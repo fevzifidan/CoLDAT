@@ -1,0 +1,27 @@
+{
+  "brand": "CoLDAT",
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "yes": "Yes",
+    "no": "No",
+    "close": "Close",
+    "create": "Create"
+  },
+  "status": {
+    "loading": "Loading...",
+    "success": "Successful!",
+    "error": "An error occurred!",
+    "server_error": "Server error!",
+    "deleting": "Deleting...",
+    "updating": "Updating...",
+    "saving": "Saving..."
+  },
+  "error": {
+    "err_reach_server": "Could not reach server!"
+  }
+}
