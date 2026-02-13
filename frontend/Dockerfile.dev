@@ -1,0 +1,25 @@
+FROM node:20-alpine AS deps
+
+WORKDIR /app
+
+# Paketleri kopyala ve yükle
+COPY package*.json ./
+RUN npm install
+
+FROM node:20-alpine AS dev
+
+WORKDIR /app
+
+# Deps stage'den node_modules kopyala
+COPY --from=deps /app/node_modules ./node_modules
+
+# Source kodunu kopyala
+COPY . .
+
+# React dev server port'u env ile al
+ENV PORT=5173
+
+# Hot reload için polling
+ENV CHOKIDAR_USEPOLLING=false
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

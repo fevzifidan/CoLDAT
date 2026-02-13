@@ -1,0 +1,13 @@
+node_modules
+.vite
+Dockerfile*
+.env
+dist
+.build
+.vscode
+.git
+.gitignore
+.DS_Store
+npm-debug.log
+.env
+Dockerfile.dev

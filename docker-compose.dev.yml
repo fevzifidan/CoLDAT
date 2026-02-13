@@ -1,0 +1,16 @@
+name: CoLDAT
+
+services:
+  frontend:
+    container_name: "coldat-frontend"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173" # container 5173, host random
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=false
+      - NODE_ENV=development
