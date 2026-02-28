@@ -23,5 +23,12 @@
   },
   "error": {
     "err_reach_server": "Could not reach server!"
+  },
+  "theme": {
+    "header": "Change Theme",
+    "appearance": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
   }
 }

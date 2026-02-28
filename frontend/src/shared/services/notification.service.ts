@@ -2,7 +2,7 @@
 import { toast, type ExternalToast } from "sonner";
 
 /**
- * Sonner için varsayılan konfigürasyonlar
+ * Default configurations for Sonner
  */
 const defaultOptions: ExternalToast = {
   duration: 4000,

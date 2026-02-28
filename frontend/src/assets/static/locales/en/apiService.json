@@ -1,0 +1,10 @@
+{
+    "error": {
+        "unexpected_err": "An unexpected error occurred.",
+        "unauthorized": "Your session has expired, please log in again.",
+        "forbidden": "You do not have permission to perform this action.",
+        "not_found": "The information you requested could not be found (404).",
+        "internal_server": "An error occurred on the server side. Please try again later.",
+        "network": "Check your internet connection."
+    }
+}

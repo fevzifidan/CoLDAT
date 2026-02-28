@@ -3,14 +3,29 @@ import { initReactI18next } from 'react-i18next';
 import HttpBackend from 'i18next-http-backend';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
+// Static language files
+import trApiService from './assets/static/locales/tr/apiService.json';
+import enApiService from './assets/static/locales/en/apiService.json';
+
 i18n
   .use(HttpBackend)
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     fallbackLng: 'en',
-    ns: ['common', 'auth'],
+    ns: ['common'],
     defaultNS: 'common',
+    detection: {
+      order: ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag'],
+      caches: ['localStorage', 'cookie'],
+    },
+
+    resources: {
+      tr: {apiService: trApiService},
+      en: {apiService: enApiService}
+    },
+
+    partialBundledLanguages: true,
 
     backend: {
       // Çeviri dosyalarının yolu.
@@ -27,7 +42,7 @@ i18n
 
     // React Suspense ile entegrasyon
     react: {
-      useSuspense: false,  // FALSE: Fixes modal styling bug on first render
+      useSuspense: true,
       bindI18n: 'languageChanged loaded',
       bindI18nStore: 'added removed',
       transEmptyNodeValue: '',

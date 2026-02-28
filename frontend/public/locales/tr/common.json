@@ -23,5 +23,12 @@
   },
   "error": {
     "err_reach_server": "Sunucuya ulaşılamıyor!"
+  },
+  "theme": {
+    "header": "Temayı Değiştir",
+    "appearance": "Görünüm",
+    "light": "Açık",
+    "dark": "Koyu",
+    "system": "Sistem"
   }
 }

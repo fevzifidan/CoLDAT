@@ -1,5 +1,8 @@
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import i18n from "../../../i18n";
+import LanguageSelector from "../LanguageSelector/LanguageSelector";
+import { ThemeToggle } from "../ThemeToggle/ThemeToggle";
 
 interface LoadingSpinnerProps {
   className?: string;
@@ -11,7 +14,7 @@ interface LoadingSpinnerProps {
 const LoadingSpinner = ({
   className,
   size = 32,
-  text = "Loading...",
+  text = i18n.t("common:status.loading"),
   fullScreen = false,
 }: LoadingSpinnerProps) => {
   const content = (
@@ -25,6 +28,8 @@ const LoadingSpinner = ({
           {text}
         </p>
       )}
+      <LanguageSelector />
+      <ThemeToggle />
     </div>
   );
 

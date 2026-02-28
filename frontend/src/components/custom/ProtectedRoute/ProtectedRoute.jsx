@@ -9,7 +9,7 @@ export default function ProtectedRoute({ children }) {
   const location = useLocation();
 
   if (loading) {
-    return <LoadingSpinner fullScreen text="Checking session..."/>;
+    return <LoadingSpinner fullScreen />;
   }
 
   if (!isAuthenticated) {

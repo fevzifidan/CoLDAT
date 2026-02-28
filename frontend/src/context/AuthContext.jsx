@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
             setUser(userData);
         } catch (error) {
             // Token is not valid
-            etUser(null);
+            setUser(null);
         }
       }
       setLoading(false);

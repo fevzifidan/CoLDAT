@@ -1,0 +1,10 @@
+{
+    "error": {
+        "unexpected_err": "Beklenmedik bir hata oluştu.",
+        "unauthorized": "Oturum süreniz doldu, lütfen tekrar giriş yapın.",
+        "forbidden": "Bu işlemi gerçekleştirmek için yetkiniz bulunmuyor.",
+        "not_found": "İstediğiniz bilgiye ulaşılamadı (404).",
+        "internal_server": "Sunucu tarafında bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+        "network": "İnternet bağlantınızı kontrol edin."
+    }
+}

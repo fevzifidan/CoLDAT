@@ -1,11 +1,12 @@
 // src/shared/services/api.service.js
 import axios from 'axios';
 import notificationService from './notification.service';
+import i18n from "../../i18n";
 
 let navigateFn = null;
 
 // 1. Axios Instance Oluşturma
-// Base URL'i environment variable'dan almak en doğrusudur.
+// Base URL'i environment variable'dan alınır.
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   timeout: 10000, // 10 seconds timeout
@@ -40,11 +41,11 @@ apiClient.interceptors.response.use(
     // a) Backend'den gelen özel hata mesajını yakalayalım
     // Genelde backend { message: "Hata detayı" } döner.
     const backendMessage = error.response?.data?.message;
-    const errorMessage = backendMessage || 'Beklenmedik bir hata oluştu.';
+    const errorMessage = backendMessage || i18n.t("apiService:error.unexpected_err");
 
     // b) "Silent" (Sessiz) Mod Kontrolü
-    // Bazen hatayı komponent içinde özel olarak yönetmek isteriz ve global bildirim çıksın istemeyiz.
-    // İstek atarken config içine { silent: true } eklersek burayı atlarız.
+    // İstek atarken config içine { silent: true } eklenirse silent mode seçilmiş olur.
+    // Silent modda merkezi bildirim gösterilmez.
     const isSilent = error.config?.silent === true;
 
     if (!isSilent) {
@@ -52,28 +53,28 @@ apiClient.interceptors.response.use(
             case 401:
                 // Unauthorized
                 localStorage.removeItem('token');
-                notificationService.error(backendMessage || "Oturum süreniz doldu, lütfen tekrar giriş yapın.");
+                notificationService.error(backendMessage || i18n.t("apiService:error.unauthorized"));
                 if (navigateFn) navigateFn('/login');
                 break;
 
             case 403:
                 // Forbidden
-                notificationService.warning(backendMessage || "Bu işlemi gerçekleştirmek için yetkiniz bulunmuyor.");
+                notificationService.warning(backendMessage || i18n.t("apiService:error.forbidden"));
                 break;
 
             case 404:
                 // Not Found
-                notificationService.info(backendMessage || "İstediğiniz bilgiye ulaşılamadı (404).");
+                notificationService.info(backendMessage || i18n.t("apiService:error.not_found"));
                 break;
 
             case 500:
                 // Internal Server Error
-                notificationService.error(backendMessage || "Sunucu tarafında bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
+                notificationService.error(backendMessage || i18n.t("apiService:error.internal_server"));
                 break;
 
             default:
                 if (error.code === 'ERR_NETWORK') {
-                    notificationService.error("İnternet bağlantınızı kontrol edin.");
+                    notificationService.error(i18n.t("apiService:error.network"));
                 } else {
                     notificationService.error(errorMessage);
                 }
