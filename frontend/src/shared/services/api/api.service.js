@@ -1,7 +1,7 @@
 // src/shared/services/api.service.js
 import axios from 'axios';
-import notificationService from './notification.service';
-import i18n from "../../i18n";
+import notificationService from '@/shared/services/notification';
+import i18n from "@/i18n";
 
 let navigateFn = null;
 
@@ -87,7 +87,7 @@ apiClient.interceptors.response.use(
 
 // 4. Metotları Dışarı Açma
 // Doğrudan axios instance'ı yerine bu wrapper objeyi kullanmak daha güvenlidir.
-const apiService = {
+export const apiService = {
   get: (url, config = {}) => apiClient.get(url, config),
   
   post: (url, data, config = {}) => apiClient.post(url, data, config),

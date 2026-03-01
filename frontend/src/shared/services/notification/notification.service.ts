@@ -12,7 +12,7 @@ const defaultOptions: ExternalToast = {
 /**
  * Central Notification Service
  */
-const notificationService = {
+export const notificationService = {
   /**
    * Success Notification
    */

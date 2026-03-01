@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import apiService from '../../../shared/services/api.service';
+import apiService from '@/shared/services/api';
 
 const AxiosInterceptorSetup = () => {
   const navigate = useNavigate();
