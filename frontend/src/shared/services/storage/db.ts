@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import { type IUser, type IImages, type IAssetUploads, type IContextMetadata, type IPaginatedItem } from './types';
+import { type IUser, type IImages, type IAssetUploads, type IContextMetadata, type IPaginatedItem, type UserConfirmationPreferences } from './types';
 
 export class AppDatabase extends Dexie {
   // 1. Tablo tiplerini tanımlıyoruz
@@ -8,6 +8,7 @@ export class AppDatabase extends Dexie {
   uploads!: Table<IAssetUploads>;
   items!: Table<IPaginatedItem>;      // Pagination referans tablosu
   contexts!: Table<IContextMetadata>; // Pagination metadata tablosu
+  userConfirmationPreferences!: Table<UserConfirmationPreferences>;
 
   constructor() {
     super('MyAppPaginationDB');
@@ -24,7 +25,10 @@ export class AppDatabase extends Dexie {
       items: 'id, [contextId+index], dataId, itemType',
       
       // Context Metadata Tablosu: contextId primary key (PK)
-      contexts: 'contextId' 
+      contexts: 'contextId',
+      
+      // User Confirmation Preference Tablosu: id primary key (PK)
+      userConfirmationPreferences: 'id'
     });
   }
 }

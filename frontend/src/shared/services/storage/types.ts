@@ -57,3 +57,10 @@ export interface IPaginatedItem {
     itemType: 'user' | 'image' | 'upload';
     createdAt: number; // Timestamp for cache invalidation
 }
+
+// Confirmation Modal User Preference
+
+export interface UserConfirmationPreferences {
+  id: string;      // Context ID of the Confirmation Dialog
+  skipped: boolean; // Indicates whether the dialog will be shown again later
+}

@@ -5,6 +5,11 @@ import { AuthProvider } from './context/AuthContext';
 import { Toaster } from "@/components/ui/sonner";
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import AxiosInterceptorSetup from './components/custom/AxiosInterceptorSetup/AxiosInterceptorSetup.jsx';
+import { ConfirmProvider } from './shared/services/confirmation/ConfirmContext.js';
+import { BannerProvider } from './components/custom/GlobalBanner/BannerContext.js';
+import { GlobalBanner } from './components/custom/GlobalBanner/GlobalBanner.js';
+
+import LoginPage from './test/Login.js';
 
 function App() {
   const { i18n, ready } = useTranslation();
@@ -32,15 +37,20 @@ function App() {
 
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AxiosInterceptorSetup />
-        <Toaster position="top-right" richColors />
+      <BannerProvider>
+        <GlobalBanner />
+        <ConfirmProvider>
+          <AuthProvider>
+            <AxiosInterceptorSetup />
+            <Toaster position="top-right" richColors />
 
-        <Routes>
-          <></>
-          <Route path='/' element={<></>} />
-        </Routes>
-      </AuthProvider>
+            <Routes>
+              <></>
+              <Route path='/' element={<><LoginPage/></>} />
+            </Routes>
+          </AuthProvider>
+        </ConfirmProvider>
+      </BannerProvider>
     </BrowserRouter>
   )
 }
