@@ -28,4 +28,11 @@ export const projects: Project[] = [
     status: "New", 
     count: 0 
   },
+  { 
+    id: 4, 
+    name: "Autonomous Doom Relations", 
+    task: "Semantic Relation", 
+    status: "Completed", 
+    count: 20
+  },
 ];
