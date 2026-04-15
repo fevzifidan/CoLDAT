@@ -32,7 +32,22 @@
     "system": "System"
   },
     "dashboard": {
+    "title": "Dashboard",
+    "description": "CoLDAT project current progress.",
     "in_progress": "In Progress",
-    "processed_files": "Processed Files"
-  }
+    "processed_files": "Processed Files",
+    "open_project": "OPEN PROJECT",
+    "status": {
+      "completed": "Completed",
+      "new": "New",
+      "in_progress": "In Progress"
+    },
+    "tasks": {
+      "object_detection": "Object Detection",
+      "entity_recognition": "Entity Recognition",
+      "semantic_relation": "Semantic Relation"
+    }
+  },
+  "language": "Language",
+  "logout": "Logout"
 }

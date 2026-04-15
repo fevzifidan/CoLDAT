@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { projects, type Project } from '../../../../shared/utils/projectsData'; 
+import { projects, type Project } from '@/shared/utils/projectsData'; 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';

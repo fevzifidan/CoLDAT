@@ -32,7 +32,22 @@
     "system": "Sistem"
   },
   "dashboard": {
+    "title": "Panel",
+    "description": "CoLDAT projesi güncel ilerlemesi.",
     "in_progress": "İşlemde",
-    "processed_files": "İşlenen Dosyalar"
-  }
+    "processed_files": "İşlenen Dosyalar",
+    "open_project": "PROJEYİ AÇ",
+    "status": {
+      "completed": "Tamamlandı",
+      "new": "Yeni",
+      "in_progress": "İşlemde"
+    },
+    "tasks": {
+      "object_detection": "Nesne Algılama",
+      "entity_recognition": "Varlık Tanıma",
+      "semantic_relation": "Anlamsal İlişki"
+    }
+  },
+  "language": "Dil",
+  "logout": "Çıkış Yap"
 }

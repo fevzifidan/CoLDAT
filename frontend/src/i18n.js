@@ -13,7 +13,7 @@ i18n
   .use(initReactI18next)
   .init({
     fallbackLng: 'en',
-    ns: ['common'],
+    ns: ['common', 'sidebar'],
     defaultNS: 'common',
     detection: {
       order: ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag'],
