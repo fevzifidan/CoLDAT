@@ -4,6 +4,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from "@/components/ui/sonner";
+
+// Context ve Interceptorlar
 import AxiosInterceptorSetup from './components/custom/AxiosInterceptorSetup/AxiosInterceptorSetup.jsx';
 import { ConfirmProvider } from './shared/services/confirmation/ConfirmContext.js';
 import { BannerProvider } from './components/custom/GlobalBanner/BannerContext.js';

@@ -3,17 +3,11 @@ import { projects, type Project } from '@/shared/utils/projectsData';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
-const AnnotationCanvas = () => (
-  <div className="w-full h-full bg-slate-900 rounded-lg flex items-center justify-center border-2 border-primary/10">
-    <span className="text-slate-500 font-mono text-sm">Konva Canvas Area</span>
-  </div>
-);
+import AnnotationCanvas from './components/AnnotationCanvas'; 
 
 const ProjectDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
   const project = projects.find((p: Project) => p.id === Number(id));
 
   if (!project) return <div className="p-8 text-white">Project Not Found.</div>;
@@ -39,10 +33,10 @@ const ProjectDetailPage = () => {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* SOL: Canvas */}
-        <main className="flex-1 bg-slate-100 p-4 flex items-center justify-center dark:bg-slate-900">
-          <div className="w-full h-full shadow-2xl rounded-xl border bg-slate-800 overflow-hidden">
-             <AnnotationCanvas />
+        {/* SOL: Canvas Alanı - Burayı geri ekledik */}
+        <main className="flex-1 bg-slate-100 p-4 flex items-center justify-center dark:bg-slate-900 overflow-hidden">
+          <div className="w-full h-full shadow-2xl rounded-xl border bg-slate-800 overflow-hidden relative flex items-center justify-center">
+             <AnnotationCanvas /> 
           </div>
         </main>
 
@@ -67,8 +61,8 @@ const ProjectDetailPage = () => {
           </ScrollArea>
 
           <div className="p-4 border-t bg-slate-50 dark:bg-slate-900/50">
-            <h3 className="font-semibold text-[10px] uppercase mb-1 text-muted-foreground">Image</h3>
-            <p className="text-[10px] font-mono opacity-70">Image: traffic_scene_01.jpg</p>
+            <h3 className="font-semibold text-[10px] uppercase mb-1 text-muted-foreground">Image Info</h3>
+            <p className="text-[10px] font-mono opacity-70">File: traffic_scene_01.jpg</p>
           </div>
         </aside>
       </div>
