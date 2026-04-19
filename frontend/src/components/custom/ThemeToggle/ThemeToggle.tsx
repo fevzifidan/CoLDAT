@@ -5,17 +5,21 @@ import { Moon, Sun, Monitor } from "lucide-react"
 import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup,
-    DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup,
+  DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
 
 import { useTranslation } from "react-i18next"
 
 interface ThemeToggleInterface {
-    alignMenu?: "start" | "center" | "end"
-    className?: string
+  alignMenu?: "start" | "center" | "end"
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
+  size?: "default" | "icon" | "sm" | "lg" | null | undefined
+  className?: string
 }
 
-export function ThemeToggle({alignMenu="center", className}: ThemeToggleInterface) {
+export function ThemeToggle({ alignMenu = "center", variant = "ghost", size = "icon", className }: ThemeToggleInterface) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
   const { t } = useTranslation(["common"])
@@ -35,7 +39,7 @@ export function ThemeToggle({alignMenu="center", className}: ThemeToggleInterfac
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className={className}>
+        <Button variant={variant} size={size} className={className}>
           {/* Icon changes based on selected theme */}
           {theme === "light" && <Sun className="h-[1.2rem] w-[1.2rem]" />}
           {theme === "dark" && <Moon className="h-[1.2rem] w-[1.2rem]" />}

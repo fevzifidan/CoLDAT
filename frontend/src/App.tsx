@@ -14,6 +14,7 @@ import { GlobalBanner } from './components/custom/GlobalBanner/GlobalBanner.js';
 import DashboardLayout from '@/features/core/layouts/DashboardLayout';
 import DashboardHome from '@/features/dashboard/DashboardHome';
 import ProjectDetailPage from '@/features/projects/ProjectDetailPage';
+import AnnotationPage from '@/features/annotation/AnnotationPage';
 import Login from "@/features/auth/Login/Login";
 import Register from "@/features/auth/Register/Register";
 
@@ -29,6 +30,7 @@ function App() {
               <Toaster position="top-right" richColors />
               <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/annotate/:projectId/:imageId" element={<AnnotationPage />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/*" element={
                   <DashboardLayout>
