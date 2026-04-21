@@ -49,10 +49,10 @@ export function AppSidebar() {
             <span className="text-primary font-bold italic text-lg tracking-tight">COLDAT</span>
          </div>
          <Button 
-           variant="ghost" 
-           size="icon" 
-           onClick={toggleSidebar} 
-           className="text-muted-foreground hover:text-foreground shrink-0 ml-auto group-data-[collapsible=icon]:ml-0 hover:bg-transparent bg-transparent border-none"
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleSidebar} 
+            className="text-muted-foreground hover:text-foreground shrink-0 ml-auto group-data-[collapsible=icon]:ml-0 hover:bg-transparent bg-transparent border-none"
          >
             <PanelLeftClose size={20} className="transition-transform duration-500 ease-in-out group-data-[state=collapsed]:rotate-180" />
          </Button>
@@ -64,16 +64,22 @@ export function AppSidebar() {
             {SIDEBAR_ITEMS.map((item) => {
               const isActive = location.pathname === item.url || 
                                (item.url !== "/" && location.pathname.startsWith(item.url));
+              
               return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     tooltip={t(item.title, { ns: 'sidebar' })} 
-                    onClick={() => navigate(item.url)}
+                    onClick={() => !item.isPlaceholder && navigate(item.url)}
                     isActive={isActive}
-                    className="transition-all duration-500 hover:bg-accent hover:text-accent-foreground data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-semibold"
+                    className={`transition-all duration-500 
+                      ${item.isPlaceholder ? 'opacity-50 cursor-not-allowed hover:bg-transparent' : 'hover:bg-accent hover:text-accent-foreground'}
+                      data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-semibold`}
                   >
                     <item.icon className="shrink-0" size={20} />
-                    <span className="truncate ml-2">{t(item.title, { ns: 'sidebar' })}</span>
+                    <span className="truncate ml-2">
+                      {t(item.title, { ns: 'sidebar' })}
+                      {item.isPlaceholder && <span className="ml-2 text-[10px] italic opacity-70">(Soon)</span>}
+                    </span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               );
@@ -84,8 +90,6 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t p-2 bg-background/50 backdrop-blur-sm">
         <SidebarMenu className="gap-2">
-          
-          {/* Appearance Dropdown */}
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

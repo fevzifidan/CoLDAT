@@ -31,12 +31,23 @@
     "dark": "Dark",
     "system": "System"
   },
-    "dashboard": {
+  "dashboard": {
     "title": "Dashboard",
     "description": "CoLDAT project current progress.",
-    "in_progress": "In Progress",
-    "processed_files": "Processed Files",
-    "open_project": "OPEN PROJECT",
+    "no_assigned_tasks": "There are no active tasks assigned to you.",
+    "show_more": "SHOW MORE",
+    "files": "PROCESSED FILES",
+    "sections": {
+      "recent_tasks": "Recent Tasks",
+      "tasks_description": "Your assigned workflow progress",
+      "recent_datasets": "Recent Datasets",
+      "recent_projects": "Recent Projects"
+    },
+    "buttons": {
+      "manage": "MANAGE",
+      "start_labeling": "START LABELING",
+      "open": "OPEN PROJECT"
+    },
     "status": {
       "completed": "Completed",
       "new": "New",
@@ -46,7 +57,19 @@
       "object_detection": "Object Detection",
       "entity_recognition": "Entity Recognition",
       "semantic_relation": "Semantic Relation"
+    },
+    "roles": {
+      "no_assigned_tasks": "No Assigned Tasks",
+      "annotator": "Annotator",
+      "viewer": "Viewer",
+      "admin": "Admin"
     }
+  },
+    "sidebar": {
+    "projects": "Projects",
+    "tasks": "Tasks",
+    "datasets": "Datasets",
+    "api_keys": "API Keys"
   },
   "language": "Language",
   "logout": "Logout"
