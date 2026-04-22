@@ -25,3 +25,4 @@ dist-ssr
 .env
 
 **/test/
+implementation_plan.md
