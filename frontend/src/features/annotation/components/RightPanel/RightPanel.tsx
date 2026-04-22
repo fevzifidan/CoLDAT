@@ -1,7 +1,7 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import InspectorTab from './InspectorTab/InspectorTab';
 import OverviewTab from './OverviewTab/OverviewTab';
-import { useAnnotationStore } from '../../store/useAnnotationStore';
+import { useAppStore } from '../../../../store/hooks/useAppStore';
 import type { ClassDef, RelationType } from '../../types/annotation.types';
 
 interface RightPanelProps {
@@ -10,7 +10,8 @@ interface RightPanelProps {
 }
 
 export default function RightPanel({ classes, relationTypes }: RightPanelProps) {
-  const { activeTab, setActiveTab } = useAnnotationStore();
+  const activeTab = useAppStore(state => state.activeTab);
+  const setActiveTab = useAppStore(state => state.setActiveTab);
 
   return (
     <Tabs

@@ -1,17 +1,43 @@
-import { useState } from 'react';
-import { useAnnotationStore } from './store/useAnnotationStore';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAppStore } from '../../store/hooks/useAppStore';
 import { useAnnotationData } from './hooks/useAnnotationData';
 import AnnotationLayout from './components/AnnotationLayout';
 import AnnotationToolbar from './components/Toolbar/AnnotationToolbar';
 import LeftPanel from './components/LeftPanel/LeftPanel';
-import CanvasPlaceholder from './components/CanvasArea/CanvasPlaceholder';
+import { CanvasContainer } from '../viewer';
+import { useUndoRedo } from './hooks/useUndoRedo';
+import { useAnnotationHotkeys } from './hooks/useAnnotationHotkeys';
 import RightPanel from './components/RightPanel/RightPanel';
+import AnnotationSideToolbar from './components/AnnotationSideToolbar';
 
 export default function AnnotationPage() {
-  const { currentImageIndex, totalImages } = useAnnotationStore();
-  const { classes, relationTypes, queue } = useAnnotationData();
+  const { projectId, imageId } = useParams<{ projectId: string; imageId: string }>();
+  const navigate = useNavigate();
+  
+  const currentImageIndex = useAppStore(state => state.currentImageIndex);
+  const totalImages = useAppStore(state => state.totalImages);
+  
+  useUndoRedo();
+  useAnnotationHotkeys();
+  const { classes, relationTypes } = useAnnotationData();
 
-  const [activeImageId, setActiveImageId] = useState(queue[0]?.id ?? '');
+  const [activeImageId, setActiveImageId] = useState(imageId ?? '');
+  
+  // Future toggle for view-only mode
+  const [isViewOnly] = useState(false);
+
+  // Sync activeImageId when URL imageId changes
+  useEffect(() => {
+    if (imageId) {
+      setActiveImageId(imageId);
+    }
+  }, [imageId]);
+
+  const handleImageSelect = (id: string) => {
+    setActiveImageId(id);
+    navigate(`/annotate/${projectId}/${id}`);
+  };
 
   return (
     <AnnotationLayout
@@ -24,13 +50,18 @@ export default function AnnotationPage() {
       }
       leftPanel={
         <LeftPanel
-          queue={queue}
+          taskId={projectId ?? ''}
           totalImages={totalImages}
           activeImageId={activeImageId}
-          onImageSelect={setActiveImageId}
+          onImageSelect={handleImageSelect}
         />
       }
-      canvas={<CanvasPlaceholder />}
+      toolPanel={!isViewOnly && <AnnotationSideToolbar />}
+      canvas={
+        <CanvasContainer 
+          imageUrl="https://images.unsplash.com/photo-1542362567-b07e54358753?q=80&w=3446&auto=format&fit=crop" 
+        />
+      }
       rightPanel={
         <RightPanel classes={classes} relationTypes={relationTypes} />
       }

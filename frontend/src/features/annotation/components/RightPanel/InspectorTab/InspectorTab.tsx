@@ -6,7 +6,7 @@ import ClassSelector from './ClassSelector';
 import ZIndexControl from './ZIndexControl';
 import ClassList from './ClassList';
 import RelationsList from './RelationsList';
-import { useAnnotationStore } from '../../../store/useAnnotationStore';
+import { useAppStore } from '../../../../../store/hooks/useAppStore';
 import type { ClassDef, RelationType } from '../../../types/annotation.types';
 
 interface InspectorTabProps {
@@ -19,8 +19,9 @@ export default function InspectorTab({ classes, relationTypes }: InspectorTabPro
     selectedObjectId,
     annotatedObjects,
     updateObject,
+    deleteObject,
     setSelectedObjectId,
-  } = useAnnotationStore();
+  } = useAppStore();
 
   const selectedObject = annotatedObjects.find((o) => o.id === selectedObjectId);
 
@@ -43,14 +44,34 @@ export default function InspectorTab({ classes, relationTypes }: InspectorTabPro
         onToggleLocked={() =>
           updateObject(selectedObject.id, { locked: !selectedObject.locked })
         }
-        onDelete={() => setSelectedObjectId(null)}
+        onRename={(label) => updateObject(selectedObject.id, { label })}
+        onDelete={() => {
+          if (selectedObject) {
+            deleteObject(selectedObject.id);
+            setSelectedObjectId(null);
+          }
+        }}
       />
 
       {/* BBox */}
-      <BoundingBoxFields
-        bbox={selectedObject.bbox}
-        onChange={(bbox) => updateObject(selectedObject.id, { bbox })}
-      />
+      {selectedObject.type === 'bbox' && (
+        <BoundingBoxFields
+          bbox={{
+            xMin: selectedObject.coordinates[0],
+            yMin: selectedObject.coordinates[1],
+            xMax: selectedObject.coordinates[0] + selectedObject.coordinates[2],
+            yMax: selectedObject.coordinates[1] + selectedObject.coordinates[3],
+          }}
+          onChange={(bbox) => updateObject(selectedObject.id, { 
+            coordinates: [
+              bbox.xMin, 
+              bbox.yMin, 
+              bbox.xMax - bbox.xMin, 
+              bbox.yMax - bbox.yMin
+            ] 
+          })}
+        />
+      )}
 
       {/* Class selector */}
       <ClassSelector

@@ -4,7 +4,7 @@ export type AnnotationStatus = 'UPLOADED' | 'PENDING' | 'VERIFICATION_FAILED' | 
 
 export type EmbeddingStatus = AnnotationStatus;
 
-export type AnnotationTool = 'select' | 'bbox' | 'polygon' | 'pan';
+export type AnnotationTool = 'select' | 'bbox' | 'polygon' | 'pan' | 'pen' | 'eraser';
 
 export interface BoundingBox {
   xMin: number;
@@ -30,8 +30,9 @@ export interface AnnotatedObject {
   id: string;       // e.g. "a8f2a"
   label: string;    // e.g. "Car_01"
   classId: string;
+  type: 'bbox' | 'polygon' | 'keypoint';
+  coordinates: number[]; // [x,y,w,h] for bbox, [x1,y1,x2,y2...] for polygon
   color: string;
-  bbox: BoundingBox;
   zIndex: number;
   visible: boolean;
   locked: boolean;
