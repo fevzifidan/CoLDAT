@@ -9,7 +9,7 @@ export default function DatasetQueueHeader({ totalImages }: DatasetQueueHeaderPr
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
       <div>
-        <h2 className="text-sm font-semibold">Dataset Queue</h2>
+        <h2 className="text-sm font-semibold">Task Queue</h2>
         <p className="text-[10px] text-muted-foreground mt-0.5">
           42 / {totalImages.toLocaleString()} images
         </p>

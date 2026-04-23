@@ -29,7 +29,7 @@ export const MainStage: React.FC<MainStageProps> = ({ width, height, imageUrl })
     if (!stage) return;
 
     const container = stage.container();
-    
+
     const onWheel = (e: WheelEvent) => {
       handleWheel(e, stage);
     };

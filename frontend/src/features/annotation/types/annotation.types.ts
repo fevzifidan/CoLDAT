@@ -4,7 +4,7 @@ export type AnnotationStatus = 'UPLOADED' | 'PENDING' | 'VERIFICATION_FAILED' | 
 
 export type EmbeddingStatus = AnnotationStatus;
 
-export type AnnotationTool = 'select' | 'bbox' | 'polygon' | 'pan' | 'pen' | 'eraser';
+export type AnnotationTool = 'select' | 'bbox' | 'polygon' | 'points' | 'pan' | 'pen' | 'eraser';
 
 export interface BoundingBox {
   xMin: number;

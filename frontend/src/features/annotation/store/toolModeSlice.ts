@@ -7,6 +7,6 @@ export interface ToolModeState {
 }
 
 export const createToolModeSlice: StateCreator<ToolModeState> = (set) => ({
-  activeTool: 'bbox',
+  activeTool: 'select',
   setActiveTool: (tool) => set({ activeTool: tool }),
 });
