@@ -1,5 +1,6 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import ObjectHeader from './ObjectHeader';
 import BoundingBoxFields from './BoundingBoxFields';
 import ClassSelector from './ClassSelector';
@@ -12,9 +13,10 @@ import type { ClassDef, RelationType } from '../../../types/annotation.types';
 interface InspectorTabProps {
   classes: ClassDef[];
   relationTypes: RelationType[];
+  isLoading?: boolean;
 }
 
-export default function InspectorTab({ classes, relationTypes }: InspectorTabProps) {
+export default function InspectorTab({ classes, relationTypes, isLoading = false }: InspectorTabProps) {
   const {
     selectedObjectId,
     annotatedObjects,
@@ -24,6 +26,47 @@ export default function InspectorTab({ classes, relationTypes }: InspectorTabPro
   } = useAppStore();
 
   const selectedObject = annotatedObjects.find((o) => o.id === selectedObjectId);
+
+  if (isLoading) {
+    return (
+      <div className="p-4 space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-32" />
+          <div className="flex gap-1">
+            <Skeleton className="h-8 w-8 rounded-md" />
+            <Skeleton className="h-8 w-8 rounded-md" />
+          </div>
+        </div>
+
+        {/* BBox Skeleton */}
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-20" />
+          <div className="grid grid-cols-2 gap-2">
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
+          </div>
+        </div>
+
+        {/* Class Selector Skeleton */}
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-9 w-full" />
+        </div>
+
+        <Separator />
+
+        {/* List Skeleton */}
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (!selectedObject) {
     return (

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/hooks/useAppStore';
 import { useAnnotationData } from './hooks/useAnnotationData';
+import { useAnnotationAutoSave } from './hooks/useAnnotationAutoSave';
 import AnnotationLayout from './components/AnnotationLayout';
 import AnnotationToolbar from './components/Toolbar/AnnotationToolbar';
 import LeftPanel from './components/LeftPanel/LeftPanel';
@@ -12,15 +13,16 @@ import RightPanel from './components/RightPanel/RightPanel';
 import AnnotationSideToolbar from './components/AnnotationSideToolbar';
 
 export default function AnnotationPage() {
-  const { projectId, imageId } = useParams<{ projectId: string; imageId: string }>();
+  const { taskId, imageId } = useParams<{ taskId: string; imageId: string }>();
   const navigate = useNavigate();
   
   const currentImageIndex = useAppStore(state => state.currentImageIndex);
   const totalImages = useAppStore(state => state.totalImages);
   
   useUndoRedo();
-  useAnnotationHotkeys();
-  const { classes, relationTypes } = useAnnotationData();
+  const { classes, relationTypes, isLoadingAnnotations } = useAnnotationData(imageId ?? '');
+  const { isSaving, saveNow } = useAnnotationAutoSave(imageId ?? '');
+  useAnnotationHotkeys({ onSave: saveNow });
 
   const [activeImageId, setActiveImageId] = useState(imageId ?? '');
   
@@ -36,7 +38,7 @@ export default function AnnotationPage() {
 
   const handleImageSelect = (id: string) => {
     setActiveImageId(id);
-    navigate(`/annotate/${projectId}/${id}`);
+    navigate(`/annotate/${taskId}/${id}`);
   };
 
   return (
@@ -46,11 +48,13 @@ export default function AnnotationPage() {
           projectName="Traffic Sign Detection"
           currentIndex={currentImageIndex}
           totalImages={totalImages}
+          onSave={saveNow}
+          isSaving={isSaving}
         />
       }
       leftPanel={
         <LeftPanel
-          taskId={projectId ?? ''}
+          taskId={taskId ?? ''}
           totalImages={totalImages}
           activeImageId={activeImageId}
           onImageSelect={handleImageSelect}
@@ -63,7 +67,11 @@ export default function AnnotationPage() {
         />
       }
       rightPanel={
-        <RightPanel classes={classes} relationTypes={relationTypes} />
+        <RightPanel 
+          classes={classes} 
+          relationTypes={relationTypes} 
+          isLoading={isLoadingAnnotations} 
+        />
       }
     />
   );

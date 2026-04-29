@@ -30,8 +30,11 @@ function App() {
               <Toaster position="top-right" richColors />
               <Routes>
                 <Route path="/login" element={<Login />} />
-                <Route path="/annotate/:projectId/:imageId" element={<AnnotationPage />} />
                 <Route path="/register" element={<Register />} />
+                {/* Annotation modu: taskId üzerinden yönetilir */}
+                <Route path="/annotate/:taskId/:imageId" element={<AnnotationPage />} />
+                {/* Viewer modu: read-only (ileride ayrı ViewerPage bileşeni ile doldurulacak) */}
+                <Route path="/view/:datasetId/:imageId" element={<AnnotationPage />} />
                 <Route path="/*" element={
                   <DashboardLayout>
                     <Routes>

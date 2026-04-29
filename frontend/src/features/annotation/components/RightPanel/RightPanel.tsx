@@ -7,9 +7,10 @@ import type { ClassDef, RelationType } from '../../types/annotation.types';
 interface RightPanelProps {
   classes: ClassDef[];
   relationTypes: RelationType[];
+  isLoading?: boolean;
 }
 
-export default function RightPanel({ classes, relationTypes }: RightPanelProps) {
+export default function RightPanel({ classes, relationTypes, isLoading = false }: RightPanelProps) {
   const activeTab = useAppStore(state => state.activeTab);
   const setActiveTab = useAppStore(state => state.setActiveTab);
 
@@ -49,7 +50,7 @@ export default function RightPanel({ classes, relationTypes }: RightPanelProps) 
 
       {/* Inspector content */}
       <TabsContent value="inspector" className="flex-1 overflow-hidden mt-0 flex flex-col">
-        <InspectorTab classes={classes} relationTypes={relationTypes} />
+        <InspectorTab classes={classes} relationTypes={relationTypes} isLoading={isLoading} />
       </TabsContent>
 
       {/* Overview content */}

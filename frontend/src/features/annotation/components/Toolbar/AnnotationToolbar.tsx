@@ -15,7 +15,8 @@ import {
   Contrast,          // Kontrast
   Droplets,          // Doygunluk
   Layers,            // Opaklık
-  RotateCcw          // Sıfırlama
+  RotateCcw,         // Sıfırlama
+  Loader2            // Auto-save spinner
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -30,12 +31,18 @@ interface AnnotationToolbarProps {
   projectName: string;
   currentIndex: number;
   totalImages: number;
+  /** Manuel save callback'i (useAnnotationAutoSave'den) */
+  onSave?: () => void;
+  /** Save işlemi sürerken true */
+  isSaving?: boolean;
 }
 
 export default function AnnotationToolbar({
   projectName,
   currentIndex,
   totalImages,
+  onSave,
+  isSaving = false,
 }: AnnotationToolbarProps) {
   const goToPrev = useAppStore(state => state.goToPrev);
   const goToNext = useAppStore(state => state.goToNext);
@@ -230,8 +237,16 @@ export default function AnnotationToolbar({
           <Download size={13} />
           Export
         </Button>
-        <Button size="sm" className="h-8 gap-1.5 text-xs bg-primary hover:bg-primary/90">
-          <Save size={13} />
+        <Button
+          size="sm"
+          className="h-8 gap-1.5 text-xs bg-primary hover:bg-primary/90"
+          onClick={onSave}
+          disabled={isSaving}
+          title="Save annotations (Ctrl+S)"
+        >
+          {isSaving
+            ? <Loader2 size={13} className="animate-spin" />
+            : <Save size={13} />}
           Save
         </Button>
       </div>

@@ -26,8 +26,10 @@ export interface RelationType {
   directed: boolean;
 }
 
+// ─── UI-Internal Annotation State Types ─────────────────────────────────────
+
 export interface AnnotatedObject {
-  id: string;       // e.g. "a8f2a"
+  id: string;       // UUID
   label: string;    // e.g. "Car_01"
   classId: string;
   type: 'bbox' | 'polygon' | 'keypoint';
@@ -48,6 +50,61 @@ export interface ObjectRelation {
   relationTypeName: string;
 }
 
+// ─── API Response Types (matches backend OpenAPI schema) ─────────────────────
+
+/**
+ * Image object as returned by GET /tasks/{taskId}/images
+ */
+export interface TaskImage {
+  asset_id: string;
+  filename: string;
+  mime_type: string;
+  /** Presigned S3 URL (time-limited) */
+  asset_url: string;
+  asset_url_expiry_at: string;
+  /** URL to precomputed MobileSAM embedding file. Null if not uploaded. */
+  sam_embedding_url: string | null;
+  sam_embedding_url_expiry_at: string | null;
+  status: AnnotationStatus;
+  embedding_status: EmbeddingStatus | null;
+}
+
+/**
+ * Scene graph relationship as stored in the backend (Visual Genome style).
+ * Used in API request/response bodies.
+ */
+export interface SceneGraphRelationship {
+  subject_id: string;
+  object_id: string;
+  predicate: string;
+}
+
+/**
+ * The full annotation payload for a single image.
+ * Used for both GET and PUT /images/{imageId}/annotations.
+ */
+export interface AnnotationData {
+  objects: Array<{
+    id: string;
+    class_id: string;
+    type: 'bbox' | 'polygon' | 'keypoint';
+    /** [x, y, w, h] for bbox or [x1, y1, x2, y2, ...] for polygon */
+    coordinates: number[];
+  }>;
+  relationships: SceneGraphRelationship[];
+}
+
+/**
+ * Paginated response from GET /tasks/{taskId}/images
+ */
+export interface TaskImagesResponse {
+  data: TaskImage[];
+  next_cursor: string | null;
+}
+
+// ─── Legacy alias kept for backwards compatibility ───────────────────────────
+
+/** @deprecated Use TaskImage instead */
 export interface QueueImage {
   asset_id: string;
   filename: string;

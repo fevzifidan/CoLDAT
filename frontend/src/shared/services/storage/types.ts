@@ -11,7 +11,8 @@ export interface IUser {
 // Images (Used for both dataset view and task view)
 
 export interface IImages {
-    dataset_id?: string,
+    task_id?: string,       // Task context (annotation mode)
+    dataset_id?: string,    // Dataset context (legacy / dataset view)
     asset_id: string,
     filename: string,
     mime_type: string,

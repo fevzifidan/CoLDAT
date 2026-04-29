@@ -1,7 +1,12 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../../../store/hooks/useAppStore';
 
-export const useAnnotationHotkeys = () => {
+interface HotkeyOptions {
+  /** Manuel save callback'i — useAnnotationAutoSave'den gelir */
+  onSave?: () => void;
+}
+
+export const useAnnotationHotkeys = ({ onSave }: HotkeyOptions = {}) => {
   const setActiveTool = useAppStore(state => state.setActiveTool);
 
   useEffect(() => {
@@ -11,6 +16,13 @@ export const useAnnotationHotkeys = () => {
         document.activeElement?.tagName === 'INPUT' ||
         document.activeElement?.tagName === 'TEXTAREA'
       ) {
+        return;
+      }
+
+      // Ctrl+S → Manuel Save
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        onSave?.();
         return;
       }
 
@@ -39,5 +51,5 @@ export const useAnnotationHotkeys = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setActiveTool]);
+  }, [setActiveTool, onSave]);
 };

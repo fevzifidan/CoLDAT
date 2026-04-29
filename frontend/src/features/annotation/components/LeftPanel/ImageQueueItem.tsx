@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils';
-import type { QueueImage, AnnotationStatus } from '../../types/annotation.types';
+import type { TaskImage, AnnotationStatus } from '../../types/annotation.types';
 
 interface ImageQueueItemProps {
-  image: QueueImage;
+  image: TaskImage;
   isActive: boolean;
   onClick: () => void;
 }
