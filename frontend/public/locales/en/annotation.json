@@ -1,0 +1,109 @@
+{
+  "toolbar": {
+    "undo": "Undo",
+    "redo": "Redo",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "panTool": "Pan Tool",
+    "magnifier": "Magnifier",
+    "resetView": "Reset View",
+    "prev": "PREV",
+    "next": "NEXT",
+    "viewSettings": "View",
+    "imageSettings": "Image Settings",
+    "reset": "Reset",
+    "brightness": "Brightness",
+    "contrast": "Contrast",
+    "saturation": "Saturation",
+    "maskOpacity": "Mask Opacity",
+    "settings": "Settings",
+    "export": "Export",
+    "save": "Save",
+    "saveTooltip": "Save annotations (Ctrl+S)"
+  },
+  "sideToolbar": {
+    "select": "Select (V)",
+    "bbox": "Rectangle (R)",
+    "polygon": "Polygon (P)",
+    "points": "Points (K)",
+    "pen": "Pen (B)",
+    "eraser": "Eraser (E)"
+  },
+  "leftPanel": {
+    "search": "Search in current page...",
+    "taskQueue": "Task Queue",
+    "datasetQueue": "Dataset Queue",
+    "imagesCount": "{{current}} / {{total}} images",
+    "status": {
+      "uploaded": "Uploaded",
+      "pending": "Pending",
+      "verFailed": "Ver. Failed",
+      "failed": "Failed"
+    },
+    "filter": "Filter"
+  },
+  "rightPanel": {
+    "tabs": {
+      "inspector": "Inspector",
+      "overview": "Overview"
+    },
+    "inspector": {
+      "noObjectSelected": "No object selected",
+      "boundingBox": "Bounding Box",
+      "class": "Class",
+      "selectClass": "Select a class...",
+      "zIndex": "Z-Index",
+      "bringForward": "Bring Forward",
+      "sendBackward": "Send Backward",
+      "relationsOntology": "Relations (Ontology)",
+      "noRelations": "No relations for this object",
+      "fields": {
+        "xMin": "X MIN",
+        "yMin": "Y MIN",
+        "xMax": "X MAX",
+        "yMax": "Y MAX"
+      },
+      "classes": "Classes",
+      "filterClasses": "Filter classes...",
+      "objectHeader": {
+        "hide": "Hide",
+        "show": "Show",
+        "lock": "Lock",
+        "unlock": "Unlock",
+        "delete": "Delete",
+        "rename": "Rename",
+        "id": "ID",
+        "deleteConfirmTitle": "Are you sure you want to delete this object?",
+        "confirmDelete": "Delete",
+        "cancel": "Cancel"
+      }
+    },
+    "overview": {
+      "annotatedObjects": "Annotated Objects",
+      "noAnnotations": "No annotations yet",
+      "objectRelations": "Object Relations",
+      "noRelations": "No relations defined",
+      "hidden": "hidden"
+    },
+    "objectMenu": {
+      "menu": "Menu",
+      "relation": "Relation",
+      "selectTarget": "Select target object...",
+      "noObjectsFound": "No objects found.",
+      "selectRelationType": "Select relation type...",
+      "noTypesFound": "No types found."
+    },
+    "contextMenu": {
+      "hideObject": "Hide Object",
+      "showObject": "Show Object",
+      "unlockObject": "Unlock Object",
+      "lockObject": "Lock Object",
+      "deleteObject": "Delete Object"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{page}}"
+    }
+  }
+}

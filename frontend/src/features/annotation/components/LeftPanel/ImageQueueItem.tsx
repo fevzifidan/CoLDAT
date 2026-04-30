@@ -1,4 +1,6 @@
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { useAppStore } from '@/store/hooks/useAppStore';
 import type { TaskImage, AnnotationStatus } from '../../types/annotation.types';
 
 interface ImageQueueItemProps {
@@ -9,31 +11,33 @@ interface ImageQueueItemProps {
 
 const STATUS_CONFIG: Record<
   AnnotationStatus,
-  { label: string; dotClass: string; badgeVariant: 'default' | 'secondary' | 'outline' | 'destructive' }
+  { key: string; dotClass: string; badgeVariant: 'default' | 'secondary' | 'outline' | 'destructive' }
 > = {
   UPLOADED: {
-    label: 'Uploaded',
+    key: 'uploaded',
     dotClass: 'bg-emerald-500',
     badgeVariant: 'outline',
   },
   PENDING: {
-    label: 'Pending',
+    key: 'pending',
     dotClass: 'bg-amber-400',
     badgeVariant: 'secondary',
   },
   VERIFICATION_FAILED: {
-    label: 'Ver. Failed',
+    key: 'verFailed',
     dotClass: 'bg-destructive',
     badgeVariant: 'destructive',
   },
   FAILED: {
-    label: 'Failed',
+    key: 'failed',
     dotClass: 'bg-red-600',
     badgeVariant: 'destructive',
   },
 };
 
 export default function ImageQueueItem({ image, isActive, onClick }: ImageQueueItemProps) {
+  const { t } = useTranslation('annotation');
+  const isReadOnly = useAppStore(state => state.isReadOnly);
   const config = STATUS_CONFIG[image.status];
 
   return (
@@ -60,10 +64,12 @@ export default function ImageQueueItem({ image, isActive, onClick }: ImageQueueI
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium truncate">{image.filename}</p>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', config.dotClass)} />
-          <span className="text-[10px] text-muted-foreground">{config.label}</span>
-        </div>
+        {!isReadOnly && (
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', config.dotClass)} />
+            <span className="text-[10px] text-muted-foreground">{t(`leftPanel.status.${config.key}`)}</span>
+          </div>
+        )}
       </div>
     </button>
   );

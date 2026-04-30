@@ -4,6 +4,8 @@ import { useAppStore } from '../../../../store/hooks/useAppStore';
 import type { AnnotatedObject } from '../../types/annotation.types';
 import { clampBox } from '../../../viewer/utils/coordinateUtils';
 import Konva from 'konva';
+import { Html } from 'react-konva-utils';
+import { ObjectMenu } from '../../components/RightPanel/InspectorTab/ObjectMenu';
 
 interface BoundingBoxProps {
   data: AnnotatedObject;
@@ -37,7 +39,8 @@ export const BoundingBox: React.FC<BoundingBoxProps> = ({ data }) => {
     updateObject, 
     deleteObject,
     opacity,
-    imgDimensions
+    imgDimensions,
+    isReadOnly
   } = useAppStore();
 
   const isSelected = selectedObjectId === data.id;
@@ -45,6 +48,10 @@ export const BoundingBox: React.FC<BoundingBoxProps> = ({ data }) => {
   const isEraserMode = activeTool === 'eraser';
 
   const handlePointerDown = () => {
+    if (isReadOnly) {
+      setSelectedObjectId(data.id);
+      return;
+    }
     if (isSelectMode) setSelectedObjectId(data.id);
     if (isEraserMode) deleteObject(data.id);
   };
@@ -56,9 +63,9 @@ export const BoundingBox: React.FC<BoundingBoxProps> = ({ data }) => {
       onClick={handlePointerDown}
       onTap={handlePointerDown}
       onMouseEnter={(e) => {
-        if (isEraserMode && e.evt.buttons === 1) deleteObject(data.id);
+        if (!isReadOnly && isEraserMode && e.evt.buttons === 1) deleteObject(data.id);
       }}
-      draggable={!data.locked && isSelected && isSelectMode}
+      draggable={!isReadOnly && !data.locked && isSelected && isSelectMode}
       onDragStart={() => {
         startCoords.current = [...data.coordinates];
       }}
@@ -101,6 +108,13 @@ export const BoundingBox: React.FC<BoundingBoxProps> = ({ data }) => {
         fontFamily="sans-serif"
         visible={isSelected}
       />
+      {isSelected && !isReadOnly && (
+        <Html divProps={{ style: { pointerEvents: 'auto' } }}>
+          <div style={{ position: 'absolute', top: `${y - 24}px`, left: `${x + 102}px` }}>
+            <ObjectMenu object={data} />
+          </div>
+        </Html>
+      )}
       <Rect
         x={x}
         y={y}

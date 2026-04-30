@@ -14,8 +14,7 @@ interface InteractionLayerProps {
 }
 
 export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) => {
-  const activeTool = useAppStore(state => state.activeTool);
-  const imgDimensions = useAppStore(state => state.imgDimensions);
+  const { activeTool, imgDimensions, isReadOnly } = useAppStore();
   
   const draftBoxRef = useRef<Konva.Rect>(null);
   const draftPolyRef = useRef<Konva.Line>(null);
@@ -54,6 +53,7 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
   // Keyboard shortcut for cancelling
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isReadOnly) return;
       if (e.key === 'Escape') {
         if (activeTool === 'polygon') cancelPoly();
         if (activeTool === 'pen') cancelPen();
@@ -106,7 +106,7 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        listening={['bbox', 'polygon', 'pen'].includes(activeTool)}
+        listening={!isReadOnly && ['bbox', 'polygon', 'pen'].includes(activeTool)}
       />
       
       {/* Draft Box */}

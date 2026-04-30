@@ -1,4 +1,5 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useTranslation } from 'react-i18next';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import ObjectHeader from './ObjectHeader';
@@ -24,6 +25,8 @@ export default function InspectorTab({ classes, relationTypes, isLoading = false
     deleteObject,
     setSelectedObjectId,
   } = useAppStore();
+
+  const { t } = useTranslation('annotation');
 
   const selectedObject = annotatedObjects.find((o) => o.id === selectedObjectId);
 
@@ -71,7 +74,7 @@ export default function InspectorTab({ classes, relationTypes, isLoading = false
   if (!selectedObject) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-xs text-muted-foreground">No object selected</p>
+        <p className="text-xs text-muted-foreground">{t('rightPanel.inspector.noObjectSelected')}</p>
       </div>
     );
   }
@@ -153,7 +156,7 @@ export default function InspectorTab({ classes, relationTypes, isLoading = false
       <Separator className="my-1" />
 
       {/* Relations */}
-      <RelationsList relationTypes={relationTypes} />
+      <RelationsList selectedObjectId={selectedObject.id} />
     </ScrollArea>
   );
 }

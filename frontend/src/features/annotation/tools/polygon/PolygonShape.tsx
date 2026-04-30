@@ -4,6 +4,8 @@ import type { AnnotatedObject } from '../../types/annotation.types';
 import { PolygonAnchor } from '@/features/annotation/tools/polygon/PolygonAnchor';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
 import { clampPoint } from '../../../viewer/utils/coordinateUtils';
+import { Html } from 'react-konva-utils';
+import { ObjectMenu } from '../../components/RightPanel/InspectorTab/ObjectMenu';
 
 interface PolygonShapeProps {
   data: AnnotatedObject;
@@ -33,7 +35,8 @@ export const PolygonShape: React.FC<PolygonShapeProps> = ({ data }) => {
     updateObject, 
     deleteObject,
     opacity,
-    imgDimensions
+    imgDimensions,
+    isReadOnly
   } = useAppStore();
   
   const startCoords = useRef<number[] | null>(null);
@@ -43,6 +46,10 @@ export const PolygonShape: React.FC<PolygonShapeProps> = ({ data }) => {
   const isEraserMode = activeTool === 'eraser';
 
   const handlePointerDown = () => {
+    if (isReadOnly) {
+      setSelectedObjectId(data.id);
+      return;
+    }
     if (isSelectMode) setSelectedObjectId(data.id);
     if (isEraserMode) deleteObject(data.id);
   };
@@ -84,9 +91,9 @@ export const PolygonShape: React.FC<PolygonShapeProps> = ({ data }) => {
       onClick={handlePointerDown}
       onTap={handlePointerDown}
       onMouseEnter={(e) => {
-        if (isEraserMode && e.evt.buttons === 1) deleteObject(data.id);
+        if (!isReadOnly && isEraserMode && e.evt.buttons === 1) deleteObject(data.id);
       }}
-      draggable={!data.locked && isSelected && isSelectMode}
+      draggable={!isReadOnly && !data.locked && isSelected && isSelectMode}
       onDragStart={() => {
         startCoords.current = [...data.coordinates];
       }}
@@ -131,9 +138,16 @@ export const PolygonShape: React.FC<PolygonShapeProps> = ({ data }) => {
         padding={2}
         visible={isSelected}
       />
+      {isSelected && !isReadOnly && (
+        <Html divProps={{ style: { pointerEvents: 'auto' } }}>
+          <div style={{ position: 'absolute', top: `${minY - 20}px`, left: `${minX + 80}px` }}>
+            <ObjectMenu object={data} />
+          </div>
+        </Html>
+      )}
 
       {/* Anchors for editing */}
-      {isSelected && !data.locked && (
+      {isSelected && !data.locked && !isReadOnly && (
         data.coordinates.map((_, i) => {
           if (i % 2 !== 0) return null;
           return (

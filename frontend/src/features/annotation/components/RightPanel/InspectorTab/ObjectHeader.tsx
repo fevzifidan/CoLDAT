@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { AnnotatedObject } from '../../../types/annotation.types';
 import { ConfirmAction } from '@/components/custom/Confirm/ConfirmAction';
-
+import { ObjectMenu } from './ObjectMenu';
+import { useTranslation } from 'react-i18next';
+import { useAppStore } from '@/store/hooks/useAppStore';
 interface ObjectHeaderProps {
   object: AnnotatedObject;
   onToggleVisible: () => void;
@@ -20,6 +22,8 @@ export default function ObjectHeader({
   onRename,
   onDelete,
 }: ObjectHeaderProps) {
+  const { t } = useTranslation('annotation');
+  const isReadOnly = useAppStore(state => state.isReadOnly);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(object.label);
 
@@ -81,18 +85,20 @@ export default function ObjectHeader({
                 style={{ backgroundColor: object.color }}
               />
               <h3 className="text-sm font-semibold truncate max-w-[120px]">{object.label}</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-                onClick={() => setIsEditing(true)}
-              >
-                <Pencil size={11} />
-              </Button>
+              {!isReadOnly && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <Pencil size={11} />
+                </Button>
+              )}
             </div>
           )}
           <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-            ID: #{object.id}
+            {t('rightPanel.inspector.objectHeader.id')}: #{object.id}
           </p>
         </div>
 
@@ -102,34 +108,39 @@ export default function ObjectHeader({
             size="icon"
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
             onClick={onToggleVisible}
-            title={object.visible ? 'Hide' : 'Show'}
+            title={object.visible ? t('rightPanel.inspector.objectHeader.hide') : t('rightPanel.inspector.objectHeader.show')}
           >
             {object.visible ? <Eye size={13} /> : <EyeOff size={13} />}
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-            onClick={onToggleLocked}
-            title={object.locked ? 'Unlock' : 'Lock'}
-          >
-            {object.locked ? <Lock size={13} /> : <Unlock size={13} />}
-          </Button>
-          <ConfirmAction
-            onConfirm={onDelete}
-            title="Bu nesneyi silmek istediğinizden emin misiniz?"
-            confirmText="Delete"
-            cancelText="Cancel"
-          >
+          {!isReadOnly && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-              title="Delete"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={onToggleLocked}
+              title={object.locked ? t('rightPanel.inspector.objectHeader.unlock') : t('rightPanel.inspector.objectHeader.lock')}
             >
-              <Trash2 size={13} />
+              {object.locked ? <Lock size={13} /> : <Unlock size={13} />}
             </Button>
-          </ConfirmAction>
+          )}
+          {!isReadOnly && (
+            <ConfirmAction
+              onConfirm={onDelete}
+              title={t('rightPanel.inspector.objectHeader.deleteConfirmTitle')}
+              confirmText={t('rightPanel.inspector.objectHeader.confirmDelete')}
+              cancelText={t('rightPanel.inspector.objectHeader.cancel')}
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                title={t('rightPanel.inspector.objectHeader.delete')}
+              >
+                <Trash2 size={13} />
+              </Button>
+            </ConfirmAction>
+          )}
+          {!isReadOnly && <ObjectMenu object={object} />}
         </div>
       </div>
     </div>

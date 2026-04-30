@@ -26,6 +26,7 @@ import { Label } from '@/components/ui/label';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
 import { ThemeToggle } from '@/components/custom/ThemeToggle/ThemeToggle';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface AnnotationToolbarProps {
   projectName: string;
@@ -57,8 +58,11 @@ export default function AnnotationToolbar({
     zoomIn, zoomOut, resetViewer,
     activeTool, setActiveTool,
     undo, redo,
-    history, historyIndex
+    history, historyIndex,
+    isReadOnly
   } = useAppStore();
+
+  const { t } = useTranslation('annotation');
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
@@ -81,33 +85,22 @@ export default function AnnotationToolbar({
         <div className="flex items-center gap-1 flex-shrink-0">
           <Separator orientation="vertical" className="h-5 mx-1" />
 
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={undo} 
-            disabled={!canUndo}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-30" 
-            title="Undo"
-          >
-            <Undo size={16} />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={redo} 
-            disabled={!canRedo}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-30" 
-            title="Redo"
-          >
-            <Redo size={16} />
-          </Button>
+          {!isReadOnly && (
+            <>
+              <Button variant="ghost" size="icon" onClick={resetViewer} className="h-8 w-8 text-muted-foreground hover:text-foreground" title={t('toolbar.undo')}>
+                <Undo size={16} />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} className="h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-30" title={t('toolbar.redo')}>
+                <Redo size={16} />
+              </Button>
+              <Separator orientation="vertical" className="h-5 mx-1" />
+            </>
+          )}
 
-          <Separator orientation="vertical" className="h-5 mx-1" />
-
-          <Button variant="ghost" size="icon" onClick={zoomIn} className="h-8 w-8 text-muted-foreground hover:text-foreground" title="Zoom In">
+          <Button variant="ghost" size="icon" onClick={zoomIn} className="h-8 w-8 text-muted-foreground hover:text-foreground" title={t('toolbar.zoomIn')}>
             <ZoomIn size={16} />
           </Button>
-          <Button variant="ghost" size="icon" onClick={zoomOut} className="h-8 w-8 text-muted-foreground hover:text-foreground" title="Zoom Out">
+          <Button variant="ghost" size="icon" onClick={zoomOut} className="h-8 w-8 text-muted-foreground hover:text-foreground" title={t('toolbar.zoomOut')}>
             <ZoomOut size={16} />
           </Button>
           <Button 
@@ -115,7 +108,7 @@ export default function AnnotationToolbar({
             size="icon" 
             onClick={() => setActiveTool('pan')} 
             className={cn("h-8 w-8 text-muted-foreground hover:text-foreground", activeTool === 'pan' && "bg-primary/10 text-primary")} 
-            title="Pan Tool"
+            title={t('toolbar.panTool')}
           >
             <Hand size={16} />
           </Button>
@@ -124,14 +117,14 @@ export default function AnnotationToolbar({
             size="icon" 
             onClick={() => setIsMagnifierActive(!isMagnifierActive)} 
             className={cn("h-8 w-8 text-muted-foreground hover:text-foreground", isMagnifierActive && "bg-primary/10 text-primary")} 
-            title="Magnifier"
+            title={t('toolbar.magnifier')}
           >
             <Search size={16} />
           </Button>
 
           <Separator orientation="vertical" className="h-5 mx-1" />
 
-          <Button variant="ghost" size="icon" onClick={resetViewer} className="h-8 w-8 text-muted-foreground hover:text-foreground" title="Reset View">
+          <Button variant="ghost" size="icon" onClick={resetViewer} className="h-8 w-8 text-muted-foreground hover:text-foreground" title={t('toolbar.resetView')}>
             <RotateCcw size={16} />
           </Button>
           <Separator orientation="vertical" className="h-5 mx-1" />
@@ -148,7 +141,7 @@ export default function AnnotationToolbar({
           className="gap-1.5 h-8 px-3 text-xs font-semibold"
         >
           <ChevronLeft size={14} />
-          PREV
+          {t('toolbar.prev')}
         </Button>
 
         <span className="text-xs text-muted-foreground font-mono min-w-[80px] text-center">
@@ -160,7 +153,7 @@ export default function AnnotationToolbar({
           onClick={goToNext}
           className="gap-1.5 h-8 px-3 text-xs font-semibold bg-primary hover:bg-primary/90"
         >
-          NEXT
+          {t('toolbar.next')}
           <ChevronRight size={14} />
         </Button>
       </div>
@@ -173,22 +166,22 @@ export default function AnnotationToolbar({
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 gap-2 text-xs text-muted-foreground hover:text-foreground">
               <SlidersHorizontal size={14} />
-              Görünüm
+              {t('toolbar.viewSettings')}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80 p-4" align="end">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h4 className="font-medium leading-none text-sm">Görüntü Ayarları</h4>
+                <h4 className="font-medium leading-none text-sm">{t('toolbar.imageSettings')}</h4>
                 <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={resetFilters}>
-                  <RotateCcw size={10} className="mr-1" /> Sıfırla
+                  <RotateCcw size={10} className="mr-1" /> {t('toolbar.reset')}
                 </Button>
               </div>
 
               {/* Parlaklık */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs flex items-center gap-2"><Sun size={12} /> Parlaklık</Label>
+                  <Label className="text-xs flex items-center gap-2"><Sun size={12} /> {t('toolbar.brightness')}</Label>
                   <span className="text-[10px] text-muted-foreground">{brightness}%</span>
                 </div>
                 <Slider value={[brightness]} onValueChange={(vals) => setBrightness(vals[0])} max={200} step={1} />
@@ -197,7 +190,7 @@ export default function AnnotationToolbar({
               {/* Kontrast */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs flex items-center gap-2"><Contrast size={12} /> Kontrast</Label>
+                  <Label className="text-xs flex items-center gap-2"><Contrast size={12} /> {t('toolbar.contrast')}</Label>
                   <span className="text-[10px] text-muted-foreground">{contrast}%</span>
                 </div>
                 <Slider value={[contrast]} onValueChange={(vals) => setContrast(vals[0])} max={200} step={1} />
@@ -206,7 +199,7 @@ export default function AnnotationToolbar({
               {/* Doygunluk */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs flex items-center gap-2"><Droplets size={12} /> Doygunluk</Label>
+                  <Label className="text-xs flex items-center gap-2"><Droplets size={12} /> {t('toolbar.saturation')}</Label>
                   <span className="text-[10px] text-muted-foreground">{saturation}%</span>
                 </div>
                 <Slider value={[saturation]} onValueChange={(vals) => setSaturation(vals[0])} max={200} step={1} />
@@ -218,7 +211,7 @@ export default function AnnotationToolbar({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs flex items-center gap-2 font-semibold text-primary">
-                    <Layers size={12} /> Maske Opaklığı
+                    <Layers size={12} /> {t('toolbar.maskOpacity')}
                   </Label>
                   <span className="text-[10px] font-mono">{opacity}%</span>
                 </div>
@@ -230,25 +223,27 @@ export default function AnnotationToolbar({
 
         <Separator orientation="vertical" className="h-5" />
 
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" title="Settings">
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" title={t('toolbar.settings')}>
           <Settings size={15} />
         </Button>
         <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
           <Download size={13} />
-          Export
+          {t('toolbar.export')}
         </Button>
-        <Button
-          size="sm"
-          className="h-8 gap-1.5 text-xs bg-primary hover:bg-primary/90"
-          onClick={onSave}
-          disabled={isSaving}
-          title="Save annotations (Ctrl+S)"
-        >
-          {isSaving
-            ? <Loader2 size={13} className="animate-spin" />
-            : <Save size={13} />}
-          Save
-        </Button>
+        {!isReadOnly && (
+          <Button
+            size="sm"
+            className="h-8 gap-1.5 text-xs bg-primary hover:bg-primary/90"
+            onClick={onSave}
+            disabled={isSaving}
+            title={t('toolbar.saveTooltip')}
+          >
+            {isSaving
+              ? <Loader2 size={13} className="animate-spin" />
+              : <Save size={13} />}
+            {t('toolbar.save')}
+          </Button>
+        )}
       </div>
     </div>
   );

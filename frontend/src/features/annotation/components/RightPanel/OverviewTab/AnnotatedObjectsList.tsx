@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../../../../../store/hooks/useAppStore';
 import type { AnnotatedObject } from '../../../types/annotation.types';
 import {
@@ -9,6 +10,7 @@ import {
   ContextMenuSeparator,
 } from "@/components/ui/context-menu";
 import { Eye, EyeOff, Lock, Unlock, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface AnnotatedObjectsListProps {
   objects: AnnotatedObject[];
@@ -18,14 +20,17 @@ export default function AnnotatedObjectsList({ objects }: AnnotatedObjectsListPr
   const { 
     selectedObjectId, 
     setSelectedObjectId, 
-    updateObject, 
-    deleteObject 
+    updateObject,
+    deleteObject,
+    isReadOnly
   } = useAppStore();
+
+  const { t } = useTranslation('annotation');
 
   return (
     <div className="px-4 py-3 border-b">
       <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
-        Annotated Objects
+        {t('rightPanel.overview.annotatedObjects')}
       </p>
 
       <div className="space-y-1">
@@ -36,7 +41,7 @@ export default function AnnotatedObjectsList({ objects }: AnnotatedObjectsListPr
                 onClick={() => setSelectedObjectId(obj.id)}
                 onContextMenu={() => setSelectedObjectId(obj.id)}
                 className={cn(
-                  'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all border',
+                  'group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all border',
                   'hover:bg-accent hover:text-accent-foreground',
                   selectedObjectId === obj.id
                     ? 'border-primary/30 bg-primary/8 text-primary font-semibold'
@@ -48,10 +53,30 @@ export default function AnnotatedObjectsList({ objects }: AnnotatedObjectsListPr
                   style={{ backgroundColor: obj.color }}
                 />
                 <span className="flex-1 text-left font-medium">{obj.label}</span>
-                {obj.locked && <Lock className="w-3 h-3 text-muted-foreground/70" />}
-                {!obj.visible && (
-                  <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">hidden</span>
-                )}
+                
+                <div className="flex items-center gap-1">
+                  {obj.locked && <Lock className="w-3 h-3 text-muted-foreground/70" />}
+                  {!obj.visible && (
+                    <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">
+                      {t('rightPanel.overview.hidden')}
+                    </span>
+                  )}
+                  
+                  {!isReadOnly && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 h-6 w-6 text-muted-foreground hover:text-destructive transition-all"
+                      title={t('rightPanel.inspector.objectHeader.delete')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteObject(obj.id);
+                      }}
+                    >
+                      <Trash2 size={12} />
+                    </Button>
+                  )}
+                </div>
               </button>
             </ContextMenuTrigger>
             <ContextMenuContent className="w-48">
@@ -60,30 +85,34 @@ export default function AnnotatedObjectsList({ objects }: AnnotatedObjectsListPr
                 className="gap-2"
               >
                 {obj.visible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                {obj.visible ? 'Hide Object' : 'Show Object'}
+                {obj.visible ? t('rightPanel.contextMenu.hideObject') : t('rightPanel.contextMenu.showObject')}
               </ContextMenuItem>
-              <ContextMenuItem 
-                onClick={() => updateObject(obj.id, { locked: !obj.locked })}
-                className="gap-2"
-              >
-                {obj.locked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                {obj.locked ? 'Unlock Object' : 'Lock Object'}
-              </ContextMenuItem>
-              <ContextMenuSeparator />
-              <ContextMenuItem 
-                onClick={() => deleteObject(obj.id)}
-                className="gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete Object
-              </ContextMenuItem>
+              {!isReadOnly && (
+                <>
+                  <ContextMenuItem 
+                    onClick={() => updateObject(obj.id, { locked: !obj.locked })}
+                    className="gap-2"
+                  >
+                    {obj.locked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                    {obj.locked ? t('rightPanel.contextMenu.unlockObject') : t('rightPanel.contextMenu.lockObject')}
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem 
+                    onClick={() => deleteObject(obj.id)}
+                    className="gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {t('rightPanel.contextMenu.deleteObject')}
+                  </ContextMenuItem>
+                </>
+              )}
             </ContextMenuContent>
           </ContextMenu>
         ))}
 
         {objects.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-3 italic">
-            No annotations yet
+            {t('rightPanel.overview.noAnnotations')}
           </p>
         )}
       </div>

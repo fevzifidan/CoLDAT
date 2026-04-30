@@ -8,8 +8,14 @@ import { createToolModeSlice } from '../features/annotation/store/toolModeSlice'
 import type { ToolModeState } from '../features/annotation/store/toolModeSlice';
 import { createUISlice } from '../features/annotation/store/uiSlice';
 import type { UIState } from '../features/annotation/store/uiSlice';
+import { createContextSlice } from '../shared/store/contextSlice';
+import type { ContextState } from '../shared/store/contextSlice';
+import { createKeyboardSlice } from '../shared/store/keyboardSlice';
+import type { KeyboardState } from '../shared/store/keyboardSlice';
+import { createViewerUISlice } from '../features/viewer/store/viewerUISlice';
+import type { ViewerUIState } from '../features/viewer/store/viewerUISlice';
 
-export type AppState = ViewerState & AnnotationState & ToolModeState & UIState;
+export type AppState = ViewerState & AnnotationState & ToolModeState & UIState & ContextState & KeyboardState & ViewerUIState;
 
 export const useAppStore = create<AppState>()(
   devtools(
@@ -18,6 +24,9 @@ export const useAppStore = create<AppState>()(
       ...createAnnotationSlice(...a),
       ...createToolModeSlice(...a),
       ...createUISlice(...a),
+      ...createContextSlice(...a),
+      ...createKeyboardSlice(...a),
+      ...createViewerUISlice(...a),
     }),
     { name: 'ColdatAppStore' }
   )

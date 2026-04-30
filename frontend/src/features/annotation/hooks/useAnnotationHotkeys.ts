@@ -8,6 +8,7 @@ interface HotkeyOptions {
 
 export const useAnnotationHotkeys = ({ onSave }: HotkeyOptions = {}) => {
   const setActiveTool = useAppStore(state => state.setActiveTool);
+  const isReadOnly = useAppStore(state => state.isReadOnly);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -16,6 +17,16 @@ export const useAnnotationHotkeys = ({ onSave }: HotkeyOptions = {}) => {
         document.activeElement?.tagName === 'INPUT' ||
         document.activeElement?.tagName === 'TEXTAREA'
       ) {
+        return;
+      }
+
+      // If in read-only mode, block editing-related hotkeys
+      if (isReadOnly) {
+        // Still allow some navigation hotkeys if needed, 
+        // but block Save and Tool switching for now.
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+          e.preventDefault();
+        }
         return;
       }
 

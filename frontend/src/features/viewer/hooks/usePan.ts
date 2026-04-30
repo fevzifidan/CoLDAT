@@ -1,27 +1,11 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import { useAppStore } from '../../../store/hooks/useAppStore';
 import Konva from 'konva';
 
 export const usePan = () => {
   const { setStagePos, activeTool } = useAppStore();
+  const isCtrlDown = useAppStore(state => state.isCtrlPressed);
   const [isMiddleClickPan, setIsMiddleClickPan] = useState(false);
-  const [isCtrlDown, setIsCtrlDown] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Control') setIsCtrlDown(true);
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Control') setIsCtrlDown(false);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, []);
 
   const handleMouseDown = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
     // Middle click or (Ctrl + Left Click)

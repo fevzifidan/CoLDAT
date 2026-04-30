@@ -1,6 +1,7 @@
 
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -23,6 +24,7 @@ export default function LeftPanel({
   activeImageId,
   onImageSelect,
 }: LeftPanelProps) {
+  const { t } = useTranslation('annotation');
   const [search, setSearch] = useState('');
 
   const {
@@ -52,7 +54,7 @@ export default function LeftPanel({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search in current page..."
+            placeholder={t('leftPanel.search')}
             className="h-7 pl-7 text-xs bg-muted/40 border-transparent focus-visible:border-input"
           />
         </div>

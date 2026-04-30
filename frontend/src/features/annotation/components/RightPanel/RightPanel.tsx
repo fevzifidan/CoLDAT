@@ -1,4 +1,5 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useTranslation } from 'react-i18next';
 import InspectorTab from './InspectorTab/InspectorTab';
 import OverviewTab from './OverviewTab/OverviewTab';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
@@ -11,6 +12,7 @@ interface RightPanelProps {
 }
 
 export default function RightPanel({ classes, relationTypes, isLoading = false }: RightPanelProps) {
+  const { t } = useTranslation('annotation');
   const activeTab = useAppStore(state => state.activeTab);
   const setActiveTab = useAppStore(state => state.setActiveTab);
 
@@ -32,7 +34,7 @@ export default function RightPanel({ classes, relationTypes, isLoading = false }
               hover:text-foreground transition-colors
             "
           >
-            Inspector
+            {t('rightPanel.tabs.inspector')}
           </TabsTrigger>
           <TabsTrigger
             value="overview"
@@ -43,7 +45,7 @@ export default function RightPanel({ classes, relationTypes, isLoading = false }
               hover:text-foreground transition-colors
             "
           >
-            Overview
+            {t('rightPanel.tabs.overview')}
           </TabsTrigger>
         </TabsList>
       </div>

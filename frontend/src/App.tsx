@@ -10,6 +10,7 @@ import AxiosInterceptorSetup from './components/custom/AxiosInterceptorSetup/Axi
 import { ConfirmProvider } from './shared/services/confirmation/ConfirmContext.js';
 import { BannerProvider } from './components/custom/GlobalBanner/BannerContext.js';
 import { GlobalBanner } from './components/custom/GlobalBanner/GlobalBanner.js';
+import { GlobalKeyboardListener } from './shared/components/GlobalKeyboardListener';
 
 import DashboardLayout from '@/features/core/layouts/DashboardLayout';
 import DashboardHome from '@/features/dashboard/DashboardHome';
@@ -17,6 +18,7 @@ import ProjectDetailPage from '@/features/projects/ProjectDetailPage';
 import AnnotationPage from '@/features/annotation/AnnotationPage';
 import Login from "@/features/auth/Login/Login";
 import Register from "@/features/auth/Register/Register";
+import ViewerPage from '@/features/viewer/ViewerPage';
 
 function App() {
   return (
@@ -24,6 +26,7 @@ function App() {
       <BrowserRouter>
         <BannerProvider>
           <GlobalBanner />
+          <GlobalKeyboardListener />
           <ConfirmProvider>
             <AuthProvider>
               <AxiosInterceptorSetup />
@@ -33,8 +36,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 {/* Annotation modu: taskId üzerinden yönetilir */}
                 <Route path="/annotate/:taskId/:imageId" element={<AnnotationPage />} />
-                {/* Viewer modu: read-only (ileride ayrı ViewerPage bileşeni ile doldurulacak) */}
-                <Route path="/view/:datasetId/:imageId" element={<AnnotationPage />} />
+                <Route path="/view/:datasetId/:imageId" element={<ViewerPage />} />
                 <Route path="/*" element={
                   <DashboardLayout>
                     <Routes>

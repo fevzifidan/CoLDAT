@@ -16,7 +16,8 @@ interface MainStageProps {
 
 export const MainStage: React.FC<MainStageProps> = ({ width, height, imageUrl }) => {
   const stageRef = useRef<Konva.Stage>(null);
-  const { scale, stagePos } = useAppStore();
+  
+  // We don't subscribe to scale and stagePos here to prevent re-renders on transient updates.
   const setSelectedObjectId = useAppStore(state => state.setSelectedObjectId);
   const activeTool = useAppStore(state => state.activeTool);
 
@@ -65,6 +66,41 @@ export const MainStage: React.FC<MainStageProps> = ({ width, height, imageUrl })
     container.style.cursor = getCursor();
   }, [activeTool, isDraggable]);
 
+  // Sync stage to Zustand store when it's updated from elsewhere (e.g. Toolbar zoom buttons)
+  useEffect(() => {
+    return useAppStore.subscribe((state, prevState) => {
+      const stage = stageRef.current;
+      if (!stage) return;
+
+      // Only sync if scale or position actually changed in the store
+      const scaleChanged = state.scale !== prevState.scale;
+      const posChanged = state.stagePos !== prevState.stagePos;
+      
+      if (!scaleChanged && !posChanged) return;
+
+      // Do not override local position if the user is actively dragging the canvas
+      if (stage.isDragging()) return;
+
+      const currentScale = stage.scaleX();
+      const currentPos = stage.position();
+      let needsUpdate = false;
+
+      if (scaleChanged && currentScale !== state.scale) {
+        stage.scale({ x: state.scale, y: state.scale });
+        needsUpdate = true;
+      }
+
+      if (posChanged && (currentPos.x !== state.stagePos.x || currentPos.y !== state.stagePos.y)) {
+        stage.position(state.stagePos);
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        stage.batchDraw();
+      }
+    });
+  }, []);
+
   const handleStageClick = (e: any) => {
     // If we clicked on the stage background (not a shape)
     if (e.target === e.target.getStage() && activeTool === 'select') {
@@ -77,10 +113,10 @@ export const MainStage: React.FC<MainStageProps> = ({ width, height, imageUrl })
       ref={stageRef}
       width={width}
       height={height}
-      scaleX={scale}
-      scaleY={scale}
-      x={stagePos.x}
-      y={stagePos.y}
+      scaleX={useAppStore.getState().scale}
+      scaleY={useAppStore.getState().scale}
+      x={useAppStore.getState().stagePos.x}
+      y={useAppStore.getState().stagePos.y}
       draggable={isDraggable}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}

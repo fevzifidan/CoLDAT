@@ -5,16 +5,7 @@
  * Annotation modu için annotation.api.ts kullanılır.
  */
 import apiService from '@/shared/services/api';
-import type { AnnotationData, TaskImage } from '../../annotation/types/annotation.types';
-
-// ─── GET /images/{imageId} ────────────────────────────────────────────────────
-
-/**
- * Tek bir resmin meta verisini ve presigned URL'lerini getirir.
- */
-export async function getImageMeta(imageId: string): Promise<TaskImage> {
-  return apiService.get<TaskImage>(`/images/${imageId}`);
-}
+import type { AnnotationData } from '../../annotation/types/annotation.types';
 
 // ─── GET /images/{imageId}/annotations ───────────────────────────────────────
 

@@ -7,6 +7,8 @@ export interface UIState {
   leftPanelCollapsed: boolean;
   rightPanelCollapsed: boolean;
   
+  isReadOnly: boolean;
+  setReadOnly: (readOnly: boolean) => void;
   setCurrentImageIndex: (index: number) => void;
   setTotalImages: (total: number) => void;
   setActiveTab: (tab: 'inspector' | 'overview') => void;
@@ -21,8 +23,8 @@ export const createUISlice: StateCreator<UIState> = (set) => ({
   totalImages: 1024,
   activeTab: 'overview',
   leftPanelCollapsed: false,
-  rightPanelCollapsed: false,
-  
+  isReadOnly: false,
+  setReadOnly: (readOnly) => set({ isReadOnly: readOnly }),
   setCurrentImageIndex: (index) => set({ currentImageIndex: index }),
   setTotalImages: (total) => set({ totalImages: total }),
   setActiveTab: (tab) => set({ activeTab: tab }),

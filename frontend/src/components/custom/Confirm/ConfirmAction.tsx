@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Popover,
     PopoverContent,
@@ -19,12 +20,17 @@ interface ConfirmActionProps {
 export function ConfirmAction({
     children,
     onConfirm,
-    title = "Bu işlemi onaylıyor musunuz?",
-    confirmText = "Delete",
-    cancelText = "Cancel",
+    title,
+    confirmText,
+    cancelText,
     className
 }: ConfirmActionProps) {
+    const { t } = useTranslation('annotation');
     const [open, setOpen] = useState(false);
+
+    const displayTitle = title || t('rightPanel.inspector.objectHeader.deleteConfirmTitle');
+    const displayConfirm = confirmText || t('rightPanel.inspector.objectHeader.confirmDelete');
+    const displayCancel = cancelText || t('rightPanel.inspector.objectHeader.cancel');
 
     const handleConfirm = () => {
         onConfirm();
@@ -42,7 +48,7 @@ export function ConfirmAction({
             >
                 <div className="space-y-3">
                     <p className="text-[13px] font-medium leading-tight text-foreground/90">
-                        {title}
+                        {displayTitle}
                     </p>
                     <div className="flex items-center justify-end gap-2">
                         <Button
@@ -51,7 +57,7 @@ export function ConfirmAction({
                             className="h-7 px-2 text-xs"
                             onClick={() => setOpen(false)}
                         >
-                            {cancelText}
+                            {displayCancel}
                         </Button>
                         <Button
                             variant="destructive"
@@ -59,7 +65,7 @@ export function ConfirmAction({
                             className="h-7 px-2 text-xs"
                             onClick={handleConfirm}
                         >
-                            {confirmText}
+                            {displayConfirm}
                         </Button>
                     </div>
                 </div>

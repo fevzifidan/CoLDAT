@@ -17,6 +17,9 @@ export const MOCK_RELATION_TYPES: RelationType[] = [
   { id: 'rel-stops', name: 'STOPS AT', directed: true },
   { id: 'rel-crosses', name: 'CROSSES', directed: true },
   { id: 'rel-follows', name: 'FOLLOWS', directed: true },
+  { id: 'rel-parked', name: 'PARKED ON', directed: true },
+  { id: 'rel-near', name: 'IS NEAR', directed: false },
+  { id: 'rel-inside', name: 'IS INSIDE', directed: true },
 ];
 
 /** API'den gelen AnnotationData → UI AnnotatedObject dönüşümü */
@@ -64,9 +67,13 @@ const IS_TEST_MODE = import.meta.env.VITE_TEST_MODE === 'true';
 export function useAnnotationData(imageId: string) {
   const setAnnotatedObjects = useAppStore(state => state.setAnnotatedObjects);
   const setObjectRelations = useAppStore(state => state.setObjectRelations);
+  const setTaxonomy = useAppStore(state => state.setTaxonomy);
   const [isLoadingAnnotations, setIsLoadingAnnotations] = useState(false);
 
   useEffect(() => {
+    // Seed taxonomy in store
+    setTaxonomy(MOCK_CLASSES, MOCK_RELATION_TYPES);
+
     if (IS_TEST_MODE) {
       // ── Test modu: mock verilerle seed ──────────────────────────────────────
       setAnnotatedObjects([

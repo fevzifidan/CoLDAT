@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { useAppStore } from '@/store/hooks/useAppStore';
 import type { ClassDef } from '../../../types/annotation.types';
 
 interface ClassListProps {
@@ -11,6 +13,8 @@ interface ClassListProps {
 }
 
 export default function ClassList({ classes, selectedClassId, onSelect }: ClassListProps) {
+  const { t } = useTranslation('annotation');
+  const isReadOnly = useAppStore(state => state.isReadOnly);
   const [search, setSearch] = useState('');
 
   const filtered = classes.filter((c) =>
@@ -20,7 +24,7 @@ export default function ClassList({ classes, selectedClassId, onSelect }: ClassL
   return (
     <div className="px-4 py-3 border-b shrink-0">
       <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
-        Classes
+        {t('rightPanel.inspector.classes')}
       </p>
 
       {/* Search */}
@@ -32,7 +36,7 @@ export default function ClassList({ classes, selectedClassId, onSelect }: ClassL
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Filter classes..."
+          placeholder={t('rightPanel.inspector.filterClasses')}
           className="h-7 pl-7 text-xs bg-muted/40 border-transparent focus-visible:border-input"
         />
       </div>
@@ -42,10 +46,11 @@ export default function ClassList({ classes, selectedClassId, onSelect }: ClassL
         {filtered.map((cls) => (
           <button
             key={cls.id}
-            onClick={() => onSelect?.(cls.id)}
+            onClick={() => !isReadOnly && onSelect?.(cls.id)}
+            disabled={isReadOnly}
             className={cn(
               'w-full flex items-center justify-between px-2 py-1.5 rounded-md text-xs transition-all',
-              'hover:bg-accent hover:text-accent-foreground',
+              !isReadOnly && 'hover:bg-accent hover:text-accent-foreground',
               selectedClassId === cls.id
                 ? 'bg-primary/10 text-primary font-semibold'
                 : 'text-foreground'

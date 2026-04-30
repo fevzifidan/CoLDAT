@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface QueuePaginationProps {
     currentPage: number;
@@ -17,6 +18,8 @@ export default function QueuePagination({
     hasNext,
     disabled
 }: QueuePaginationProps) {
+    const { t } = useTranslation('annotation');
+
     return (
         <div className="flex items-center justify-center gap-4 py-3 px-2 border-t bg-background/50 backdrop-blur-sm shrink-0">
             <Button
@@ -27,7 +30,7 @@ export default function QueuePagination({
                 className="text-muted-foreground hover:text-foreground transition-colors gap-1 text-xs"
             >
                 <ChevronLeft size={14} />
-                Previous
+                {t('rightPanel.pagination.previous')}
             </Button>
 
             <div className={cn(
@@ -35,7 +38,7 @@ export default function QueuePagination({
                 "bg-secondary text-secondary-foreground dark:bg-muted dark:text-white"
                 // Görseldeki gibi oval ve belirgin durması için özel padding ve renk
             )}>
-                Page {currentPage}
+                {t('rightPanel.pagination.page', { page: currentPage })}
             </div>
 
             <Button
@@ -45,7 +48,7 @@ export default function QueuePagination({
                 disabled={!hasNext || disabled}
                 className="text-muted-foreground hover:text-foreground transition-colors gap-1 text-xs"
             >
-                Next
+                {t('rightPanel.pagination.next')}
                 <ChevronRight size={14} />
             </Button>
         </div>

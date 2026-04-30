@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/hooks/useAppStore';
+import { useTranslation } from 'react-i18next';
 
 export type SideToolId = 'select' | 'bbox' | 'polygon' | 'points' | 'pen' | 'eraser';
 
@@ -36,6 +37,7 @@ const TOOLS: ToolItem[] = [
 export default function AnnotationSideToolbar() {
   const activeTool = useAppStore(state => state.activeTool);
   const setActiveTool = useAppStore(state => state.setActiveTool);
+  const { t } = useTranslation('annotation');
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -61,7 +63,7 @@ export default function AnnotationSideToolbar() {
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={10}>
-              <p className="font-medium">{tool.label}</p>
+              <p className="font-medium">{t(`sideToolbar.${tool.id}`)}</p>
             </TooltipContent>
           </Tooltip>
         ))}

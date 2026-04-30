@@ -12,6 +12,7 @@ import type {
   TaskImage,
   TaskImagesResponse,
 } from '../types/annotation.types';
+import { useAppStore } from '@/store/hooks/useAppStore';
 
 // ─── GET /tasks/{taskId}/images ───────────────────────────────────────────────
 
@@ -54,6 +55,12 @@ export async function saveAnnotations(
   data: AnnotationData,
   silent: boolean = false
 ): Promise<void> {
+  // Hard block if in read-only mode
+  if (useAppStore.getState().isReadOnly) {
+    console.warn('[API Block] Attempted to save annotations in read-only mode.');
+    return;
+  }
+  
   await apiService.put(`/images/${imageId}/annotations`, data);
 
   if (!silent) {
@@ -68,6 +75,12 @@ export async function saveAnnotations(
  * Backend 204 No Content döner.
  */
 export async function clearAnnotations(imageId: string): Promise<void> {
+  // Hard block if in read-only mode
+  if (useAppStore.getState().isReadOnly) {
+    console.warn('[API Block] Attempted to clear annotations in read-only mode.');
+    return;
+  }
+
   await apiService.delete(`/images/${imageId}/annotations`);
 }
 
@@ -80,6 +93,12 @@ export async function clearAnnotations(imageId: string): Promise<void> {
  * UI'da çağrı öncesi rol kontrolü yapılmalıdır.
  */
 export async function deleteImage(imageId: string): Promise<void> {
+  // Hard block if in read-only mode
+  if (useAppStore.getState().isReadOnly) {
+    console.warn('[API Block] Attempted to delete image in read-only mode.');
+    return;
+  }
+
   await apiService.delete(`/images/${imageId}`);
 }
 

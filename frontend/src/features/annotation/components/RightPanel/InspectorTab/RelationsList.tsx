@@ -1,78 +1,87 @@
-import { useState } from 'react';
-import { Search, ChevronDown, ChevronRight, ArrowRight } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
-import type { RelationType } from '../../../types/annotation.types';
+import { ArrowRight, Trash2 } from 'lucide-react';
+import type { ObjectRelation, AnnotatedObject } from '../../../types/annotation.types';
+import { useAppStore } from '../../../../../store/hooks/useAppStore';
+import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface RelationsListProps {
-  relationTypes: RelationType[];
+  selectedObjectId: string;
 }
 
-export default function RelationsList({ relationTypes }: RelationsListProps) {
-  const [search, setSearch] = useState('');
-  const [expanded, setExpanded] = useState<string[]>([]);
+export default function RelationsList({ selectedObjectId }: RelationsListProps) {
+  const { t } = useTranslation('annotation');
+  const { annotatedObjects, objectRelations, setObjectRelations, isReadOnly } = useAppStore();
 
-  const filtered = relationTypes.filter((r) =>
-    r.name.toLowerCase().includes(search.toLowerCase())
+  const filteredRelations = objectRelations.filter(
+    (rel) => rel.sourceId === selectedObjectId || rel.targetId === selectedObjectId
   );
 
-  const toggle = (id: string) =>
-    setExpanded((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+  const getColor = (id: string) =>
+    annotatedObjects.find((o) => o.id === id)?.color ?? '#94a3b8';
+
+  const handleDelete = (id: string) => {
+    setObjectRelations(objectRelations.filter((rel) => rel.id !== id));
+  };
 
   return (
     <div className="px-4 py-3">
       <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
-        Relations (Ontology)
+        {t('rightPanel.inspector.relationsOntology')}
       </p>
 
-      {/* Search */}
-      <div className="relative mb-2">
-        <Search
-          size={12}
-          className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search relation types..."
-          className="h-7 pl-7 text-xs bg-muted/40 border-transparent focus-visible:border-input"
-        />
-      </div>
+      <div className="space-y-2">
+        {filteredRelations.map((rel) => (
+          <div
+            key={rel.id}
+            className="group relative flex items-center gap-1.5 bg-muted/40 rounded-lg px-3 py-2 text-xs hover:bg-muted/60 transition-colors"
+          >
+            {/* Source */}
+            <span
+              className="font-semibold truncate max-w-[80px]"
+              style={{ color: getColor(rel.sourceId) }}
+              title={rel.sourceLabel}
+            >
+              {rel.sourceLabel}
+            </span>
 
-      {/* Relation rows */}
-      <div className="space-y-0.5">
-        {filtered.map((rel) => {
-          const isOpen = expanded.includes(rel.id);
-          return (
-            <div key={rel.id}>
-              <button
-                onClick={() => toggle(rel.id)}
-                className={cn(
-                  'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all',
-                  'hover:bg-accent hover:text-accent-foreground text-left'
-                )}
-              >
-                {isOpen ? (
-                  <ChevronDown size={11} className="text-muted-foreground shrink-0" />
-                ) : (
-                  <ChevronRight size={11} className="text-muted-foreground shrink-0" />
-                )}
-                <ArrowRight size={11} className="text-primary shrink-0" />
-                <span className="font-medium tracking-wide">{rel.name}</span>
-              </button>
-
-              {isOpen && (
-                <div className="ml-8 mt-0.5 mb-1 px-2 py-1.5 rounded-md bg-muted/40 text-[10px] text-muted-foreground">
-                  {rel.directed
-                    ? 'Directed relation — source → target'
-                    : 'Undirected relation — bidirectional'}
-                </div>
-              )}
+            {/* Arrow + relation type */}
+            <div className="flex items-center gap-1 shrink-0 text-primary">
+              <ArrowRight size={11} />
+              <span className="text-[9px] font-bold uppercase tracking-wider bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                {rel.relationTypeName}
+              </span>
+              <ArrowRight size={11} />
             </div>
-          );
-        })}
+
+            {/* Target */}
+            <span
+              className="font-semibold truncate max-w-[80px]"
+              style={{ color: getColor(rel.targetId) }}
+              title={rel.targetLabel}
+            >
+              {rel.targetLabel}
+            </span>
+
+            {/* Delete Button */}
+            {!isReadOnly && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 opacity-0 group-hover:opacity-100 h-6 w-6 text-muted-foreground hover:text-destructive transition-all"
+                title={t('rightPanel.inspector.objectHeader.delete')}
+                onClick={() => handleDelete(rel.id)}
+              >
+                <Trash2 size={12} />
+              </Button>
+            )}
+          </div>
+        ))}
+
+        {filteredRelations.length === 0 && (
+          <p className="text-xs text-muted-foreground text-center py-3">
+            {t('rightPanel.inspector.noRelations')}
+          </p>
+        )}
       </div>
     </div>
   );
