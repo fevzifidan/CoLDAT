@@ -1,3 +1,4 @@
+// src/features/dashboard/components/ProjectCard.tsx
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { ArrowUpRight, Settings, Eye } from "lucide-react";
 import type { Project } from '@/shared/utils/projectsData';
 
 interface ProjectCardProps {
-  project: Project; // API'den gelen role, status, task, count vb. bilgilerini içerir [cite: 16, 20]
+  project: Project;
   cardType: 'task' | 'dataset' | 'project';
 }
 
@@ -15,10 +16,9 @@ export const ProjectCard = ({ project, cardType }: ProjectCardProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   
-  // Rolü güvenli bir şekilde alıyoruz (varsayılan viewer) [cite: 18, 29]
-  const role = project.role?.toLowerCase() || 'viewer';
+  // Rol bilgisini alıyoruz, eğer yoksa dökümanda belirtilen rollerden birini (viewer) varsayılan atıyoruz
+  const rawRole = project.role?.toLowerCase() || 'viewer';
 
-  // Yönlendirme fonksiyonu [cite: 10, 15, 22, 40]
   const handleNavigate = () => {
     const paths = {
       task: `/tasks/${project.id}`,
@@ -28,9 +28,8 @@ export const ProjectCard = ({ project, cardType }: ProjectCardProps) => {
     navigate(paths[cardType]);
   };
 
-  // Role göre buton metni ve ikonu [cite: 18, 19]
   const getButtonConfig = () => {
-    if (role === 'admin') return { text: t('dashboard.buttons.manage'), icon: <Settings className="ml-1 w-3 h-3" /> };
+    if (rawRole === 'admin') return { text: t('dashboard.buttons.manage'), icon: <Settings className="ml-1 w-3 h-3" /> };
     if (cardType === 'task') return { text: t('dashboard.buttons.start_labeling'), icon: <ArrowUpRight className="ml-1 w-3 h-3" /> };
     return { text: t('dashboard.buttons.open'), icon: <Eye className="ml-1 w-3 h-3" /> };
   };
@@ -41,15 +40,15 @@ export const ProjectCard = ({ project, cardType }: ProjectCardProps) => {
     <Card className="group relative overflow-hidden rounded-[2rem] border-none bg-white shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100">
       <CardHeader className="pb-2 text-left p-5">
         <div className="flex justify-between items-start mb-1">
-          {/* Sadece Task kartlarında status gösterilir, Proje/Dataset'lerde rol gösterilir [cite: 33, 34] */}
+          {/* KRİTİK DÜZELTME: Sadece Task kartları status içerir. Proje ve Dataset kartlarında sadece Rol olmalı. */}
           {cardType === 'task' ? (
             <Badge variant="outline" className="text-[9px] font-bold uppercase rounded-lg border-red-100 text-red-600 bg-red-50/30 px-2 py-0.5">
               {t(`dashboard.status.${project.status?.toLowerCase().replace(" ", "_")}`)}
             </Badge>
           ) : (
+            // Proje ve Dataset kartlarında 'Atanmış Görev Yok' yerine direkt Rol yazıyoruz
             <Badge variant="secondary" className="text-[8px] opacity-70 uppercase px-2 py-0">
-              {/* Rol ismini dil dosyasına göre çeviriyoruz */}
-              {t(`dashboard.roles.${role.replace(/ /g, '_')}`)}
+              {t(`dashboard.roles.${rawRole.replace(/ /g, '_')}`)}
             </Badge>
           )}
         </div>

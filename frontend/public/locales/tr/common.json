@@ -19,7 +19,8 @@
     "server_error": "Sunucu hatası!",
     "deleting": "Siliniyor...",
     "updating": "Güncelleniyor...",
-    "saving": "Kaydediliyor..."
+    "saving": "Kaydediliyor...",
+    "load_more": "Daha Fazla Yükle"
   },
   "error": {
     "err_reach_server": "Sunucuya ulaşılamadı!"

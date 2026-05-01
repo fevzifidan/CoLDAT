@@ -1,3 +1,4 @@
+// src/features/core/components/AppSidebar.tsx
 import { LogOut, Languages, Monitor, Moon, Sun, PanelLeftClose } from "lucide-react";
 import {
   Sidebar,
@@ -29,7 +30,7 @@ import { SIDEBAR_ITEMS } from "./SidebarConfig";
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t, i18n } = useTranslation(["common", "sidebar"]);
+  const { t, i18n } = useTranslation(["common"]); // Namespace olarak direkt common kullanıyoruz
   const { toggleSidebar } = useSidebar();
   const { theme, setTheme } = useTheme();
 
@@ -65,10 +66,15 @@ export function AppSidebar() {
               const isActive = location.pathname === item.url || 
                                (item.url !== "/" && location.pathname.startsWith(item.url));
               
+              // JSON yapısına göre eşleştirme: dashboard en üstte, diğerleri sidebar altında
+              const translatedTitle = item.title === "dashboard" 
+                ? t("dashboard.title") 
+                : t(`sidebar.${item.title}`);
+
               return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
-                    tooltip={t(item.title, { ns: 'sidebar' })} 
+                    tooltip={translatedTitle} 
                     onClick={() => !item.isPlaceholder && navigate(item.url)}
                     isActive={isActive}
                     className={`transition-all duration-500 
@@ -77,7 +83,7 @@ export function AppSidebar() {
                   >
                     <item.icon className="shrink-0" size={20} />
                     <span className="truncate ml-2">
-                      {t(item.title, { ns: 'sidebar' })}
+                      {translatedTitle}
                       {item.isPlaceholder && <span className="ml-2 text-[10px] italic opacity-70">(Soon)</span>}
                     </span>
                   </SidebarMenuButton>
@@ -90,11 +96,12 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t p-2 bg-background/50 backdrop-blur-sm">
         <SidebarMenu className="gap-2">
+          {/* Görünüm Ayarları */}
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton tooltip={t("theme.appearance")}>
-                  <Monitor size={20} className="shrink-0 text-muted-foreground md:transition-colors md:hover:text-foreground" />
+                  <Monitor size={20} className="shrink-0 text-muted-foreground" />
                   <span className="ml-2 font-medium text-muted-foreground">{t("theme.appearance")}</span>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
@@ -119,18 +126,20 @@ export function AppSidebar() {
             </DropdownMenu>
           </SidebarMenuItem>
 
+          {/* Dil Değiştirme */}
           <SidebarMenuItem>
             <SidebarMenuButton 
-              tooltip={t("language")} 
+              tooltip={i18n.language.startsWith('tr') ? 'English' : 'Türkçe'} 
               onClick={toggleLanguage}
             >
-              <Languages size={20} className="shrink-0 text-muted-foreground md:transition-colors md:hover:text-foreground" />
+              <Languages size={20} className="shrink-0 text-muted-foreground" />
               <span className="ml-2 font-medium uppercase text-muted-foreground">
                 {i18n.language.startsWith('tr') ? 'Türkçe' : 'English'}
               </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
+          {/* Çıkış Yap */}
           <SidebarMenuItem>
             <SidebarMenuButton 
               tooltip={t("logout")} 
@@ -143,7 +152,6 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-      
       <SidebarRail />
     </Sidebar>
   );

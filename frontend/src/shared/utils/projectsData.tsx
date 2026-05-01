@@ -2,9 +2,10 @@ export interface Project {
   id: number;
   name: string;
   task: string;
-  status: "In Progress" | "Completed" | "New";
+  status?: "In Progress" | "Completed" | "New";
   count: number;
-  role: 'admin' | 'annotator' | 'viewer' | 'no assigned tasks';
+  role?: 'admin' | 'annotator' | 'viewer';
+  type: 'project' | 'dataset';
 }
 
 export const projects: Project[] = [
@@ -14,7 +15,8 @@ export const projects: Project[] = [
     task: "Object Detection", 
     status: "In Progress", 
     count: 1250,
-    role: "no assigned tasks"
+    role: "annotator",
+    type: "project" // Bu bir projedir
   },
   { 
     id: 2, 
@@ -22,7 +24,8 @@ export const projects: Project[] = [
     task: "Entity Recognition", 
     status: "Completed", 
     count: 500,
-    role: "annotator"
+    role: "annotator",
+    type: "project"
   },
   { 
     id: 3, 
@@ -30,7 +33,8 @@ export const projects: Project[] = [
     task: "Semantic Relation", 
     status: "New", 
     count: 0,
-    role: "viewer"
+    role: "viewer",
+    type: "project"
   },
   { 
     id: 4, 
@@ -38,6 +42,15 @@ export const projects: Project[] = [
     task: "Semantic Relation", 
     status: "Completed", 
     count: 20,
-    role: "admin"
+    role: "admin",
+    type: "project"
+  },
+  {
+    id: 5,
+    name: "Medical NLP Analysis",
+    task: "Entity Recognition",
+    count: 850,
+    role: "admin",
+    type: "dataset"
   },
 ];

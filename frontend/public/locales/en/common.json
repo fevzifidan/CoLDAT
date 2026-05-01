@@ -19,7 +19,8 @@
     "server_error": "Server error!",
     "deleting": "Deleting...",
     "updating": "Updating...",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "load_more": "Load More"
   },
   "error": {
     "err_reach_server": "Could not reach server!"
