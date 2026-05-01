@@ -19,7 +19,8 @@
     "server_error": "Server error!",
     "deleting": "Deleting...",
     "updating": "Updating...",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "load_more": "Load More"
   },
   "error": {
     "err_reach_server": "Could not reach server!"
@@ -30,5 +31,47 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System"
-  }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "CoLDAT project current progress.",
+    "no_assigned_tasks": "There are no active tasks assigned to you.",
+    "show_more": "SHOW MORE",
+    "files": "PROCESSED FILES",
+    "sections": {
+      "recent_tasks": "Recent Tasks",
+      "tasks_description": "Your assigned workflow progress",
+      "recent_datasets": "Recent Datasets",
+      "recent_projects": "Recent Projects"
+    },
+    "buttons": {
+      "manage": "MANAGE",
+      "start_labeling": "START LABELING",
+      "open": "OPEN PROJECT"
+    },
+    "status": {
+      "completed": "Completed",
+      "new": "New",
+      "in_progress": "In Progress"
+    },
+    "tasks": {
+      "object_detection": "Object Detection",
+      "entity_recognition": "Entity Recognition",
+      "semantic_relation": "Semantic Relation"
+    },
+    "roles": {
+      "no_assigned_tasks": "No Assigned Tasks",
+      "annotator": "Annotator",
+      "viewer": "Viewer",
+      "admin": "Admin"
+    }
+  },
+    "sidebar": {
+    "projects": "Projects",
+    "tasks": "Tasks",
+    "datasets": "Datasets",
+    "api_keys": "API Keys"
+  },
+  "language": "Language",
+  "logout": "Logout"
 }

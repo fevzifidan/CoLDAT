@@ -1,58 +1,64 @@
+// src/App.tsx
 import './App.css';
-import { useEffect } from 'react';
-import { useTranslation } from "react-i18next";
+import { Suspense } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from "@/components/ui/sonner";
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
 import AxiosInterceptorSetup from './components/custom/AxiosInterceptorSetup/AxiosInterceptorSetup.jsx';
 import { ConfirmProvider } from './shared/services/confirmation/ConfirmContext.js';
 import { BannerProvider } from './components/custom/GlobalBanner/BannerContext.js';
 import { GlobalBanner } from './components/custom/GlobalBanner/GlobalBanner.js';
 
-import LoginPage from './test/Login.js';
+import DashboardLayout from '@/features/core/layouts/DashboardLayout';
+import DashboardHome from '@/features/dashboard/DashboardHome';
+import ProjectDetailPage from '@/features/projects/ProjectDetailPage';
+import Login from "@/features/auth/Login/Login";
+import Register from "@/features/auth/Register/Register";
+
+// YENİ: Döküman kurallarına uygun hazırladığımız sayfaları import ediyoruz
+import TasksPage from '@/features/tasks/TasksPage';
+import DatasetsPage from '@/features/datasets/DatasetsPage';
+import ProjectsPage from '@/features/projects/ProjectsPage';
 
 function App() {
-  const { i18n, ready } = useTranslation();
-
-  useEffect(() => {
-    const handleLanguageChange = () => {
-      // Get browser's language ('en-US' -> 'en')
-      const newLang = navigator.language.split('-')[0]; 
-      i18n.changeLanguage(newLang);
-    };
-
-    // Listen for browser language change event
-    window.addEventListener('languagechange', handleLanguageChange);
-
-    return () => {
-      // Remove listener when component removed
-      window.removeEventListener('languagechange', handleLanguageChange);
-    };
-  }, [i18n]);
-
-  // Do not render anything until i18n is completely initialized
-  if (!ready) {
-    return null;
-  }
-
   return (
-    <BrowserRouter>
-      <BannerProvider>
-        <GlobalBanner />
-        <ConfirmProvider>
-          <AuthProvider>
-            <AxiosInterceptorSetup />
-            <Toaster position="top-right" richColors />
-
-            <Routes>
-              <></>
-              <Route path='/' element={<><LoginPage/></>} />
-            </Routes>
-          </AuthProvider>
-        </ConfirmProvider>
-      </BannerProvider>
-    </BrowserRouter>
-  )
+    <Suspense fallback={<div className="flex h-screen items-center justify-center text-white font-mono">Yükleniyor...</div>}>
+      <BrowserRouter>
+        <BannerProvider>
+          <GlobalBanner />
+          <ConfirmProvider>
+            <AuthProvider>
+              <AxiosInterceptorSetup />
+              <Toaster position="top-right" richColors />
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/*" element={
+                  <DashboardLayout>
+                    <Routes>
+                      <Route path="/" element={<DashboardHome />} />
+                      
+                      {/* Döküman: Show More butonları artık gerçek sayfalara yönlendiriyor */}
+                      <Route path="/projects" element={<ProjectsPage />} />
+                      <Route path="/datasets" element={<DatasetsPage />} />
+                      <Route path="/tasks" element={<TasksPage />} />
+                      
+                      {/* Detay sayfası */}
+                      <Route path="/projects/:id" element={<ProjectDetailPage />} />
+                      
+                      <Route path="*" element={<div className="p-8 text-center font-mono text-white">404 | Sayfa Bulunamadı</div>} />
+                    </Routes>
+                  </DashboardLayout>
+                } />
+              </Routes>
+            </AuthProvider>
+          </ConfirmProvider>
+        </BannerProvider>
+      </BrowserRouter>
+    </Suspense>
+  );
 }
 
-export default App
+export default App;
