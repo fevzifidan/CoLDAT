@@ -11,6 +11,9 @@ import type {
   AnnotationData,
   TaskImage,
   TaskImagesResponse,
+  Task,
+  TaxonomyResponse,
+  DatasetDetails,
 } from '../types/annotation.types';
 import { useAppStore } from '@/store/hooks/useAppStore';
 
@@ -102,8 +105,35 @@ export async function deleteImage(imageId: string): Promise<void> {
   await apiService.delete(`/images/${imageId}`);
 }
 
-// ─── Presigned URL Yenileme Yardımcısı ───────────────────────────────────────
+// ─── GET /tasks/{taskId} ────────────────────────────────────────────────────
+/** Görev detaylarını (rol, durum, dataset_id vb.) getirir. */
+export async function getTaskDetails(taskId: string): Promise<Task> {
+  return apiService.get<Task>(`/tasks/${taskId}`);
+}
 
+// ─── GET /projects/{projectId}/taxonomy ──────────────────────────────────────
+/** Projeye ait sınıf ve ilişki tiplerini getirir. */
+export async function getProjectTaxonomy(projectId: string): Promise<TaxonomyResponse> {
+  return apiService.get<TaxonomyResponse>(`/projects/${projectId}/taxonomy`);
+}
+
+// ─── PATCH /tasks/{taskId}/status ─────────────────────────────────────────────
+/** Görev durumunu günceller (onaya gönderme, tamamlama vb.). */
+export async function updateTaskStatus(
+  taskId: string, 
+  status: string, 
+  note?: string
+): Promise<void> {
+  await apiService.patch(`/tasks/${taskId}/status`, { status, note });
+}
+
+// ─── GET /datasets/{datasetId} ───────────────────────────────────────────────
+/** Dataset detaylarını (ve içindeki projectId'yi) getirir. */
+export async function getDatasetDetails(datasetId: string): Promise<DatasetDetails> {
+  return apiService.get<DatasetDetails>(`/datasets/${datasetId}`);
+}
+
+// ─── Presigned URL Yenileme Yardımcısı ───────────────────────────────────────
 /**
  * Resmin asset_url veya sam_embedding_url'inin süresinin dolup dolmadığını kontrol eder.
  * Süresi dolmuşsa yeni bir TaskImage verisiyle taze URL alınması için

@@ -11,7 +11,7 @@ interface MagnifierLensProps {
 }
 
 export const MagnifierLens: React.FC<MagnifierLensProps> = ({ imageUrl, children }) => {
-  const [image] = useImage(imageUrl);
+  const [image] = useImage(imageUrl, 'anonymous');
   const { 
     activeTool,
     scale: stageScale,

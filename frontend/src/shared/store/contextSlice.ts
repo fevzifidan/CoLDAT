@@ -15,6 +15,7 @@ export interface Task {
   id: string;
   dataset_id: string;
   assignee_id: string;
+  role: 'Annotator' | 'Viewer';
   status: 'open' | 'in_progress' | 'approval_pending' | 'completed' | 'rejected';
   rejection_note: string | null;
   image_count: number;
@@ -24,11 +25,13 @@ export interface ClassDef {
   id: string;
   name: string;
   color: string;
+  count?: number;
 }
 
 export interface PredicateDef {
   id: string;
   name: string;
+  directed?: boolean;
 }
 
 export interface Taxonomy {

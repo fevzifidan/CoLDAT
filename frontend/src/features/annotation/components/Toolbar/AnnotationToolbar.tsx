@@ -16,6 +16,8 @@ import {
   Droplets,          // Doygunluk
   Layers,            // Opaklık
   RotateCcw,         // Sıfırlama
+  Check,
+  AlertCircle,
   Loader2            // Auto-save spinner
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +25,7 @@ import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
 import { ThemeToggle } from '@/components/custom/ThemeToggle/ThemeToggle';
 import { cn } from '@/lib/utils';
@@ -36,6 +39,10 @@ interface AnnotationToolbarProps {
   onSave?: () => void;
   /** Save işlemi sürerken true */
   isSaving?: boolean;
+  /** Onaya gönderme callback'i */
+  onSubmit?: () => void;
+  /** Submit işlemi sürerken true */
+  isSubmitting?: boolean;
 }
 
 export default function AnnotationToolbar({
@@ -44,23 +51,34 @@ export default function AnnotationToolbar({
   totalImages,
   onSave,
   isSaving = false,
+  onSubmit,
+  isSubmitting = false,
 }: AnnotationToolbarProps) {
   const goToPrev = useAppStore(state => state.goToPrev);
   const goToNext = useAppStore(state => state.goToNext);
+  const currentTask = useAppStore(state => state.currentTask);
 
-  const { 
-    brightness, setBrightness,
-    contrast, setContrast,
-    saturation, setSaturation,
-    opacity, setOpacity,
-    resetFilters,
-    isMagnifierActive, setIsMagnifierActive,
-    zoomIn, zoomOut, resetViewer,
-    activeTool, setActiveTool,
-    undo, redo,
-    history, historyIndex,
-    isReadOnly
-  } = useAppStore();
+  const brightness = useAppStore(state => state.brightness);
+  const setBrightness = useAppStore(state => state.setBrightness);
+  const contrast = useAppStore(state => state.contrast);
+  const setContrast = useAppStore(state => state.setContrast);
+  const saturation = useAppStore(state => state.saturation);
+  const setSaturation = useAppStore(state => state.setSaturation);
+  const opacity = useAppStore(state => state.opacity);
+  const setOpacity = useAppStore(state => state.setOpacity);
+  const resetFilters = useAppStore(state => state.resetFilters);
+  const isMagnifierActive = useAppStore(state => state.isMagnifierActive);
+  const setIsMagnifierActive = useAppStore(state => state.setIsMagnifierActive);
+  const zoomIn = useAppStore(state => state.zoomIn);
+  const zoomOut = useAppStore(state => state.zoomOut);
+  const resetViewer = useAppStore(state => state.resetViewer);
+  const activeTool = useAppStore(state => state.activeTool);
+  const setActiveTool = useAppStore(state => state.setActiveTool);
+  const undo = useAppStore(state => state.undo);
+  const redo = useAppStore(state => state.redo);
+  const history = useAppStore(state => state.history);
+  const historyIndex = useAppStore(state => state.historyIndex);
+  const isReadOnly = useAppStore(state => state.isReadOnly);
 
   const { t } = useTranslation('annotation');
 
@@ -160,6 +178,32 @@ export default function AnnotationToolbar({
 
       {/* Sağ: Görünüm Ayarları & Aksiyonlar */}
       <div className="flex items-center justify-end gap-2">
+        {/* Görev Durumu ve Rol Bilgisi */}
+        {currentTask && (
+          <div className="flex items-center gap-2 mr-2">
+            <Badge variant="outline" className="text-[10px] h-5 capitalize">
+              {currentTask.status.replace('_', ' ')}
+            </Badge>
+            {isReadOnly && (
+              <Badge variant="secondary" className="text-[10px] h-5 bg-amber-500/10 text-amber-500 border-amber-500/20">
+                {t('common.readOnly')}
+              </Badge>
+            )}
+            {currentTask.rejection_note && (
+               <Popover>
+               <PopoverTrigger asChild>
+                 <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10">
+                   <AlertCircle size={14} />
+                 </Button>
+               </PopoverTrigger>
+               <PopoverContent className="w-64 p-3 text-xs">
+                 <p className="font-bold mb-1 text-destructive">Rejection Note:</p>
+                 <p className="text-muted-foreground">{currentTask.rejection_note}</p>
+               </PopoverContent>
+             </Popover>
+            )}
+          </div>
+        )}
 
         {/* YENİ: Görünüm ve Opaklık Ayarları Popover */}
         <Popover>
@@ -230,19 +274,36 @@ export default function AnnotationToolbar({
           <Download size={13} />
           {t('toolbar.export')}
         </Button>
+        
         {!isReadOnly && (
-          <Button
-            size="sm"
-            className="h-8 gap-1.5 text-xs bg-primary hover:bg-primary/90"
-            onClick={onSave}
-            disabled={isSaving}
-            title={t('toolbar.saveTooltip')}
-          >
-            {isSaving
-              ? <Loader2 size={13} className="animate-spin" />
-              : <Save size={13} />}
-            {t('toolbar.save')}
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              onClick={onSave}
+              disabled={isSaving}
+              title={t('toolbar.saveTooltip')}
+            >
+              {isSaving
+                ? <Loader2 size={13} className="animate-spin" />
+                : <Save size={13} />}
+              {t('toolbar.save')}
+            </Button>
+
+            <Button
+              size="sm"
+              className="h-8 gap-1.5 text-xs bg-primary hover:bg-primary/90"
+              onClick={onSubmit}
+              disabled={isSubmitting || (currentTask?.status === 'approval_pending')}
+              title={t('toolbar.submitTooltip')}
+            >
+              {isSubmitting
+                ? <Loader2 size={13} className="animate-spin" />
+                : <Check size={14} />}
+              {t('toolbar.submit')}
+            </Button>
+          </>
         )}
       </div>
     </div>

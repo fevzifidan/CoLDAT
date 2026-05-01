@@ -19,7 +19,9 @@
     "settings": "Settings",
     "export": "Export",
     "save": "Save",
-    "saveTooltip": "Save annotations (Ctrl+S)"
+    "saveTooltip": "Save annotations (Ctrl+S)",
+    "submit": "Submit for Review",
+    "submitTooltip": "Submit this task for admin review."
   },
   "sideToolbar": {
     "select": "Select (V)",

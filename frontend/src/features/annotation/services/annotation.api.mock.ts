@@ -10,7 +10,11 @@
 import notificationService from '@/shared/services/notification';
 import type {
   AnnotationData,
+  TaskImage,
   TaskImagesResponse,
+  Task,
+  TaxonomyResponse,
+  DatasetDetails,
 } from '../types/annotation.types';
 
 // Mock veri — useAnnotationData.ts'deki MOCK_QUEUE ile senkronize
@@ -145,4 +149,55 @@ export async function clearAnnotations(_imageId: string): Promise<void> {
 export async function deleteImage(_imageId: string): Promise<void> {
   await delay(150);
   // No-op in test mode
+}
+
+export async function getTaskDetails(taskId: string): Promise<Task> {
+  await delay();
+  return {
+    id: taskId,
+    dataset_id: 'mock-dataset-id',
+    assignee_id: 'mock-user-id',
+    role: 'Annotator',
+    status: 'in_progress',
+    rejection_note: null,
+    image_count: 8,
+  };
+}
+
+export async function getProjectTaxonomy(_projectId: string): Promise<TaxonomyResponse> {
+  await delay();
+  return {
+    classes: [
+      { id: 'cls-car', name: 'Car', color: '#3b82f6' },
+      { id: 'cls-ped', name: 'Pedestrian', color: '#ef4444' },
+      { id: 'cls-light', name: 'Traffic Light', color: '#f59e0b' },
+    ],
+    predicates: [
+      { id: 'rel-drives', name: 'DRIVES' },
+      { id: 'rel-stops', name: 'STOPS AT' },
+    ],
+  };
+}
+
+export async function updateTaskStatus(
+  _taskId: string,
+  _status: string,
+  _note?: string
+): Promise<void> {
+  await delay(150);
+  notificationService.success(`Task status updated to ${_status}. (test mode)`);
+}
+
+export async function getDatasetDetails(datasetId: string): Promise<DatasetDetails> {
+  await delay();
+  return {
+    id: datasetId,
+    project_id: 'mock-project-id',
+    name: 'Mock Dataset',
+    description: 'Description',
+    current_version: 'v1.0',
+    total_images: 100,
+    annotated_images: 10,
+    role: 'annotator',
+  };
 }

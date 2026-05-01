@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, memo, useMemo } from 'react';
 import { Rect, Group, Text } from 'react-konva';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
 import type { AnnotatedObject } from '../../types/annotation.types';
@@ -27,21 +27,19 @@ const hexToRGBA = (hex: string, alpha: number) => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-export const BoundingBox: React.FC<BoundingBoxProps> = ({ data }) => {
+export const BoundingBox: React.FC<BoundingBoxProps> = memo(({ data }) => {
   if (data.coordinates.length < 4) return null;
   const [x, y, w, h] = data.coordinates;
   const startCoords = useRef<number[] | null>(null);
 
-  const { 
-    selectedObjectId, 
-    setSelectedObjectId, 
-    activeTool, 
-    updateObject, 
-    deleteObject,
-    opacity,
-    imgDimensions,
-    isReadOnly
-  } = useAppStore();
+  const selectedObjectId = useAppStore(state => state.selectedObjectId);
+  const setSelectedObjectId = useAppStore(state => state.setSelectedObjectId);
+  const activeTool = useAppStore(state => state.activeTool);
+  const updateObject = useAppStore(state => state.updateObject);
+  const deleteObject = useAppStore(state => state.deleteObject);
+  const opacity = useAppStore(state => state.opacity);
+  const imgDimensions = useAppStore(state => state.imgDimensions);
+  const isReadOnly = useAppStore(state => state.isReadOnly);
 
   const isSelected = selectedObjectId === data.id;
   const isSelectMode = activeTool === 'select';
@@ -57,6 +55,7 @@ export const BoundingBox: React.FC<BoundingBoxProps> = ({ data }) => {
   };
 
   const color = data.color || '#3b82f6';
+  const fillColor = useMemo(() => hexToRGBA(color, opacity / 100), [color, opacity]);
 
   return (
     <Group 
@@ -122,9 +121,9 @@ export const BoundingBox: React.FC<BoundingBoxProps> = ({ data }) => {
         height={h}
         stroke={color}
         strokeWidth={isSelected ? 3 : 2}
-        fill={hexToRGBA(color, opacity / 100)}
+        fill={fillColor}
         hitStrokeWidth={10}
       />
     </Group>
   );
-};
+});

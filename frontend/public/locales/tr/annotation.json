@@ -19,7 +19,9 @@
     "settings": "Ayarlar",
     "export": "Dışa Aktar",
     "save": "Kaydet",
-    "saveTooltip": "Açıklamaları kaydet (Ctrl+S)"
+    "saveTooltip": "Açıklamaları kaydet (Ctrl+S)",
+    "submit": "Onaya Gönder",
+    "submitTooltip": "Bu görevi admin onayı için gönder."
   },
   "sideToolbar": {
     "select": "Seç (V)",

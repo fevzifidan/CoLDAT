@@ -17,13 +17,13 @@ export interface ClassDef {
   id: string;
   name: string;
   color: string;   // hex or tailwind-compatible color
-  count: number;
+  count?: number;
 }
 
 export interface RelationType {
   id: string;
   name: string;     // e.g. "DRIVES", "STOPS AT"
-  directed: boolean;
+  directed?: boolean;
 }
 
 // ─── UI-Internal Annotation State Types ─────────────────────────────────────
@@ -100,6 +100,42 @@ export interface AnnotationData {
 export interface TaskImagesResponse {
   data: TaskImage[];
   next_cursor: string | null;
+}
+
+export type TaskStatus = 'open' | 'in_progress' | 'approval_pending' | 'completed' | 'rejected';
+export type UserRole = 'Annotator' | 'Viewer';
+
+export interface Task {
+  id: string;
+  dataset_id: string;
+  assignee_id: string;
+  role: UserRole;
+  status: TaskStatus;
+  rejection_note: string | null;
+  image_count: number;
+}
+
+export interface TaxonomyResponse {
+  classes: Array<{
+    id: string;
+    name: string;
+    color: string;
+  }>;
+  predicates: Array<{
+    id: string;
+    name: string;
+  }>;
+}
+
+export interface DatasetDetails {
+  id: string;
+  project_id: string;
+  name: string;
+  description: string;
+  current_version: string;
+  total_images: number;
+  annotated_images: number;
+  role: 'admin' | 'annotator' | 'viewer';
 }
 
 // ─── Legacy alias kept for backwards compatibility ───────────────────────────

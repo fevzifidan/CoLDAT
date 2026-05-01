@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, memo, useMemo } from 'react';
 import { Group, Line, Text } from 'react-konva';
 import type { AnnotatedObject } from '../../types/annotation.types';
 import { PolygonAnchor } from '@/features/annotation/tools/polygon/PolygonAnchor';
@@ -27,17 +27,15 @@ const hexToRGBA = (hex: string, alpha: number) => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-export const PolygonShape: React.FC<PolygonShapeProps> = ({ data }) => {
-  const { 
-    selectedObjectId, 
-    setSelectedObjectId, 
-    activeTool, 
-    updateObject, 
-    deleteObject,
-    opacity,
-    imgDimensions,
-    isReadOnly
-  } = useAppStore();
+export const PolygonShape: React.FC<PolygonShapeProps> = memo(({ data }) => {
+  const selectedObjectId = useAppStore(state => state.selectedObjectId);
+  const setSelectedObjectId = useAppStore(state => state.setSelectedObjectId);
+  const activeTool = useAppStore(state => state.activeTool);
+  const updateObject = useAppStore(state => state.updateObject);
+  const deleteObject = useAppStore(state => state.deleteObject);
+  const opacity = useAppStore(state => state.opacity);
+  const imgDimensions = useAppStore(state => state.imgDimensions);
+  const isReadOnly = useAppStore(state => state.isReadOnly);
   
   const startCoords = useRef<number[] | null>(null);
 
@@ -74,17 +72,22 @@ export const PolygonShape: React.FC<PolygonShapeProps> = ({ data }) => {
 
   if (data.coordinates.length < 6) return null; // Needs at least 3 points
 
-  // Top-leftmost point for label
-  let minX = data.coordinates[0];
-  let minY = data.coordinates[1];
-  for (let i = 0; i < data.coordinates.length; i += 2) {
-    if (data.coordinates[i+1] < minY) {
-      minY = data.coordinates[i+1];
-      minX = data.coordinates[i];
+  const labelPos = useMemo(() => {
+    if (!isSelected) return { x: 0, y: 0 };
+    // Top-leftmost point for label
+    let minX = data.coordinates[0];
+    let minY = data.coordinates[1];
+    for (let i = 0; i < data.coordinates.length; i += 2) {
+      if (data.coordinates[i+1] < minY) {
+        minY = data.coordinates[i+1];
+        minX = data.coordinates[i];
+      }
     }
-  }
+    return { x: minX, y: minY };
+  }, [data.coordinates, isSelected]);
 
   const color = data.color || '#3b82f6';
+  const fillColor = useMemo(() => hexToRGBA(color, opacity / 100), [color, opacity]);
 
   return (
     <Group 
@@ -124,14 +127,14 @@ export const PolygonShape: React.FC<PolygonShapeProps> = ({ data }) => {
         stroke={color}
         strokeWidth={isSelected ? 3 : 2}
         closed
-        fill={hexToRGBA(color, opacity / 100)}
+        fill={fillColor}
         hitStrokeWidth={10}
       />
       
       {/* Label */}
       <Text
-        x={minX}
-        y={minY - 16}
+        x={labelPos.x}
+        y={labelPos.y - 16}
         text={data.label}
         fill="white"
         fontSize={12}
@@ -140,7 +143,7 @@ export const PolygonShape: React.FC<PolygonShapeProps> = ({ data }) => {
       />
       {isSelected && !isReadOnly && (
         <Html divProps={{ style: { pointerEvents: 'auto' } }}>
-          <div style={{ position: 'absolute', top: `${minY - 20}px`, left: `${minX + 80}px` }}>
+          <div style={{ position: 'absolute', top: `${labelPos.y - 20}px`, left: `${labelPos.x + 80}px` }}>
             <ObjectMenu object={data} />
           </div>
         </Html>
@@ -165,4 +168,4 @@ export const PolygonShape: React.FC<PolygonShapeProps> = ({ data }) => {
       )}
     </Group>
   );
-};
+});

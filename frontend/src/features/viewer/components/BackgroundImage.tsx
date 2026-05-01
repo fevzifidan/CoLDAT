@@ -9,16 +9,14 @@ interface BackgroundImageProps {
 }
 
 export const BackgroundImage: React.FC<BackgroundImageProps> = ({ url }) => {
-  const [image] = useImage(url);
+  const [image] = useImage(url, 'anonymous');
   const imgRef = useRef<Konva.Image>(null);
   
-  const { 
-    setImgDimensions, 
-    setIsLoaded,
-    brightness,
-    contrast,
-    saturation
-  } = useAppStore();
+  const setImgDimensions = useAppStore(state => state.setImgDimensions);
+  const setIsLoaded = useAppStore(state => state.setIsLoaded);
+  const brightness = useAppStore(state => state.brightness);
+  const contrast = useAppStore(state => state.contrast);
+  const saturation = useAppStore(state => state.saturation);
 
   useEffect(() => {
     if (image) {

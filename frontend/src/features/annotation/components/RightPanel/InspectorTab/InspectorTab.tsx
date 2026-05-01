@@ -18,13 +18,11 @@ interface InspectorTabProps {
 }
 
 export default function InspectorTab({ classes, relationTypes, isLoading = false }: InspectorTabProps) {
-  const {
-    selectedObjectId,
-    annotatedObjects,
-    updateObject,
-    deleteObject,
-    setSelectedObjectId,
-  } = useAppStore();
+  const selectedObjectId = useAppStore(state => state.selectedObjectId);
+  const annotatedObjects = useAppStore(state => state.annotatedObjects);
+  const updateObject = useAppStore(state => state.updateObject);
+  const deleteObject = useAppStore(state => state.deleteObject);
+  const setSelectedObjectId = useAppStore(state => state.setSelectedObjectId);
 
   const { t } = useTranslation('annotation');
 

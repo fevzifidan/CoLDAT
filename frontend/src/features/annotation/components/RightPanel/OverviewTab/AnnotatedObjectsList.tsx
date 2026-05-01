@@ -17,13 +17,11 @@ interface AnnotatedObjectsListProps {
 }
 
 export default function AnnotatedObjectsList({ objects }: AnnotatedObjectsListProps) {
-  const { 
-    selectedObjectId, 
-    setSelectedObjectId, 
-    updateObject,
-    deleteObject,
-    isReadOnly
-  } = useAppStore();
+  const selectedObjectId = useAppStore(state => state.selectedObjectId);
+  const setSelectedObjectId = useAppStore(state => state.setSelectedObjectId);
+  const updateObject = useAppStore(state => state.updateObject);
+  const deleteObject = useAppStore(state => state.deleteObject);
+  const isReadOnly = useAppStore(state => state.isReadOnly);
 
   const { t } = useTranslation('annotation');
 
@@ -37,11 +35,18 @@ export default function AnnotatedObjectsList({ objects }: AnnotatedObjectsListPr
         {objects.map((obj) => (
           <ContextMenu key={obj.id}>
             <ContextMenuTrigger asChild>
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelectedObjectId(obj.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    setSelectedObjectId(obj.id);
+                  }
+                }}
                 onContextMenu={() => setSelectedObjectId(obj.id)}
                 className={cn(
-                  'group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all border',
+                  'group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all border cursor-pointer select-none',
                   'hover:bg-accent hover:text-accent-foreground',
                   selectedObjectId === obj.id
                     ? 'border-primary/30 bg-primary/8 text-primary font-semibold'
@@ -77,7 +82,7 @@ export default function AnnotatedObjectsList({ objects }: AnnotatedObjectsListPr
                     </Button>
                   )}
                 </div>
-              </button>
+              </div>
             </ContextMenuTrigger>
             <ContextMenuContent className="w-48">
               <ContextMenuItem 
