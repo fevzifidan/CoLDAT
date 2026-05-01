@@ -26,4 +26,5 @@ dist-ssr
 
 **/test/
 implementation_plan.md
-CoLDAT API Design.pdf
+CoLDAT API Design.yaml
+CoLDAT API Design.yml
