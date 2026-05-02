@@ -29,7 +29,16 @@ import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
 import { ThemeToggle } from '@/components/custom/ThemeToggle/ThemeToggle';
 import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useTranslation } from 'react-i18next';
+import { useExport } from '../../hooks/useExport';
 
 interface AnnotationToolbarProps {
   projectName: string;
@@ -81,6 +90,7 @@ export default function AnnotationToolbar({
   const isReadOnly = useAppStore(state => state.isReadOnly);
 
   const { t } = useTranslation('annotation');
+  const { handleExport } = useExport();
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
@@ -270,10 +280,28 @@ export default function AnnotationToolbar({
         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" title={t('toolbar.settings')}>
           <Settings size={15} />
         </Button>
-        <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
-          <Download size={13} />
-          {t('toolbar.export')}
-        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+              <Download size={13} />
+              {t('toolbar.export')}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>{t('toolbar.exportOptions')}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => handleExport('coco')} className="cursor-pointer">
+              {t('toolbar.exportCOCO')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('yolo')} className="cursor-pointer">
+              {t('toolbar.exportYOLO')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('visual_genome')} className="cursor-pointer">
+              {t('toolbar.exportVG')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         
         {!isReadOnly && (
           <>

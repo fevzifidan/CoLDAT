@@ -7,6 +7,8 @@ export interface AnnotationState {
   selectedObjectId: string | null;
   history: AnnotatedObject[][];
   historyIndex: number;
+  currentImage: { asset_id: string; filename: string; asset_url: string } | null;
+  taskImages: { asset_id: string; filename: string; asset_url: string }[];
   
   // Basic CRUD
   setAnnotatedObjects: (objects: AnnotatedObject[]) => void;
@@ -18,6 +20,8 @@ export interface AnnotationState {
   // History
   undo: () => void;
   redo: () => void;
+  setCurrentImage: (image: { asset_id: string; filename: string; asset_url: string } | null) => void;
+  setTaskImages: (images: { asset_id: string; filename: string; asset_url: string }[]) => void;
 }
 
 export const createAnnotationSlice: StateCreator<AnnotationState> = (set, get) => ({
@@ -26,6 +30,8 @@ export const createAnnotationSlice: StateCreator<AnnotationState> = (set, get) =
   selectedObjectId: null,
   history: [[]],
   historyIndex: 0,
+  currentImage: null,
+  taskImages: [],
   
   setAnnotatedObjects: (objects) => {
     set((state) => {
@@ -98,4 +104,7 @@ export const createAnnotationSlice: StateCreator<AnnotationState> = (set, get) =
     }
     return state;
   }),
+
+  setCurrentImage: (image) => set({ currentImage: image }),
+  setTaskImages: (images) => set({ taskImages: images }),
 });

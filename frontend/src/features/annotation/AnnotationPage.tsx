@@ -20,6 +20,9 @@ export default function AnnotationPage() {
   const currentImageIndex = useAppStore(state => state.currentImageIndex);
   const totalImages = useAppStore(state => state.totalImages);
   const isReadOnly = useAppStore(state => state.isReadOnly);
+  const taskImages = useAppStore(state => state.taskImages);
+  const currentImage = useAppStore(state => state.currentImage);
+  const setCurrentImage = useAppStore(state => state.setCurrentImage);
   
   useUndoRedo();
   const { classes, relationTypes, isLoading, isLoadingAnnotations } = useAnnotationData(taskId ?? '', imageId ?? '');
@@ -34,8 +37,17 @@ export default function AnnotationPage() {
   useEffect(() => {
     if (imageId) {
       setActiveImageId(imageId);
+      // Update currentImage metadata in store
+      const imgMeta = taskImages.find(img => img.asset_id === imageId);
+      if (imgMeta) {
+        setCurrentImage(imgMeta);
+      } else {
+        // Fallback or fetch if not found
+        // Since it's not found, we don't have the URL yet.
+        // We could fetch it here if we had a single image details API.
+      }
     }
-  }, [imageId]);
+  }, [imageId, taskImages, setCurrentImage]);
 
   const handleImageSelect = (id: string) => {
     setActiveImageId(id);
@@ -76,9 +88,13 @@ export default function AnnotationPage() {
       }
       toolPanel={!isReadOnly && <AnnotationSideToolbar />}
       canvas={
-        <CanvasContainer 
-          imageUrl="https://images.unsplash.com/photo-1542362567-b07e54358753?q=80&w=3446&auto=format&fit=crop" 
-        />
+        currentImage?.asset_url ? (
+          <CanvasContainer imageUrl={currentImage.asset_url} />
+        ) : (
+          <div className="flex h-full items-center justify-center bg-background text-muted-foreground">
+            <p className="text-xs">Loading image metadata...</p>
+          </div>
+        )
       }
       rightPanel={
         <RightPanel 

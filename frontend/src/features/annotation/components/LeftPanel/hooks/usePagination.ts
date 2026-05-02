@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { TaskImage } from '../../../types/annotation.types';
 import paginationStorage from '@/shared/services/storage';
+import { useAppStore } from '@/store/hooks/useAppStore';
 
 const IS_TEST_MODE = import.meta.env.VITE_TEST_MODE === 'true';
 
@@ -10,6 +11,7 @@ export function useImagePagination(taskId: string, limit: number = 50) {
     const [nextCursor, setNextCursor] = useState<string | null>(null);
     const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
     const [currentPage, setCurrentPage] = useState(1);
+    const setTaskImages = useAppStore(state => state.setTaskImages);
 
     // Race condition'ları engellemek için abort kontrolü
     const lastFetchId = useRef(0);
@@ -32,6 +34,7 @@ export function useImagePagination(taskId: string, limit: number = 50) {
                 if (fetchId !== lastFetchId.current) return;
 
                 setImages(result.data);
+                setTaskImages(result.data.map(img => ({ asset_id: img.asset_id, filename: img.filename, asset_url: img.asset_url })));
                 setNextCursor(result.next_cursor);
             } else {
                 // ── Production modu ────────────────────────────────────────────
@@ -72,6 +75,7 @@ export function useImagePagination(taskId: string, limit: number = 50) {
                     await paginationStorage.upsertPage(taskId, itemsForStorage, result.next_cursor, 'image');
 
                     setImages(result.data);
+                    setTaskImages(result.data.map(img => ({ asset_id: img.asset_id, filename: img.filename, asset_url: img.asset_url })));
                     setNextCursor(result.next_cursor);
                 }
             }
@@ -82,7 +86,7 @@ export function useImagePagination(taskId: string, limit: number = 50) {
                 setLoading(false);
             }
         }
-    }, [taskId, limit]);
+    }, [taskId, limit, setTaskImages]);
 
     useEffect(() => {
         setImages([]);
