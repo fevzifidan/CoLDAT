@@ -9,16 +9,20 @@ import { CanvasContainer } from './components/CanvasContainer';
 import RightPanel from '../annotation/components/RightPanel/RightPanel';
 
 export default function ViewerPage() {
-  const { datasetId, imageId } = useParams<{ datasetId: string; imageId: string }>();
+  // K-1: Route parametresi ':taskId' olduğu için tip 'taskId' olarak düzeltildi.
+  const { taskId, imageId } = useParams<{ taskId: string; imageId: string }>();
   const navigate = useNavigate();
-  
-  const { 
-    currentImageIndex, 
-    totalImages, 
+
+  const {
+    currentImageIndex,
+    totalImages,
     setReadOnly,
-    setActiveTool
+    setActiveTool,
+    taskImages,
+    currentImage,
+    setCurrentImage,
   } = useAppStore();
-  
+
   // Set read-only mode on mount and revert on unmount
   useEffect(() => {
     setReadOnly(true);
@@ -26,20 +30,27 @@ export default function ViewerPage() {
     return () => setReadOnly(false);
   }, [setReadOnly, setActiveTool]);
 
-  const { classes, relationTypes, isLoadingAnnotations } = useAnnotationData(imageId ?? '');
+  // K-2: useAnnotationData, taskId ve imageId'nin her ikisiyle de çağrılıyor.
+  // Metadata zinciri (task → dataset → taxonomy) ve annotation yüklemesi doğru çalışır.
+  const { classes, relationTypes, isLoadingAnnotations } = useAnnotationData(taskId ?? '', imageId ?? '');
 
   const [activeImageId, setActiveImageId] = useState(imageId ?? '');
-  
-  // Sync activeImageId when URL imageId changes
+
+  // Sync activeImageId and currentImage when URL imageId changes
   useEffect(() => {
     if (imageId) {
       setActiveImageId(imageId);
+      // D-4: LeftPanel tarafından doldurulan taskImages'tan aktif resmin URL'ini bul
+      const imgMeta = taskImages.find(img => img.asset_id === imageId);
+      if (imgMeta) {
+        setCurrentImage(imgMeta);
+      }
     }
-  }, [imageId]);
+  }, [imageId, taskImages, setCurrentImage]);
 
   const handleImageSelect = (id: string) => {
     setActiveImageId(id);
-    navigate(`/view/${datasetId}/${id}`);
+    navigate(`/view/${taskId}/${id}`);
   };
 
   return (
@@ -53,22 +64,27 @@ export default function ViewerPage() {
       }
       leftPanel={
         <LeftPanel
-          taskId={datasetId ?? ''} // Assuming LeftPanel can handle datasetId as taskId for now or works similarly
+          taskId={taskId ?? ''}
           totalImages={totalImages}
           activeImageId={activeImageId}
           onImageSelect={handleImageSelect}
         />
       }
       canvas={
-        <CanvasContainer 
-          imageUrl="https://images.unsplash.com/photo-1542362567-b07e54358753?q=80&w=3446&auto=format&fit=crop" 
-        />
+        // D-4: Hardcoded URL kaldırıldı; store'daki currentImage.asset_url kullanılıyor.
+        currentImage?.asset_url ? (
+          <CanvasContainer imageUrl={currentImage.asset_url} />
+        ) : (
+          <div className="flex h-full items-center justify-center bg-background text-muted-foreground">
+            <p className="text-xs">Loading image...</p>
+          </div>
+        )
       }
       rightPanel={
-        <RightPanel 
-          classes={classes} 
-          relationTypes={relationTypes} 
-          isLoading={isLoadingAnnotations} 
+        <RightPanel
+          classes={classes}
+          relationTypes={relationTypes}
+          isLoading={isLoadingAnnotations}
         />
       }
     />

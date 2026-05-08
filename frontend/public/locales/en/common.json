@@ -31,7 +31,7 @@
     "dark": "Dark",
     "system": "System"
   },
-    "dashboard": {
+  "dashboard": {
     "title": "Dashboard",
     "description": "CoLDAT project current progress.",
     "in_progress": "In Progress",
@@ -48,6 +48,14 @@
       "semantic_relation": "Semantic Relation"
     }
   },
+  "footer": {
+    "privacyPolicy": "Privacy Policy",
+    "termsOfUse": "Terms of Use",
+    "contact": "Contact",
+    "copyright": "© 2026 CoLDAT. All rights reserved."
+  },
+  "support": "Support",
+  "help": "Help",
   "language": "Language",
   "logout": "Logout"
 }

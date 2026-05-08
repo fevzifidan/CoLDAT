@@ -13,7 +13,7 @@ i18n
   .use(initReactI18next)
   .init({
     fallbackLng: 'en',
-    ns: ['common', 'sidebar', 'annotation', 'viewer'],
+    ns: ['common', 'sidebar', 'annotation', 'viewer', 'auth'],
     defaultNS: 'common',
     detection: {
       order: ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag'],
@@ -21,8 +21,8 @@ i18n
     },
 
     resources: {
-      tr: {apiService: trApiService},
-      en: {apiService: enApiService}
+      tr: { apiService: trApiService },
+      en: { apiService: enApiService }
     },
 
     partialBundledLanguages: true,

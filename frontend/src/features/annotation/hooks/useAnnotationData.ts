@@ -89,14 +89,24 @@ export function useAnnotationData(taskId: string, imageId: string) {
         if (cancelled) return;
 
         // Map and Set Taxonomy
-        const mappedClasses: ClassDef[] = taxonomyData.classes.map(c => ({
-          ...c,
-          count: 0 // Will be calculated or fetched separately if needed
-        }));
-        const mappedRelations: RelationType[] = taxonomyData.predicates.map(p => ({
-          ...p,
-          directed: true // Default to true as per Visual Genome/Scene Graph style
-        }));
+        // O-1: isActive=false olanlar filtrelenir; sınıflar YOLO/COCO indeks sırasına göre dizilir.
+        const mappedClasses: ClassDef[] = taxonomyData.classes
+          .filter(c => c.isActive)
+          .sort((a, b) => a.index - b.index)
+          .map(c => ({
+            id: c.id,
+            name: c.name,
+            color: c.color,
+            count: 0,
+          }));
+
+        const mappedRelations: RelationType[] = taxonomyData.predicates
+          .filter(p => p.isActive)
+          .map(p => ({
+            id: p.id,
+            name: p.name,
+            directed: true, // Default to true as per Visual Genome/Scene Graph style
+          }));
 
         setTaxonomy(mappedClasses, mappedRelations);
       } catch (error) {

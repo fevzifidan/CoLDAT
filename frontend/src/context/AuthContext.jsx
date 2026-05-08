@@ -29,9 +29,9 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // 2. Login Fonksiyonu
-  const login = async (credentials) => {
+  const login = async (credentials, config = {}) => {
     // credentials = { email, password }
-    const response = await apiService.post("/auth/login", credentials);
+    const response = await apiService.post("/auth/login", credentials, config);
     // response.token ve response.user geldiğini varsayalım
     localStorage.setItem("token", response.token);
     setUser(response.user);

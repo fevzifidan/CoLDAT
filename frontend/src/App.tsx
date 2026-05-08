@@ -19,6 +19,10 @@ import AnnotationPage from '@/features/annotation/AnnotationPage';
 import Login from "@/features/auth/Login/Login";
 import Register from "@/features/auth/Register/Register";
 import ViewerPage from '@/features/viewer/ViewerPage';
+import { VerificationPage } from '@/features/auth/EmailVerification/EmailVerification';
+import { ForgotPasswordPage } from '@/features/auth/ForgotPassword/ForgotPassword';
+import { PasswordResetPage } from '@/features/auth/ResetPassword/ResetPassword';
+import AccountNotVerifiedPage from '@/features/auth/AccountNotVerified/AccountNotVerified';
 
 function App() {
   return (
@@ -34,9 +38,8 @@ function App() {
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                {/* Annotation modu: taskId üzerinden yönetilir */}
-                <Route path="/annotate/:taskId/:imageId" element={<AnnotationPage />} />
-                <Route path="/view/:datasetId/:imageId" element={<ViewerPage />} />
+                <Route path="/annotate/:taskId/:imageId?" element={<AnnotationPage />} />
+                <Route path="/view/:taskId/:imageId?" element={<ViewerPage />} />
                 <Route path="/*" element={
                   <DashboardLayout>
                     <Routes>
@@ -46,6 +49,10 @@ function App() {
                     </Routes>
                   </DashboardLayout>
                 } />
+                <Route path="/verify-email" element={<VerificationPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<PasswordResetPage />} />
+                <Route path="/account-not-verified" element={<AccountNotVerifiedPage />} />
               </Routes>
             </AuthProvider>
           </ConfirmProvider>

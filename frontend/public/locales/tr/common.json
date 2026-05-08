@@ -48,6 +48,14 @@
       "semantic_relation": "Anlamsal İlişki"
     }
   },
+  "footer": {
+    "privacyPolicy": "Gizlilik Politikası",
+    "termsOfUse": "Kullanım Koşulları",
+    "contact": "İletişim",
+    "copyright": "© 2026 CoLDAT. Tüm hakları saklıdır."
+  },
+  "support": "Destek",
+  "help": "Yardım",
   "language": "Dil",
   "logout": "Çıkış Yap"
 }

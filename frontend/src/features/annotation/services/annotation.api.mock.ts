@@ -168,14 +168,15 @@ export async function getProjectTaxonomy(_projectId: string): Promise<TaxonomyRe
   await delay();
   return {
     classes: [
-      { id: 'cls-car', name: 'Car', color: '#3b82f6' },
-      { id: 'cls-ped', name: 'Pedestrian', color: '#ef4444' },
-      { id: 'cls-light', name: 'Traffic Light', color: '#f59e0b' },
+      { id: 'cls-car', name: 'Car', color: '#3b82f6', index: 0, isActive: true, includeInExport: true },
+      { id: 'cls-ped', name: 'Pedestrian', color: '#ef4444', index: 1, isActive: true, includeInExport: true },
+      { id: 'cls-light', name: 'Traffic Light', color: '#f59e0b', index: 2, isActive: true, includeInExport: true },
     ],
     predicates: [
-      { id: 'rel-drives', name: 'DRIVES' },
-      { id: 'rel-stops', name: 'STOPS AT' },
+      { id: 'rel-drives', name: 'DRIVES', isActive: true, includeInExport: true },
+      { id: 'rel-stops', name: 'STOPS AT', isActive: true, includeInExport: true },
     ],
+    attributes: [],
   };
 }
 
@@ -198,6 +199,6 @@ export async function getDatasetDetails(datasetId: string): Promise<DatasetDetai
     current_version: 'v1.0',
     total_images: 100,
     annotated_images: 10,
-    role: 'annotator',
+    role: 'viewer',
   };
 }

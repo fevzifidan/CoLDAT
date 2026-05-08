@@ -12,6 +12,7 @@ import { FaMicrosoft, FaGithub } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { getLoginSchema } from "./validations/loginSchema";
 import { useNavigate } from "react-router-dom";
+import notificationService from "@/shared/services/notification";
 
 const LoginForm = () => {
   const { t } = useTranslation(["auth"]);
@@ -29,12 +30,17 @@ const LoginForm = () => {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const res = await login({ email: data.identifier, password: data.password });
+      const res = await login({ email: data.identifier, password: data.password }, { silent: true });
       if (res) {
         navigate("/home");
       }
     } catch (error) {
-      // Hata yönetimi
+      if (error.response?.data?.errorCode === "ACCOUNT_NOT_VERIFIED") {
+        navigate("/account-not-verified", { state: { email: data.identifier } });
+      } else {
+        const backendMessage = error.response?.data?.message;
+        notificationService.error(backendMessage || t("auth:login.errorMessage", "An unexpected error occurred."));
+      }
     } finally {
       setLoading(false);
     }
@@ -108,9 +114,10 @@ const LoginForm = () => {
                   {loading ? "..." : t("auth:login.title")}
                 </Button>
 
-                <Button 
-                  variant="link" 
-                  type="button" 
+                <Button
+                  variant="link"
+                  type="button"
+                  onClick={() => navigate("/forgot-password")}
                   className="text-muted-foreground font-semibold hover:text-primary transition-colors"
                 >
                   {t("auth:login.forgotPassword")}
@@ -133,7 +140,7 @@ const LoginForm = () => {
                 <span className="text-sm font-bold opacity-80">{t("auth:login.microsoft")}</span>
               </Button>
               <Button variant="outline" className="flex-1 rounded-full bg-secondary/30 border-none h-12 gap-3 hover:bg-secondary/50 transition-colors">
-                <FaGithub  className="w-4 h-4 fill-current" />
+                <FaGithub className="w-4 h-4 fill-current" />
                 <span className="text-sm font-bold opacity-80">{t("auth:login.github")}</span>
               </Button>
             </div>
@@ -142,9 +149,9 @@ const LoginForm = () => {
           {/* Footer */}
           <div className="pt-6 border-t border-border flex justify-between items-center px-2">
             <span className="text-muted-foreground font-medium">{t("auth:login.noAccount")}</span>
-            <Button 
-              onClick={() => navigate("/register")} 
-              variant="link" 
+            <Button
+              onClick={() => navigate("/register")}
+              variant="link"
               className="text-primary font-bold p-0 text-lg hover:no-underline"
             >
               {t("auth:login.signUp")}

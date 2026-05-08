@@ -120,10 +120,25 @@ export interface TaxonomyResponse {
     id: string;
     name: string;
     color: string;
+    /** YOLO/COCO export'ta sınıf indeksini belirler; spec'teki ClassItem.index alanı. */
+    index: number;
+    /** false ise sınıf pasiftir ve annotation UI'da gösterilmez. */
+    isActive: boolean;
+    /** false ise bu sınıfa ait annotation'lar export'a dahil edilmez. */
+    includeInExport: boolean;
   }>;
   predicates: Array<{
     id: string;
     name: string;
+    isActive: boolean;
+    includeInExport: boolean;
+  }>;
+  /** Gelecekte nişaan (attribute) tabanlı filtreleme için rezerve edilmiştir. */
+  attributes: Array<{
+    id: string;
+    name: string;
+    isActive: boolean;
+    includeInExport: boolean;
   }>;
 }
 
@@ -138,17 +153,3 @@ export interface DatasetDetails {
   role: 'admin' | 'annotator' | 'viewer';
 }
 
-// ─── Legacy alias kept for backwards compatibility ───────────────────────────
-
-/** @deprecated Use TaskImage instead */
-export interface QueueImage {
-  asset_id: string;
-  filename: string;
-  mime_type: string;
-  asset_url: string;
-  asset_url_expiry_at: string;
-  sam_embedding_url: string;
-  sam_embedding_url_expiry_at: string;
-  status: AnnotationStatus;
-  embedding_status: EmbeddingStatus;
-}

@@ -58,7 +58,7 @@ export const BoundingBox: React.FC<BoundingBoxProps> = memo(({ data }) => {
   const fillColor = useMemo(() => hexToRGBA(color, opacity / 100), [color, opacity]);
 
   return (
-    <Group 
+    <Group
       onClick={handlePointerDown}
       onTap={handlePointerDown}
       onMouseEnter={(e) => {
@@ -70,32 +70,32 @@ export const BoundingBox: React.FC<BoundingBoxProps> = memo(({ data }) => {
       }}
       onDragEnd={(e) => {
         if (e.target !== e.currentTarget || !startCoords.current) return;
-        
+
         const xOffset = e.target.x();
         const yOffset = e.target.y();
         const [oldX, oldY, oldW, oldH] = startCoords.current;
-        
+
         let newX = oldX + xOffset;
         let newY = oldY + yOffset;
         let newW = oldW;
         let newH = oldH;
-        
+
         if (imgDimensions) {
           [newX, newY, newW, newH] = clampBox(newX, newY, newW, newH, imgDimensions.width, imgDimensions.height);
         }
-        
+
         e.target.position({ x: 0, y: 0 }); // Reset visual position after store update
         updateObject(data.id, { coordinates: [newX, newY, newW, newH] });
         startCoords.current = null;
       }}
     >
       {/* Background for text */}
-      <Rect 
-        x={x} 
-        y={y - 20} 
-        width={100} 
-        height={20} 
-        fill={color} 
+      <Rect
+        x={x}
+        y={y - 20}
+        width={100}
+        height={20}
+        fill={color}
         visible={isSelected}
       />
       <Text
