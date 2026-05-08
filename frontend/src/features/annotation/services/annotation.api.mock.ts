@@ -168,7 +168,7 @@ export async function getProjectTaxonomy(_projectId: string): Promise<TaxonomyRe
   await delay();
   return {
     classes: [
-      { id: 'cls-car', name: 'Car', color: '#3b82f6', index: 0, isActive: true, includeInExport: true },
+      { id: 'cls-car', name: 'Car', color: '#3b82f6', index: 0, isActive: true, includeInExport: false },
       { id: 'cls-ped', name: 'Pedestrian', color: '#ef4444', index: 1, isActive: true, includeInExport: true },
       { id: 'cls-light', name: 'Traffic Light', color: '#f59e0b', index: 2, isActive: true, includeInExport: true },
     ],

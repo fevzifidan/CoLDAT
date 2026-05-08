@@ -97,6 +97,9 @@ export function useAnnotationData(taskId: string, imageId: string) {
             id: c.id,
             name: c.name,
             color: c.color,
+            index: c.index,
+            isActive: c.isActive,
+            includeInExport: c.includeInExport,
             count: 0,
           }));
 
@@ -105,6 +108,8 @@ export function useAnnotationData(taskId: string, imageId: string) {
           .map(p => ({
             id: p.id,
             name: p.name,
+            isActive: p.isActive,
+            includeInExport: p.includeInExport,
             directed: true, // Default to true as per Visual Genome/Scene Graph style
           }));
 

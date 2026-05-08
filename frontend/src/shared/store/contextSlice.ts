@@ -25,12 +25,17 @@ export interface ClassDef {
   id: string;
   name: string;
   color: string;
+  index: number;
+  isActive: boolean;
+  includeInExport: boolean;
   count?: number;
 }
 
 export interface PredicateDef {
   id: string;
   name: string;
+  isActive: boolean;
+  includeInExport: boolean;
   directed?: boolean;
 }
 

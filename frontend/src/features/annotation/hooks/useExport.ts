@@ -1,14 +1,10 @@
-/**
- * useExport.ts
- * 
- * Hook to handle annotation export logic using Web Workers.
- */
 import { useCallback } from 'react';
 import { useAppStore } from '@/store/hooks/useAppStore';
 import notificationService from '@/shared/services/notification';
 import { downloadFile } from '@/shared/utils/downloadHelper';
 import { useTranslation } from 'react-i18next';
 import type { ExportData } from '@/shared/utils/exportConverters';
+import JSZip from 'jszip';
 
 export function useExport() {
   const { t } = useTranslation('annotation');
@@ -31,16 +27,41 @@ export function useExport() {
       imageName: currentImage?.filename || 'image',
       imageWidth: imgDimensions.width,
       imageHeight: imgDimensions.height,
-      classNames: taxonomy.classes.map(c => c.name),
+      taxonomy,
     };
 
-    const exportPromise = new Promise<string>((resolve, reject) => {
+    const exportPromise = new Promise<Blob>(async (resolve, reject) => {
       // Create worker
       const worker = new Worker(new URL('@/shared/workers/export.worker.ts', import.meta.url), { type: 'module' });
       
-      worker.onmessage = (e) => {
+      worker.onmessage = async (e) => {
         if (e.data.success) {
-          resolve(e.data.result);
+          try {
+            const result = e.data.result;
+            const zip = new JSZip();
+            const baseName = currentImage?.filename.split('.')[0] || 'export';
+
+            if (format === 'yolo') {
+              // Add annotation file
+              zip.file(`${baseName}.txt`, result);
+              
+              // Add classes.txt using project taxonomy (sorted by index)
+              const projectClasses = [...taxonomy.classes]
+                .sort((a, b) => a.index - b.index)
+                .map(c => c.name)
+                .join('\n');
+              zip.file('classes.txt', projectClasses);
+            } else if (format === 'coco') {
+              zip.file(`${baseName}_coco.json`, result);
+            } else if (format === 'visual_genome') {
+              zip.file(`${baseName}_vg.json`, result);
+            }
+
+            const content = await zip.generateAsync({ type: 'blob' });
+            resolve(content);
+          } catch (err) {
+            reject(err);
+          }
         } else {
           reject(new Error(e.data.error));
         }
@@ -57,26 +78,14 @@ export function useExport() {
 
     notificationService.promise(exportPromise, {
       loading: t('toolbar.exporting'),
-      success: (result) => {
+      success: (blob) => {
         const baseName = currentImage?.filename.split('.')[0] || 'export';
-        const extensions = { coco: 'json', yolo: 'txt', visual_genome: 'json' };
-        const mimeTypes = { coco: 'application/json', yolo: 'text/plain', visual_genome: 'application/json' };
-        
-        if (format === 'yolo') {
-          // Download the .txt file for the image
-          downloadFile(result, `${baseName}.txt`, 'text/plain');
-          
-          // Also download classes.txt using full project taxonomy for consistency
-          const projectClasses = taxonomy.classes.map(c => c.name).join('\n');
-          downloadFile(projectClasses, 'classes.txt', 'text/plain');
-        } else {
-          downloadFile(result, `${baseName}.${extensions[format]}`, mimeTypes[format]);
-        }
+        downloadFile(blob, `${baseName}.zip`, 'application/zip');
         return t('toolbar.exportSuccess');
       },
       error: (err) => t('toolbar.exportError', { error: err.message || 'Unknown error' }),
     });
-  }, [annotatedObjects, objectRelations, imgDimensions, t]);
+  }, [annotatedObjects, objectRelations, imgDimensions, taxonomy, currentImage, t]);
 
   return { handleExport };
 }

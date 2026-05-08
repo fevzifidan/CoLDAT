@@ -17,12 +17,17 @@ export interface ClassDef {
   id: string;
   name: string;
   color: string;   // hex or tailwind-compatible color
+  index: number;
+  isActive: boolean;
+  includeInExport: boolean;
   count?: number;
 }
 
 export interface RelationType {
   id: string;
   name: string;     // e.g. "DRIVES", "STOPS AT"
+  isActive: boolean;
+  includeInExport: boolean;
   directed?: boolean;
 }
 
