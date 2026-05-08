@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback } from 'react';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
 import { useCoordinateTransform } from '../../../viewer/hooks/useCoordinateTransform';
 import { clampPoint } from '../../../viewer/utils/coordinateUtils';
@@ -8,7 +8,7 @@ export const useDrawPen = (
   draftLineRef: React.RefObject<Konva.Line | null>
 ) => {
   const isDrawing = useRef(false);
-  const [points, setPoints] = useState<number[]>([]);
+  const pointsRef = useRef<number[]>([]);
   const { getRelativePointerPosition } = useCoordinateTransform();
   
   const handleMouseDown = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -24,7 +24,7 @@ export const useDrawPen = (
     
     isDrawing.current = true;
     const newPoints = [pos.x, pos.y];
-    setPoints(newPoints);
+    pointsRef.current = newPoints;
     
     if (draftLineRef.current) {
       draftLineRef.current.points(newPoints);
@@ -43,20 +43,20 @@ export const useDrawPen = (
     
     pos = clampPoint(pos, imgDims.width, imgDims.height);
     
-    const newPoints = [...points, pos.x, pos.y];
-    setPoints(newPoints);
+    const newPoints = [...pointsRef.current, pos.x, pos.y];
+    pointsRef.current = newPoints;
     
     if (draftLineRef.current) {
       draftLineRef.current.points(newPoints);
     }
-  }, [points, getRelativePointerPosition, draftLineRef]);
+  }, [getRelativePointerPosition, draftLineRef]);
 
   const handleMouseUp = useCallback((_e: Konva.KonvaEventObject<MouseEvent>) => {
     if (!isDrawing.current) return;
     isDrawing.current = false;
     
-    if (points.length < 4) {
-      setPoints([]);
+    if (pointsRef.current.length < 4) {
+      pointsRef.current = [];
       if (draftLineRef.current) draftLineRef.current.visible(false);
       return;
     }
@@ -70,28 +70,28 @@ export const useDrawPen = (
         label: 'New Path',
         type: 'polygon', // We treat freehand as a polygon for now
         color: '#22c55e',
-        coordinates: [...points],
+        coordinates: [...pointsRef.current],
         zIndex: annotatedObjects.length,
         visible: true,
         locked: false
       }
     ]);
     
-    setPoints([]);
-    if (draftLineRef.current) {
-      draftLineRef.current.points([]);
-      draftLineRef.current.visible(false);
-    }
-  }, [points, draftLineRef]);
-
-  const cancelDrawing = useCallback(() => {
-    isDrawing.current = false;
-    setPoints([]);
+    pointsRef.current = [];
     if (draftLineRef.current) {
       draftLineRef.current.points([]);
       draftLineRef.current.visible(false);
     }
   }, [draftLineRef]);
 
-  return { handleMouseDown, handleMouseMove, handleMouseUp, cancelDrawing, points };
+  const cancelDrawing = useCallback(() => {
+    isDrawing.current = false;
+    pointsRef.current = [];
+    if (draftLineRef.current) {
+      draftLineRef.current.points([]);
+      draftLineRef.current.visible(false);
+    }
+  }, [draftLineRef]);
+
+  return { handleMouseDown, handleMouseMove, handleMouseUp, cancelDrawing, points: pointsRef.current };
 };

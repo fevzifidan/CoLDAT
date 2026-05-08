@@ -4,7 +4,7 @@ import { useAppStore } from '../../../../store/hooks/useAppStore';
 import { BoundingBox } from '../../tools/bounding-box/BoundingBox';
 import { PolygonShape } from '../../tools/polygon/PolygonShape';
 
-export const AnnotationShapes: React.FC = () => {
+export const AnnotationShapes: React.FC = React.memo(() => {
   const annotatedObjects = useAppStore(state => state.annotatedObjects);
 
   const sortedObjects = React.useMemo(() => {
@@ -25,7 +25,7 @@ export const AnnotationShapes: React.FC = () => {
       })}
     </Group>
   );
-};
+});
 
 export const AnnotationLayer: React.FC = () => {
   return (

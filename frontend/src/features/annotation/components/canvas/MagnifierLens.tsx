@@ -3,6 +3,7 @@ import { Group, Rect, Image as KonvaImage, Line, Circle } from 'react-konva';
 import useImage from 'use-image';
 import Konva from 'konva';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { AnnotationShapes } from './AnnotationLayer';
 
 interface MagnifierLensProps {
@@ -20,7 +21,15 @@ export const MagnifierLens: React.FC<MagnifierLensProps> = ({ imageUrl, children
     brightness,
     contrast,
     saturation
-  } = useAppStore();
+  } = useAppStore(useShallow(state => ({
+    activeTool: state.activeTool,
+    scale: state.scale,
+    isMagnifierActive: state.isMagnifierActive,
+    imgDimensions: state.imgDimensions,
+    brightness: state.brightness,
+    contrast: state.contrast,
+    saturation: state.saturation
+  })));
   
   const lensRef = useRef<Konva.Group>(null);
   const contentRef = useRef<Konva.Group>(null);

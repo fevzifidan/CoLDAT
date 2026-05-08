@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Layer, Rect, Line, Circle } from 'react-konva';
 import Konva from 'konva';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useDrawBox } from '../../tools/bounding-box/useDrawBox';
 import { useDrawPolygon } from '../../tools/polygon/useDrawPolygon';
 import { useDrawPen } from '../../tools/pen/useDrawPen';
@@ -14,7 +15,13 @@ interface InteractionLayerProps {
 }
 
 export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) => {
-  const { activeTool, imgDimensions, isReadOnly } = useAppStore();
+  const { activeTool, imgDimensions, isReadOnly } = useAppStore(
+    useShallow((state) => ({
+      activeTool: state.activeTool,
+      imgDimensions: state.imgDimensions,
+      isReadOnly: state.isReadOnly,
+    }))
+  );
   
   const draftBoxRef = useRef<Konva.Rect>(null);
   const draftPolyRef = useRef<Konva.Line>(null);

@@ -22,7 +22,7 @@ const MOCK_IMAGES: TaskImagesResponse['data'] = [
   {
     asset_id: 'img-1',
     filename: 'IMG_4821.jpg',
-    asset_url: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=80&h=80&fit=crop',
+    asset_url: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1024&h=1024&fit=crop',
     asset_url_expiry_at: new Date(Date.now() + 3600_000).toISOString(),
     sam_embedding_url: null,
     sam_embedding_url_expiry_at: null,
@@ -33,7 +33,7 @@ const MOCK_IMAGES: TaskImagesResponse['data'] = [
   {
     asset_id: 'img-2',
     filename: 'IMG_4822.jpg',
-    asset_url: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=80&h=80&fit=crop',
+    asset_url: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1024&h=1024&fit=crop',
     asset_url_expiry_at: new Date(Date.now() + 3600_000).toISOString(),
     sam_embedding_url: null,
     sam_embedding_url_expiry_at: null,
@@ -44,7 +44,7 @@ const MOCK_IMAGES: TaskImagesResponse['data'] = [
   {
     asset_id: 'img-3',
     filename: 'IMG_4820.jpg',
-    asset_url: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=80&h=80&fit=crop',
+    asset_url: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1024&h=1024&fit=crop',
     asset_url_expiry_at: new Date(Date.now() + 3600_000).toISOString(),
     sam_embedding_url: null,
     sam_embedding_url_expiry_at: null,
@@ -55,7 +55,7 @@ const MOCK_IMAGES: TaskImagesResponse['data'] = [
   {
     asset_id: 'img-4',
     filename: 'IMG_4819.jpg',
-    asset_url: 'https://images.unsplash.com/photo-1465447142348-e9952c393450?w=80&h=80&fit=crop',
+    asset_url: 'https://images.unsplash.com/photo-1465447142348-e9952c393450?w=1024&h=1024&fit=crop',
     asset_url_expiry_at: new Date(Date.now() + 3600_000).toISOString(),
     sam_embedding_url: null,
     sam_embedding_url_expiry_at: null,
@@ -66,7 +66,7 @@ const MOCK_IMAGES: TaskImagesResponse['data'] = [
   {
     asset_id: 'img-5',
     filename: 'IMG_4818.jpg',
-    asset_url: 'https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=80&h=80&fit=crop',
+    asset_url: 'https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=1024&h=1024&fit=crop',
     asset_url_expiry_at: new Date(Date.now() + 3600_000).toISOString(),
     sam_embedding_url: null,
     sam_embedding_url_expiry_at: null,
@@ -77,7 +77,7 @@ const MOCK_IMAGES: TaskImagesResponse['data'] = [
   {
     asset_id: 'img-6',
     filename: 'IMG_4817.jpg',
-    asset_url: 'https://images.unsplash.com/photo-1460472178825-e5240623afd5?w=80&h=80&fit=crop',
+    asset_url: 'https://images.unsplash.com/photo-1460472178825-e5240623afd5?w=1024&h=1024&fit=crop',
     asset_url_expiry_at: new Date(Date.now() + 3600_000).toISOString(),
     sam_embedding_url: null,
     sam_embedding_url_expiry_at: null,
