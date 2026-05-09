@@ -1,8 +1,9 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useAppStore } from '@/store/hooks/useAppStore';
 import { Button } from '@/components/ui/button';
 import { PanelLeft, PanelRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ActionStatusBox } from './ActionStatusBox';
 
 interface AnnotationLayoutProps {
   leftPanel: ReactNode;
@@ -24,9 +25,9 @@ export default function AnnotationLayout({
   rightPanel,
   toolbar,
 }: AnnotationLayoutProps) {
-  const { 
+  const {
     leftPanelCollapsed, setLeftPanelCollapsed,
-    rightPanelCollapsed, setRightPanelCollapsed 
+    rightPanelCollapsed, setRightPanelCollapsed
   } = useAppStore();
 
   return (
@@ -41,7 +42,7 @@ export default function AnnotationLayout({
         {/* Left container (Queue + Tools) */}
         <div className="flex shrink-0 border-r overflow-hidden h-full">
           {/* Dataset Queue */}
-          <aside 
+          <aside
             className={cn(
               "shrink-0 bg-card flex flex-col overflow-hidden border-r transition-all duration-300 ease-in-out",
               leftPanelCollapsed ? "w-0 border-r-0" : "w-[280px]"
@@ -86,10 +87,15 @@ export default function AnnotationLayout({
           </div>
 
           {canvas}
+
+          {/* Action Status Indicator */}
+          <div className="absolute left-3 bottom-3 z-10">
+            <ActionStatusBox />
+          </div>
         </main>
 
         {/* Right panel */}
-        <aside 
+        <aside
           className={cn(
             "shrink-0 border-l bg-card flex flex-col overflow-hidden transition-all duration-300 ease-in-out",
             rightPanelCollapsed ? "w-0 border-l-0" : "w-[320px]"
