@@ -88,7 +88,7 @@ export const MagnifierLens: React.FC<MagnifierLensProps> = ({ imageUrl, children
     }
   }, [image, brightness, contrast, saturation]);
 
-  if (!image) return null;
+  if (!image || !isMagnifierActive) return null;
 
   return (
     <Group ref={lensRef} listening={false} visible={false}>

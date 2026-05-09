@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../store/hooks/useAppStore';
 import { useAnnotationData } from '../annotation/hooks/useAnnotationData';
 import AnnotationLayout from '../annotation/components/AnnotationLayout';
@@ -21,7 +22,17 @@ export default function ViewerPage() {
     taskImages,
     currentImage,
     setCurrentImage,
-  } = useAppStore();
+  } = useAppStore(
+    useShallow((state) => ({
+      currentImageIndex: state.currentImageIndex,
+      totalImages: state.totalImages,
+      setReadOnly: state.setReadOnly,
+      setActiveTool: state.setActiveTool,
+      taskImages: state.taskImages,
+      currentImage: state.currentImage,
+      setCurrentImage: state.setCurrentImage,
+    }))
+  );
 
   // Set read-only mode on mount and revert on unmount
   useEffect(() => {

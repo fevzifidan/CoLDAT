@@ -36,6 +36,7 @@ export const PolygonShape: React.FC<PolygonShapeProps> = memo(({ data }) => {
   const opacity = useAppStore(state => state.opacity);
   const imgDimensions = useAppStore(state => state.imgDimensions);
   const isReadOnly = useAppStore(state => state.isReadOnly);
+  const scale = useAppStore(state => state.scale);
   
   const startCoords = useRef<number[] | null>(null);
 
@@ -125,10 +126,10 @@ export const PolygonShape: React.FC<PolygonShapeProps> = memo(({ data }) => {
       <Line
         points={data.coordinates}
         stroke={color}
-        strokeWidth={isSelected ? 3 : 2}
+        strokeWidth={(isSelected ? 3 : 2) / scale}
         closed
         fill={fillColor}
-        hitStrokeWidth={10}
+        hitStrokeWidth={10 / scale}
       />
       
       {/* Label */}

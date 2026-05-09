@@ -1,11 +1,20 @@
 import { useEffect, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type { RefObject } from 'react';
 import { useAppStore } from '../../../store/hooks/useAppStore';
 import { calculateFitAndCenter } from '../utils/centering';
 
 export const useStageResize = (containerRef: RefObject<HTMLDivElement | null>) => {
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const { imgDimensions, setScale, setStagePos, isLoaded, setContainerSize } = useAppStore();
+  const { imgDimensions, setScale, setStagePos, isLoaded, setContainerSize } = useAppStore(
+    useShallow((state) => ({
+      imgDimensions: state.imgDimensions,
+      setScale: state.setScale,
+      setStagePos: state.setStagePos,
+      isLoaded: state.isLoaded,
+      setContainerSize: state.setContainerSize,
+    }))
+  );
   const [hasInitialFit, setHasInitialFit] = useState(false);
 
   useEffect(() => {

@@ -6,6 +6,7 @@ export const GlobalKeyboardListener = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return;
       const isInput = document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA';
 
       // Prevent default browser behaviors for shortcut combinations

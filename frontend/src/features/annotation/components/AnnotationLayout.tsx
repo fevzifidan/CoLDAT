@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '@/store/hooks/useAppStore';
 import { Button } from '@/components/ui/button';
 import { PanelLeft, PanelRight } from 'lucide-react';
@@ -28,7 +29,14 @@ export default function AnnotationLayout({
   const {
     leftPanelCollapsed, setLeftPanelCollapsed,
     rightPanelCollapsed, setRightPanelCollapsed
-  } = useAppStore();
+  } = useAppStore(
+    useShallow((state) => ({
+      leftPanelCollapsed: state.leftPanelCollapsed,
+      setLeftPanelCollapsed: state.setLeftPanelCollapsed,
+      rightPanelCollapsed: state.rightPanelCollapsed,
+      setRightPanelCollapsed: state.setRightPanelCollapsed,
+    }))
+  );
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">

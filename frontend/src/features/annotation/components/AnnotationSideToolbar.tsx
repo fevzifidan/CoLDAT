@@ -4,7 +4,8 @@ import {
   Share2,
   CircleDot,
   Pencil,
-  Eraser
+  Eraser,
+  Magnet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +18,7 @@ import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/hooks/useAppStore';
 import { useTranslation } from 'react-i18next';
 
-export type SideToolId = 'select' | 'bbox' | 'polygon' | 'points' | 'pen' | 'eraser';
+export type SideToolId = 'select' | 'bbox' | 'polygon' | 'points' | 'pen' | 'eraser' | 'livewire';
 
 interface ToolItem {
   id: SideToolId;
@@ -32,6 +33,7 @@ const TOOLS: ToolItem[] = [
   { id: 'points', icon: CircleDot, label: 'Points (K)' },
   { id: 'pen', icon: Pencil, label: 'Pen (B)' },
   { id: 'eraser', icon: Eraser, label: 'Eraser (E)' },
+  { id: 'livewire', icon: Magnet, label: 'Livewire (L)' },
 ];
 
 export default function AnnotationSideToolbar() {

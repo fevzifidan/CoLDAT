@@ -9,23 +9,30 @@ import { useDrawPen } from '../../tools/pen/useDrawPen';
 import { useEraser } from '../../tools/eraser/useEraser';
 import { useZoom } from '../../../viewer/hooks/useZoom';
 import { MagnifierLens } from './MagnifierLens';
+import { useLivewire } from '../../tools/livewire/useLivewire';
+import { LivewirePreview } from '../../tools/livewire/LivewirePreview';
+
 
 interface InteractionLayerProps {
   imageUrl: string;
 }
 
 export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) => {
-  const { activeTool, imgDimensions, isReadOnly } = useAppStore(
+  const { activeTool, imgDimensions, isReadOnly, scale } = useAppStore(
     useShallow((state) => ({
       activeTool: state.activeTool,
       imgDimensions: state.imgDimensions,
       isReadOnly: state.isReadOnly,
+      scale: state.scale,
     }))
   );
   
   const draftBoxRef = useRef<Konva.Rect>(null);
   const draftPolyRef = useRef<Konva.Line>(null);
   const draftPenRef = useRef<Konva.Line>(null);
+  const livewireMainRef = useRef<Konva.Line>(null);
+  const livewireMagnifierRef = useRef<Konva.Line>(null);
+
   
   const { handleWheel } = useZoom();
   const { 
@@ -56,6 +63,18 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
     handleMouseMove: eraserMove,
     handleMouseUp: eraserUp,
   } = useEraser();
+  
+  const {
+    handleMouseDown: livewireDown,
+    handleMouseMove: livewireMove,
+    finalizeDrawing: livewireFinalize,
+    undoLastPoint: livewireUndo,
+    resetDrawing: livewireReset,
+    committedPoints: livewirePoints,
+    lastSnappedPoint: livewireSnap,
+    isDrawing: isLivewireDrawing
+  } = useLivewire([livewireMainRef, livewireMagnifierRef]);
+
 
   // Keyboard shortcut for cancelling
   React.useEffect(() => {
@@ -64,6 +83,7 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
       if (e.key === 'Escape') {
         if (activeTool === 'polygon') cancelPoly();
         if (activeTool === 'pen') cancelPen();
+        if (activeTool === 'livewire') livewireReset();
       }
       
       if (e.key === 'Backspace' || (e.key === 'z' && (e.ctrlKey || e.metaKey))) {
@@ -71,11 +91,20 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
           e.preventDefault();
           undoPoly();
         }
+        if (activeTool === 'livewire') {
+          e.preventDefault();
+          livewireUndo();
+        }
+      }
+
+      if (e.key === 'Enter') {
+        if (activeTool === 'livewire') livewireFinalize();
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTool, cancelPoly, cancelPen, undoPoly]);
+  }, [activeTool, cancelPoly, cancelPen, undoPoly, livewireFinalize, livewireUndo, livewireReset, isReadOnly]);
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (e.evt.ctrlKey) return; // Ctrl + LMB is for panning
@@ -83,14 +112,18 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
     else if (activeTool === 'polygon') polyDown(e);
     else if (activeTool === 'pen') penDown(e);
     else if (activeTool === 'eraser') eraserDown(e);
+    else if (activeTool === 'livewire') livewireDown(e);
   };
+
 
   const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (activeTool === 'bbox') boxMove(e);
     else if (activeTool === 'polygon') polyMove(e);
     else if (activeTool === 'pen') penMove(e);
     else if (activeTool === 'eraser') eraserMove(e);
+    else if (activeTool === 'livewire') livewireMove(e);
   };
+
 
   const handleMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (activeTool === 'bbox') boxUp(e);
@@ -113,15 +146,16 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        listening={!isReadOnly && ['bbox', 'polygon', 'pen'].includes(activeTool)}
+        listening={!isReadOnly && ['bbox', 'polygon', 'pen', 'livewire'].includes(activeTool)}
       />
+
       
       {/* Draft Box */}
       <Rect
         ref={draftBoxRef}
         visible={false}
         stroke="#22c55e"
-        strokeWidth={2}
+        strokeWidth={2 / scale}
         listening={false}
       />
       
@@ -129,7 +163,7 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
       <Line
         ref={draftPolyRef}
         stroke="#22c55e"
-        strokeWidth={2}
+        strokeWidth={2 / scale}
         listening={false}
       />
 
@@ -137,10 +171,20 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
       <Line
         ref={draftPenRef}
         stroke="#22c55e"
-        strokeWidth={2}
+        strokeWidth={2 / scale}
         listening={false}
         visible={false}
       />
+      
+      {/* Livewire Preview */}
+      {activeTool === 'livewire' && (
+        <LivewirePreview 
+          committedPoints={livewirePoints} 
+          previewLineRef={livewireMainRef} 
+          lastSnappedPoint={livewireSnap}
+        />
+      )}
+
       {polyPoints.map((_, i) => {
         if (i % 2 !== 0) return null;
         return (
@@ -148,7 +192,7 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
             key={i}
             x={polyPoints[i]}
             y={polyPoints[i+1]}
-            radius={4}
+            radius={4 / scale}
             fill="#22c55e"
             listening={false}
           />
@@ -164,7 +208,7 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
           width={draftBoxRef.current?.width()}
           height={draftBoxRef.current?.height()}
           stroke="#22c55e"
-          strokeWidth={2}
+          strokeWidth={2 / scale}
           listening={false}
         />
         
@@ -172,7 +216,7 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
         <Line
           points={polyPoints}
           stroke="#22c55e"
-          strokeWidth={2}
+          strokeWidth={2 / scale}
           listening={false}
         />
 
@@ -180,7 +224,7 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
         <Line
           points={penPoints}
           stroke="#22c55e"
-          strokeWidth={2}
+          strokeWidth={2 / scale}
           listening={false}
         />
 
@@ -191,12 +235,20 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
               key={i}
               x={polyPoints[i]}
               y={polyPoints[i+1]}
-              radius={4}
+              radius={4 / scale}
               fill="#22c55e"
               listening={false}
             />
           );
         })}
+
+        {activeTool === 'livewire' && (
+          <LivewirePreview 
+            committedPoints={livewirePoints} 
+            previewLineRef={livewireMagnifierRef} 
+            lastSnappedPoint={livewireSnap}
+          />
+        )}
       </MagnifierLens>
     </Layer>
   );

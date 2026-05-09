@@ -36,7 +36,8 @@
     "polygon": "Polygon (P)",
     "points": "Points (K)",
     "pen": "Pen (B)",
-    "eraser": "Eraser (E)"
+    "eraser": "Eraser (E)",
+    "livewire": "Livewire (L)"
   },
   "leftPanel": {
     "search": "Search in current page...",

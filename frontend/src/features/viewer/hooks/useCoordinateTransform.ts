@@ -4,22 +4,21 @@ import type { Point } from '../types/viewer.types';
 import Konva from 'konva';
 
 export const useCoordinateTransform = () => {
-  const scale = useAppStore(state => state.scale);
-  const stagePos = useAppStore(state => state.stagePos);
-
   const screenToImage = useCallback((screenPos: Point): Point => {
+    const { scale, stagePos } = useAppStore.getState();
     return {
       x: (screenPos.x - stagePos.x) / scale,
       y: (screenPos.y - stagePos.y) / scale,
     };
-  }, [scale, stagePos]);
+  }, []);
 
   const imageToScreen = useCallback((imagePos: Point): Point => {
+    const { scale, stagePos } = useAppStore.getState();
     return {
       x: imagePos.x * scale + stagePos.x,
       y: imagePos.y * scale + stagePos.y,
     };
-  }, [scale, stagePos]);
+  }, []);
 
   const getRelativePointerPosition = useCallback((stage: Konva.Stage): Point | null => {
     const pointerPos = stage.getPointerPosition();

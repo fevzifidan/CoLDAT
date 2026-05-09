@@ -1,5 +1,5 @@
-import React from 'react';
 import { Circle } from 'react-konva';
+import { useAppStore } from '../../../../store/hooks/useAppStore';
 
 interface PolygonAnchorProps {
   x: number;
@@ -11,14 +11,16 @@ interface PolygonAnchorProps {
 }
 
 export const PolygonAnchor: React.FC<PolygonAnchorProps> = ({ x, y, index, color, onDrag, onDragEnd }) => {
+  const scale = useAppStore(state => state.scale);
+
   return (
     <Circle
       x={x}
       y={y}
-      radius={4}
+      radius={4 / scale}
       fill="white"
       stroke={color}
-      strokeWidth={2}
+      strokeWidth={2 / scale}
       draggable
       onDragMove={(e) => {
         onDrag(index, e.target.x(), e.target.y());
@@ -26,7 +28,7 @@ export const PolygonAnchor: React.FC<PolygonAnchorProps> = ({ x, y, index, color
       onDragEnd={(e) => {
         onDragEnd(index, e.target.x(), e.target.y());
       }}
-      hitStrokeWidth={10}
+      hitStrokeWidth={12 / scale}
       onMouseEnter={(e) => {
         const container = e.target.getStage()?.container();
         if (container) container.style.cursor = 'move';

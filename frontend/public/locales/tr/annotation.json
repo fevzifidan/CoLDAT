@@ -36,7 +36,8 @@
     "polygon": "Poligon (P)",
     "points": "Noktalar (K)",
     "pen": "Kalem (B)",
-    "eraser": "Silgi (E)"
+    "eraser": "Silgi (E)",
+    "livewire": "Akıllı Makas (L)"
   },
   "leftPanel": {
     "search": "Mevcut sayfada ara...",

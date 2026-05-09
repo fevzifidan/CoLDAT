@@ -40,6 +40,7 @@ export const BoundingBox: React.FC<BoundingBoxProps> = memo(({ data }) => {
   const opacity = useAppStore(state => state.opacity);
   const imgDimensions = useAppStore(state => state.imgDimensions);
   const isReadOnly = useAppStore(state => state.isReadOnly);
+  const scale = useAppStore(state => state.scale);
 
   const isSelected = selectedObjectId === data.id;
   const isSelectMode = activeTool === 'select';
@@ -92,18 +93,18 @@ export const BoundingBox: React.FC<BoundingBoxProps> = memo(({ data }) => {
       {/* Background for text */}
       <Rect
         x={x}
-        y={y - 20}
-        width={100}
-        height={20}
+        y={y - 20 / scale}
+        width={Math.max(60, 100 / scale)}
+        height={20 / scale}
         fill={color}
         visible={isSelected}
       />
       <Text
-        x={x + 4}
-        y={y - 16}
+        x={x + 4 / scale}
+        y={y - 16 / scale}
         text={data.label}
         fill="white"
-        fontSize={12}
+        fontSize={12 / scale}
         fontFamily="sans-serif"
         visible={isSelected}
       />
@@ -120,9 +121,9 @@ export const BoundingBox: React.FC<BoundingBoxProps> = memo(({ data }) => {
         width={w}
         height={h}
         stroke={color}
-        strokeWidth={isSelected ? 3 : 2}
+        strokeWidth={(isSelected ? 3 : 2) / scale}
         fill={fillColor}
-        hitStrokeWidth={10}
+        hitStrokeWidth={10 / scale}
       />
     </Group>
   );

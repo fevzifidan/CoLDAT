@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../store/hooks/useAppStore';
 import type { ClassDef, RelationType, AnnotatedObject, ObjectRelation } from '../types/annotation.types';
 
@@ -55,7 +56,16 @@ export function useAnnotationData(taskId: string, imageId: string) {
     setTaskContext,
     setReadOnly,
     taxonomy
-  } = useAppStore();
+  } = useAppStore(
+    useShallow((state) => ({
+      setAnnotatedObjects: state.setAnnotatedObjects,
+      setObjectRelations: state.setObjectRelations,
+      setTaxonomy: state.setTaxonomy,
+      setTaskContext: state.setTaskContext,
+      setReadOnly: state.setReadOnly,
+      taxonomy: state.taxonomy,
+    }))
+  );
 
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
   const [isLoadingAnnotations, setIsLoadingAnnotations] = useState(false);

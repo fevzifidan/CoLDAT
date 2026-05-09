@@ -1,10 +1,16 @@
 import { useCallback, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../store/hooks/useAppStore';
 import Konva from 'konva';
 
 export const usePan = () => {
-  const { setStagePos, activeTool } = useAppStore();
-  const isCtrlDown = useAppStore(state => state.isCtrlPressed);
+  const { setStagePos, activeTool, isCtrlDown } = useAppStore(
+    useShallow((state) => ({
+      setStagePos: state.setStagePos,
+      activeTool: state.activeTool,
+      isCtrlDown: state.isCtrlPressed,
+    }))
+  );
   const [isMiddleClickPan, setIsMiddleClickPan] = useState(false);
 
   const handleMouseDown = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {

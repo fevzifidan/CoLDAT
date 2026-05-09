@@ -30,6 +30,7 @@ export interface ViewerState {
   setIsMagnifierActive: (val: boolean) => void;
   zoomIn: () => void;
   zoomOut: () => void;
+  setViewport: (scale: number, pos: Point) => void;
 }
 
 export const createViewerSlice: StateCreator<ViewerState> = (set) => ({
@@ -47,6 +48,7 @@ export const createViewerSlice: StateCreator<ViewerState> = (set) => ({
 
   setScale: (scale) => set({ scale }),
   setStagePos: (pos) => set({ stagePos: pos }),
+  setViewport: (scale, stagePos) => set({ scale, stagePos }),
   setImgDimensions: (dimensions) => set({ imgDimensions: dimensions }),
   setContainerSize: (size) => set({ containerSize: size }),
   setIsLoaded: (isLoaded) => set({ isLoaded }),
