@@ -28,3 +28,4 @@ dist-ssr
 implementation_plan.md
 CoLDAT API Design.yaml
 CoLDAT API Design.yml
+.aider*
