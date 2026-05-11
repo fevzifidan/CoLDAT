@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { PanelLeft, PanelRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ActionStatusBox } from './ActionStatusBox';
+import DotGridBackground from './canvas/DotGridBackground';
 
 interface AnnotationLayoutProps {
   leftPanel: ReactNode;
@@ -70,9 +71,12 @@ export default function AnnotationLayout({
         </div>
 
         {/* Centre canvas */}
-        <main className="flex-1 bg-muted/30 flex items-center justify-center overflow-hidden relative">
+        <main className="flex-1 flex items-center justify-center overflow-hidden relative">
+          {/* Dot grid background */}
+          <DotGridBackground />
+
           {/* Collapse Toggle Buttons (Overlay) */}
-          <div className="absolute left-2 top-2 z-10">
+          <div className="absolute left-2 top-2 z-20">
             <Button
               variant="secondary"
               size="icon"
@@ -83,7 +87,7 @@ export default function AnnotationLayout({
             </Button>
           </div>
 
-          <div className="absolute right-2 top-2 z-10">
+          <div className="absolute right-2 top-2 z-20">
             <Button
               variant="secondary"
               size="icon"
@@ -97,7 +101,7 @@ export default function AnnotationLayout({
           {canvas}
 
           {/* Action Status Indicator */}
-          <div className="absolute left-3 bottom-3 z-10">
+          <div className="absolute left-3 bottom-3 z-20">
             <ActionStatusBox />
           </div>
         </main>

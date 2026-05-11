@@ -26,19 +26,9 @@ export default function CanvasPlaceholder() {
         <div className="text-center">
           <p className="text-sm font-semibold text-foreground/70">Annotation Canvas</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Coming soon — interactive labeling area
+            Select an image to start annotating
           </p>
         </div>
-
-        {/* Grid overlay */}
-        <div
-          className="absolute inset-0 rounded-xl opacity-[0.04] pointer-events-none"
-          style={{
-            backgroundImage:
-              'linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }}
-        />
       </div>
     </div>
   );

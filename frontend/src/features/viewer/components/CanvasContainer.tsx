@@ -11,7 +11,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({ imageUrl }) =>
   const size = useStageResize(containerRef);
 
   return (
-    <div ref={containerRef} className="w-full h-full overflow-hidden bg-white-950 relative">
+    <div ref={containerRef} className="w-full h-full overflow-hidden relative">
       {size.width > 0 && size.height > 0 && (
         <MainStage width={size.width} height={size.height} imageUrl={imageUrl} />
       )}
