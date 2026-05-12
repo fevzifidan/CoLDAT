@@ -27,14 +27,18 @@ interface DotGridBackgroundProps {
  *
  * No animations, no effects — minimal and performant.
  * Place this as an absolutely positioned element behind the Konva stage.
+ *
+ * Dark/Light mode aware: reads the actual background color luminance at
+ * initialization to determine appropriate dot color (light bg → dark dots,
+ * dark bg → light dots) so dots are always subtly visible.
  */
 const DotGridBackground = memo(({
-  dotRadius = 0.6,
-  dotSpacing = 20,
-  hoverRadius = 50,
-  color = 'var(--foreground)',
-  opacity = 0.07,
-  hoverBoost = 0.18,
+  dotRadius = 1.2,
+  dotSpacing = 24,
+  hoverRadius = 60,
+  color,
+  opacity,
+  hoverBoost,
 }: DotGridBackgroundProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dotsRef = useRef<{ x: number; y: number }[]>([]);
@@ -42,16 +46,52 @@ const DotGridBackground = memo(({
   const sizeRef = useRef({ w: 0, h: 0 });
   const rafIdRef = useRef<number | null>(null);
   const needsPaintRef = useRef(true);
+  const resolvedColorRef = useRef<{ base: string; hover: string } | null>(null);
+  const paramsRef = useRef<{ dotRadius: number; dotSpacing: number; hoverRadius: number }>({
+    dotRadius: 1.2,
+    dotSpacing: 24,
+    hoverRadius: 60,
+  });
+  const bgColorCacheRef = useRef<string>('');
 
   /**
-   * Resolve a CSS variable to an RGBA string the Canvas2D API can use.
+   * Determine whether the current background is light or dark by reading
+   * the computed background color and calculating relative luminance.
+   * Returns 'dark' or 'light' so we can pick fitting dot colors.
    */
-  const resolveColor = useCallback((cssColor: string, alpha: number): string => {
-    if (!cssColor.startsWith('var(')) {
-      return cssColor;
+  const detectColorScheme = useCallback((): 'light' | 'dark' => {
+    const bg = getComputedStyle(document.documentElement)
+      .getPropertyValue('--background')
+      .trim();
+
+    if (!bg) {
+      // Fallback: check for .dark class on <html>
+      return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
     }
 
-    const match = cssColor.match(/var\((--[\w-]+)/);
+    // Resolve oklch to RGB via temp canvas to get luminance
+    const rgb = resolveToRGB(bg);
+    if (!rgb) {
+      return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    }
+
+    // Relative luminance formula (WCAG)
+    const lum = 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2];
+    return lum > 128 ? 'light' : 'dark';
+  }, []);
+
+  /**
+   * Resolve a CSS variable to RGBA. If the color is a CSS variable like
+   * `var(--foreground)`, resolve it first. Then apply the given alpha.
+   */
+  const resolveColor = useCallback((cssColor: string | undefined, alpha: number): string => {
+    const colorToUse = cssColor || 'var(--foreground)';
+
+    if (!colorToUse.startsWith('var(')) {
+      return resolveToRGBA(colorToUse, alpha);
+    }
+
+    const match = colorToUse.match(/var\((--[\w-]+)/);
     if (!match) return `rgba(128, 128, 128, ${alpha})`;
 
     const varValue = getComputedStyle(document.documentElement)
@@ -63,13 +103,34 @@ const DotGridBackground = memo(({
     return resolveToRGBA(varValue, alpha);
   }, []);
 
+  /**
+   * Get mode-aware default parameters.
+   * Light bg → dark dots on light bg, higher opacity for visibility.
+   * Dark bg → light dots on dark bg, moderate opacity since contrast is naturally high.
+   */
+  const getModeParams = useCallback(() => {
+    const scheme = detectColorScheme();
+    const isLight = scheme === 'light';
+
+    return {
+      // Light mode: foreground is dark → higher opacity = darker dots
+      // Dark mode: foreground is light → lower opacity = subtle light dots
+      baseOpacity: isLight ? 0.10 : 0.10,
+      hoverBoostAmt: isLight ? 0.18 : 0.18,
+      dotRadius: isLight ? 1.8 : 1.6,
+      dotSpacing: isLight ? 28 : 28,
+      hoverRadius: isLight ? 72 : 72,
+    };
+  }, [detectColorScheme]);
+
   // Build the dot grid
   const buildDots = useCallback((w: number, h: number) => {
-    const step = dotSpacing;
+    const { dotSpacing: sp, dotRadius: dr } = paramsRef.current;
+    const step = sp;
     const cols = Math.floor(w / step);
     const rows = Math.floor(h / step);
-    const padX = (w % step) / 2;
-    const padY = (h % step) / 2;
+    const padX = (w % sp) / 2;
+    const padY = (h % sp) / 2;
 
     const dots: { x: number; y: number }[] = new Array(rows * cols);
     let idx = 0;
@@ -84,7 +145,7 @@ const DotGridBackground = memo(({
     }
 
     dotsRef.current = dots;
-  }, [dotSpacing]);
+  }, []);
 
   // Check if parent size changed and sync canvas buffer if needed
   const syncSize = useCallback((dpr: number): boolean => {
@@ -132,10 +193,35 @@ const DotGridBackground = memo(({
     const { w, h } = sizeRef.current;
     const mx = mouseRef.current.x;
     const my = mouseRef.current.y;
-    const hrSq = hoverRadius * hoverRadius;
+    const { hoverRadius: hr } = paramsRef.current;
+    const hrSq = hr * hr;
 
-    const baseColor = resolveColor(color, opacity);
-    const hoverColor = resolveColor(color, Math.min(opacity + hoverBoost, 1));
+    // Resolve colors & params once, then invalidate cache if CSS variables change
+    // (e.g. user switches between dark/light mode at runtime).
+    const currentBg = getComputedStyle(document.documentElement)
+      .getPropertyValue('--background')
+      .trim();
+    if (currentBg && currentBg !== bgColorCacheRef.current) {
+      // Background changed (dark/light mode switch) → reset cache
+      resolvedColorRef.current = null;
+      bgColorCacheRef.current = currentBg;
+    }
+
+    if (!resolvedColorRef.current) {
+      const modeParams = getModeParams();
+      paramsRef.current = {
+        dotRadius: modeParams.dotRadius,
+        dotSpacing: modeParams.dotSpacing,
+        hoverRadius: modeParams.hoverRadius,
+      };
+
+      const base = resolveColor(color, opacity ?? modeParams.baseOpacity);
+      const hover = resolveColor(color, Math.min((opacity ?? modeParams.baseOpacity) + (hoverBoost ?? modeParams.hoverBoostAmt), 1));
+      resolvedColorRef.current = { base, hover };
+    }
+
+    const { base: baseColor, hover: hoverColor } = resolvedColorRef.current;
+    const { dotRadius: dr } = paramsRef.current;
 
     ctx.clearRect(0, 0, w, h);
     ctx.beginPath();
@@ -152,8 +238,8 @@ const DotGridBackground = memo(({
       if (isHovered) {
         hasHovered = true;
       } else {
-        ctx.moveTo(d.x + dotRadius, d.y);
-        ctx.arc(d.x, d.y, dotRadius, 0, Math.PI * 2);
+        ctx.moveTo(d.x + dr, d.y);
+        ctx.arc(d.x, d.y, dr, 0, Math.PI * 2);
       }
     }
 
@@ -169,14 +255,14 @@ const DotGridBackground = memo(({
         const dx = mx - d.x;
         const dy = my - d.y;
         if (dx * dx + dy * dy < hrSq) {
-          ctx.moveTo(d.x + dotRadius, d.y);
-          ctx.arc(d.x, d.y, dotRadius, 0, Math.PI * 2);
+          ctx.moveTo(d.x + dr, d.y);
+          ctx.arc(d.x, d.y, dr, 0, Math.PI * 2);
         }
       }
       ctx.fillStyle = hoverColor;
       ctx.fill();
     }
-  }, [dotRadius, hoverRadius, color, opacity, hoverBoost, resolveColor, syncSize]);
+  }, [color, opacity, hoverBoost, syncSize, getModeParams, detectColorScheme]);
 
   // Animation loop — only paints when needed
   const tick = useCallback(() => {
@@ -188,15 +274,17 @@ const DotGridBackground = memo(({
   }, [paint]);
 
   // Initial setup — mouse tracking and animation loop.
-  // Canvas size is synced every frame inside paint() via syncSize().
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const parent = canvasRef.current?.parentElement;
       if (!parent) return;
       const rect = parent.getBoundingClientRect();
 
-      mouseRef.current.x = e.clientX - rect.left;
-      mouseRef.current.y = e.clientY - rect.top;
+      const localX = e.clientX - rect.left;
+      const localY = e.clientY - rect.top;
+
+      mouseRef.current.x = localX;
+      mouseRef.current.y = localY;
       needsPaintRef.current = true;
     };
 
@@ -242,12 +330,22 @@ function resolveToRGBA(colorStr: string, alpha: number): string {
   if (!ctx) return `rgba(128, 128, 128, ${alpha})`;
 
   ctx.fillStyle = colorStr;
-  const computed = ctx.fillStyle;
+  ctx.fillRect(0, 0, 1, 1);
+  const pixel = ctx.getImageData(0, 0, 1, 1).data;
 
-  const rgbaMatch = computed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (rgbaMatch) {
-    return `rgba(${rgbaMatch[1]}, ${rgbaMatch[2]}, ${rgbaMatch[3]}, ${alpha})`;
-  }
+  return `rgba(${pixel[0]}, ${pixel[1]}, ${pixel[2]}, ${alpha})`;
+}
 
-  return computed;
+/**
+ * Resolve any CSS color string to an RGB tuple [r, g, b] (0-255).
+ */
+function resolveToRGB(colorStr: string): [number, number, number] | null {
+  const ctx = document.createElement('canvas').getContext('2d');
+  if (!ctx) return null;
+
+  ctx.fillStyle = colorStr;
+  ctx.fillRect(0, 0, 1, 1);
+  const pixel = ctx.getImageData(0, 0, 1, 1).data;
+
+  return [pixel[0], pixel[1], pixel[2]];
 }

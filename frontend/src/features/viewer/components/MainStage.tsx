@@ -24,12 +24,13 @@ export const MainStage: React.FC<MainStageProps> = ({ width, height, imageUrl })
   const { handleWheel } = useZoom();
   const { isDraggable, handleMouseDown, handleMouseUp, handleDragEnd } = usePan();
 
-  // Attach native non-passive wheel listener to prevent browser zoom
+  // Make Konva stage container transparent so DotGridBackground shows through
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
 
     const container = stage.container();
+    container.style.background = 'transparent';
 
     const onWheel = (e: WheelEvent) => {
       handleWheel(e, stage);
