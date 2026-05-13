@@ -34,15 +34,15 @@ class UploadService {
         };
     }
 
-    private notify() {
-        const visibleTasks = new Map<string, UploadTask>();
-        this.activeUploads.forEach((task, id) => {
-            if (!task.hidden) {
-                visibleTasks.set(id, task);
-            }
-        });
-        this.listeners.forEach(listener => listener(visibleTasks));
-    }
+        private notify() {
+            const visibleTasks = new Map<string, UploadTask>();
+            this.activeUploads.forEach((task, id) => {
+                if (!task.hidden) {
+                    visibleTasks.set(id, task);
+                }
+            });
+            this.listeners.forEach(listener => listener(visibleTasks));
+        }
 
     // Yeni dosya ekleme (datasetId ile)
     public async addUpload(file: File, dataset_id: string, params?: { priority?: UploadPriority; upload_type?: UploadType; asset_id?: string; hidden?: boolean }) {
@@ -108,9 +108,9 @@ class UploadService {
 
             this.updateTaskStatus(task.upload_id, 'REQUESTING_URL');
 
-            // Eğer daha önceden alınmış bir asset_id var ve status IDLE'dan geliyorsa 
-            // bu bir RETRY'dır. Yeni URL yerine Retry-Upload API'sine gidilir.
-            if (task.asset_id) {
+                        // Sadece isRetry=true olan (FAILED → retryUpload çağrılmış) task'lar Retry-Upload API'sine gider.
+            // İlk yükleme (asset veya embedding fark etmez) her zaman Presigned URL alır.
+            if (task.isRetry && task.asset_id) {
                 await this.fetchRetryUrl(task);
             } else {
                 await this.fetchPresignedUrl(task);
@@ -143,7 +143,7 @@ class UploadService {
     private async fetchPresignedUrl(task: UploadTask) {
         if (this.useMock) {
             await new Promise(resolve => setTimeout(resolve, 800)); // Simule gecikme
-            task.asset_id = `mock-asset-${Math.random().toString(36).substring(7)}`;
+            task.asset_id = crypto.randomUUID();
             task.upload_url = `https://mock-s3.amazonaws.com/uploads/${task.upload_id}`;
             task.expiry_at = new Date(Date.now() + 3600000).toISOString();
             return;
@@ -193,11 +193,12 @@ class UploadService {
         task.expiry_at = data.url.expiry_at;
     }
 
-    // API Tasarımı ile Tam Uyumlu Retry ( /assets/{asset_id}/retry-upload )
+        // API Tasarımı ile Tam Uyumlu Retry ( /assets/{asset_id}/retry-upload )
     public async retryUpload(upload_id: string) {
         const task = this.activeUploads.get(upload_id);
         if (!task || task.status !== 'FAILED' || !task.asset_id) return;
 
+        task.isRetry = true;  // executeTask'in fetchRetryUrl'e yönlenmesi için
         task.status = 'IDLE';
         task.progress = 0;
         task.abortController = new AbortController();
@@ -270,15 +271,15 @@ class UploadService {
                         return;
                     }
 
-                    progress += Math.floor(Math.random() * 15) + 5;
-                    if (progress >= 100) {
-                        progress = 100;
-                        clearInterval(interval);
-                        this.updateTaskStatus(task.upload_id, 'UPLOADING', 100);
-                        resolve();
-                    } else {
-                        this.updateTaskStatus(task.upload_id, 'UPLOADING', progress);
-                    }
+                                        progress += Math.floor(Math.random() * 15) + 5;
+                                        if (progress >= 100) {
+                                            progress = 100;
+                                            clearInterval(interval);
+                                            this.updateTaskStatus(task.upload_id, 'UPLOADING', 100);
+                                            resolve();
+                                        } else {
+                                            this.updateTaskStatus(task.upload_id, 'UPLOADING', progress);
+                                        }
                 }, 300);
             });
         }
@@ -311,7 +312,7 @@ class UploadService {
         });
     }
 
-    // --- İptal Etme ---
+        // --- İptal Etme ---
     public cancelUpload(upload_id: string) {
         const task = this.activeUploads.get(upload_id);
         if (!task) return;
@@ -322,6 +323,54 @@ class UploadService {
         this.queue = this.queue.filter(t => t.upload_id !== upload_id);
         this.updateTaskStatus(upload_id, 'CANCELLED');
         this.processQueue();
+    }
+
+    /**
+     * Terminal durumdaki (SUCCESS/FAILED/CANCELLED) bir task'i UI'dan kaldırır.
+     * Task hidden=true yapılır, notify tetiklenir, UI'dan kaybolur.
+     */
+    public dismissUpload(upload_id: string) {
+        const task = this.activeUploads.get(upload_id);
+        if (!task) return;
+        if (!['SUCCESS', 'FAILED', 'CANCELLED'].includes(task.status)) return;
+        task.hidden = true;
+        this.notify();
+    }
+
+        /**
+     * Tüm terminal durumdaki task'leri UI'dan kaldırır.
+     * Close/X butonu için — başarılı, hatalı ve iptal edilmiş dosyaları temizler.
+     */
+    public dismissAllCompleted() {
+        let changed = false;
+        this.activeUploads.forEach((task, id) => {
+            if (!task.hidden && ['SUCCESS', 'FAILED', 'CANCELLED'].includes(task.status)) {
+                task.hidden = true;
+                changed = true;
+            }
+        });
+        if (changed) {
+            this.notify();
+        }
+    }
+
+    /**
+     * Tüm aktif (terminal olmayan) task'leri iptal eder.
+     * "Pause All" butonu için — tüm kuyruğu ve aktif yüklemeleri durdurur.
+     */
+    public cancelAll() {
+        // Önce kuyruğu temizle (yeni task başlamasın)
+        this.queue = [];
+        // Tüm aktif task'leri iptal et
+        this.activeUploads.forEach((task, upload_id) => {
+            if (!['SUCCESS', 'FAILED', 'CANCELLED'].includes(task.status)) {
+                if (task.status === 'UPLOADING' && task.xhr) task.xhr.abort();
+                else if (task.abortController) task.abortController.abort();
+                task.status = 'CANCELLED';
+                task.progress = 0;
+            }
+        });
+        this.notify();
     }
 
     // --- Yardımcı Fonksiyonlar ---

@@ -11,8 +11,12 @@ export function useUploads() {
     useEffect(() => {
         // Servise abone ol (Her notify() çalıştığında bu callback tetiklenir)
         const unsubscribe = uploadService.subscribe((activeUploads) => {
-            // Map'i Diziye çevirip state'e aktarıyoruz
-            setTasks(Array.from(activeUploads.values()));
+            // Her task için yeni referans oluştur, böylece React.memo doğru çalışır.
+            // Ayrıca sadece status/progress gibi UI için gerekli alanları spread et.
+            const clonedTasks = Array.from(activeUploads.values()).map(task => ({
+                ...task,
+            }));
+            setTasks(clonedTasks);
         });
 
         // Component unmount olduğunda aboneliği kaldır (Memory leak'i önler)

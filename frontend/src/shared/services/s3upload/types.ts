@@ -13,6 +13,7 @@ export interface UploadTask {
     priority: UploadPriority;
     status: UploadStatus;
     progress: number;
+    isRetry?: boolean; // true ise fetchRetryUrl (FAILED → retry), false/undefined ise fetchPresignedUrl (ilk yükleme)
     hash?: string;
     width?: number;
     height?: number;

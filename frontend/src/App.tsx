@@ -12,6 +12,9 @@ import { BannerProvider } from './components/custom/GlobalBanner/BannerContext.j
 import { GlobalBanner } from './components/custom/GlobalBanner/GlobalBanner.js';
 import { GlobalKeyboardListener } from './shared/components/GlobalKeyboardListener';
 
+// Upload Manager
+import { UploadManager } from '@/features/upload_manager';
+
 import DashboardLayout from '@/features/core/layouts/DashboardLayout';
 import DashboardHome from '@/features/dashboard/DashboardHome';
 import ProjectDetailPage from '@/features/projects/ProjectDetailPage';
@@ -35,6 +38,7 @@ function App() {
             <AuthProvider>
               <AxiosInterceptorSetup />
               <Toaster position="top-right" richColors />
+              <UploadManager />
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
@@ -46,7 +50,7 @@ function App() {
                       <Route path="/" element={<DashboardHome />} />
                       <Route path="/projects/:id" element={<ProjectDetailPage />} />
                       <Route path="*" element={<div className="p-8 text-center font-mono text-white">404 | Page Not Found</div>} />
-                    </Routes>
+              </Routes>
                   </DashboardLayout>
                 } />
                 <Route path="/verify-email" element={<VerificationPage />} />

@@ -14,8 +14,10 @@ import { createKeyboardSlice } from '../shared/store/keyboardSlice';
 import type { KeyboardState } from '../shared/store/keyboardSlice';
 import { createViewerUISlice } from '../features/viewer/store/viewerUISlice';
 import type { ViewerUIState } from '../features/viewer/store/viewerUISlice';
+import { createUploadManagerSlice } from '../features/upload_manager/store/uploadManagerSlice';
+import type { UploadManagerState } from '../features/upload_manager/store/uploadManagerSlice';
 
-export type AppState = ViewerState & AnnotationState & ToolModeState & UIState & ContextState & KeyboardState & ViewerUIState;
+export type AppState = ViewerState & AnnotationState & ToolModeState & UIState & ContextState & KeyboardState & ViewerUIState & UploadManagerState;
 
 export const useAppStore = create<AppState>()(
   devtools(
@@ -27,7 +29,9 @@ export const useAppStore = create<AppState>()(
       ...createContextSlice(...a),
       ...createKeyboardSlice(...a),
       ...createViewerUISlice(...a),
+      ...createUploadManagerSlice(...a),
     }),
     { name: 'ColdatAppStore' }
   )
 );
+
