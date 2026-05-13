@@ -29,40 +29,46 @@ import AccountNotVerifiedPage from '@/features/auth/AccountNotVerified/AccountNo
 
 function App() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center text-white font-mono">Yükleniyor...</div>}>
-      <BrowserRouter>
-        <BannerProvider>
-          <GlobalBanner />
-          <GlobalKeyboardListener />
-          <ConfirmProvider>
-            <AuthProvider>
-              <AxiosInterceptorSetup />
-              <Toaster position="top-right" richColors />
+    <>
+      {/* UploadManager — Routes DIŞINDA, Suspense DIŞINDA mount edilir.
+          Böylece sayfa değişimlerinde veya Suspense fallback gösterildiğinde
+          dahi DOM'dan kalkmaz, her zaman görünür kalır. */}
               <UploadManager />
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/annotate/:taskId/:imageId?" element={<AnnotationPage />} />
-                <Route path="/view/:taskId/:imageId?" element={<ViewerPage />} />
-                <Route path="/*" element={
-                  <DashboardLayout>
+
+      <Suspense fallback={<div className="flex h-screen items-center justify-center text-white font-mono">Yükleniyor...</div>}>
+        <BrowserRouter>
+          <BannerProvider>
+            <GlobalBanner />
+            <GlobalKeyboardListener />
+            <ConfirmProvider>
+              <AuthProvider>
+                <AxiosInterceptorSetup />
+                <Toaster position="top-right" richColors />
                     <Routes>
-                      <Route path="/" element={<DashboardHome />} />
-                      <Route path="/projects/:id" element={<ProjectDetailPage />} />
-                      <Route path="*" element={<div className="p-8 text-center font-mono text-white">404 | Page Not Found</div>} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/annotate/:taskId/:imageId?" element={<AnnotationPage />} />
+                  <Route path="/view/:taskId/:imageId?" element={<ViewerPage />} />
+                  <Route path="/*" element={
+                    <DashboardLayout>
+                      <Routes>
+                        <Route path="/" element={<DashboardHome />} />
+                        <Route path="/projects/:id" element={<ProjectDetailPage />} />
+                        <Route path="*" element={<div className="p-8 text-center font-mono text-white">404 | Page Not Found</div>} />
               </Routes>
-                  </DashboardLayout>
-                } />
-                <Route path="/verify-email" element={<VerificationPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<PasswordResetPage />} />
-                <Route path="/account-not-verified" element={<AccountNotVerifiedPage />} />
-              </Routes>
-            </AuthProvider>
-          </ConfirmProvider>
-        </BannerProvider>
+                    </DashboardLayout>
+                  } />
+                  <Route path="/verify-email" element={<VerificationPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/reset-password" element={<PasswordResetPage />} />
+                  <Route path="/account-not-verified" element={<AccountNotVerifiedPage />} />
+                </Routes>
+              </AuthProvider>
+            </ConfirmProvider>
+          </BannerProvider>
       </BrowserRouter>
     </Suspense>
+    </>
   );
 }
 

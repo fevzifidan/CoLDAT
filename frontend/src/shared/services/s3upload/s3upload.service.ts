@@ -1,6 +1,10 @@
 import type { UploadTask, UploadPriority, UploadStatus, UploadType } from './types';
 import apiService from '@/shared/services/api';
+import { saveTasks, loadPersistedTasks, clearPersistedTasks, type PersistedTask } from './uploadPersistence';
 
+// Debounce timer for persistence saves
+let persistenceTimer: ReturnType<typeof setTimeout> | null = null;
+const PERSISTENCE_DEBOUNCE_MS = 500;
 
 // React state'i için listener tipi
 type Listener = (tasks: Map<string, UploadTask>) => void;
@@ -16,10 +20,69 @@ class UploadService {
     private statusUpdateTimer: ReturnType<typeof setTimeout> | null = null;
     private useMock = false;
 
+    /** Persistence hazır mı? (ilk yükleme tamamlandı mı?) */
+    private persistenceReady = false;
+
     private static instance: UploadService;
     public static getInstance(): UploadService {
         if (!UploadService.instance) UploadService.instance = new UploadService();
         return UploadService.instance;
+    }
+
+    /**
+     * Sayfa yüklendiğinde çağrılır. Kalıcı depodaki task'leri yükler,
+     * aktif durumdakileri FAILED olarak işaretler (File kaybolduğu için).
+     */
+    public async initialize(): Promise<void> {
+        if (this.persistenceReady) return;
+
+        const persistedTasks = await loadPersistedTasks();
+        let hasChanges = false;
+
+        persistedTasks.forEach((persisted) => {
+            const isActive = !['SUCCESS', 'FAILED', 'CANCELLED'].includes(persisted.status);
+
+            // Aktif task'ler sayfa yenilenince File kaybeder → FAILED
+            const status = isActive ? 'FAILED' : persisted.status;
+
+            // Runtime-only alanlar olmadan task oluştur
+            const task: UploadTask = {
+                upload_id: persisted.upload_id,
+                upload_type: persisted.upload_type,
+                hidden: persisted.hidden,
+                asset_id: persisted.asset_id,
+                dataset_id: persisted.dataset_id,
+                priority: persisted.priority,
+                status: status as UploadStatus,
+                progress: isActive ? 0 : persisted.progress,
+                isRetry: persisted.isRetry,
+                hash: persisted.hash,
+                width: persisted.width,
+                height: persisted.height,
+                upload_url: persisted.upload_url,
+                expiry_at: persisted.expiry_at,
+                // File kayboldu — dummy File nesnesi (sadece metadata için)
+                file: new File([], persisted.fileName, { type: persisted.fileType }),
+                abortController: undefined,
+                xhr: undefined,
+            };
+
+            this.activeUploads.set(task.upload_id, task);
+
+            if (isActive) {
+                hasChanges = true;
+                console.log(`[UploadService] Active task ${persisted.upload_id} (${persisted.fileName}) marked as FAILED due to page reload`);
+            }
+        });
+
+        if (hasChanges) {
+            // Değişiklikleri kalıcı depoya yaz
+            await saveTasks(this.activeUploads);
+        }
+
+        this.persistenceReady = true;
+        this.notify();
+        console.log(`[UploadService] Initialized with ${this.activeUploads.size} persisted tasks`);
     }
 
     public setMockMode(enabled: boolean) {
@@ -34,6 +97,14 @@ class UploadService {
         };
     }
 
+    /**
+     * Tüm task'leri (gizli olanlar dahil) döndürür.
+     * useUploads hook'u tarafından full state için kullanılır.
+     */
+    public getAllTasks(): UploadTask[] {
+        return Array.from(this.activeUploads.values());
+    }
+
         private notify() {
             const visibleTasks = new Map<string, UploadTask>();
             this.activeUploads.forEach((task, id) => {
@@ -42,7 +113,21 @@ class UploadService {
                 }
             });
             this.listeners.forEach(listener => listener(visibleTasks));
+
+            // Her notify'da persistence'ı debounce ile güncelle
+            this.schedulePersistenceSave();
         }
+
+    /**
+     * Her state değişiminde persistence'ı hemen değil,
+     * debounce ile (500ms) kaydeder — aşırı yazmayı önler.
+     */
+    private schedulePersistenceSave() {
+        if (persistenceTimer) clearTimeout(persistenceTimer);
+        persistenceTimer = setTimeout(() => {
+            saveTasks(this.activeUploads);
+        }, PERSISTENCE_DEBOUNCE_MS);
+    }
 
     // Yeni dosya ekleme (datasetId ile)
     public async addUpload(file: File, dataset_id: string, params?: { priority?: UploadPriority; upload_type?: UploadType; asset_id?: string; hidden?: boolean }) {
@@ -329,29 +414,29 @@ class UploadService {
      * Terminal durumdaki (SUCCESS/FAILED/CANCELLED) bir task'i UI'dan kaldırır.
      * Task hidden=true yapılır, notify tetiklenir, UI'dan kaybolur.
      */
-    public dismissUpload(upload_id: string) {
+        public async dismissUpload(upload_id: string) {
         const task = this.activeUploads.get(upload_id);
         if (!task) return;
         if (!['SUCCESS', 'FAILED', 'CANCELLED'].includes(task.status)) return;
         task.hidden = true;
+        // Kalıcı depodan da kaldır
+        this.activeUploads.delete(upload_id);
         this.notify();
     }
 
         /**
-     * Tüm terminal durumdaki task'leri UI'dan kaldırır.
+     * Tüm terminal durumdaki task'leri UI'dan kaldırır ve kalıcı depoyu temizler.
      * Close/X butonu için — başarılı, hatalı ve iptal edilmiş dosyaları temizler.
      */
-    public dismissAllCompleted() {
-        let changed = false;
+    public async dismissAllCompleted() {
         this.activeUploads.forEach((task, id) => {
             if (!task.hidden && ['SUCCESS', 'FAILED', 'CANCELLED'].includes(task.status)) {
-                task.hidden = true;
-                changed = true;
+                this.activeUploads.delete(id);
             }
         });
-        if (changed) {
-            this.notify();
-        }
+        // Tüm kalıcı depoyu temizle (görünür terminal task kalmadı)
+        await clearPersistedTasks();
+        this.notify();
     }
 
     /**
