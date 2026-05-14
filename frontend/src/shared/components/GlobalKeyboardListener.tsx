@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/hooks/useAppStore';
-import { maskToPolygon } from '../../features/annotation/tools/sam/samCoords';
+import { sendPolygonWorkerRequest } from '../../features/annotation/tools/sam/useSamOrchestrator';
 
 export const GlobalKeyboardListener = () => {
   const setKeyPressed = useAppStore(state => state.setKeyPressed);
+  // Ref to track if a conversion is in progress to prevent duplicate Enter presses
+  const isConvertingRef = useRef(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -40,44 +42,65 @@ export const GlobalKeyboardListener = () => {
             state.clearSamSession();
           }
 
-          // Enter → Convert mask to polygon and add as annotation
+          // Enter → Convert mask to polygon (OFFLOADED TO SHARED WORKER) and add as annotation
           if (e.key === 'Enter' && samMaskData && samMaskBlobUrl) {
             e.preventDefault();
-            
+
+            // Prevent duplicate conversions if user mashes Enter
+            if (isConvertingRef.current) return;
+            isConvertingRef.current = true;
+
             const { maskData, width, height } = samMaskData;
-            
-            // Convert mask to polygon coordinates
-            const polygonCoords = maskToPolygon(maskData, width, height, 1.5);
-            
-            if (polygonCoords.length >= 6) { // At least 3 points (6 coords)
-              // Create a new annotated object
-              const newId = crypto.randomUUID?.() ?? `sam-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-              
-              // Use the first active class or a default
-              const taxonomy = state.taxonomy;
-              const activeClass = taxonomy?.classes?.find(c => c.isActive);
-              const classId = activeClass?.id ?? 'default';
-              const className = activeClass?.name ?? 'Object';
-              
-              const newObject = {
-                id: newId,
-                label: `${className}_${(state.annotatedObjects?.length ?? 0) + 1}`,
-                classId: classId,
-                type: 'polygon' as const,
-                coordinates: polygonCoords,
-                color: activeClass?.color ?? '#3b82f6',
-                zIndex: (state.annotatedObjects?.length ?? 0) + 1,
-                visible: true,
-                locked: false,
-              };
-              
-              // Add to annotated objects
-              const currentObjects = state.annotatedObjects ?? [];
-              state.setAnnotatedObjects([...currentObjects, newObject]);
-            }
-            
-            // Clear SAM session for the next annotation
-            state.clearSamSession();
+
+            // Run mask → polygon conversion in the shared singleton worker (non-blocking).
+            // Uses the same worker instance as useSamOrchestrator to avoid a second
+            // independent worker whose PING/PONG handshake could race and time out.
+            sendPolygonWorkerRequest('MASK_TO_POLYGON', {
+              maskData,
+              width,
+              height,
+              epsilon: 1.5,
+            })
+              .then((result: unknown) => {
+                const { coordinates } = result as { coordinates: number[] };
+
+                if (coordinates.length >= 6) {
+                  // At least 3 points (6 coords) — create a new annotation
+                  const currentState = useAppStore.getState();
+                  const newId = crypto.randomUUID?.() ?? `sam-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+                  const taxonomy = currentState.taxonomy;
+                  const activeClass = taxonomy?.classes?.find((c: { isActive: boolean }) => c.isActive);
+                  const classId = activeClass?.id ?? 'default';
+                  const className = activeClass?.name ?? 'Object';
+
+                  const newObject = {
+                    id: newId,
+                    label: `${className}_${(currentState.annotatedObjects?.length ?? 0) + 1}`,
+                    classId: classId,
+                    type: 'polygon' as const,
+                    coordinates: coordinates,
+                    color: activeClass?.color ?? '#3b82f6',
+                    zIndex: (currentState.annotatedObjects?.length ?? 0) + 1,
+                    visible: true,
+                    locked: false,
+                  };
+
+                  const currentObjects = currentState.annotatedObjects ?? [];
+                  currentState.setAnnotatedObjects([...currentObjects, newObject]);
+                }
+
+                // Clear SAM session for the next annotation
+                useAppStore.getState().clearSamSession();
+              })
+              .catch((err: Error) => {
+                console.error('[SAM] Polygon conversion failed:', err);
+                // Still clear the session so the user can try again
+                useAppStore.getState().clearSamSession();
+              })
+              .finally(() => {
+                isConvertingRef.current = false;
+              });
           }
         }
       }

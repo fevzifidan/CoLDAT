@@ -1,4 +1,4 @@
-﻿import React, { useRef } from 'react';
+import React, { useRef } from 'react';
 import { Layer, Rect, Line, Circle } from 'react-konva';
 import Konva from 'konva';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
@@ -132,18 +132,8 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
     else if (activeTool === 'pen') penDown(e);
     else if (activeTool === 'eraser') eraserDown(e);
     else if (activeTool === 'livewire') livewireDown(e);
+    else if (activeTool === 'sam') samDown(e);
   };
-  
-  // SAM, mouseDown ve mouseUp'ı ayrı ayrı kullanır (drag algılama için)
-  const handleSamMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (activeTool === 'sam') samDown(e);
-  };
-  
-  const handleSamMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (activeTool === 'sam') samUp(e);
-  };
-
-
   const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (activeTool === 'bbox') boxMove(e);
     else if (activeTool === 'polygon') polyMove(e);
@@ -158,6 +148,7 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
     else if (activeTool === 'polygon') polyUp(e);
     else if (activeTool === 'pen') penUp(e);
     else if (activeTool === 'eraser') eraserUp();
+    else if (activeTool === 'sam') samUp(e);
   };
 
   if (!imgDimensions) return null;
@@ -171,15 +162,9 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
         width={imgDimensions.width}
         height={imgDimensions.height}
         fill="transparent"
-        onMouseDown={(e) => {
-          handleMouseDown(e);
-          handleSamMouseDown(e);
-        }}
+        onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
-        onMouseUp={(e) => {
-          handleMouseUp(e);
-          handleSamMouseUp(e);
-        }}
+        onMouseUp={handleMouseUp}
         listening={!isReadOnly && ['bbox', 'polygon', 'pen', 'livewire', 'sam'].includes(activeTool)}
       />
 

@@ -311,7 +311,7 @@ async function generateMask(
   prompts: PromptMessage[],
   originalWidth: number,
   originalHeight: number
-): Promise<Float32Array> {
+): Promise<{ data: Float32Array; width: number; height: number }> {
   if (!decoderSession) {
     throw new Error('[SAM Worker] Decoder session not initialized. Send INIT_MODELS first.');
   }
@@ -403,6 +403,14 @@ async function generateMask(
   }
 
   const outputTensor = results[maskOutputName];
+  
+  // Log ALL outputs for debugging purposes
+  for (const name of outputNames) {
+    const t = results[name];
+    const d = t.data as any;
+    logDebug('[SAM Worker] Output', name, 'dims:', t.dims, 'type:', t.type, 'len:', d?.length, 'first5:', d?.subarray ? Array.from(d.subarray(0, Math.min(5, d.length))) : 'N/A');
+  }
+  
   const rawData = outputTensor.data as any;
   logDebug('[SAM Worker] outputTensor type:', typeof rawData, 'constructor:', rawData?.constructor?.name, 'length:', rawData?.length);
   logDebug('[SAM Worker] outputTensor dims:', outputTensor.dims, 'type:', outputTensor.type);

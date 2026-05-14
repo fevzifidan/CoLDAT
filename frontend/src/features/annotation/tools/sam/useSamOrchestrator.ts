@@ -86,6 +86,179 @@ import type { TaskImage, SAMStatus, SAMPrompt } from '../../types/annotation.typ
 import { uploadService } from '@/shared/services/s3upload/s3upload.service';
 import notificationService from '@/shared/services/notification';
 
+// ─── Polygon/Blob Worker (singleton for offloading heavy ops) ────────────────
+// This singleton is EXPORTED so GlobalKeyboardListener can reuse the same
+// instance instead of spawning its own, which caused the MASK_TO_POLYGON timeout.
+
+let polyWorkerRef: Worker | null = null;
+
+export function getPolygonWorker(): Worker {
+  if (!polyWorkerRef) {
+    polyWorkerRef = new Worker(
+      new URL('./samPolygonWorker', import.meta.url),
+      { type: 'module' }
+    );
+  }
+  return polyWorkerRef;
+}
+
+/**
+ * Send a request to the shared polygon worker and return a Promise.
+ * Exported for use in GlobalKeyboardListener (mask → polygon on Enter).
+ */
+export function sendPolygonWorkerRequest(
+  type: string,
+  data: Record<string, unknown>
+): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const worker = getPolygonWorker();
+    const requestId = `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
+    let timeoutHandle: ReturnType<typeof setTimeout>;
+
+    const handler = (e: MessageEvent) => {
+      const msg = e.data;
+      if (msg.requestId !== requestId) return;
+      worker.removeEventListener('message', handler);
+      clearTimeout(timeoutHandle);
+      if (msg.type === 'ERROR') {
+        reject(new Error((msg.data?.message as string) ?? 'Worker error'));
+      } else {
+        resolve(msg.data);
+      }
+    };
+
+    worker.addEventListener('message', handler);
+
+    // 30s timeout for polygon conversion
+    timeoutHandle = setTimeout(() => {
+      worker.removeEventListener('message', handler);
+      reject(new Error(`${type} timed out after 30000ms`));
+    }, 30_000);
+
+    const maskData = data['maskData'];
+    if (maskData instanceof Uint8Array && maskData.byteLength > 0) {
+      const cloned = new Uint8Array(maskData);
+      const messageData = { ...data, maskData: cloned };
+      worker.postMessage({ type, data: messageData, requestId }, [cloned.buffer]);
+    } else {
+      worker.postMessage({ type, data, requestId });
+    }
+  });
+}
+
+
+/**
+ * Offload CROP_SCALE_MASK operation to the polygon worker to avoid main-thread
+ * blocking during heavy nearest-neighbor scaling of large tensors.
+ */
+function offloadCropScaleMask(
+  tensorData: Float32Array,
+  tensorSize: number,
+  padX: number,
+  padY: number,
+  scaledW: number,
+  scaledH: number,
+  originalWidth: number,
+  originalHeight: number
+): Promise<{ maskData: Uint8Array; maskWidth: number; maskHeight: number }> {
+  return new Promise((resolve, reject) => {
+    const worker = getPolygonWorker();
+    const requestId = `CROP_SCALE_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
+    const handler = (e: MessageEvent) => {
+      const msg = e.data;
+      if (msg.requestId !== requestId) return;
+      worker.removeEventListener('message', handler);
+
+      if (msg.type === 'ERROR') {
+        reject(new Error((msg.data?.message as string) ?? 'CROP_SCALE_MASK failed'));
+      } else {
+        const buf = msg.data.maskData as ArrayBuffer;
+        resolve({
+          maskData: new Uint8Array(buf),
+          maskWidth: msg.data.maskWidth as number,
+          maskHeight: msg.data.maskHeight as number,
+        });
+      }
+    };
+
+    worker.addEventListener('message', handler);
+
+    setTimeout(() => {
+      worker.removeEventListener('message', handler);
+      reject(new Error('CROP_SCALE_MASK timed out (30s)'));
+    }, 30_000);
+
+    // Clone the Float32Array buffer properly respecting byteOffset & byteLength,
+    // then transfer the clone for zero-copy efficiency
+    const cloned = new Float32Array(tensorData);
+    worker.postMessage(
+      {
+        type: 'CROP_SCALE_MASK',
+        requestId,
+        data: {
+          tensorData: cloned,
+          tensorSize,
+          padX,
+          padY,
+          scaledW,
+          scaledH,
+          originalWidth,
+          originalHeight,
+        },
+      },
+      { transfer: [cloned.buffer] }
+    );
+  });
+}
+
+/**
+ * Offload MASK_TO_BLOB_URL operation to the polygon worker.
+ * Uses OffscreenCanvas inside the worker to render the PNG blob.
+ */
+function offloadMaskToBlobUrl(
+  maskData: Uint8Array,
+  width: number,
+  height: number
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const worker = getPolygonWorker();
+    const requestId = `BLOB_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
+    const handler = (e: MessageEvent) => {
+      const msg = e.data;
+      if (msg.requestId !== requestId) return;
+      worker.removeEventListener('message', handler);
+
+      if (msg.type === 'ERROR') {
+        reject(new Error((msg.data?.message as string) ?? 'MASK_TO_BLOB_URL failed'));
+      } else {
+        resolve(msg.data.blobUrl as string);
+      }
+    };
+
+    worker.addEventListener('message', handler);
+
+    setTimeout(() => {
+      worker.removeEventListener('message', handler);
+      reject(new Error('MASK_TO_BLOB_URL timed out (15s)'));
+    }, 15_000);
+
+    // Clone the mask buffer properly respecting byteOffset & byteLength,
+    // then transfer the clone for zero-copy efficiency
+    const cloned = new Uint8Array(maskData);
+    worker.postMessage(
+      {
+        type: 'MASK_TO_BLOB_URL',
+        requestId,
+        data: { maskData: cloned, width, height },
+      },
+      { transfer: [cloned.buffer] }
+    );
+  });
+}
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 /** Paths to the ONNX model files hosted as static assets in public/models/ */
@@ -311,18 +484,20 @@ export function useSamOrchestrator(
     const worker = new Worker(new URL('./samWorker', import.meta.url), { type: 'module' });
     workerRef.current = worker;
 
-    // Log worker LOG messages to console
+    // Log all worker messages (LOG, ERROR, etc.)
     worker.addEventListener('message', (e: MessageEvent) => {
       const msg = e.data;
       if (msg.type === 'LOG') {
         console.log('[SAM Worker Log]', ...(msg.data?.args ?? []));
+      } else if (msg.type === 'ERROR') {
+        console.error('[SAM Worker] Reported error:', msg.data?.message);
       }
     });
 
-    // Set up the error handler
-    worker.onerror = (err) => {
-      console.error('[SAM Worker] Unhandled error:', err);
-      notificationService.error('SAM worker encountered an error.');
+    // Set up the error handler for unhandled worker errors
+    worker.onerror = (err: ErrorEvent) => {
+      console.error('[SAM Worker] Unhandled error:', err.message, '| file:', err.filename, 'line:', err.lineno, 'col:', err.colno);
+      notificationService.error(`SAM worker error: ${err.message}`);
       setSamStatus('idle');
     };
 
@@ -505,29 +680,75 @@ export function useSamOrchestrator(
         
         // Check if model output already matches original image dimensions
         if (maskWidthFromWorker === origW && maskHeightFromWorker === origH) {
-          // Model output is already at original resolution.
-          // MobileSAM 'masks' output contains raw logits. Apply sigmoid then threshold at 0.5.
-          // sigmoid(0) = 0.5, so 0.0 threshold on logits is equivalent.
-          // For multi-point prompts, increase threshold to reduce over-segmentation.
+          // Model output is already at original resolution (1024×1024).
+          // MobileSAM 'masks' output contains raw logits (before sigmoid).
+          // Standard: sigmoid(0) = 0.5, so logit > 0.0 → mask pixel.
+          // If all logits are ≤ 0, use adaptive thresholding at 70th percentile.
           maskWidth = origW;
           maskHeight = origH;
           maskData = new Uint8Array(origW * origH);
           
+          // Determine threshold strategy with full tensor scan
+          let hasPositive = false;
+          let minVal = Infinity, maxVal = -Infinity;
           for (let i = 0; i < tensorData.length; i++) {
-            maskData[i] = tensorData[i] > 0.0 ? 255 : 0;
+            const v = tensorData[i];
+            if (v > 0) hasPositive = true;
+            if (v < minVal) minVal = v;
+            if (v > maxVal) maxVal = v;
+          }
+          console.log('[SAM Orchestrator] Full tensor stats: min=', minVal, 'max=', maxVal, 'hasPositive=', hasPositive);
+          
+          if (hasPositive) {
+            // Standard threshold on logits (sigmoid(0) = 0.5)
+            for (let i = 0; i < tensorData.length; i++) {
+              maskData[i] = tensorData[i] > 0.0 ? 255 : 0;
+            }
+          } else if (maxVal > minVal) {
+            // All values ≤ 0 — use adaptive threshold at 70th percentile
+            const sorted = new Float32Array(tensorData);
+            sorted.sort();
+            const threshold = sorted[Math.floor(sorted.length * 0.7)];
+            console.log('[SAM Orchestrator] All ≤ 0. Using adaptive threshold:', threshold, '(70th pct)');
+            for (let i = 0; i < tensorData.length; i++) {
+              maskData[i] = tensorData[i] > threshold ? 255 : 0;
+            }
+          } else {
+            // All values identical (constant) — empty mask
+            console.log('[SAM Orchestrator] All logits identical:', minVal, '- empty mask');
           }
         } else {
-          // Need to crop and scale from model output space to original image space
-          const result = cropAndScaleMask(
-            tensorData,
-            Math.max(maskWidthFromWorker, maskHeightFromWorker), // tensorSize (max dim)
-            origW,
-            origH,
-            Math.max(maskWidthFromWorker, maskHeightFromWorker)  // targetSize (same as tensorSize)
-          );
-          maskData = result.maskData;
-          maskWidth = result.maskWidth;
-          maskHeight = result.maskHeight;
+          // Model output is at a lower (or different) resolution than original.
+          // Nearest-neighbor upscale from model output to original dimensions.
+          maskWidth = origW;
+          maskHeight = origH;
+          maskData = new Uint8Array(origW * origH);
+          
+          const srcW = maskWidthFromWorker;
+          const srcH = maskHeightFromWorker;
+          
+          // First compute adaptive threshold using a sample of the source data
+          let hasPos = false;
+          let sMin = Infinity, sMax = -Infinity;
+          for (let i = 0; i < Math.min(tensorData.length, 10000); i++) {
+            const v = tensorData[i];
+            if (v > 0) hasPos = true;
+            if (v < sMin) sMin = v;
+            if (v > sMax) sMax = v;
+          }
+          
+          const srcThreshold = hasPos ? 0.0 : (sMax > sMin ? sMax * 0.3 : 0.0); // 30% from max if all negative
+          
+          // Nearest-neighbor upsample with thresholding
+          for (let y = 0; y < origH; y++) {
+            const srcY = Math.min(srcH - 1, Math.round((y / origH) * srcH));
+            const dstRowOffset = y * origW;
+            for (let x = 0; x < origW; x++) {
+              const srcX = Math.min(srcW - 1, Math.round((x / origW) * srcW));
+              const srcIdx = srcY * srcW + srcX;
+              maskData[dstRowOffset + x] = tensorData[srcIdx] > srcThreshold ? 255 : 0;
+            }
+          }
         }
 
         console.log('[SAM Orchestrator] Mask data stats:', { 
@@ -537,8 +758,8 @@ export function useSamOrchestrator(
           nonZeroCount: maskData.reduce((sum, v) => sum + (v > 0 ? 1 : 0), 0)
         });
 
-        // Convert the mask to a renderable PNG blob
-        const maskBlobUrl = await maskToBlobUrl(maskData, maskWidth, maskHeight);
+        // Convert the mask to a renderable PNG blob (offloaded to worker)
+        const maskBlobUrl = await offloadMaskToBlobUrl(maskData, maskWidth, maskHeight);
 
         if (isMountedRef.current && imageIdRef.current === imageId) {
           // Revoke previous mask URL
@@ -779,19 +1000,21 @@ async function computeEmbeddingInWorker(
 
     worker.addEventListener('message', handler);
 
-    // Transfer the ImageData's buffer to the worker to avoid structured cloning
-    const buffer = imageData.data.buffer.slice(0);
+    // Clone the ImageData buffer properly respecting byteOffset & byteLength,
+    // then transfer the clone for zero-copy efficiency
+    const cloned = new Uint8ClampedArray(imageData.data);
+    const clonedImageData = new ImageData(cloned, imageData.width, imageData.height);
     worker.postMessage(
       {
         type: 'COMPUTE_EMBEDDING',
         data: {
-          imageData,
+          imageData: clonedImageData,
           originalWidth,
           originalHeight,
           outputDims,
         },
       },
-      { transfer: [buffer] }
+      { transfer: [cloned.buffer] }
     );
   });
 }
