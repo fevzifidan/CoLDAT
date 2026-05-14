@@ -4,7 +4,7 @@ export type AnnotationStatus = 'UPLOADED' | 'PENDING' | 'VERIFICATION_FAILED' | 
 
 export type EmbeddingStatus = AnnotationStatus;
 
-export type AnnotationTool = 'select' | 'bbox' | 'polygon' | 'points' | 'pan' | 'pen' | 'eraser' | 'livewire';
+export type AnnotationTool = 'select' | 'bbox' | 'polygon' | 'points' | 'pan' | 'pen' | 'eraser' | 'livewire' | 'sam';
 
 export interface BoundingBox {
   xMin: number;
@@ -156,5 +156,56 @@ export interface DatasetDetails {
   total_images: number;
   annotated_images: number;
   role: 'admin' | 'annotator' | 'viewer';
+}
+
+// ─── SAM-specific Types ─────────────────────────────────────────────────────
+
+/**
+ * Embedding availability lifecycle status.
+ * Tracks the end-to-end flow from cache check → backend check → download/compute.
+ */
+export type SAMStatus =
+  | 'idle'
+  | 'checking_cache'
+  | 'checking_backend'
+  | 'downloading_embedding'
+  | 'computing_local'
+  | 'ready';
+
+/**
+ * A single point prompt for the MobileSAM decoder.
+ * Stored in **original image pixel coordinates** (not model tensor space).
+ * Conversion to 1024×1024 padded space happens just before sending to the worker.
+ */
+export interface SAMPrompt {
+  x: number;
+  y: number;
+  type: 'positive' | 'negative';
+}
+
+/**
+ * State shape for the SAM slice.
+ * Separate from the slice definition to allow type-only imports.
+ */
+export interface SamState {
+  samStatus: SAMStatus;
+  samDownloadProgress: number;
+  samEmbeddingReady: boolean;
+  samPrompts: SAMPrompt[];
+  samMaskBlobUrl: string | null;
+  samPromptCount: number;
+  samMaskData: { maskData: Uint8Array; width: number; height: number } | null;
+
+  setSamStatus: (status: SAMStatus) => void;
+  setSamDownloadProgress: (progress: number) => void;
+  setSamEmbeddingReady: (ready: boolean) => void;
+  addSamPrompt: (x: number, y: number, type: 'positive' | 'negative') => void;
+  removeSamPrompt: (index: number) => void;
+  clearSamPrompts: () => void;
+  setSamMaskBlobUrl: (url: string | null) => void;
+  clearSamMask: () => void;
+  resetSamState: () => void;
+  clearSamSession: () => void;
+  setSamMaskData: (data: { maskData: Uint8Array; width: number; height: number } | null) => void;
 }
 

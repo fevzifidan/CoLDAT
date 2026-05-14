@@ -16,8 +16,10 @@ import { createViewerUISlice } from '../features/viewer/store/viewerUISlice';
 import type { ViewerUIState } from '../features/viewer/store/viewerUISlice';
 import { createUploadManagerSlice } from '../features/upload_manager/store/uploadManagerSlice';
 import type { UploadManagerState } from '../features/upload_manager/store/uploadManagerSlice';
+import { createSamSlice } from '../features/annotation/store/samSlice';
+import type { SamState } from '../features/annotation/store/samSlice';
 
-export type AppState = ViewerState & AnnotationState & ToolModeState & UIState & ContextState & KeyboardState & ViewerUIState & UploadManagerState;
+export type AppState = ViewerState & AnnotationState & ToolModeState & UIState & ContextState & KeyboardState & ViewerUIState & UploadManagerState & SamState;
 
 export const useAppStore = create<AppState>()(
   devtools(
@@ -30,6 +32,7 @@ export const useAppStore = create<AppState>()(
       ...createKeyboardSlice(...a),
       ...createViewerUISlice(...a),
       ...createUploadManagerSlice(...a),
+      ...createSamSlice(...a),
     }),
     { name: 'ColdatAppStore' }
   )

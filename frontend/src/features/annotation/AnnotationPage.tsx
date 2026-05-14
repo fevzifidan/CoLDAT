@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/hooks/useAppStore';
 import { useAnnotationData } from './hooks/useAnnotationData';
@@ -12,6 +12,7 @@ import { useUndoRedo } from './hooks/useUndoRedo';
 import { useAnnotationHotkeys } from './hooks/useAnnotationHotkeys';
 import RightPanel from './components/RightPanel/RightPanel';
 import AnnotationSideToolbar from './components/AnnotationSideToolbar';
+import { useSamOrchestrator } from './tools/sam/useSamOrchestrator';
 
 export default function AnnotationPage() {
   const { taskId, imageId } = useParams<{ taskId: string; imageId: string }>();
@@ -23,6 +24,7 @@ export default function AnnotationPage() {
   const taskImages = useAppStore(state => state.taskImages);
   const currentImage = useAppStore(state => state.currentImage);
   const setCurrentImage = useAppStore(state => state.setCurrentImage);
+  const currentTask = useAppStore(state => state.currentTask);
   
   useUndoRedo();
   const { classes, relationTypes, isLoading, isLoadingAnnotations } = useAnnotationData(taskId ?? '', imageId ?? '');
@@ -33,7 +35,37 @@ export default function AnnotationPage() {
 
   const [activeImageId, setActiveImageId] = useState(imageId ?? '');
   
-  // Sync activeImageId when URL imageId changes
+  // ─── Resolve datasetId from task context ─────────────────────────────────
+  const datasetId = useMemo<string>(() => {
+    if (currentTask?.dataset_id) return currentTask.dataset_id;
+    // Fallback for test mode or if task context hasn't loaded yet
+    return '';
+  }, [currentTask]);
+
+  // ─── Resolve the full TaskImage metadata for the current image ────────────
+  const taskImageMeta = useMemo(() => {
+    if (!imageId) return null;
+    return taskImages.find(img => img.asset_id === imageId) ?? null;
+  }, [imageId, taskImages]);
+
+  // ─── Wire the SAM orchestrator ───────────────────────────────────────────
+  // This hook handles the entire MobileSAM embedding lifecycle (cache check,
+  // backend download, local computation) and mask generation. It runs
+  // automatically when imageId, taskImageMeta, or datasetId changes.
+  const { isReady: isSamReady } = useSamOrchestrator(
+    imageId ?? '',
+    taskImageMeta,
+    datasetId
+  );
+
+  // (Optional) Log when SAM becomes available for debugging
+  useEffect(() => {
+    if (isSamReady && process.env.NODE_ENV === 'development') {
+      console.info('[AnnotationPage] MobileSAM embedding ready for image:', imageId);
+    }
+  }, [isSamReady, imageId]);
+
+  // ─── Sync activeImageId when URL imageId changes ─────────────────────────
   useEffect(() => {
     if (imageId) {
       setActiveImageId(imageId);

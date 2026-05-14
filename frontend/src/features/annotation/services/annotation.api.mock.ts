@@ -85,6 +85,17 @@ const MOCK_IMAGES: TaskImagesResponse['data'] = [
     status: 'PENDING',
     embedding_status: null,
   },
+  {
+    asset_id: 'img-7',
+    filename: 'IMG_4817.jpg',
+    asset_url: 'https://fastly.picsum.photos/id/60/1920/1200.jpg?hmac=fAMNjl4E_sG_WNUjdU39Kald5QAHQMh-_-TsIbbeDNI',
+    asset_url_expiry_at: new Date(Date.now() + 3600_000).toISOString(),
+    sam_embedding_url: null,
+    sam_embedding_url_expiry_at: null,
+    mime_type: 'image/jpeg',
+    status: 'PENDING',
+    embedding_status: null,
+  },
 ];
 
 const MOCK_ANNOTATION_DATA: AnnotationData = {

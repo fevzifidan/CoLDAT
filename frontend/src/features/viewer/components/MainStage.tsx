@@ -8,6 +8,8 @@ import { BackgroundLayer } from './BackgroundLayer';
 import { AnnotationLayer } from '../../annotation/components/canvas/AnnotationLayer';
 import { InteractionLayer } from '../../annotation/components/canvas/InteractionLayer';
 
+import { SamCanvas } from '../../annotation/tools/sam/SamCanvas';
+
 interface MainStageProps {
   width: number;
   height: number;
@@ -57,6 +59,8 @@ export const MainStage: React.FC<MainStageProps> = ({ width, height, imageUrl })
           return 'crosshair';
         case 'eraser':
           return 'url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTIwIDExTDE0IDVMNCAxNWw3IDcgOS05eiIvPjxwYXRoIGQ9Ik0xOCA5bC0yIDIiLz48L3N2Zz4=") 0 24, auto'; // Eraser icon
+        case 'sam':
+          return 'crosshair'; // SAM prompts are placed with crosshair precision
         case 'select':
           return 'default';
         default:
@@ -109,6 +113,13 @@ export const MainStage: React.FC<MainStageProps> = ({ width, height, imageUrl })
     }
   };
 
+  // Prevent the browser's default right-click context menu when SAM tool is active
+  const handleContextMenu = (e: any) => {
+    if (activeTool === 'sam') {
+      e.evt.preventDefault();
+    }
+  };
+
   return (
     <Stage
       ref={stageRef}
@@ -124,10 +135,12 @@ export const MainStage: React.FC<MainStageProps> = ({ width, height, imageUrl })
       onDragEnd={handleDragEnd}
       onClick={handleStageClick}
       onTap={handleStageClick}
+      onContextMenu={handleContextMenu}
       imageSmoothingEnabled={false}
     >
       <BackgroundLayer imageUrl={imageUrl} />
       <AnnotationLayer />
+      <SamCanvas />
       <InteractionLayer imageUrl={imageUrl} />
     </Stage>
   );

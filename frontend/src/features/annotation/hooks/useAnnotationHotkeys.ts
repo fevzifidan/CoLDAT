@@ -56,6 +56,12 @@ export const useAnnotationHotkeys = ({ onSave }: HotkeyOptions = {}) => {
         case 'e':
           setActiveTool('eraser');
           break;
+        case 'm':
+          setActiveTool('livewire');
+          break;
+        case 's':
+          setActiveTool('sam');
+          break;
         // Add more tools here as they are implemented
       }
     };

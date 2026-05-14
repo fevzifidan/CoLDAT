@@ -6,7 +6,7 @@ import { MarchingAnts, MARCHING_ANTS_DASH, MARCHING_ANTS_DASH_SPEED_MS } from '.
 
 interface LivewirePreviewProps {
   committedPoints: number[];
-  previewLineRef: React.RefObject<Konva.Line>;
+  previewLineRef: React.RefObject<Konva.Line | null>;
   lastSnappedPoint: { x: number; y: number } | null;
 }
 

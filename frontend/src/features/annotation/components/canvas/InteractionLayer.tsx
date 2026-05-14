@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+﻿import React, { useRef } from 'react';
 import { Layer, Rect, Line, Circle } from 'react-konva';
 import Konva from 'konva';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
@@ -11,6 +11,7 @@ import { useZoom } from '../../../viewer/hooks/useZoom';
 import { MagnifierLens } from './MagnifierLens';
 import { useLivewire } from '../../tools/livewire/useLivewire';
 import { LivewirePreview } from '../../tools/livewire/LivewirePreview';
+import { useSamInteraction } from '../../tools/sam/useSamInteraction';
 
 
 interface InteractionLayerProps {
@@ -75,8 +76,18 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
     isDrawing: isLivewireDrawing
   } = useLivewire([livewireMainRef, livewireMagnifierRef]);
 
+  // SAM interaction — handles left-click (positive) and right-click (negative) prompts
+  const {
+    handleMouseDown: samDown,
+    handleMouseUp: samUp,
+  } = useSamInteraction({ disabled: isReadOnly });
 
-  // Keyboard shortcut for cancelling
+  // Get SAM store actions for keyboard shortcuts
+  const clearSamPrompts = useAppStore(state => state.clearSamPrompts);
+  const removeSamPrompt = useAppStore(state => state.removeSamPrompt);
+  const samPromptCount = useAppStore(state => state.samPromptCount);
+
+  // Keyboard shortcut for cancelling and SAM prompt management
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isReadOnly) return;
@@ -84,6 +95,10 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
         if (activeTool === 'polygon') cancelPoly();
         if (activeTool === 'pen') cancelPen();
         if (activeTool === 'livewire') livewireReset();
+        if (activeTool === 'sam') {
+          e.preventDefault();
+          clearSamPrompts();
+        }
       }
       
       if (e.key === 'Backspace' || (e.key === 'z' && (e.ctrlKey || e.metaKey))) {
@@ -95,6 +110,10 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
           e.preventDefault();
           livewireUndo();
         }
+        if (activeTool === 'sam') {
+          e.preventDefault();
+          removeSamPrompt(samPromptCount - 1);
+        }
       }
 
       if (e.key === 'Enter') {
@@ -104,7 +123,7 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTool, cancelPoly, cancelPen, undoPoly, livewireFinalize, livewireUndo, livewireReset, isReadOnly]);
+  }, [activeTool, cancelPoly, cancelPen, undoPoly, livewireFinalize, livewireUndo, livewireReset, isReadOnly, clearSamPrompts, removeSamPrompt, samPromptCount]);
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (e.evt.ctrlKey) return; // Ctrl + LMB is for panning
@@ -113,6 +132,15 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
     else if (activeTool === 'pen') penDown(e);
     else if (activeTool === 'eraser') eraserDown(e);
     else if (activeTool === 'livewire') livewireDown(e);
+  };
+  
+  // SAM, mouseDown ve mouseUp'ı ayrı ayrı kullanır (drag algılama için)
+  const handleSamMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (activeTool === 'sam') samDown(e);
+  };
+  
+  const handleSamMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (activeTool === 'sam') samUp(e);
   };
 
 
@@ -143,10 +171,16 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
         width={imgDimensions.width}
         height={imgDimensions.height}
         fill="transparent"
-        onMouseDown={handleMouseDown}
+        onMouseDown={(e) => {
+          handleMouseDown(e);
+          handleSamMouseDown(e);
+        }}
         onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        listening={!isReadOnly && ['bbox', 'polygon', 'pen', 'livewire'].includes(activeTool)}
+        onMouseUp={(e) => {
+          handleMouseUp(e);
+          handleSamMouseUp(e);
+        }}
+        listening={!isReadOnly && ['bbox', 'polygon', 'pen', 'livewire', 'sam'].includes(activeTool)}
       />
 
       
