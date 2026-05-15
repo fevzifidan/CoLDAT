@@ -115,5 +115,8 @@
       "next": "Next",
       "page": "Page {{page}}"
     }
+  },
+  "sam": {
+    "actionHint": "Press Q for polygon, W for bounding box"
   }
 }

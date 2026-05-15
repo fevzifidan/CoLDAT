@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { PanelLeft, PanelRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ActionStatusBox } from './ActionStatusBox';
+import { SamActionHintBox } from './SamActionHintBox';
 import DotGridBackground from './canvas/DotGridBackground';
 
 interface AnnotationLayoutProps {
@@ -103,6 +104,11 @@ export default function AnnotationLayout({
           {/* Action Status Indicator */}
           <div className="absolute left-3 bottom-3 z-20">
             <ActionStatusBox />
+          </div>
+
+          {/* SAM Action Hint Indicator */}
+          <div className="absolute right-3 bottom-3 z-20">
+            <SamActionHintBox />
           </div>
         </main>
 

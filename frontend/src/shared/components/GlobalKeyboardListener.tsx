@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/hooks/useAppStore';
 import { maskToBoundingBox } from '../../features/annotation/tools/sam/samCoords';
+import notificationService from '@/shared/services/notification';
 
 export const GlobalKeyboardListener = () => {
   const setKeyPressed = useAppStore(state => state.setKeyPressed);
@@ -42,12 +43,12 @@ export const GlobalKeyboardListener = () => {
             state.clearSamSession();
           }
 
-          // Enter → Convert mask to bounding box and add as annotation
+          // Enter or W → Convert mask to bounding box and add as annotation
           // Uses maskToBoundingBox from samCoords (main-thread, sync, fast).
-          if (e.key === 'Enter' && samMaskData && samMaskBlobUrl) {
+          if ((e.key === 'Enter' || e.key.toLowerCase() === 'w') && samMaskData && samMaskBlobUrl) {
             e.preventDefault();
 
-            // Prevent duplicate conversions if user mashes Enter
+            // Prevent duplicate conversions if user mashes Enter/W
             if (isConvertingRef.current) return;
             isConvertingRef.current = true;
 
@@ -99,6 +100,20 @@ export const GlobalKeyboardListener = () => {
               console.error('[SAM] Bounding box conversion failed:', err);
               // Still clear the session so the user can try again
               useAppStore.getState().clearSamSession();
+            } finally {
+              isConvertingRef.current = false;
+            }
+          }
+
+          // Q → Convert mask to polygon (Placeholder)
+          if (e.key.toLowerCase() === 'q' && samMaskData && samMaskBlobUrl) {
+            e.preventDefault();
+            
+            if (isConvertingRef.current) return;
+            isConvertingRef.current = true;
+            
+            try {
+              notificationService.info('Polygon conversion will be implemented soon.');
             } finally {
               isConvertingRef.current = false;
             }

@@ -115,5 +115,8 @@
       "next": "Sonraki",
       "page": "Sayfa {{page}}"
     }
+  },
+  "sam": {
+    "actionHint": "Poligon için Q, sınırlayıcı kutu (BBox) için W tuşuna basın"
   }
 }
