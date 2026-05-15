@@ -195,6 +195,7 @@ export interface SamState {
   samMaskBlobUrl: string | null;
   samPromptCount: number;
   samMaskData: { maskData: Uint8Array; width: number; height: number } | null;
+  samWarning: string | null;
 
   setSamStatus: (status: SAMStatus) => void;
   setSamDownloadProgress: (progress: number) => void;
@@ -207,5 +208,6 @@ export interface SamState {
   resetSamState: () => void;
   clearSamSession: () => void;
   setSamMaskData: (data: { maskData: Uint8Array; width: number; height: number } | null) => void;
+  setSamWarning: (warning: string | null) => void;
 }
 

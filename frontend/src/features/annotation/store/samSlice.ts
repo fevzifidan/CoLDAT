@@ -31,6 +31,7 @@ export const createSamSlice: StateCreator<SamState> = (set) => ({
   samMaskBlobUrl: null,
   samPromptCount: 0,
   samMaskData: null,
+  samWarning: null,
 
   // ─── Status Setters ─────────────────────────────────────────────────────────
 
@@ -105,6 +106,7 @@ export const createSamSlice: StateCreator<SamState> = (set) => ({
         samMaskBlobUrl: null,
         samPromptCount: 0,
         samMaskData: null,
+        samWarning: null,
       };
     });
   },
@@ -121,6 +123,7 @@ export const createSamSlice: StateCreator<SamState> = (set) => ({
         samMaskBlobUrl: null,
         samPromptCount: 0,
         samMaskData: null,
+        samWarning: null,
       };
     });
   },
@@ -129,5 +132,11 @@ export const createSamSlice: StateCreator<SamState> = (set) => ({
 
   setSamMaskData: (data: { maskData: Uint8Array; width: number; height: number } | null) => {
     set({ samMaskData: data });
+  },
+
+  // ─── Warning Management ─────────────────────────────────────────────────────
+
+  setSamWarning: (warning: string | null) => {
+    set({ samWarning: warning });
   },
 });

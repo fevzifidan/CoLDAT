@@ -694,12 +694,33 @@ export function useSamOrchestrator(
           SAM_TENSOR_SIZE
         );
 
+        const nonZeroCount = maskData.reduce((sum, v) => sum + (v > 0 ? 1 : 0), 0);
         console.log('[SAM Orchestrator] Mask data stats:', { 
           maskWidth, 
           maskHeight, 
           maskDataLength: maskData.length,
-          nonZeroCount: maskData.reduce((sum, v) => sum + (v > 0 ? 1 : 0), 0)
+          nonZeroCount
         });
+
+        if (nonZeroCount === 0) {
+          console.log('[SAM Orchestrator] No mask detected. Triggering warning and removing prompt.');
+          clearSamMask();
+          const { setSamWarning, removeSamPrompt, samPrompts } = useAppStore.getState();
+          setSamWarning('sam.noMaskFound');
+          
+          if (samPrompts.length > 0) {
+            removeSamPrompt(samPrompts.length - 1);
+          }
+
+          // Clear warning after 3 seconds
+          setTimeout(() => {
+            if (isMountedRef.current && useAppStore.getState().samWarning === 'sam.noMaskFound') {
+              useAppStore.getState().setSamWarning(null);
+            }
+          }, 3000);
+
+          return;
+        }
 
         // Convert the mask to a renderable PNG blob (offloaded to worker)
         const maskBlobUrl = await offloadMaskToBlobUrl(maskData, maskWidth, maskHeight);

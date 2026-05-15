@@ -117,6 +117,7 @@
     }
   },
   "sam": {
-    "actionHint": "Poligon için Q, sınırlayıcı kutu (BBox) için W tuşuna basın"
+    "actionHint": "Poligon için Q, sınırlayıcı kutu (BBox) için W tuşuna basın",
+    "noMaskFound": "Seçili bölgede maske bulunamadı."
   }
 }

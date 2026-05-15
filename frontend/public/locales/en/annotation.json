@@ -117,6 +117,7 @@
     }
   },
   "sam": {
-    "actionHint": "Press Q for polygon, W for bounding box"
+    "actionHint": "Press Q for polygon, W for bounding box",
+    "noMaskFound": "No mask found in the selected region."
   }
 }
