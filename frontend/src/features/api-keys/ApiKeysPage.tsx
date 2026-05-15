@@ -14,16 +14,15 @@ import {
 import { CreateKeyModal } from "./components/CreateKeyModal";
 
 export default function ApiKeysPage() {
-  const { t } = useTranslation();
+  const { t } = useTranslation(); // defaultNS common.json'dan okur
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // Başlangıç verisi (isteğe bağlı boş bırakabilirsin: useState([]))
   const [keys, setKeys] = useState([
     { id: 1, name: "Initial_Project", key: "sk-coldat-••••4a21", createdAt: "2026-05-10", status: "Active" },
   ]);
 
   const handleAddNewKey = (newKey: any) => {
-    setKeys((prevKeys) => [newKey, ...prevKeys]); // Yeni anahtarı listenin en üstüne ekler
+    setKeys((prevKeys) => [newKey, ...prevKeys]); 
   };
 
   const deleteKey = (id: number) => {
@@ -36,12 +35,12 @@ export default function ApiKeysPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t("sidebar.api_keys")}</h1>
           <p className="text-muted-foreground text-sm">
-            Manage your API keys to access CoLDAT services securely.
+            {t("api_keys.description")}
           </p>
         </div>
         <Button className="gap-2" onClick={() => setIsModalOpen(true)}>
           <Plus size={16} />
-          Create New Key
+          {t("api_keys.create_new")}
         </Button>
       </div>
 
@@ -49,11 +48,11 @@ export default function ApiKeysPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[250px]">Name</TableHead>
-              <TableHead>API Key</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[250px]">{t("api_keys.table.name")}</TableHead>
+              <TableHead>{t("api_keys.table.key")}</TableHead>
+              <TableHead>{t("api_keys.table.created_at")}</TableHead>
+              <TableHead>{t("api_keys.table.status")}</TableHead>
+              <TableHead className="text-right">{t("api_keys.table.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -66,7 +65,7 @@ export default function ApiKeysPage() {
                   <TableCell>
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
                       <ShieldCheck size={12} />
-                      {item.status}
+                      {item.status === "Active" ? t("dashboard.status.in_progress") || "Active" : item.status}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
@@ -84,7 +83,7 @@ export default function ApiKeysPage() {
             ) : (
               <TableRow>
                 <td colSpan={5} className="h-24 text-center text-muted-foreground">
-                  No API keys found. Create one to get started.
+                  {t("api_keys.no_keys")}
                 </td>
               </TableRow>
             )}

@@ -18,7 +18,6 @@ import ProjectDetailPage from '@/features/projects/ProjectDetailPage';
 import Login from "@/features/auth/Login/Login";
 import Register from "@/features/auth/Register/Register";
 
-// YENİ: Döküman kurallarına uygun hazırladığımız sayfaları import ediyoruz
 import TasksPage from '@/features/tasks/TasksPage';
 import DatasetsPage from '@/features/datasets/DatasetsPage';
 import ProjectsPage from '@/features/projects/ProjectsPage';
@@ -41,7 +40,7 @@ function App() {
                     <Routes>
                       <Route path="/" element={<DashboardHome />} />
                       
-                      {/* Döküman: Show More butonları artık gerçek sayfalara yönlendiriyor */}
+                      {/* Ana Sayfa */}
                       <Route path="/projects" element={<ProjectsPage />} />
                       <Route path="/datasets" element={<DatasetsPage />} />
                       <Route path="/tasks" element={<TasksPage />} />

@@ -1,78 +1,279 @@
 {
+
   "brand": "CoLDAT",
+
   "actions": {
+
     "save": "Kaydet",
+
     "cancel": "İptal",
+
     "delete": "Sil",
+
     "edit": "Düzenle",
+
     "back": "Geri",
+
     "next": "İleri",
+
     "yes": "Evet",
+
     "no": "Hayır",
+
     "close": "Kapat",
+
     "create": "Oluştur"
+
   },
+
   "status": {
+
     "loading": "Yükleniyor...",
+
     "success": "Başarılı!",
+
     "error": "Bir hata oluştu!",
+
     "server_error": "Sunucu hatası!",
+
     "deleting": "Siliniyor...",
+
     "updating": "Güncelleniyor...",
+
     "saving": "Kaydediliyor...",
+
     "load_more": "Daha Fazla Yükle"
+
   },
+
   "error": {
+
     "err_reach_server": "Sunucuya ulaşılamadı!"
+
   },
+
   "theme": {
+
     "header": "Temayı Değiştir",
+
     "appearance": "Görünüm",
+
     "light": "Aydınlık",
+
     "dark": "Karanlık",
+
     "system": "Sistem"
+
   },
+
   "dashboard": {
+
     "title": "Panel",
+
     "description": "CoLDAT projesi güncel ilerlemesi.",
+
     "no_assigned_tasks": "Üzerinize atanmış aktif bir görev bulunmamaktadır.",
+
     "show_more": "DAHA FAZLA",
+
     "files": "İŞLENEN DOSYALAR",
+
     "sections": {
+
       "recent_tasks": "Son Görevler",
+
       "tasks_description": "Size atanan iş akışı ilerlemesi",
+
       "recent_datasets": "Son Veri Setleri",
+
       "recent_projects": "Son Projeler"
+
     },
+
     "buttons": {
+
       "manage": "YÖNET",
+
       "start_labeling": "ETİKETLEMEYE BAŞLA",
-      "open": "PROJEYİ AÇ"
+
+      "open": "PROJEYİ AÇ",
+
+      "create_project": "Yeni Proje Oluştur"
+
     },
+
     "status": {
+
       "completed": "Tamamlandı",
+
       "new": "Yeni",
+
       "in_progress": "İşlemde"
+
     },
+
+    "tasks": {
+
+      "object_detection": "Nesne Algılama",
+
+      "entity_recognition": "Varlık Tanıma",
+
+      "semantic_relation": "Anlamsal İlişki"
+
+    }
+
+    ,
+
+    "roles": {
+
+      "no_assigned_tasks": "Atanmış Görev Yok",
+
+      "annotator": "Etiketleyici",
+
+      "viewer": "İzleyici",
+
+      "admin": "Yönetici"
+
+    }
+
+  },
+
+    "sidebar": {
+
+    "projects": "Projeler",
+
+    "tasks": "Görevler",
+
+    "datasets": "Veri Setleri",
+
+    "api_keys": "API Anahtarları"
+
+  },
+
+  "datasets": {
+    "title": "Veri Setleri",
+    "description": "Versiyonlanmış veri koleksiyonlarını yönetin ve ilerlemeyi takip edin.",
+    "create_new": "Yeni Veri Seti Oluştur",
+    "total": "Toplam",
+    "annotated": "Etiketlenen",
+    "progress": "İlerleme",
+    "view_data": "Veriyi Görüntüle",
+    "members": "Üyeler"
+  },
+
+  "api_keys": {
+    "description": "CoLDAT servislerine güvenli bir şekilde erişmek için API anahtarlarınızı yönetin.",
+    "create_new": "Yeni Anahtar Oluştur",
+    "no_keys": "API anahtarı bulunamadı. Başlamak için yeni bir tane oluşturun.",
+    "table": {
+      "name": "İsim",
+      "key": "API Anahtarı",
+      "created_at": "Oluşturulma Tarihi",
+      "status": "Durum",
+      "actions": "İşlemler"
+    }
+  },
+
+  "project_detail": {
+    "not_found": "Proje Bulunamadı.",
+    "save_all": "Tüm Değişiklikleri Kaydet",
+    "annotate_data": "Veriyi Etiketle",
+    "alert_success": "Değişiklikler başarıyla kaydedildi (Konsolu kontrol edin).",
+    "tabs": {
+      "general": "Genel",
+      "taxonomy": "Taksonomi",
+      "assets": "Varlıklar (Assets)",
+      "users": "Kullanıcılar",
+      "export": "Dışa Aktar"
+    }
+  },
+
+  "project_general": {
+    "metadata": "Proje Meta Verileri",
+    "project_name": "PROJE ADI",
+    "description": "AÇIKLAMA",
+    "task_type": "GÖREV TÜRÜ",
+    "privacy_status": "GİZLİLİK DURUMU",
+    "public": "Açık (Public)",
+    "private": "Gizli (Private)",
+    "delete_project": "Projeyi Sil",
+    "delete_warning": "Bu işlem kalıcıdır ve geri alınamaz.",
+    "placeholder_name": "Örn. Otonom Sürüş Veri Seti",
+    "placeholder_desc": "Bu veri setinin amacını açıklayın...",
     "tasks": {
       "object_detection": "Nesne Algılama",
-      "entity_recognition": "Varlık Tanıma",
-      "semantic_relation": "Anlamsal İlişki"
+      "instance_segmentation": "Örneklem Bölütleme",
+      "classification": "Sınıflandırma"
     }
-    ,
+  },
+
+  "taxonomy": {
+    "title": "Proje Taksonomisi",
+    "description": "Nesne sınıflarını ve aralarındaki ilişkileri yönetin.",
+    "save_changes": "Değişiklikleri Kaydet",
+    "alert_saved": "Değişiklikler Kaydedildi!",
+    "object_classes": "Nesne Sınıfları (Object Classes)",
+    "predicates": "Yüklemler (Predicates)",
+    "no_global_attributes": "Tanımlanmış Küresel Öznitelik Yok",
+    "add_global_attribute": "Küresel öznitelik ekle",
+    "global_attributes_title": "Küresel Öznitelikler",
+    "prompt_msg": "Yeni öznitelik adını girin (Örn: color, truncate):",
+    "default_new_class": "Yeni Sınıf",
+    "default_new_relation": "yeni_iliski"
+  },
+
+  "assets": {
+    "search_placeholder": "Varlıklarda ara...",
+    "upload_items": "Ögeleri Yükle",
+    "cancel": "İptal Et",
+    "upload_title": "Görsellerinizi veya videolarınızı yükleyin",
+    "upload_desc": "Dosyaları buraya sürükleyip bırakın veya göz atmak için tıklayın. JPG, PNG, MP4 desteklenir.",
+    "select_files": "Dosyaları Seçin",
+    "status": {
+      "annotated": "Etiketlendi",
+      "pending": "Beklemede"
+    }
+  },
+
+  "team": {
+    "title": "Proje Ekibi",
+    "description": "Ekip çalışanlarını ve erişim yetkilerini yönetin.",
+    "cancel": "İptal Et",
+    "add_member": "Üye Ekle",
+    "email_label": "E-posta Adresi",
+    "role_label": "Rol",
+    "send_invitation": "Davetiye Gönder",
+    "alert_invited": "{{email}} adresine davetiye gönderildi!",
+    "status": {
+      "active": "AKTİF",
+      "invited": "DAVET EDİLDİ"
+    },
     "roles": {
-      "no_assigned_tasks": "Atanmış Görev Yok",
-      "annotator": "Etiketleyici",
-      "viewer": "İzleyici",
-      "admin": "Yönetici"
+      "admin": "Yönetici (Admin)",
+      "manager": "Müdür (Manager)",
+      "labeler": "Etiketleyici (Labeler)",
+      "reviewer": "Denetleyici (Reviewer)"
     }
   },
-    "sidebar": {
-    "projects": "Projeler",
-    "tasks": "Görevler",
-    "datasets": "Veri Setleri",
-    "api_keys": "API Anahtarları"
+
+  "export": {
+    "title": "Verisetini Dışa Aktar",
+    "description": "Etiketlerinizi endüstri standardı formatlarda indirin.",
+    "ready_title": "Oluşturmaya Hazır",
+    "ready_desc": "Bu işlem, etiketlenmiş tüm varlıkları bir {{format}} dosyası olarak paketleyecektir.",
+    "btn_generating": "Oluşturuluyor...",
+    "btn_export_now": "Şimdi Dışa Aktar",
+    "formats": {
+      "coco_desc": "Common Objects in Context (COCO)",
+      "yolo_desc": "Darknet / PyTorch formatı",
+      "pascal_desc": "Nesne tespiti için XML formatı"
+    }
   },
+
+
   "language": "Dil",
+
   "logout": "Çıkış Yap"
+
 }
+

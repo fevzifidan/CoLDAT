@@ -1,6 +1,7 @@
 // frontend/src/assets/TeamManager.tsx
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next'; // i18n hook'u eklendi
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 const TeamManager = () => {
+  const { t } = useTranslation(); // t fonksiyonu tanımlandı
+
   const [isAdding, setIsAdding] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("Labeler");
@@ -29,16 +32,16 @@ const TeamManager = () => {
 
     const newUser = {
       id: Date.now(),
-      name: email.split('@')[0], // Geçici isim
+      name: email.split('@')[0], 
       email: email,
       role: role,
       status: "Invited"
     };
 
     setTeam([...team, newUser]);
-    setEmail("");
     setIsAdding(false);
-    alert(`${email} adresine davetiye gönderildi!`);
+    alert(t("team.alert_invited", { email: email })); // Parametreli alert kullanımı
+    setEmail("");
   };
 
   const removeUser = (id: number) => {
@@ -49,14 +52,14 @@ const TeamManager = () => {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-xl font-bold">Project Team</h3>
-          <p className="text-sm text-muted-foreground">Manage collaborators and their access levels.</p>
+          <h3 className="text-xl font-bold">{t("team.title")}</h3>
+          <p className="text-sm text-muted-foreground">{t("team.description")}</p>
         </div>
         <Button 
           onClick={() => setIsAdding(!isAdding)}
           className={isAdding ? "bg-slate-200 text-slate-700" : "bg-indigo-600"}
         >
-          {isAdding ? <><X className="mr-2 h-4 w-4" /> Cancel</> : <><UserPlus className="mr-2 h-4 w-4" /> Add Member</>}
+          {isAdding ? <><X className="mr-2 h-4 w-4" /> {t("team.cancel")}</> : <><UserPlus className="mr-2 h-4 w-4" /> {t("team.add_member")}</>}
         </Button>
       </div>
 
@@ -65,7 +68,7 @@ const TeamManager = () => {
           <CardContent className="p-6">
             <form onSubmit={handleAddUser} className="flex flex-col md:flex-row gap-4 items-end">
               <div className="flex-1 space-y-2">
-                <label className="text-xs font-bold uppercase text-slate-500">Email Address</label>
+                <label className="text-xs font-bold uppercase text-slate-500">{t("team.email_label")}</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                   <Input 
@@ -78,20 +81,20 @@ const TeamManager = () => {
                 </div>
               </div>
               <div className="w-full md:w-48 space-y-2">
-                <label className="text-xs font-bold uppercase text-slate-500">Role</label>
+                <label className="text-xs font-bold uppercase text-slate-500">{t("team.role_label")}</label>
                 <select 
                   className="w-full h-10 px-3 py-2 bg-white border rounded-md text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                 >
-                  <option value="Admin">Admin</option>
-                  <option value="Manager">Manager</option>
-                  <option value="Labeler">Labeler</option>
-                  <option value="Reviewer">Reviewer</option>
+                  <option value="Admin">{t("team.roles.admin")}</option>
+                  <option value="Manager">{t("team.roles.manager")}</option>
+                  <option value="Labeler">{t("team.roles.labeler")}</option>
+                  <option value="Reviewer">{t("team.roles.reviewer")}</option>
                 </select>
               </div>
               <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700">
-                Send Invitation
+                {t("team.send_invitation")}
               </Button>
             </form>
           </CardContent>
@@ -110,7 +113,7 @@ const TeamManager = () => {
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-sm">{user.name}</p>
                     <Badge variant="outline" className="text-[10px] h-5 py-0">
-                      {user.role}
+                      {t(`team.roles.${user.role.toLowerCase()}`)}
                     </Badge>
                   </div>
                   <p className="text-xs text-slate-400">{user.email}</p>
@@ -119,10 +122,10 @@ const TeamManager = () => {
               <div className="flex items-center gap-3">
                 {user.status === "Active" ? (
                   <div className="flex items-center text-green-600 text-[10px] font-bold gap-1">
-                    <CheckCircle2 size={12} /> ACTIVE
+                    <CheckCircle2 size={12} /> {t("team.status.active")}
                   </div>
                 ) : (
-                  <div className="text-orange-500 text-[10px] font-bold">INVITED</div>
+                  <div className="text-orange-500 text-[10px] font-bold">{t("team.status.invited")}</div>
                 )}
                 <Button 
                   variant="ghost" 

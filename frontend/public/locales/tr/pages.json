@@ -1,0 +1,19 @@
+{
+  "projects": {
+    "title": "Projeler",
+    "create_new": "Yeni Proje Oluştur",
+    "import": "Proje İçe Aktar",
+    "search_placeholder": "Projelerde ara..."
+  },
+  "datasets": {
+    "title": "Veri Setleri",
+    "create_new": "Yeni Veri Seti Oluştur",
+    "import": "Veri Seti İçe Aktar",
+    "search_placeholder": "Veri setlerinde ara..."
+  },
+  "api_keys": {
+    "title": "API Anahtarları",
+    "create_new": "Yeni Anahtar Oluştur",
+    "description": "Dış sistemlerin erişimi için API anahtarlarınızı yönetin."
+  }
+}

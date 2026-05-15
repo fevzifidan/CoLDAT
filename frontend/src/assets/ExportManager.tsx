@@ -1,16 +1,21 @@
+// frontend/src/assets/ExportManager.tsx
+
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next'; // i18n hook'u eklendi
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, FileJson, FileCode, Archive, CheckCircle2, Loader2 } from "lucide-react";
 
 const ExportManager = () => {
+  const { t } = useTranslation(); // t fonksiyonu tanımlandı
+
   const [isExporting, setIsExporting] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState('coco');
 
   const formats = [
-    { id: 'coco', name: 'COCO JSON', icon: FileJson, desc: 'Common Objects in Context' },
-    { id: 'yolo', name: 'YOLO v8', icon: FileCode, desc: 'Darknet / PyTorch format' },
-    { id: 'pascal', name: 'Pascal VOC', icon: Archive, desc: 'XML format for object detection' },
+    { id: 'coco', name: 'COCO JSON', icon: FileJson, desc: t("export.formats.coco_desc") },
+    { id: 'yolo', name: 'YOLO v8', icon: FileCode, desc: t("export.formats.yolo_desc") },
+    { id: 'pascal', name: 'Pascal VOC', icon: Archive, desc: t("export.formats.pascal_desc") },
   ];
 
   const handleExport = () => {
@@ -23,8 +28,8 @@ const ExportManager = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-bold">Export Dataset</h3>
-          <p className="text-sm text-muted-foreground">Download your annotations in industry standard formats.</p>
+          <h3 className="text-lg font-bold">{t("export.title")}</h3>
+          <p className="text-sm text-muted-foreground">{t("export.description")}</p>
         </div>
       </div>
 
@@ -58,8 +63,10 @@ const ExportManager = () => {
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <h4 className="text-sm font-semibold">Ready to Generate</h4>
-              <p className="text-xs text-muted-foreground">This will package all annotated assets into a {selectedFormat.toUpperCase()} file.</p>
+              <h4 className="text-sm font-semibold">{t("export.ready_title")}</h4>
+              <p className="text-xs text-muted-foreground">
+                {t("export.ready_desc", { format: selectedFormat === 'pascal' ? 'Pascal VOC' : selectedFormat.toUpperCase() })}
+              </p>
             </div>
             <Button 
               onClick={handleExport} 
@@ -68,11 +75,11 @@ const ExportManager = () => {
             >
               {isExporting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("export.btn_generating")}
                 </>
               ) : (
                 <>
-                  <Download className="mr-2 h-4 w-4" /> Export Now
+                  <Download className="mr-2 h-4 w-4" /> {t("export.btn_export_now")}
                 </>
               )}
             </Button>

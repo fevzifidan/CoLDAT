@@ -19,7 +19,10 @@ const ProjectsPage = () => {
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
           {t('dashboard.sections.recent_projects')}
         </h1>
-        <Button className="bg-indigo-600 hover:bg-indigo-700">Create New Project</Button>
+        {/* Buton buradaki dinamik anahtara bağlandı */}
+        <Button className="bg-indigo-600 hover:bg-indigo-700">
+          {t('dashboard.buttons.create_project')}
+        </Button>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

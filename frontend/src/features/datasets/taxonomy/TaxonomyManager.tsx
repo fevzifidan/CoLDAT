@@ -1,6 +1,7 @@
 // frontend/src/features/datasets/taxonomy/TaxonomyManager.tsx
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next'; // i18n hook'u eklendi
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Save, Plus, Edit2, Check, X, Link as LinkIcon, Tag } from "lucide-react";
 
 const TaxonomyManager = () => {
+  const { t } = useTranslation(); // t fonksiyonu tanımlandı
+
   // State Yönetimi
   const [classes, setClasses] = useState([
     { id: 1, name: 'Car', color: '#ff4d4d' },
@@ -20,7 +23,7 @@ const TaxonomyManager = () => {
   ]);
 
   const [attributes, setAttributes] = useState<string[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null); // "class-1" veya "pred-1" formatında
+  const [editingId, setEditingId] = useState<string | null>(null); 
   const [tempName, setTempName] = useState("");
 
   // Edit İşlemleri
@@ -39,7 +42,7 @@ const TaxonomyManager = () => {
   };
 
   const addGlobalAttribute = () => {
-    const attr = prompt("Yeni attribute ismi girin (Örn: color, truncate):");
+    const attr = prompt(t("taxonomy.prompt_msg"));
     if (attr) setAttributes([...attributes, attr]);
   };
 
@@ -47,11 +50,11 @@ const TaxonomyManager = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-xl font-bold">Project Taxonomy</h3>
-          <p className="text-sm text-muted-foreground">Manage object classes and their relationships.</p>
+          <h3 className="text-xl font-bold">{t("taxonomy.title")}</h3>
+          <p className="text-sm text-muted-foreground">{t("taxonomy.description")}</p>
         </div>
-        <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => alert("Changes Saved!")}>
-          <Save className="mr-2 h-4 w-4" /> Save Changes
+        <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => alert(t("taxonomy.alert_saved"))}>
+          <Save className="mr-2 h-4 w-4" /> {t("taxonomy.save_changes")}
         </Button>
       </div>
 
@@ -61,14 +64,14 @@ const TaxonomyManager = () => {
           <CardContent className="p-5">
             <div className="flex justify-between items-center mb-4 border-b pb-2">
               <div className="flex items-center gap-2 font-bold text-slate-700">
-                <Tag size={18} className="text-orange-500" /> Object Classes
+                <Tag size={18} className="text-orange-500" /> {t("taxonomy.object_classes")}
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setClasses([...classes, { id: Date.now(), name: 'New Class', color: '#cbd5e1' }])}>
+              <Button variant="ghost" size="icon" onClick={() => setClasses([...classes, { id: Date.now(), name: t("taxonomy.default_new_class"), color: '#cbd5e1' }])}>
                 <Plus size={18} className="text-indigo-600" />
               </Button>
             </div>
             <div className="space-y-2">
-              {classes.map((cls) => (
+              ={classes.map((cls) => (
                 <div key={cls.id} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl group">
                   {editingId === `class-${cls.id}` ? (
                     <div className="flex gap-2 w-full">
@@ -98,9 +101,9 @@ const TaxonomyManager = () => {
           <CardContent className="p-5">
             <div className="flex justify-between items-center mb-4 border-b pb-2">
               <div className="flex items-center gap-2 font-bold text-slate-700">
-                <LinkIcon size={18} className="text-blue-500" /> Predicates
+                <LinkIcon size={18} className="text-blue-500" /> {t("taxonomy.predicates")}
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setPredicates([...predicates, { id: Date.now(), name: 'new_relation' }])}>
+              <Button variant="ghost" size="icon" onClick={() => setPredicates([...predicates, { id: Date.now(), name: t("taxonomy.default_new_relation") }])}>
                 <Plus size={18} className="text-indigo-600" />
               </Button>
             </div>
@@ -135,14 +138,14 @@ const TaxonomyManager = () => {
               <div className="bg-white w-12 h-12 rounded-xl shadow-sm flex items-center justify-center mx-auto mb-4">
                 <Tag size={20} className="text-slate-300" />
               </div>
-              <p className="text-slate-500 font-medium mb-4 text-sm">No Global Attributes Defined</p>
+              <p className="text-slate-500 font-medium mb-4 text-sm">{t("taxonomy.no_global_attributes")}</p>
               <Button variant="outline" size="sm" onClick={addGlobalAttribute} className="text-indigo-600 border-indigo-200 hover:bg-indigo-50">
-                Add global attribute
+                {t("taxonomy.add_global_attribute")}
               </Button>
             </>
           ) : (
             <div className="text-left w-full">
-              <h4 className="text-xs font-bold uppercase text-slate-400 mb-4 tracking-widest">Global Attributes</h4>
+              <h4 className="text-xs font-bold uppercase text-slate-400 mb-4 tracking-widest">{t("taxonomy.global_attributes_title")}</h4>
               <div className="flex flex-wrap gap-2">
                 {attributes.map((attr, i) => (
                   <Badge key={i} className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-none px-3 py-1">

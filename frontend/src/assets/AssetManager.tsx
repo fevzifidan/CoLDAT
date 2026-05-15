@@ -1,6 +1,7 @@
 // frontend/src/assets/AssetManager.tsx
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next'; // i18n hook'u eklendi
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,8 @@ import { Upload, Image as ImageIcon, X, FilePlus, Search, Trash2 } from "lucide-
 import { Badge } from "@/components/ui/badge";
 
 const AssetManager = () => {
+  const { t } = useTranslation(); // t fonksiyonu tanımlandı
+
   const [isUploading, setIsUploading] = useState(false);
   const [assets, setAssets] = useState([
     { id: 1, name: 'frame_001.jpg', size: '1.2 MB', status: 'Annotated' },
@@ -28,13 +31,13 @@ const AssetManager = () => {
       <div className="flex justify-between items-center">
         <div className="relative w-72">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-          <Input placeholder="Search assets..." className="pl-9 h-9" />
+          <Input placeholder={t("assets.search_placeholder")} className="pl-9 h-9" />
         </div>
         <Button 
           onClick={handleUploadClick}
           className={`${isUploading ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-indigo-600 hover:bg-indigo-700'}`}
         >
-          {isUploading ? <><X className="mr-2 h-4 w-4" /> Cancel</> : <><Upload className="mr-2 h-4 w-4" /> Upload Items</>}
+          {isUploading ? <><X className="mr-2 h-4 w-4" /> {t("assets.cancel")}</> : <><Upload className="mr-2 h-4 w-4" /> {t("assets.upload_items")}</>}
         </Button>
       </div>
 
@@ -45,13 +48,13 @@ const AssetManager = () => {
             <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4">
               <FilePlus className="text-indigo-600" size={28} />
             </div>
-            <h4 className="text-lg font-bold text-slate-800">Upload your images or videos</h4>
+            <h4 className="text-lg font-bold text-slate-800">{t("assets.upload_title")}</h4>
             <p className="text-sm text-slate-500 max-w-xs mx-auto mt-2">
-              Drag and drop files here, or click to browse. Supports JPG, PNG, MP4.
+              {t("assets.upload_desc")}
             </p>
             <input type="file" id="file-upload" className="hidden" multiple />
             <Button variant="outline" className="mt-6 border-indigo-200 bg-white" onClick={() => document.getElementById('file-upload')?.click()}>
-              Select Files
+              {t("assets.select_files")}
             </Button>
           </CardContent>
         </Card>
@@ -78,7 +81,7 @@ const AssetManager = () => {
               <div className="flex justify-between items-start mb-1">
                 <p className="text-sm font-semibold truncate text-slate-700 w-32">{asset.name}</p>
                 <Badge variant={asset.status === 'Annotated' ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
-                  {asset.status}
+                  {asset.status === 'Annotated' ? t("assets.status.annotated") : t("assets.status.pending")}
                 </Badge>
               </div>
               <p className="text-[10px] text-slate-400 font-mono uppercase">{asset.size}</p>

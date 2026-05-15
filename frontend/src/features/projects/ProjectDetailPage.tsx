@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Settings, Tag, Image as ImageIcon, Users, Download, ArrowLeft, Save } from "lucide-react";
 import { useState } from 'react'; 
+import { useTranslation } from 'react-i18next'; // i18n hook'u eklendi
 
 // Bileşen Importları
 import TaxonomyManager from '@/features/datasets/taxonomy/TaxonomyManager';
@@ -15,6 +16,7 @@ import GeneralSettings from './tabs/GeneralSettings';
 const ProjectDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation(); // t fonksiyonu tanımlandı
   const [activeTab, setActiveTab] = useState('general');
   
   // Global Değişiklik Takibi
@@ -26,7 +28,7 @@ const ProjectDetailPage = () => {
 
   const project = projects.find((p: Project) => String(p.id) === id);
 
-  if (!project) return <div className="p-8 text-center text-slate-500">Project Not Found.</div>;
+  if (!project) return <div className="p-8 text-center text-slate-500">{t('project_detail.not_found')}</div>;
 
   // Veri güncelleme yakalayıcı
   const handleDataUpdate = (tab: string, data: any) => {
@@ -39,15 +41,16 @@ const ProjectDetailPage = () => {
   // Kaydetme işlemi
   const handleGlobalSave = async () => {
     console.log("Kaydedilecek Değişiklikler:", pendingChanges);
-    alert("Değişiklikler başarıyla kaydedildi (Konsolu kontrol edin).");
+    alert(t('project_detail.alert_success'));
   };
 
+  // Sekme isimleri dinamik hale getirildi
   const tabs = [
-    { value: 'general', label: 'General', icon: Settings },
-    { value: 'taxonomy', label: 'Taxonomy', icon: Tag },
-    { value: 'assets', label: 'Assets', icon: ImageIcon },
-    { value: 'team', label: 'Users', icon: Users },
-    { value: 'export', label: 'Export', icon: Download },
+    { value: 'general', label: t('project_detail.tabs.general'), icon: Settings },
+    { value: 'taxonomy', label: t('project_detail.tabs.taxonomy'), icon: Tag },
+    { value: 'assets', label: t('project_detail.tabs.assets'), icon: ImageIcon },
+    { value: 'team', label: t('project_detail.tabs.users'), icon: Users },
+    { value: 'export', label: t('project_detail.tabs.export'), icon: Download },
   ];
 
   return (
@@ -73,10 +76,10 @@ const ProjectDetailPage = () => {
             className="bg-green-600 hover:bg-green-700 text-white"
             onClick={handleGlobalSave}
           >
-            <Save className="mr-2 h-4 w-4" /> Save All Changes
+            <Save className="mr-2 h-4 w-4" /> {t('project_detail.save_all')}
           </Button>
           <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
-            Annotate Data
+            {t('project_detail.annotate_data')}
           </Button>
         </div>
       </div>
@@ -115,8 +118,6 @@ const ProjectDetailPage = () => {
                 />
               )}
 
-              {/* HATA GİDERME: TaxonomyManager ve TeamManager'a onUpdate eklemiyoruz 
-                  çünkü bu bileşenler henüz o prop'u desteklemiyor. */}
               {activeTab === 'taxonomy' && (
                 <TaxonomyManager />
               )}
