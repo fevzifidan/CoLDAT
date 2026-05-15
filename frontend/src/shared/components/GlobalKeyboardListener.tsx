@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/hooks/useAppStore';
-import { sendPolygonWorkerRequest } from '../../features/annotation/tools/sam/useSamOrchestrator';
+import { maskToBoundingBox } from '../../features/annotation/tools/sam/samCoords';
 
 export const GlobalKeyboardListener = () => {
   const setKeyPressed = useAppStore(state => state.setKeyPressed);
@@ -42,7 +42,8 @@ export const GlobalKeyboardListener = () => {
             state.clearSamSession();
           }
 
-          // Enter → Convert mask to polygon (OFFLOADED TO SHARED WORKER) and add as annotation
+          // Enter → Convert mask to bounding box and add as annotation
+          // Uses maskToBoundingBox from samCoords (main-thread, sync, fast).
           if (e.key === 'Enter' && samMaskData && samMaskBlobUrl) {
             e.preventDefault();
 
@@ -50,57 +51,57 @@ export const GlobalKeyboardListener = () => {
             if (isConvertingRef.current) return;
             isConvertingRef.current = true;
 
-            const { maskData, width, height } = samMaskData;
+            try {
+              const { maskData, width, height } = samMaskData;
 
-            // Run mask → polygon conversion in the shared singleton worker (non-blocking).
-            // Uses the same worker instance as useSamOrchestrator to avoid a second
-            // independent worker whose PING/PONG handshake could race and time out.
-            sendPolygonWorkerRequest('MASK_TO_POLYGON', {
-              maskData,
-              width,
-              height,
-              epsilon: 1.5,
-            })
-              .then((result: unknown) => {
-                const { coordinates } = result as { coordinates: number[] };
+              // Convert binary mask to bounding box coordinates
+              const bbox = maskToBoundingBox(maskData, width, height);
 
-                if (coordinates.length >= 6) {
-                  // At least 3 points (6 coords) — create a new annotation
-                  const currentState = useAppStore.getState();
-                  const newId = crypto.randomUUID?.() ?? `sam-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+              if (bbox) {
+                // Valid bounding box found — create a new annotation
+                const currentState = useAppStore.getState();
+                const newId = crypto.randomUUID?.() ?? `sam-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-                  const taxonomy = currentState.taxonomy;
-                  const activeClass = taxonomy?.classes?.find((c: { isActive: boolean }) => c.isActive);
-                  const classId = activeClass?.id ?? 'default';
-                  const className = activeClass?.name ?? 'Object';
+                const taxonomy = currentState.taxonomy;
+                const activeClass = taxonomy?.classes?.find((c: { isActive: boolean }) => c.isActive);
+                const classId = activeClass?.id ?? 'default';
+                const className = activeClass?.name ?? 'Object';
 
-                  const newObject = {
-                    id: newId,
-                    label: `${className}_${(currentState.annotatedObjects?.length ?? 0) + 1}`,
-                    classId: classId,
-                    type: 'polygon' as const,
-                    coordinates: coordinates,
-                    color: activeClass?.color ?? '#3b82f6',
-                    zIndex: (currentState.annotatedObjects?.length ?? 0) + 1,
-                    visible: true,
-                    locked: false,
-                  };
+                // Bounding box format: [xMin, yMin, width, height]
+                const bboxCoords = [
+                  bbox.xMin,
+                  bbox.yMin,
+                  bbox.xMax - bbox.xMin,
+                  bbox.yMax - bbox.yMin,
+                ];
 
-                  const currentObjects = currentState.annotatedObjects ?? [];
-                  currentState.setAnnotatedObjects([...currentObjects, newObject]);
-                }
+                const newObject = {
+                  id: newId,
+                  label: `${className}_${(currentState.annotatedObjects?.length ?? 0) + 1}`,
+                  classId: classId,
+                  type: 'bbox' as const,
+                  coordinates: bboxCoords,
+                  color: activeClass?.color ?? '#3b82f6',
+                  zIndex: (currentState.annotatedObjects?.length ?? 0) + 1,
+                  visible: true,
+                  locked: false,
+                };
 
-                // Clear SAM session for the next annotation
-                useAppStore.getState().clearSamSession();
-              })
-              .catch((err: Error) => {
-                console.error('[SAM] Polygon conversion failed:', err);
-                // Still clear the session so the user can try again
-                useAppStore.getState().clearSamSession();
-              })
-              .finally(() => {
-                isConvertingRef.current = false;
-              });
+                const currentObjects = currentState.annotatedObjects ?? [];
+                currentState.setAnnotatedObjects([...currentObjects, newObject]);
+              } else {
+                console.warn('[SAM] No mask found in mask data — skipping annotation creation');
+              }
+
+              // Clear SAM session for the next annotation
+              useAppStore.getState().clearSamSession();
+            } catch (err) {
+              console.error('[SAM] Bounding box conversion failed:', err);
+              // Still clear the session so the user can try again
+              useAppStore.getState().clearSamSession();
+            } finally {
+              isConvertingRef.current = false;
+            }
           }
         }
       }

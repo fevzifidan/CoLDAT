@@ -116,8 +116,9 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
         }
       }
 
-      if (e.key === 'Enter') {
+            if (e.key === 'Enter') {
         if (activeTool === 'livewire') livewireFinalize();
+        // SAM Enter handling is done in GlobalKeyboardListener.tsx (mask → bbox)
       }
     };
 

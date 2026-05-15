@@ -160,10 +160,12 @@ export function mapClickToModel(
  * Crop the padding from the model's 1024×1024 mask output and scale it back
  * to the original image dimensions for pixel-perfect Konva rendering.
  *
- * Algorithm:
- *   1. Extract the inner rectangle (scaled image region) from the padded tensor
- *   2. Nearest-neighbor scale the cropped region back to original dimensions
- *   3. Threshold the result (> 0.5 becomes 255, ≤ 0.5 becomes 0)
+ * CORE FIX (2025):
+ *   - The worker always uses orig_im_size=[1024,1024] for performance.
+ *   - Output is a square 1024×1024 tensor containing the padded image.
+ *   - This function crops the inner (scaled image) region from padding,
+ *     thresholds at logit > 0.0 (sigmoid-equivalent), and scales to original dims.
+ *   - NO min/max normalization is applied — SAM outputs raw logits.
  *
  * @param tensorData    — Flat Float32Array of size tensorSize² from the decoder output
  * @param tensorSize    — The width/height of the square tensor (default: 1024)
@@ -183,43 +185,37 @@ export function cropAndScaleMask(
   originalHeight: number,
   targetSize: number = SAM_TENSOR_SIZE
 ): { maskData: Uint8Array; maskWidth: number; maskHeight: number } {
-  // The model output may be non-square (e.g., [1,1,1200,1920]).
-  // Determine actual dimensions: either tensorSize x tensorSize (square)
-  // or the tensor may be rectangular where tensorSize was the max dim.
+  // ── Step 0: Determine actual tensor dimensions ──────────────────────────
+  // The worker always uses orig_im_size=[1024,1024], so output is 1024×1024.
   let actualW: number;
   let actualH: number;
-  
-  // If tensorData length doesn't match tensorSize^2, it's probably rectangular
-  const squareSize = tensorSize * tensorSize;
-  if (tensorData.length === squareSize) {
-    // Square tensor — use original logic with getScaledDims
+
+  if (tensorData.length === tensorSize * tensorSize) {
+    // Standard case: square tensor (1024×1024 = 1,048,576 elements)
     actualW = tensorSize;
     actualH = tensorSize;
   } else {
-    // Rectangular tensor — try to determine dims from original image ratio
-    // Assume tensorSize is the max dimension and the other dim is proportional
-    const ratio = originalWidth / originalHeight;
-    if (originalWidth >= originalHeight) {
-      actualW = tensorSize;
-      actualH = Math.round(tensorSize / ratio);
-    } else {
-      actualH = tensorSize;
-      actualW = Math.round(tensorSize * ratio);
-    }
-    // Verify: if the estimated dims don't match, try swapping
-    if (actualW * actualH !== tensorData.length) {
-      // Try swapped
-      if (originalHeight >= originalWidth) {
-        actualW = Math.round(tensorSize / ratio);
-        actualH = tensorSize;
-      } else {
-        actualH = Math.round(tensorSize / ratio);
-        actualW = tensorSize;
+    // Non-square output — try to detect dimensions
+    const totalPixels = tensorData.length;
+    let found = false;
+    for (let w = tensorSize; w >= 1; w--) {
+      if (totalPixels % w === 0) {
+        const h = totalPixels / w;
+        if (Number.isInteger(h) && h <= tensorSize) {
+          actualW = w;
+          actualH = h;
+          found = true;
+          break;
+        }
       }
+    }
+    if (!found) {
+      actualW = originalWidth;
+      actualH = originalHeight;
     }
   }
 
-  // If dimensions don't match, return empty mask
+  // Sanity check
   if (tensorData.length < actualW * actualH) {
     console.warn(
       `[SAM Coords] tensorData too small: ${tensorData.length} < ${actualW * actualH}. Returning empty mask.`
@@ -231,64 +227,83 @@ export function cropAndScaleMask(
     };
   }
 
-  // ── Step 1: If tensor has padding, crop it. Otherwise use as-is. ──
+  // ── Step 1: Compute scaled dimensions and padding ──────────────────────
   const { width: scaledW, height: scaledH, padX, padY } = getScaledDims(
     originalWidth,
     originalHeight,
     targetSize
   );
 
+  // ── Step 2: Crop the inner (scaled image) region from the padded tensor ─
   let cropped: Float32Array;
-  
-  if (actualW === tensorSize && actualH === tensorSize && (padX > 0 || padY > 0)) {
-    // Square tensor with padding — crop the inner region
+  let cropW: number;
+  let cropH: number;
+
+  if (actualW === targetSize && actualH === targetSize) {
+    // Standard padded tensor — crop out the padding to get the inner region
     cropped = new Float32Array(scaledW * scaledH);
     for (let row = 0; row < scaledH; row++) {
-      const srcRowStart = (padY + row) * tensorSize + padX;
+      const srcRowStart = (padY + row) * targetSize + padX;
       const dstRowStart = row * scaledW;
       for (let col = 0; col < scaledW; col++) {
         cropped[dstRowStart + col] = tensorData[srcRowStart + col];
       }
     }
-  } else if (actualW === originalWidth && actualH === originalHeight) {
-    // Model output is already at original resolution — no crop/scale needed
-    cropped = tensorData;
-  } else if (actualW === scaledW && actualH === scaledH) {
-    // Model output is at scaled (pre-padding) resolution — no crop needed
-    cropped = tensorData;
+    cropW = scaledW;
+    cropH = scaledH;
   } else {
-    // Unknown layout — use raw tensor data as-is and scale to original
-    cropped = tensorData;
+    // Non-square output — use as-is
+    cropped = tensorData.subarray(0, actualW * actualH);
+    cropW = actualW;
+    cropH = actualH;
   }
 
-  // ── Step 2: Nearest-neighbor scale to original dimensions ──
+  // ── Step 3: Determine threshold ────────────────────────────────────────
+  // SAM decoder outputs raw logits. sigmoid(0) = 0.5, so logit > 0 → mask.
+  // This is the correct threshold for SAM logits.
+  // Scan CROPPED region only (not padding) for edge case detection.
+  let threshold: number;
+  let positiveCount = 0;
+  let negativeCount = 0;
+
+  for (let i = 0; i < cropped.length; i++) {
+    if (cropped[i] > 0) positiveCount++;
+    else negativeCount++;
+  }
+
+  if (positiveCount === 0) {
+    // All logits negative — no mask detected
+    console.log(`[SAM Coords] All logits negative. No mask detected.`);
+    return {
+      maskData: new Uint8Array(originalWidth * originalHeight),
+      maskWidth: originalWidth,
+      maskHeight: originalHeight,
+    };
+  } else if (negativeCount === 0) {
+    // All logits positive — model very confident. Use median as threshold.
+    const sorted = new Float32Array(cropped);
+    sorted.sort();
+    threshold = sorted[Math.floor(sorted.length * 0.5)];
+    console.log(
+      `[SAM Coords] All logits positive! Using median adaptive threshold: ${threshold.toFixed(4)}`
+    );
+  } else {
+    // Normal case: mixed positive/negative logits → threshold at 0.0
+    threshold = 0.0;
+  }
+
+  // ── Step 4: Nearest-neighbor scale to original dimensions ─────────────
   const result = new Uint8Array(originalWidth * originalHeight);
-  
-  // Determine the effective cropped dimensions
-  const cropW = (actualW === tensorSize && actualH === tensorSize) ? scaledW : actualW;
-  const cropH = (actualH === tensorSize && actualW === tensorSize) ? scaledH : actualH;
-  
-  // Use original resolution directly if cropped matches original
-  if (cropped.length === originalWidth * originalHeight) {
-    // Already at original resolution — just threshold
+
+  // Fast path: already at original resolution
+  if (cropW === originalWidth && cropH === originalHeight) {
     for (let i = 0; i < cropped.length; i++) {
-      result[i] = cropped[i] > 0.0 ? 255 : 0;
+      result[i] = cropped[i] > threshold ? 255 : 0;
     }
     return { maskData: result, maskWidth: originalWidth, maskHeight: originalHeight };
   }
 
-  // First, find the min and max of the cropped region to normalize
-  let minVal = Infinity;
-  let maxVal = -Infinity;
-  for (let i = 0; i < cropped.length; i++) {
-    const v = cropped[i];
-    if (v < minVal) minVal = v;
-    if (v > maxVal) maxVal = v;
-  }
-
-  const range = maxVal - minVal;
-  const threshold = range > 0 ? 0.3 : 0.5; // Adaptive threshold or fallback
-
+  // Nearest-neighbor interpolation
   const ratioX = cropW / originalWidth;
   const ratioY = cropH / originalHeight;
 
@@ -300,12 +315,7 @@ export function cropAndScaleMask(
     for (let x = 0; x < originalWidth; x++) {
       const srcX = Math.min(cropW - 1, Math.max(0, Math.round(x * ratioX)));
       const val = cropped[srcRowOffset + srcX];
-      // Normalize if range is valid, then threshold
-      let normalized = val;
-      if (range > 0) {
-        normalized = (val - minVal) / range;
-      }
-      result[dstRowOffset + x] = normalized > threshold ? 255 : 0;
+      result[dstRowOffset + x] = val > threshold ? 255 : 0;
     }
   }
 
@@ -314,6 +324,53 @@ export function cropAndScaleMask(
     maskWidth: originalWidth,
     maskHeight: originalHeight,
   };
+}
+
+// ─── Mask to Bounding Box Conversion ──────────────────────────────────────
+
+/**
+ * Convert a binary mask (Uint8Array) to a bounding box by finding the
+ * minimum and maximum foreground pixel coordinates.
+ *
+ * This is useful for:
+ *   - Committing a SAM mask as a bounding box annotation (Enter key)
+ *   - Exporting masks in YOLO/COCO bbox format
+ *   - Measuring object extent within the mask
+ *
+ * @param maskData  — Flat Uint8Array of size width × height (0 = background, >0 = mask)
+ * @param width     — Width of the mask in pixels
+ * @param height    — Height of the mask in pixels
+ * @returns
+ *   { xMin, yMin, xMax, yMax } in pixel coordinates,
+ *   or null if no foreground pixels are found.
+ */
+export function maskToBoundingBox(
+  maskData: Uint8Array,
+  width: number,
+  height: number
+): { xMin: number; yMin: number; xMax: number; yMax: number } | null {
+  let xMin = width;
+  let yMin = height;
+  let xMax = 0;
+  let yMax = 0;
+  let found = false;
+
+  for (let y = 0; y < height; y++) {
+    const rowOffset = y * width;
+    for (let x = 0; x < width; x++) {
+      if (maskData[rowOffset + x] > 0) {
+        found = true;
+        if (x < xMin) xMin = x;
+        if (x > xMax) xMax = x;
+        if (y < yMin) yMin = y;
+        if (y > yMax) yMax = y;
+      }
+    }
+  }
+
+  if (!found) return null;
+
+  return { xMin, yMin, xMax, yMax };
 }
 
 // ─── Model Coordinates → Image Space (For Display) ─────────────────────────

@@ -36,10 +36,29 @@ import * as ort from 'onnxruntime-web';
 // Worker içinde WASM dosyaları doğrudan `node_modules/` yolundan yüklenemez.
 // Bu nedenle CDN üzerinden yüklemeyi yapılandırıyoruz.
 // NOT: Bu satır `import`'tan hemen sonra çalıştırılmalıdır.
-ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.26.0/dist/';
+//
+// Multiple CDN fallbacks to avoid single point of failure
+const WASM_CDN_URLS = [
+  'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.26.0/dist/',
+  'https://unpkg.com/onnxruntime-web@1.26.0/dist/',
+];
 
-// SIMD ve multi-threading desteğini etkinleştir (WASM performansını artırır)
-ort.env.wasm.simd = true;
+ort.env.wasm.wasmPaths = WASM_CDN_URLS[0];
+
+// Configure threading (use 4 threads for reasonable performance)
+// Too many threads can cause memory pressure on WASM
+try {
+  ort.env.wasm.numThreads = 4;
+} catch (e) {
+  logDebug('[SAM Worker] Multi-threading not available');
+}
+
+// Try to enable SIMD if supported, but don't fail if not available
+try {
+  ort.env.wasm.simd = true;
+} catch (e) {
+  logDebug('[SAM Worker] SIMD not available, falling back to scalar operations');
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -94,11 +113,10 @@ const MODEL_SIZE = 1024;
 
 /**
  * Default execution provider priority chain.
- * ONNX Runtime will try webgpu first, fall back to webgl, then wasm.
+ * Use only 'wasm' — webgpu and webgl are not available in most browsers
+ * and their absence causes ONNX Runtime to waste time trying to load them.
  */
 const EXECUTION_PROVIDERS: ort.InferenceSession.ExecutionProviderName[] = [
-  'webgpu',
-  'webgl',
   'wasm',
 ];
 
@@ -144,6 +162,7 @@ async function initModels(
     executionProviders: EXECUTION_PROVIDERS,
     graphOptimizationLevel: 'all',
     enableCpuMemArena: true,
+    enableMemPattern: false,
   });
   logDebug(
     '[SAM Worker] Encoder loaded in',
@@ -158,6 +177,7 @@ async function initModels(
     executionProviders: EXECUTION_PROVIDERS,
     graphOptimizationLevel: 'all',
     enableCpuMemArena: true,
+    enableMemPattern: false,
   });
   logDebug(
     '[SAM Worker] Decoder loaded in',
@@ -277,7 +297,9 @@ async function computeEmbedding(
   }
   feeds[inputNames[0]] = inputTensor;
 
+  const encStart = performance.now();
   const results = await encoderSession.run(feeds);
+  logDebug('[SAM Worker] Encoder run completed in', Math.round(performance.now() - encStart), 'ms');
 
   // Get the output — typically the first (and only) output
   const outputNames = encoderSession.outputNames;
@@ -286,7 +308,15 @@ async function computeEmbedding(
   }
 
   const outputTensor = results[outputNames[0]];
-  const embeddingData = outputTensor.data as Float32Array;
+  let embeddingData: Float32Array;
+  
+  if (outputTensor.type === 'float32') {
+    embeddingData = outputTensor.data as Float32Array;
+  } else if (outputTensor.type === 'float64') {
+    embeddingData = new Float32Array(outputTensor.data as Float64Array);
+  } else {
+    embeddingData = new Float32Array(outputTensor.data as any);
+  }
 
   return embeddingData;
 }
@@ -312,11 +342,26 @@ async function generateMask(
   originalWidth: number,
   originalHeight: number
 ): Promise<{ data: Float32Array; width: number; height: number }> {
+  logDebug('[SAM Worker] generateMask called. decoderSession=', !!decoderSession, 'currentEmbedding=', !!currentEmbedding, 'prompts=', prompts.length);
+
+  // Check both prerequisites immediately - no polling (MODELS_READY event handles init order)
   if (!decoderSession) {
     throw new Error('[SAM Worker] Decoder session not initialized. Send INIT_MODELS first.');
   }
   if (!currentEmbedding) {
     throw new Error('[SAM Worker] No embedding loaded. Send COMPUTE_EMBEDDING or LOAD_EMBEDDING first.');
+  }
+
+  // CRITICAL: Validate decoder session is usable
+  try {
+    const inputNames = decoderSession.inputNames;
+    if (!inputNames || inputNames.length === 0) {
+      throw new Error('Decoder session has no input names - session may be corrupted');
+    }
+    logDebug('[SAM Worker] Decoder session validated. Input count:', inputNames.length);
+  } catch (sessErr) {
+    const errMsg = sessErr instanceof Error ? sessErr.message : String(sessErr);
+    throw new Error(`[SAM Worker] Decoder session validation failed: ${errMsg}`);
   }
 
   const numPoints = prompts.length;
@@ -346,13 +391,20 @@ async function generateMask(
   const hasMaskInputData = new Float32Array([0.0]);
   const hasMaskInputTensor = new ort.Tensor('float32', hasMaskInputData, [1]);
 
-  // ── Build orig_im_size tensor ───────────────────────────────────────────
-  // Note: Some SAM decoder variants expect [H, W] order
+        // ── Build orig_im_size tensor ───────────────────────────────────────────
+  // CRITICAL: orig_im_size MUST be the actual original image dimensions [H, W]
+  // NOT a fixed value. The decoder uses this to properly scale/align the output.
+  // Passing wrong dimensions causes the decoder to hang or produce invalid results.
   const origImSizeData = new Float32Array([originalHeight, originalWidth]);
   const origImSizeTensor = new ort.Tensor('float32', origImSizeData, [2]);
 
   // ── Prepare feeds ───────────────────────────────────────────────────────
   const inputNames = decoderSession.inputNames;
+  logDebug('[SAM Worker DEBUG] Decoder input names:', inputNames);
+  logDebug('[SAM Worker] Decoder input names:', inputNames);
+  logDebug('[SAM Worker] Current embedding dims:', currentEmbedding?.dims);
+  logDebug('[SAM Worker] Point coords tensor dims:', pointCoordsTensor.dims);
+  logDebug('[SAM Worker] Point labels tensor dims:', pointLabelsTensor.dims);
 
   // Build feeds by matching input names (model-dependent naming)
   const feeds: Record<string, ort.Tensor> = {};
@@ -362,18 +414,25 @@ async function generateMask(
   //   'image_embeddings', 'point_coords', 'point_labels',
   //   'mask_input', 'has_mask_input', 'orig_im_size'
   for (const name of inputNames) {
-    if (name.toLowerCase().includes('image') || name.toLowerCase().includes('embedding')) {
-      feeds[name] = currentEmbedding;
-    } else if (name.toLowerCase().includes('point_coords') || name.toLowerCase().includes('pointcoords')) {
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('image') || nameLower.includes('embedding')) {
+      logDebug('[SAM Worker] Matching', name, '→ image_embeddings');
+      feeds[name] = currentEmbedding!;
+    } else if (nameLower.includes('point_coords') || nameLower.includes('pointcoords')) {
+      logDebug('[SAM Worker] Matching', name, '→ point_coords [1,', numPoints, ',2]');
       feeds[name] = pointCoordsTensor;
-    } else if (name.toLowerCase().includes('point_labels') || name.toLowerCase().includes('pointlabels')) {
+    } else if (nameLower.includes('point_labels') || nameLower.includes('pointlabels')) {
+      logDebug('[SAM Worker] Matching', name, '→ point_labels [1,', numPoints, ']');
       feeds[name] = pointLabelsTensor;
-    } else if (name.toLowerCase().includes('has_mask_input') || name.toLowerCase().includes('hasmaskinput')) {
+    } else if (nameLower.includes('has_mask_input') || nameLower.includes('hasmaskinput')) {
       // IMPORTANT: Check has_mask_input BEFORE mask_input to avoid false match!
+      logDebug('[SAM Worker] Matching', name, '→ has_mask_input');
       feeds[name] = hasMaskInputTensor;
-    } else if (name.toLowerCase().includes('mask_input') || name.toLowerCase().includes('maskinput')) {
+    } else if (nameLower.includes('mask_input') || nameLower.includes('maskinput')) {
+      logDebug('[SAM Worker] Matching', name, '→ mask_input [1,1,256,256]');
       feeds[name] = maskInputTensor;
-    } else if (name.toLowerCase().includes('orig_im_size') || name.toLowerCase().includes('origimsize')) {
+    } else if (nameLower.includes('orig_im_size') || nameLower.includes('origimsize')) {
+      logDebug('[SAM Worker] Matching', name, '→ orig_im_size [', originalHeight, ',', originalWidth, ']');
       feeds[name] = origImSizeTensor;
     }
   }
@@ -385,8 +444,33 @@ async function generateMask(
     );
   }
 
+  // Validate all feeds are valid tensors
+  for (const [name, tensor] of Object.entries(feeds)) {
+    if (!tensor) {
+      throw new Error(`[SAM Worker] Feed tensor "${name}" is null or undefined`);
+    }
+    logDebug('[SAM Worker] Feed', name, 'dims:', tensor.dims, 'type:', tensor.type);
+  }
+
+  logDebug('[SAM Worker] Decoder feeds prepared. Matched:', Object.keys(feeds).length, '/', inputNames.length);
+
   // ── Run decoder ─────────────────────────────────────────────────────────
-  const results = await decoderSession.run(feeds);
+  logDebug('[SAM Worker] Running decoder session.run()...', 'with feeds:', Object.keys(feeds).length, 'inputs');
+  const runStart = performance.now();
+  let results: Record<string, ort.Tensor>;
+  try {
+    // Add timeout wrapper to prevent decoder.run() from hanging forever
+    const decoderPromise = decoderSession.run(feeds);
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('[SAM Worker] Decoder.run() exceeded 15s timeout')), 15000)
+    );
+    results = await Promise.race([decoderPromise, timeoutPromise]);
+  } catch (runErr) {
+    const errMsg = runErr instanceof Error ? runErr.message : String(runErr);
+    logDebug('[SAM Worker] Decoder run failed:', errMsg);
+    throw new Error(`[SAM Worker] Decoder inference failed: ${errMsg}`);
+  }
+  logDebug('[SAM Worker] decoder session.run() completed in', Math.round(performance.now() - runStart), 'ms');
 
   // Find the mask output — look for 'masks' or 'low_res_masks' first
   const outputNames = decoderSession.outputNames;
@@ -404,9 +488,19 @@ async function generateMask(
 
   const outputTensor = results[maskOutputName];
   
+  if (!outputTensor) {
+    throw new Error(
+      `[SAM Worker] Mask output "${maskOutputName}" not found in decoder results. Available: [${outputNames.join(', ')}]`
+    );
+  }
+  
   // Log ALL outputs for debugging purposes
   for (const name of outputNames) {
     const t = results[name];
+    if (!t) {
+      logDebug('[SAM Worker] Output', name, 'is null/undefined in results!');
+      continue;
+    }
     const d = t.data as any;
     logDebug('[SAM Worker] Output', name, 'dims:', t.dims, 'type:', t.type, 'len:', d?.length, 'first5:', d?.subarray ? Array.from(d.subarray(0, Math.min(5, d.length))) : 'N/A');
   }
@@ -422,10 +516,16 @@ async function generateMask(
   } else if (outputTensor.type === 'float64') {
     // Convert Float64Array to Float32Array
     const float64 = rawData as Float64Array;
+    logDebug('[SAM Worker] Converting Float64 output to Float32');
     outputData = new Float32Array(float64);
   } else {
     // Try direct cast
+    logDebug('[SAM Worker] Attempting direct cast to Float32Array from type:', outputTensor.type);
     outputData = new Float32Array(rawData);
+  }
+
+  if (!outputData || outputData.length === 0) {
+    throw new Error(`[SAM Worker] Output tensor data is empty or null. Length: ${outputData?.length ?? 'null'}`);
   }
   
   // Check first few values
@@ -525,8 +625,10 @@ function imageDataToFloat32Rgba(imageData: ImageData): Float32Array {
 
 self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
   const { type, data } = e.data;
+  logDebug('[SAM Worker] onmessage:', type, 'decoderReady:', !!decoderSession);
 
   try {
+    logDebug('[SAM Worker] === BEFORE SWITCH ===  type=' + type);
     switch (type) {
       // ── INIT MODELS ──────────────────────────────────────────────────────
       case 'INIT_MODELS': {
@@ -606,11 +708,23 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
           'elements'
         );
 
-        // Keep a copy of the embedding in worker memory
-        currentEmbedding = new ort.Tensor('float32', embeddingData, [1, 256, 64, 64]);
+        // Keep a copy of the embedding in worker memory (creates a new Tensor with a copy)
+        // CRITICAL: Must use a SEPARATE INDEPENDENT buffer for the copy!
+        // embeddingData.buffer.slice(0) creates a transfer-safe copy, then we copy the data.
+        const embeddingCopy = new Float32Array(embeddingData);
+        currentEmbedding = new ort.Tensor('float32', embeddingCopy, [1, 256, 64, 64]);
 
-        // Create a Transferable copy for the UI thread
+        // Create a SEPARATE Transferable copy for the UI thread
+        // This ensures the worker's copy remains valid after transfer
         const transferBuffer = embeddingData.buffer.slice(0) as ArrayBuffer;
+
+        logDebug(
+          '[SAM Worker] Embedding stored in worker (separate buffer). Copy size:',
+          embeddingCopy.byteLength,
+          'bytes. Transfer buffer:',
+          transferBuffer.byteLength,
+          'bytes'
+        );
 
         self.postMessage(
           {
@@ -625,7 +739,7 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
         break;
       }
 
-      // ── LOAD EMBEDDING ──────────────────────────────────────────────────
+            // ── LOAD EMBEDDING ──────────────────────────────────────────────────
       case 'LOAD_EMBEDDING': {
         const embedding = data.embedding as ArrayBuffer;
         const dims = data.dims as number[];
@@ -638,82 +752,103 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
           return;
         }
 
-        // Create a Float32Array view over the buffer
-        const floatArray = new Float32Array(embedding);
-        currentEmbedding = new ort.Tensor('float32', floatArray, dims || [1, 256, 64, 64]);
+        try {
+          // Create a SAFE COPY of the buffer data to avoid ownership issues
+          // The transferred ArrayBuffer may be garbage-collected, so we must copy the data
+          if (embedding.byteLength === 0) {
+            throw new Error('LOAD_EMBEDDING: Embedding buffer is empty');
+          }
+          
+          const floatArray = new Float32Array(embedding);
+          logDebug('[SAM Worker] LOAD_EMBEDDING received. Buffer size:', embedding.byteLength, 'bytes. Float32 elements:', floatArray.length);
+          
+          // Create a new independent buffer (allocate + copy, not view)
+          const embeddingCopy = new Float32Array(floatArray.length);
+          embeddingCopy.set(floatArray); // Explicit data copy
+          
+          currentEmbedding = new ort.Tensor('float32', embeddingCopy, dims || [1, 256, 64, 64]);
+          logDebug('[SAM Worker] Embedding tensor created with dims:', dims);
 
-        // Also store image dims if provided
-        if (data.originalWidth && data.originalHeight) {
-          currentImageDims = {
-            w: data.originalWidth as number,
-            h: data.originalHeight as number,
-          };
+          // Also store image dims if provided
+          if (data.originalWidth && data.originalHeight) {
+            currentImageDims = {
+              w: data.originalWidth as number,
+              h: data.originalHeight as number,
+            };
+          }
+
+          logDebug('[SAM Worker] Embedding loaded successfully, dims:', dims, 'copy size:', embeddingCopy.byteLength, 'bytes');
+          self.postMessage({ type: 'EMBEDDING_LOADED' });
+        } catch (tensorErr) {
+          const errMsg = tensorErr instanceof Error ? tensorErr.message : String(tensorErr);
+          logDebug('[SAM Worker] Failed to create Tensor from embedding:', errMsg);
+          
+          self.postMessage({
+            type: 'ERROR',
+            data: { message: `LOAD_EMBEDDING: Failed to create ONNX Tensor: ${errMsg}` },
+          });
         }
-
-        self.postMessage({ type: 'EMBEDDING_LOADED' });
         break;
       }
 
-      // ── GENERATE MASK ───────────────────────────────────────────────────
+            // ── GENERATE MASK ───────────────────────────────────────────────────
       case 'GENERATE_MASK': {
-        if (!decoderSession) {
-          self.postMessage({
-            type: 'ERROR',
-            data: { message: 'GENERATE_MASK: Decoder not initialized. Send INIT_MODELS first.' },
-          });
-          return;
-        }
-        if (!currentEmbedding) {
-          self.postMessage({
-            type: 'ERROR',
-            data: { message: 'GENERATE_MASK: No embedding loaded. Send COMPUTE_EMBEDDING or LOAD_EMBEDDING first.' },
-          });
-          return;
-        }
+        logDebug('[SAM Worker] GENERATE_MASK case reached!');
+        
+        try {
+          const prompts = data.prompts as PromptMessage[];
+          const originalWidth = (data.originalWidth as number) || currentImageDims?.w || 1024;
+          const originalHeight = (data.originalHeight as number) || currentImageDims?.h || 1024;
 
-        const prompts = data.prompts as PromptMessage[];
-        const originalWidth = (data.originalWidth as number) || currentImageDims?.w || 1024;
-        const originalHeight = (data.originalHeight as number) || currentImageDims?.h || 1024;
+          logDebug('[SAM Worker] GENERATE_MASK params: prompts.length=', prompts.length, 'origW=', originalWidth, 'origH=', originalHeight);
 
-        if (!prompts || prompts.length === 0) {
-          self.postMessage({
-            type: 'ERROR',
-            data: { message: 'GENERATE_MASK: At least one prompt is required.' },
-          });
-          return;
-        }
+          if (!prompts || prompts.length === 0) {
+            self.postMessage({
+              type: 'ERROR',
+              data: { message: 'GENERATE_MASK: At least one prompt is required.' },
+            });
+            return;
+          }
 
-        logDebug('[SAM Worker] Generating mask with', prompts.length, 'prompts...');
-        const decodeStart = performance.now();
+          logDebug('[SAM Worker] Calling generateMask() ...');
+          const decodeStart = performance.now();
 
-        const { data: maskData, width: maskW, height: maskH } = await generateMask(prompts, originalWidth, originalHeight);
+          const { data: maskData, width: maskW, height: maskH } = await generateMask(prompts, originalWidth, originalHeight);
 
-        logDebug(
-          '[SAM Worker] Mask generated in',
-          Math.round(performance.now() - decodeStart),
-          'ms',
-          '- size:',
-          maskW,
-          'x',
-          maskH
-        );
+          logDebug(
+            '[SAM Worker] Mask generated in',
+            Math.round(performance.now() - decodeStart),
+            'ms',
+            '- size:',
+            maskW,
+            'x',
+            maskH
+          );
 
-        // Create a Transferable copy
-        const maskBuffer = maskData.buffer.slice(0) as ArrayBuffer;
+          // Create a Transferable copy
+          const maskBuffer = maskData.buffer.slice(0) as ArrayBuffer;
 
-        self.postMessage(
-          {
-            type: 'MASK_GENERATED',
-            data: {
-              mask: maskBuffer,
-              width: maskW,
-              height: maskH,
-              originalWidth,
-              originalHeight,
+          self.postMessage(
+            {
+              type: 'MASK_GENERATED',
+              data: {
+                mask: maskBuffer,
+                width: maskW,
+                height: maskH,
+                originalWidth,
+                originalHeight,
+              },
             },
-          },
-          { transfer: [maskBuffer] }
-        );
+            { transfer: [maskBuffer] }
+          );
+        } catch (caseErr) {
+          const errMsg = caseErr instanceof Error ? caseErr.message : String(caseErr);
+          logDebug('[SAM Worker] GENERATE_MASK case ERROR:', errMsg);
+          self.postMessage({
+            type: 'ERROR',
+            data: { message: `GENERATE_MASK error: ${errMsg}` },
+          });
+        }
         break;
       }
 
@@ -725,7 +860,8 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
     }
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    logDebug('[SAM Worker] Error:', errorMessage);
+    const stack = err instanceof Error ? err.stack : '';
+    logDebug('[SAM Worker] EXCEPTION caught:', errorMessage, stack);
     self.postMessage({
       type: 'ERROR',
       data: { message: errorMessage },
@@ -734,6 +870,32 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
 };
 
 // ─── Graceful Shutdown Handler ──────────────────────────────────────────────
+
+// Global error handler for unhandled exceptions in the worker
+self.onerror = (event: ErrorEvent) => {
+  logDebug('[SAM Worker] GLOBAL ERROR:', event.message, event.filename, event.lineno);
+  self.postMessage({
+    type: 'ERROR',
+    data: { message: `Global error: ${event.message}` },
+  });
+  return true; // Prevent default error handling
+};
+
+// Handle unhandled promise rejections
+self.onrejectionhandled = (event: PromiseRejectionEvent) => {
+  logDebug('[SAM Worker] Unhandled rejection:', event.reason);
+};
+
+self.onunhandledrejection = (event: PromiseRejectionEvent) => {
+  logDebug('[SAM Worker] Unhandled rejection (will terminate):', event.reason);
+  const errMsg = event.reason instanceof Error ? event.reason.message : String(event.reason);
+  self.postMessage({
+    type: 'ERROR',
+    data: { message: `Unhandled rejection: ${errMsg}` },
+  });
+};
+
+logDebug('[SAM Worker] Global error handlers installed');
 
 self.addEventListener('beforeunload', () => {
   // Clean up ONNX sessions

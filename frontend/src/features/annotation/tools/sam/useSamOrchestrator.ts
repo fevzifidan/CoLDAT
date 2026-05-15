@@ -302,11 +302,16 @@ export function useSamOrchestrator(
   const samStatus = useAppStore((s) => s.samStatus);
   const imgDimensions = useAppStore((s) => s.imgDimensions);
 
-  // ─── Refs (persist across renders without causing re-renders) ────────────
+    // ─── Refs (persist across renders without causing re-renders) ────────────
   const workerRef = useRef<Worker | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isInitializedRef = useRef(false);
   const imageIdRef = useRef(imageId);
+  // Tracks whether BOTH encoder AND decoder models are fully loaded in the worker.
+  // The worker sends MODELS_READY only after both sessions are created.
+  // Until then, GENERATE_MASK will fail because decoderSession is null.
+  // generateMask checks this ref before sending GENERATE_MASK to the worker.
+  const modelsReadyRef = useRef(false);
 
   // Track whether the component is still mounted to avoid state updates after unmount
   const isMountedRef = useRef(true);
@@ -334,98 +339,43 @@ export function useSamOrchestrator(
         setSamStatus('checking_cache');
       }
 
-      const cachedEmbedding = await getEmbedding(imageId);
+                  const cachedEmbedding = await getEmbedding(imageId);
 
       if (cachedEmbedding && !abortController.signal.aborted) {
         console.info('[SAM Orchestrator] Cache HIT for', imageId);
-        // Found in cache — load into worker
+        // Found in cache — load into worker optimistically
         if (workerRef.current) {
-          workerRef.current.postMessage(
-            {
-              type: 'LOAD_EMBEDDING',
-              data: {
-                embedding: cachedEmbedding,
-                dims: [1, 256, 64, 64],
-                originalWidth: origW,
-                originalHeight: origH,
-              },
-            },
-            { transfer: [cachedEmbedding] }
-          );
-
-          // Wait for confirmation
-          const ready = await waitForWorkerResponse(workerRef.current, 'EMBEDDING_LOADED', abortController.signal);
-          if (ready && !abortController.signal.aborted) {
-            setSamEmbeddingReady(true);
-            setSamStatus('ready');
-            return;
-          }
-        }
-      }
-
-      if (abortController.signal.aborted) return;
-
-      // ── Step 2: Check backend for precomputed embedding ─────────────────
-      setSamStatus('checking_backend');
-
-      const hasPrecomputedEmbedding =
-        taskImage.embedding_status === 'UPLOADED' &&
-        taskImage.sam_embedding_url !== null &&
-        taskImage.sam_embedding_url !== undefined;
-
-      if (hasPrecomputedEmbedding) {
-        // ── Step 2a: Download embedding from S3 ──────────────────────────
-        console.info('[SAM Orchestrator] Downloading precomputed embedding from S3:', imageId);
-        setSamStatus('downloading_embedding');
-        setSamDownloadProgress(0);
-
-        try {
-          const downloadedBuffer = await fetchEmbeddingWithProgress(
-            taskImage.sam_embedding_url!,
-            (progress) => {
-              if (!abortController.signal.aborted) {
-                setSamDownloadProgress(progress);
-              }
-            },
-            abortController.signal
-          );
-
-          if (abortController.signal.aborted) return;
-
-          // Cache it locally
-          await saveEmbedding(imageId, downloadedBuffer);
-
-          // Load into worker
-          if (workerRef.current) {
+          try {
+            // Clone the buffer before transfer to avoid double-free issues
+            const clonedBuffer = cachedEmbedding.slice(0);
             workerRef.current.postMessage(
               {
                 type: 'LOAD_EMBEDDING',
                 data: {
-                  embedding: downloadedBuffer,
+                  embedding: clonedBuffer,
                   dims: [1, 256, 64, 64],
                   originalWidth: origW,
                   originalHeight: origH,
                 },
               },
-              { transfer: [downloadedBuffer] }
+              { transfer: [clonedBuffer] }
             );
-
-            const ready = await waitForWorkerResponse(workerRef.current, 'EMBEDDING_LOADED', abortController.signal);
-            if (ready && !abortController.signal.aborted) {
-              setSamEmbeddingReady(true);
-              setSamStatus('ready');
-              return;
-            }
+          } catch (e) {
+            console.warn('[SAM Orchestrator] postMessage failed, worker dead?', e);
           }
-        } catch (err) {
-          // S3 download failed — fall through to local computation
-          console.warn('[SAM Orchestrator] S3 download failed, falling back to local computation:', err);
         }
+        // Optimistically mark ready — if the worker fails, generateMask will error.
+        setSamEmbeddingReady(true);
+        setSamStatus('ready');
+        console.info('[SAM Orchestrator] Cache HIT — marking ready optimistically');
+        return;
       }
 
-      if (abortController.signal.aborted) return;
+            if (abortController.signal.aborted) return;
 
-      // ── Step 3: Compute embedding locally ──────────────────────────────
+      // ── Step 2 & 3 combined: Compute embedding locally if we get here
+      // (cache miss OR cache hit but EMBEDDING_LOADED not confirmed).
+      // Skip backend check — if cache was usable it would have worked.
       console.info('[SAM Orchestrator] Computing embedding locally for', imageId);
       setSamStatus('computing_local');
       setSamDownloadProgress(0);
@@ -465,10 +415,10 @@ export function useSamOrchestrator(
 
       setSamEmbeddingReady(true);
       setSamStatus('ready');
-    } catch (err) {
+        } catch (err) {
       if (!abortController.signal.aborted) {
         console.error('[SAM Orchestrator] Initialization failed:', err);
-        notificationService.error('SAM initialization failed. Please try again.');
+        notificationService.error('SAM initialization failed. Please refresh the page or try again.');
         setSamStatus('idle');
       }
     }
@@ -484,13 +434,17 @@ export function useSamOrchestrator(
     const worker = new Worker(new URL('./samWorker', import.meta.url), { type: 'module' });
     workerRef.current = worker;
 
-    // Log all worker messages (LOG, ERROR, etc.)
+        // Log all worker messages (LOG, ERROR, etc.)
     worker.addEventListener('message', (e: MessageEvent) => {
       const msg = e.data;
       if (msg.type === 'LOG') {
         console.log('[SAM Worker Log]', ...(msg.data?.args ?? []));
       } else if (msg.type === 'ERROR') {
         console.error('[SAM Worker] Reported error:', msg.data?.message);
+        // Show error to user for non-recoverable errors
+        if (msg.data?.message?.includes('onnxruntime') || msg.data?.message?.includes('Tensor') || msg.data?.message?.includes('embedding')) {
+          notificationService.error(`SAM: ${msg.data.message}`);
+        }
       }
     });
 
@@ -517,11 +471,12 @@ export function useSamOrchestrator(
         reject(new Error('Worker model initialization timed out (180s)'));
       }, 180_000);
 
-      const handler = (e: MessageEvent) => {
+            const handler = (e: MessageEvent) => {
         const msg = e.data;
         if (msg.type === 'MODELS_READY') {
           clearTimeout(timeout);
           worker.removeEventListener('message', handler);
+          modelsReadyRef.current = true;
           resolve();
         } else if (msg.type === 'ERROR') {
           clearTimeout(timeout);
@@ -536,7 +491,16 @@ export function useSamOrchestrator(
     return worker;
   }, [setSamStatus]);
 
-  // ─── Lifecycle: Mount + Image Changes ─────────────────────────────────────
+      // ─── Lifecycle: Mount + Image Changes ─────────────────────────────────────
+  //
+  // When imageId changes → full reset + bootstrapWorker.
+  //
+  // TaskImage metadata may arrive asynchronously after the initial mount
+  // (useAnnotationData fetches taskImages). When the page first loads,
+  // taskImage is null so initializeEmbedding early-returns. Once taskImage
+  // becomes available, the deps on imageId + taskImage ensure this effect
+  // re-fires, but WITHOUT re-bootstrapping the worker (which would re-download
+  // the ONNX models and cause a "Encoder not initialized" race).
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -546,14 +510,21 @@ export function useSamOrchestrator(
 
     const start = async () => {
       try {
-        // Bootstrap the worker
-        const worker = await bootstrapWorker();
-        if (isCancelled || !isMountedRef.current) {
-          worker.terminate();
-          return;
+        // Only bootstrap the worker (download ONNX models) when imageId changes.
+        // If taskImage was previously null and is now available, worker already
+        // exists and is initialized — skip bootstrap.
+        if (!workerRef.current) {
+          const worker = await bootstrapWorker();
+          if (!isMountedRef.current) {
+            worker.terminate();
+            return;
+          }
+          if (isCancelled) return;
         }
 
-        // Initialize the embedding pipeline
+        // Initialize the embedding pipeline.
+        // If taskImage is null (metadata not yet loaded), this will early-return.
+        // The effect will re-fire once taskImage becomes non-null (deps below).
         await initializeEmbedding();
       } catch (err) {
         if (!isCancelled) {
@@ -570,24 +541,55 @@ export function useSamOrchestrator(
       isCancelled = true;
       isMountedRef.current = false;
 
-      // Cleanup
-      abortControllerRef.current?.abort();
-      workerRef.current?.terminate();
-      workerRef.current = null;
-      isInitializedRef.current = false;
-      resetSamState();
+            // Cleanup: when imageId changes, only abort inflight operations and reset state.
+      // Do NOT terminate the worker — ONNX model loading is expensive (seconds).
+      // The same worker can process multiple images sequentially.
+      if (imageIdRef.current !== imageId) {
+        abortControllerRef.current?.abort();
+        // Keep the worker alive for the next image
+        isInitializedRef.current = false;
+        // DO NOT reset modelsReadyRef because the worker is still alive and models are loaded!
+        resetSamState();
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imageId]);
+  }, [imageId, taskImage]);
 
   // ─── Generate Mask (called after prompts change) ─────────────────────────
 
-  const generateMask = useCallback(
-    async (prompts: SAMPrompt[]): Promise<void> => {
-      if (!workerRef.current || prompts.length === 0) {
-        clearSamMask();
-        return;
-      }
+    const generateMask = useCallback(
+      async (prompts: SAMPrompt[]): Promise<void> => {
+        if (!workerRef.current || prompts.length === 0) {
+          clearSamMask();
+          return;
+        }
+
+        // Wait for models to be ready before generating mask
+        if (!modelsReadyRef.current) {
+          console.log('[SAM Orchestrator] Waiting for models to be ready before generating mask...');
+          try {
+            await new Promise<void>((resolve, reject) => {
+              // Same timeout as bootstrapWorker
+              const timeout = setTimeout(() => reject(new Error('Models initialization timed out')), 180_000);
+              const handler = (e: MessageEvent) => {
+                const msg = e.data;
+                if (msg.type === 'MODELS_READY') {
+                  clearTimeout(timeout);
+                  workerRef.current?.removeEventListener('message', handler);
+                  resolve();
+                } else if (msg.type === 'ERROR') {
+                  clearTimeout(timeout);
+                  workerRef.current?.removeEventListener('message', handler);
+                  reject(new Error(msg.data?.message || 'Worker error'));
+                }
+              };
+              workerRef.current?.addEventListener('message', handler);
+            });
+          } catch (err) {
+            console.error('[SAM Orchestrator] Model readiness check failed:', err);
+            return;
+          }
+        }
 
       const origW = imgDimensions?.width ?? 1024;
       const origH = imgDimensions?.height ?? 1024;
@@ -611,17 +613,25 @@ export function useSamOrchestrator(
           return;
         }
 
-        // Send GENERATE_MASK to worker
-        const maskResult = await new Promise<{ mask: ArrayBuffer; width: number; height: number }>((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error('Mask generation timed out (15s)'));
-          }, 15_000);
+                // Send GENERATE_MASK to worker
+                const maskResult = await new Promise<{ mask: ArrayBuffer; width: number; height: number }>((resolve, reject) => {
+                                    // Mask generation timeout: 30s should be enough for 256x256 output
+                  let timedOut = false;
+                  const timeout = setTimeout(() => {
+                    timedOut = true;
+                    if (workerRef.current) {
+                      workerRef.current.removeEventListener('message', handler);
+                    }
+                    reject(new Error('Mask generation timed out (30s) — decoder may be stuck or model not responding'));
+                  }, 30_000);
 
           const handler = (e: MessageEvent) => {
+            if (timedOut) return; // Ignore messages after timeout
             const msg = e.data;
             if (msg.type === 'MASK_GENERATED') {
               clearTimeout(timeout);
               workerRef.current?.removeEventListener('message', handler);
+              console.log('[SAM Orchestrator] MASK_GENERATED received');
               resolve({
                 mask: msg.data.mask as ArrayBuffer,
                 width: msg.data.width as number,
@@ -630,12 +640,17 @@ export function useSamOrchestrator(
             } else if (msg.type === 'ERROR') {
               clearTimeout(timeout);
               workerRef.current?.removeEventListener('message', handler);
-              reject(new Error(msg.data?.message ?? 'Mask generation error'));
+              console.error('[SAM Orchestrator] Worker ERROR:', msg.data?.message);
+              reject(new Error(`Mask generation error: ${msg.data?.message ?? 'Unknown error'}`));
+            } else if (msg.type === 'LOG') {
+              // Log messages for debugging but don't remove handler
+              console.log('[SAM Worker]', ...(msg.data?.args ?? []));
             }
           };
 
           workerRef.current!.addEventListener('message', handler);
 
+          console.error('[SAM Orchestrator DEBUG] Sending GENERATE_MASK to worker. prompts:', modelPrompts.length, 'origW:', origW, 'origH:', origH); // CRITICAL DEBUG
           workerRef.current!.postMessage({
             type: 'GENERATE_MASK',
             data: {
@@ -644,6 +659,7 @@ export function useSamOrchestrator(
               originalHeight: origH,
             },
           });
+          console.error('[SAM Orchestrator DEBUG] GENERATE_MASK sent!'); // CRITICAL DEBUG
         });
 
         console.log('[SAM Orchestrator] Mask buffer received, size:', maskResult.mask?.byteLength);
@@ -659,97 +675,24 @@ export function useSamOrchestrator(
         const maskHeightFromWorker = maskResult.height;
         console.log('[SAM Orchestrator] Mask resolution from worker:', maskWidthFromWorker, 'x', maskHeightFromWorker);
 
-        // Use the actual mask dimensions from worker instead of SAM_TENSOR_SIZE
-        // Model output is already at [1, 1, H, W] = [1, 1, maskHeightFromWorker, maskWidthFromWorker]
-        // If the model output matches the original image dimensions, no scaling is needed
+                                // cropAndScaleMask handles:
+        //   1. Tensor dimension detection (always 1024×1024 from worker)
+        //   2. Padding cropping → extracts ONLY the scaled image region
+        //   3. Threshold at logit > 0.0 (sigmoid-equivalent, no min/max normalization)
+        //   4. Nearest-neighbor scaling to original image dimensions
         const tensorData = new Float32Array(maskResult.mask);
+        const tensorSize = Math.max(maskWidthFromWorker, maskHeightFromWorker);
         console.log('[SAM Orchestrator] Tensor data length:', tensorData.length, 'Float32 elements');
         console.log('[SAM Orchestrator] Original image dims:', origW, 'x', origH);
-        
-        // Check some stats
-        let minV = Infinity, maxV = -Infinity;
-        for (let i = 0; i < Math.min(tensorData.length, 1000); i++) {
-          if (tensorData[i] < minV) minV = tensorData[i];
-          if (tensorData[i] > maxV) maxV = tensorData[i];
-        }
-        console.log('[SAM Orchestrator] Mask tensor stats (first 1000): min=', minV, 'max=', maxV);
-        
-        let maskData: Uint8Array;
-        let maskWidth: number;
-        let maskHeight: number;
-        
-        // Check if model output already matches original image dimensions
-        if (maskWidthFromWorker === origW && maskHeightFromWorker === origH) {
-          // Model output is already at original resolution (1024×1024).
-          // MobileSAM 'masks' output contains raw logits (before sigmoid).
-          // Standard: sigmoid(0) = 0.5, so logit > 0.0 → mask pixel.
-          // If all logits are ≤ 0, use adaptive thresholding at 70th percentile.
-          maskWidth = origW;
-          maskHeight = origH;
-          maskData = new Uint8Array(origW * origH);
-          
-          // Determine threshold strategy with full tensor scan
-          let hasPositive = false;
-          let minVal = Infinity, maxVal = -Infinity;
-          for (let i = 0; i < tensorData.length; i++) {
-            const v = tensorData[i];
-            if (v > 0) hasPositive = true;
-            if (v < minVal) minVal = v;
-            if (v > maxVal) maxVal = v;
-          }
-          console.log('[SAM Orchestrator] Full tensor stats: min=', minVal, 'max=', maxVal, 'hasPositive=', hasPositive);
-          
-          if (hasPositive) {
-            // Standard threshold on logits (sigmoid(0) = 0.5)
-            for (let i = 0; i < tensorData.length; i++) {
-              maskData[i] = tensorData[i] > 0.0 ? 255 : 0;
-            }
-          } else if (maxVal > minVal) {
-            // All values ≤ 0 — use adaptive threshold at 70th percentile
-            const sorted = new Float32Array(tensorData);
-            sorted.sort();
-            const threshold = sorted[Math.floor(sorted.length * 0.7)];
-            console.log('[SAM Orchestrator] All ≤ 0. Using adaptive threshold:', threshold, '(70th pct)');
-            for (let i = 0; i < tensorData.length; i++) {
-              maskData[i] = tensorData[i] > threshold ? 255 : 0;
-            }
-          } else {
-            // All values identical (constant) — empty mask
-            console.log('[SAM Orchestrator] All logits identical:', minVal, '- empty mask');
-          }
-        } else {
-          // Model output is at a lower (or different) resolution than original.
-          // Nearest-neighbor upscale from model output to original dimensions.
-          maskWidth = origW;
-          maskHeight = origH;
-          maskData = new Uint8Array(origW * origH);
-          
-          const srcW = maskWidthFromWorker;
-          const srcH = maskHeightFromWorker;
-          
-          // First compute adaptive threshold using a sample of the source data
-          let hasPos = false;
-          let sMin = Infinity, sMax = -Infinity;
-          for (let i = 0; i < Math.min(tensorData.length, 10000); i++) {
-            const v = tensorData[i];
-            if (v > 0) hasPos = true;
-            if (v < sMin) sMin = v;
-            if (v > sMax) sMax = v;
-          }
-          
-          const srcThreshold = hasPos ? 0.0 : (sMax > sMin ? sMax * 0.3 : 0.0); // 30% from max if all negative
-          
-          // Nearest-neighbor upsample with thresholding
-          for (let y = 0; y < origH; y++) {
-            const srcY = Math.min(srcH - 1, Math.round((y / origH) * srcH));
-            const dstRowOffset = y * origW;
-            for (let x = 0; x < origW; x++) {
-              const srcX = Math.min(srcW - 1, Math.round((x / origW) * srcW));
-              const srcIdx = srcY * srcW + srcX;
-              maskData[dstRowOffset + x] = tensorData[srcIdx] > srcThreshold ? 255 : 0;
-            }
-          }
-        }
+        console.log('[SAM Orchestrator] Using cropAndScaleMask with tensorSize:', tensorSize);
+
+        const { maskData, maskWidth, maskHeight } = cropAndScaleMask(
+          tensorData,
+          tensorSize,
+          origW,
+          origH,
+          SAM_TENSOR_SIZE
+        );
 
         console.log('[SAM Orchestrator] Mask data stats:', { 
           maskWidth, 
@@ -774,16 +717,17 @@ export function useSamOrchestrator(
         clearSamMask();
       }
     },
-    [imgDimensions, clearSamMask, setSamMaskBlobUrl, imageId]
+    [imgDimensions, clearSamMask, setSamMaskBlobUrl, setSamMaskData, imageId]
   );
 
   // ─── Reset Session ────────────────────────────────────────────────────────
 
-  const resetSession = useCallback(() => {
+    const resetSession = useCallback(() => {
     abortControllerRef.current?.abort();
     workerRef.current?.terminate();
     workerRef.current = null;
     isInitializedRef.current = false;
+    modelsReadyRef.current = false;
     resetSamState();
   }, [resetSamState]);
 
@@ -834,10 +778,10 @@ function waitForWorkerResponse(
   signal: AbortSignal
 ): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
-    const timeout = setTimeout(() => {
+        const timeout = setTimeout(() => {
       worker.removeEventListener('message', handler);
       resolve(false);
-    }, 60_000);
+    }, 30_000);
 
     const handler = (e: MessageEvent) => {
       if (signal.aborted) {
@@ -922,7 +866,7 @@ async function loadImageToImageData(
 ): Promise<ImageData | null> {
   return new Promise<ImageData | null>((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'Anonymous';
+    img.crossOrigin = 'anonymous';
 
     const timeout = setTimeout(() => {
       img.onload = null;
@@ -973,10 +917,10 @@ async function computeEmbeddingInWorker(
   signal: AbortSignal
 ): Promise<ArrayBuffer | null> {
   return new Promise<ArrayBuffer | null>((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      worker.removeEventListener('message', handler);
-      reject(new Error('Embedding computation timed out (60s)'));
-    }, 60_000);
+        const timeout = setTimeout(() => {
+          worker.removeEventListener('message', handler);
+          reject(new Error('Embedding computation timed out (60s)'));
+        }, 60_000);
 
     const handler = (e: MessageEvent) => {
       if (signal.aborted) {

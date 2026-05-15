@@ -22,7 +22,7 @@ const MOCK_IMAGES: TaskImagesResponse['data'] = [
   {
     asset_id: 'img-1',
     filename: 'IMG_4821.jpg',
-    asset_url: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1024&h=1024&fit=crop',
+    asset_url: 'https://fastly.picsum.photos/id/88/1280/1707.jpg?hmac=NnkwPVDBTVxHkc4rALB_fyu-OHY2usdm7iRk5El7JC4',
     asset_url_expiry_at: new Date(Date.now() + 3600_000).toISOString(),
     sam_embedding_url: null,
     sam_embedding_url_expiry_at: null,

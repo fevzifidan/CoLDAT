@@ -8,7 +8,7 @@
 export { saveEmbedding, getEmbedding, removeEmbedding, clearCache, estimateQuota, getCacheSize } from './embeddingCache';
 
 // Coordinate transforms
-export { getScaleRatio, getScaledDims, mapClickToModel, mapModelToImage, cropAndScaleMask, SAM_TENSOR_SIZE } from './samCoords';
+export { getScaleRatio, getScaledDims, mapClickToModel, mapModelToImage, cropAndScaleMask, maskToBoundingBox, SAM_TENSOR_SIZE } from './samCoords';
 
 // Orchestrator (hybrid flow manager)
 export { useSamOrchestrator } from './useSamOrchestrator';
