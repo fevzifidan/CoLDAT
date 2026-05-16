@@ -137,7 +137,7 @@ export function logitsToPolygon(
     return null;
   }
 
-  // results[0] is the largest contour (d3-contour sorts by area descending)
+  // results[0] is the MultiPolygon geometry for the 0.0 threshold
   const feature = results[0];
   const multiPolygon = feature.coordinates as number[][][][];
 
@@ -146,12 +146,37 @@ export function logitsToPolygon(
     return null;
   }
 
-  // Take the first polygon's outer ring (ring index 0 = exterior, 1+ = holes)
-  const outerRing = multiPolygon[0][0];
-  if (!outerRing || outerRing.length < 3) {
-    console.log('[SAM Contour] Outer ring has fewer than 3 points');
+  // d3-contour does NOT sort polygons by area. It outputs them in scan order.
+  // Calculate the area of each outer ring to find the largest mask component,
+  // preventing tiny noise artifacts from being selected instead of the main object.
+  let largestOuterRing: number[][] | null = null;
+  let maxArea = -1;
+
+  for (const polygon of multiPolygon) {
+    const ring = polygon[0]; // Ring 0 is the exterior boundary
+    if (!ring || ring.length < 3) continue;
+
+    // Shoelace formula to calculate polygon area
+    let area = 0;
+    for (let i = 0; i < ring.length - 1; i++) {
+      const [x1, y1] = ring[i];
+      const [x2, y2] = ring[i + 1];
+      area += (x1 * y2) - (x2 * y1);
+    }
+    area = Math.abs(area / 2);
+
+    if (area > maxArea) {
+      maxArea = area;
+      largestOuterRing = ring;
+    }
+  }
+
+  if (!largestOuterRing) {
+    console.log('[SAM Contour] No valid outer rings found');
     return null;
   }
+
+  const outerRing = largestOuterRing;
 
   // ── Step 3: Coordinate transformation ───────────────────────────────
   // Chain: 256 grid → 1024 padded → crop padding → original image
