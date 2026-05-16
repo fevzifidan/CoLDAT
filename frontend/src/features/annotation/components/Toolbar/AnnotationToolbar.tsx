@@ -1,33 +1,26 @@
+import { useCallback } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
   Save,
   Download,
-  Settings,
   Undo,
   Redo,
   ZoomIn,
   ZoomOut,
   Hand,
-  Search,            // Büyüteç
-  SlidersHorizontal, // Yeni: Görünüm ayarları ikonu
-  Sun,               // Parlaklık
-  Contrast,          // Kontrast
-  Droplets,          // Doygunluk
-  Layers,            // Opaklık
-  RotateCcw,         // Sıfırlama
+  Search,
+  RotateCcw,
   Check,
   AlertCircle,
-  Loader2            // Auto-save spinner
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
-import { ThemeToggle } from '@/components/custom/ThemeToggle/ThemeToggle';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -39,6 +32,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTranslation } from 'react-i18next';
 import { useExport } from '../../hooks/useExport';
+import SettingsPopover from './SettingsPopover';
 
 interface AnnotationToolbarProps {
   projectName: string;
@@ -63,37 +57,50 @@ export default function AnnotationToolbar({
   onSubmit,
   isSubmitting = false,
 }: AnnotationToolbarProps) {
-  const goToPrev = useAppStore(state => state.goToPrev);
-  const goToNext = useAppStore(state => state.goToNext);
-  const currentTask = useAppStore(state => state.currentTask);
-
-  const brightness = useAppStore(state => state.brightness);
-  const setBrightness = useAppStore(state => state.setBrightness);
-  const contrast = useAppStore(state => state.contrast);
-  const setContrast = useAppStore(state => state.setContrast);
-  const saturation = useAppStore(state => state.saturation);
-  const setSaturation = useAppStore(state => state.setSaturation);
-  const opacity = useAppStore(state => state.opacity);
-  const setOpacity = useAppStore(state => state.setOpacity);
-  const resetFilters = useAppStore(state => state.resetFilters);
-  const isMagnifierActive = useAppStore(state => state.isMagnifierActive);
-  const setIsMagnifierActive = useAppStore(state => state.setIsMagnifierActive);
-  const zoomIn = useAppStore(state => state.zoomIn);
-  const zoomOut = useAppStore(state => state.zoomOut);
-  const resetViewer = useAppStore(state => state.resetViewer);
-  const activeTool = useAppStore(state => state.activeTool);
-  const setActiveTool = useAppStore(state => state.setActiveTool);
-  const undo = useAppStore(state => state.undo);
-  const redo = useAppStore(state => state.redo);
-  const history = useAppStore(state => state.history);
-  const historyIndex = useAppStore(state => state.historyIndex);
-  const isReadOnly = useAppStore(state => state.isReadOnly);
+    const {
+    goToPrev,
+    goToNext,
+    currentTask,
+    isMagnifierActive,
+    setIsMagnifierActive,
+    zoomIn,
+    zoomOut,
+    resetViewer,
+    activeTool,
+    setActiveTool,
+    undo,
+    redo,
+    history,
+    historyIndex,
+    isReadOnly,
+  } = useAppStore(
+    useShallow((state) => ({
+      goToPrev: state.goToPrev,
+      goToNext: state.goToNext,
+      currentTask: state.currentTask,
+      isMagnifierActive: state.isMagnifierActive,
+      setIsMagnifierActive: state.setIsMagnifierActive,
+      zoomIn: state.zoomIn,
+      zoomOut: state.zoomOut,
+      resetViewer: state.resetViewer,
+      activeTool: state.activeTool,
+      setActiveTool: state.setActiveTool,
+      undo: state.undo,
+      redo: state.redo,
+      history: state.history,
+      historyIndex: state.historyIndex,
+      isReadOnly: state.isReadOnly,
+    }))
+  );
 
   const { t } = useTranslation('annotation');
   const { handleExport } = useExport();
 
-  const canUndo = historyIndex > 0;
+        const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
+
+  const handleTogglePan = useCallback(() => setActiveTool('pan'), [setActiveTool]);
+  const handleToggleMagnifier = useCallback(() => setIsMagnifierActive(!isMagnifierActive), [setIsMagnifierActive, isMagnifierActive]);
 
   return (
     <div className="flex items-center justify-between h-14 px-4 gap-4 w-full border-b bg-background">
@@ -131,10 +138,10 @@ export default function AnnotationToolbar({
           <Button variant="ghost" size="icon" onClick={zoomOut} className="h-8 w-8 text-muted-foreground hover:text-foreground" title={t('toolbar.zoomOut')}>
             <ZoomOut size={16} />
           </Button>
-          <Button 
+                    <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => setActiveTool('pan')} 
+            onClick={handleTogglePan}
             className={cn("h-8 w-8 text-muted-foreground hover:text-foreground", activeTool === 'pan' && "bg-primary/10 text-primary")} 
             title={t('toolbar.panTool')}
           >
@@ -143,7 +150,7 @@ export default function AnnotationToolbar({
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => setIsMagnifierActive(!isMagnifierActive)} 
+            onClick={handleToggleMagnifier}
             className={cn("h-8 w-8 text-muted-foreground hover:text-foreground", isMagnifierActive && "bg-primary/10 text-primary")} 
             title={t('toolbar.magnifier')}
           >
@@ -152,11 +159,9 @@ export default function AnnotationToolbar({
 
           <Separator orientation="vertical" className="h-5 mx-1" />
 
-          <Button variant="ghost" size="icon" onClick={resetViewer} className="h-8 w-8 text-muted-foreground hover:text-foreground" title={t('toolbar.resetView')}>
+                    <Button variant="ghost" size="icon" onClick={resetViewer} className="h-8 w-8 text-muted-foreground hover:text-foreground" title={t('toolbar.resetView')}>
             <RotateCcw size={16} />
           </Button>
-          <Separator orientation="vertical" className="h-5 mx-1" />
-          <ThemeToggle />
         </div>
       </div>
 
@@ -215,71 +220,9 @@ export default function AnnotationToolbar({
           </div>
         )}
 
-        {/* YENİ: Görünüm ve Opaklık Ayarları Popover */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 gap-2 text-xs text-muted-foreground hover:text-foreground">
-              <SlidersHorizontal size={14} />
-              {t('toolbar.viewSettings')}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80 p-4" align="end">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium leading-none text-sm">{t('toolbar.imageSettings')}</h4>
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={resetFilters}>
-                  <RotateCcw size={10} className="mr-1" /> {t('toolbar.reset')}
-                </Button>
-              </div>
-
-              {/* Parlaklık */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs flex items-center gap-2"><Sun size={12} /> {t('toolbar.brightness')}</Label>
-                  <span className="text-[10px] text-muted-foreground">{brightness}%</span>
-                </div>
-                <Slider value={[brightness]} onValueChange={(vals) => setBrightness(vals[0])} max={200} step={1} />
-              </div>
-
-              {/* Kontrast */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs flex items-center gap-2"><Contrast size={12} /> {t('toolbar.contrast')}</Label>
-                  <span className="text-[10px] text-muted-foreground">{contrast}%</span>
-                </div>
-                <Slider value={[contrast]} onValueChange={(vals) => setContrast(vals[0])} max={200} step={1} />
-              </div>
-
-              {/* Doygunluk */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs flex items-center gap-2"><Droplets size={12} /> {t('toolbar.saturation')}</Label>
-                  <span className="text-[10px] text-muted-foreground">{saturation}%</span>
-                </div>
-                <Slider value={[saturation]} onValueChange={(vals) => setSaturation(vals[0])} max={200} step={1} />
-              </div>
-
-              <Separator />
-
-              {/* Opaklık (Maske/Poligonlar için) */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs flex items-center gap-2 font-semibold text-primary">
-                    <Layers size={12} /> {t('toolbar.maskOpacity')}
-                  </Label>
-                  <span className="text-[10px] font-mono">{opacity}%</span>
-                </div>
-                <Slider value={[opacity]} onValueChange={(vals) => setOpacity(vals[0])} max={100} step={1} />
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+                <SettingsPopover />
 
         <Separator orientation="vertical" className="h-5" />
-
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" title={t('toolbar.settings')}>
-          <Settings size={15} />
-        </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

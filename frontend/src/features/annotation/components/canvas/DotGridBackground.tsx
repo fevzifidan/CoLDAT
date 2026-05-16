@@ -177,7 +177,7 @@ const DotGridBackground = memo(({
     return true;
   }, [buildDots]);
 
-  // Draw everything
+    // Draw everything
   const paint = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -185,42 +185,52 @@ const DotGridBackground = memo(({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Sync size every frame — catches layout shifts from panel animations
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    syncSize(dpr);
-
-    const dots = dotsRef.current;
-    const { w, h } = sizeRef.current;
-    const mx = mouseRef.current.x;
-    const my = mouseRef.current.y;
-    const { hoverRadius: hr } = paramsRef.current;
-    const hrSq = hr * hr;
-
-    // Resolve colors & params once, then invalidate cache if CSS variables change
-    // (e.g. user switches between dark/light mode at runtime).
+    // Resolve colors/params if cache invalidated (e.g. dark mode toggle)
+    // This is done unconditionally but getComputedStyle is called rarely.
     const currentBg = getComputedStyle(document.documentElement)
       .getPropertyValue('--background')
       .trim();
     if (currentBg && currentBg !== bgColorCacheRef.current) {
-      // Background changed (dark/light mode switch) → reset cache
       resolvedColorRef.current = null;
       bgColorCacheRef.current = currentBg;
     }
 
-    if (!resolvedColorRef.current) {
+    // Sync size lazily — only if container dimensions changed
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const sizeChanged = syncSize(dpr);
+
+    // If size changed, rebuild dot colors/params too (layout shift might occur on theme toggle)
+    if (sizeChanged && !resolvedColorRef.current) {
       const modeParams = getModeParams();
       paramsRef.current = {
         dotRadius: modeParams.dotRadius,
         dotSpacing: modeParams.dotSpacing,
         hoverRadius: modeParams.hoverRadius,
       };
-
+      const base = resolveColor(color, opacity ?? modeParams.baseOpacity);
+      const hover = resolveColor(color, Math.min((opacity ?? modeParams.baseOpacity) + (hoverBoost ?? modeParams.hoverBoostAmt), 1));
+      resolvedColorRef.current = { base, hover };
+    } else if (!resolvedColorRef.current) {
+      const modeParams = getModeParams();
+      paramsRef.current = {
+        dotRadius: modeParams.dotRadius,
+        dotSpacing: modeParams.dotSpacing,
+        hoverRadius: modeParams.hoverRadius,
+      };
       const base = resolveColor(color, opacity ?? modeParams.baseOpacity);
       const hover = resolveColor(color, Math.min((opacity ?? modeParams.baseOpacity) + (hoverBoost ?? modeParams.hoverBoostAmt), 1));
       resolvedColorRef.current = { base, hover };
     }
 
-    const { base: baseColor, hover: hoverColor } = resolvedColorRef.current;
+    const dots = dotsRef.current;
+    const { w, h } = sizeRef.current;
+    if (dots.length === 0 || w === 0 || h === 0) return;
+
+    const mx = mouseRef.current.x;
+    const my = mouseRef.current.y;
+    const { hoverRadius: hr } = paramsRef.current;
+    const hrSq = hr * hr;
+    const { base: baseColor, hover: hoverColor } = resolvedColorRef.current!;
     const { dotRadius: dr } = paramsRef.current;
 
     ctx.clearRect(0, 0, w, h);
@@ -264,16 +274,35 @@ const DotGridBackground = memo(({
     }
   }, [color, opacity, hoverBoost, syncSize, getModeParams, detectColorScheme]);
 
-  // Animation loop — only paints when needed
-  const tick = useCallback(() => {
-    if (needsPaintRef.current) {
+  // Schedule a single paint frame — avoids the continuous rAF loop
+  const schedulePaint = useCallback(() => {
+    if (rafIdRef.current) return; // Already has a paint scheduled
+    rafIdRef.current = requestAnimationFrame(() => {
       paint();
+      rafIdRef.current = null;
       needsPaintRef.current = false;
-    }
-    rafIdRef.current = requestAnimationFrame(tick);
+    });
   }, [paint]);
 
-  // Initial setup — mouse tracking and animation loop.
+  // Resize observer for when panels collapse/expand
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const parent = canvas.parentElement;
+    if (!parent) return;
+
+    const observer = new ResizeObserver(() => {
+      // Invalidate cache so syncSize rebuilds dots on next paint
+      sizeRef.current = { w: 0, h: 0 };
+      needsPaintRef.current = true;
+      schedulePaint();
+    });
+
+    observer.observe(parent);
+    return () => observer.disconnect();
+  }, [schedulePaint]);
+
+  // Initial setup — mouse tracking, event-driven painting (no continuous rAF).
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const parent = canvasRef.current?.parentElement;
@@ -286,25 +315,33 @@ const DotGridBackground = memo(({
       mouseRef.current.x = localX;
       mouseRef.current.y = localY;
       needsPaintRef.current = true;
+
+      // Schedule a single paint on mouse move
+      schedulePaint();
     };
 
     const handleMouseLeave = () => {
       mouseRef.current.x = -9999;
       mouseRef.current.y = -9999;
       needsPaintRef.current = true;
+      schedulePaint();
     };
 
-    rafIdRef.current = requestAnimationFrame(tick);
+    // Initial paint
+    schedulePaint();
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('mouseleave', handleMouseLeave, { passive: true });
 
     return () => {
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [tick]);
+  }, [schedulePaint]);
 
   return (
     <canvas
