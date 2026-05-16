@@ -18,7 +18,7 @@
  */
 
 import type { StateCreator } from 'zustand';
-import type { SAMStatus, SAMPrompt, SamState } from '../types/annotation.types';
+import type { SAMStatus, SAMPrompt, SamState, SamLogitData } from '../types/annotation.types';
 
 export type { SamState };
 
@@ -31,6 +31,7 @@ export const createSamSlice: StateCreator<SamState> = (set) => ({
   samMaskBlobUrl: null,
   samPromptCount: 0,
   samMaskData: null,
+  samLogitData: null,
   samWarning: null,
 
   // ─── Status Setters ─────────────────────────────────────────────────────────
@@ -106,6 +107,7 @@ export const createSamSlice: StateCreator<SamState> = (set) => ({
         samMaskBlobUrl: null,
         samPromptCount: 0,
         samMaskData: null,
+        samLogitData: null,
         samWarning: null,
       };
     });
@@ -123,6 +125,7 @@ export const createSamSlice: StateCreator<SamState> = (set) => ({
         samMaskBlobUrl: null,
         samPromptCount: 0,
         samMaskData: null,
+        samLogitData: null,
         samWarning: null,
       };
     });
@@ -130,8 +133,14 @@ export const createSamSlice: StateCreator<SamState> = (set) => ({
 
   // ─── Set raw mask data for polygon conversion ──────────────────────────────
 
-  setSamMaskData: (data: { maskData: Uint8Array; width: number; height: number } | null) => {
+    setSamMaskData: (data: { maskData: Uint8Array; width: number; height: number } | null) => {
     set({ samMaskData: data });
+  },
+
+  // ─── Set low-res logit data for d3-contour polygon conversion ────────────
+
+  setSamLogitData: (data: SamLogitData | null) => {
+    set({ samLogitData: data });
   },
 
   // ─── Warning Management ─────────────────────────────────────────────────────

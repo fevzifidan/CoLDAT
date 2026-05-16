@@ -82,7 +82,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useAppStore } from '@/store/hooks/useAppStore';
 import { getEmbedding, saveEmbedding } from './embeddingCache';
 import { mapClickToModel, cropAndScaleMask, getScaledDims, SAM_TENSOR_SIZE } from './samCoords';
-import type { TaskImage, SAMStatus, SAMPrompt } from '../../types/annotation.types';
+import type { TaskImage, SAMStatus, SAMPrompt, SamLogitData } from '../../types/annotation.types';
 import { uploadService } from '@/shared/services/s3upload/s3upload.service';
 import notificationService from '@/shared/services/notification';
 
@@ -294,8 +294,9 @@ export function useSamOrchestrator(
   const setSamStatus = useAppStore((s) => s.setSamStatus);
   const setSamDownloadProgress = useAppStore((s) => s.setSamDownloadProgress);
   const setSamEmbeddingReady = useAppStore((s) => s.setSamEmbeddingReady);
-  const setSamMaskBlobUrl = useAppStore((s) => s.setSamMaskBlobUrl);
+    const setSamMaskBlobUrl = useAppStore((s) => s.setSamMaskBlobUrl);
   const setSamMaskData = useAppStore((s) => s.setSamMaskData);
+  const setSamLogitData = useAppStore((s) => s.setSamLogitData);
   const clearSamMask = useAppStore((s) => s.clearSamMask);
   const clearSamPrompts = useAppStore((s) => s.clearSamPrompts);
   const resetSamState = useAppStore((s) => s.resetSamState);
@@ -614,7 +615,14 @@ export function useSamOrchestrator(
         }
 
                 // Send GENERATE_MASK to worker
-                const maskResult = await new Promise<{ mask: ArrayBuffer; width: number; height: number }>((resolve, reject) => {
+                const maskResult = await new Promise<{
+                  mask: ArrayBuffer;
+                  width: number;
+                  height: number;
+                  lowResMask: ArrayBuffer;
+                  lowResWidth: number;
+                  lowResHeight: number;
+                }>((resolve, reject) => {
                                     // Mask generation timeout: 30s should be enough for 256x256 output
                   let timedOut = false;
                   const timeout = setTimeout(() => {
@@ -632,10 +640,13 @@ export function useSamOrchestrator(
               clearTimeout(timeout);
               workerRef.current?.removeEventListener('message', handler);
               console.log('[SAM Orchestrator] MASK_GENERATED received');
-              resolve({
+                            resolve({
                 mask: msg.data.mask as ArrayBuffer,
                 width: msg.data.width as number,
                 height: msg.data.height as number,
+                lowResMask: msg.data.lowResMask as ArrayBuffer,
+                lowResWidth: msg.data.lowResWidth as number,
+                lowResHeight: msg.data.lowResHeight as number,
               });
             } else if (msg.type === 'ERROR') {
               clearTimeout(timeout);
@@ -725,12 +736,47 @@ export function useSamOrchestrator(
         // Convert the mask to a renderable PNG blob (offloaded to worker)
         const maskBlobUrl = await offloadMaskToBlobUrl(maskData, maskWidth, maskHeight);
 
-        if (isMountedRef.current && imageIdRef.current === imageId) {
+                if (isMountedRef.current && imageIdRef.current === imageId) {
           // Revoke previous mask URL
           clearSamMask();
           // Store raw mask data for polygon conversion
           setSamMaskData({ maskData, width: maskWidth, height: maskHeight });
           setSamMaskBlobUrl(maskBlobUrl);
+
+                    // Store low-res logit data for d3-contour polygon conversion
+          // lowResMask is [1, 1, H, W] where H=W=256 — extract first channel
+          const lowResBuffer = maskResult.lowResMask;
+          if (lowResBuffer && lowResBuffer.byteLength > 0) {
+            const lowResWidth = maskResult.lowResWidth;
+            const lowResHeight = maskResult.lowResHeight;
+            const logitCount = lowResWidth * lowResHeight;
+            const rawLogits = new Float32Array(lowResBuffer);
+
+            // The worker sends the first channel data (length = H*W)
+            const logits = rawLogits.length >= logitCount
+              ? new Float32Array(rawLogits.subarray(0, logitCount))
+              : new Float32Array(rawLogits);
+
+            // Compute padding/scaling parameters for contour coordinate conversion
+            const { padX, padY, scaleRatio } = getScaledDims(origW, origH, SAM_TENSOR_SIZE);
+
+            const logitData: SamLogitData = {
+              logits,
+              width: lowResWidth,
+              height: lowResHeight,
+              originalWidth: origW,
+              originalHeight: origH,
+              tensorSize: SAM_TENSOR_SIZE,
+              padX,
+              padY,
+              scaleRatio,
+            };
+            setSamLogitData(logitData);
+            console.log('[SAM Orchestrator] Low-res logit data stored:', lowResWidth, 'x', lowResHeight, 'padX:', padX, 'padY:', padY, 'scaleRatio:', scaleRatio);
+          } else {
+            console.warn('[SAM Orchestrator] No low-res mask data available from worker');
+          }
+
           console.log('[SAM Orchestrator] Mask blob URL set');
         }
       } catch (err) {

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/hooks/useAppStore';
 import { maskToBoundingBox } from '../../features/annotation/tools/sam/samCoords';
+import { logitsToPolygon } from '../../features/annotation/tools/sam/samContour';
 import notificationService from '@/shared/services/notification';
 
 export const GlobalKeyboardListener = () => {
@@ -30,9 +31,10 @@ export const GlobalKeyboardListener = () => {
 
       // ── SAM Tool Shortcuts ────────────────────────────────────────────
       if (!isInput) {
-        const state = useAppStore.getState();
+                const state = useAppStore.getState();
         const activeTool = state.activeTool;
         const samMaskData = state.samMaskData;
+        const samLogitData = state.samLogitData;
         const samMaskBlobUrl = state.samMaskBlobUrl;
         const samPromptCount = state.samPromptCount;
 
@@ -105,15 +107,65 @@ export const GlobalKeyboardListener = () => {
             }
           }
 
-          // Q → Convert mask to polygon (Placeholder)
-          if (e.key.toLowerCase() === 'q' && samMaskData && samMaskBlobUrl) {
+                    // Q → Convert mask to polygon using d3-contour + simplify-js
+          // Uses logit data (low_res_masks from the decoder) for sub-pixel contour detection.
+          if (e.key.toLowerCase() === 'q' && state.samLogitData && samMaskBlobUrl) {
             e.preventDefault();
             
             if (isConvertingRef.current) return;
             isConvertingRef.current = true;
             
-            try {
-              notificationService.info('Polygon conversion will be implemented soon.');
+                        try {
+              const { logits, width, height, originalWidth, originalHeight, padX, padY, scaleRatio } = state.samLogitData;
+              
+              // Run contour detection (main thread — d3-contour is fast on 256x256 grid)
+              const coordinates = logitsToPolygon(
+                logits,
+                width,
+                height,
+                originalWidth,
+                originalHeight,
+                padX,
+                padY,
+                scaleRatio,
+                2.0 // epsilon in image pixels for simplify-js
+              );
+              
+              if (coordinates && coordinates.length >= 6) {
+                const currentState = useAppStore.getState();
+                const newId = crypto.randomUUID?.() ?? `sam-poly-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+                
+                const taxonomy = currentState.taxonomy;
+                const activeClass = taxonomy?.classes?.find((c: { isActive: boolean }) => c.isActive);
+                const classId = activeClass?.id ?? 'default';
+                const className = activeClass?.name ?? 'Object';
+                
+                const newObject = {
+                  id: newId,
+                  label: `${className}_${(currentState.annotatedObjects?.length ?? 0) + 1}`,
+                  classId,
+                  type: 'polygon' as const,
+                  coordinates,
+                  color: activeClass?.color ?? '#3b82f6',
+                  zIndex: (currentState.annotatedObjects?.length ?? 0) + 1,
+                  visible: true,
+                  locked: false,
+                };
+                
+                const currentObjects = currentState.annotatedObjects ?? [];
+                currentState.setAnnotatedObjects([...currentObjects, newObject]);
+                console.log('[SAM] Polygon annotation created with', coordinates.length / 2, 'points');
+              } else {
+                console.warn('[SAM] No valid polygon contour found');
+                notificationService.warning('No valid polygon contour found. Try adding more prompts.');
+              }
+              
+              // Clear SAM session for the next annotation
+              useAppStore.getState().clearSamSession();
+            } catch (err) {
+              console.error('[SAM] Polygon conversion failed:', err);
+              notificationService.error('Polygon conversion failed. Please try again.');
+              useAppStore.getState().clearSamSession();
             } finally {
               isConvertingRef.current = false;
             }

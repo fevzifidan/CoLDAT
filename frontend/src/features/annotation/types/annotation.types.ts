@@ -184,6 +184,43 @@ export interface SAMPrompt {
 }
 
 /**
+ * Low-resolution logit data from the SAM decoder for contour detection.
+ *
+ * The decoder outputs `low_res_masks` as a [1, 1, 256, 256] float32 tensor.
+ * These are RAW logits (NOT thresholded, NOT padded).
+ * d3-contour uses these directly with threshold=0.0 for sub-pixel contour detection.
+ *
+ * IMPORTANT: The 256x256 grid represents the FULL 1024x1024 padded tensor space,
+ * NOT the original image. Each grid cell = 4x4 pixels in 1024x1024 space.
+ *
+ * Coordinate conversion chain:
+ *   256 grid → 1024 padded (×4) → crop padding → scale to original image
+ *
+ * The fields padX, padY, scaleRatio and tensorSize are pre-computed from
+ * getScaledDims() so that this module can be self-contained for conversion.
+ */
+export interface SamLogitData {
+  /** Raw logit values at 256x256 resolution (Float32Array) */
+  logits: Float32Array;
+  /** Grid width (always 256 for MobileSAM) */
+  width: number;
+  /** Grid height (always 256 for MobileSAM) */
+  height: number;
+  /** Original image width for coordinate transformation */
+  originalWidth: number;
+  /** Original image height for coordinate transformation */
+  originalHeight: number;
+  /** Padded tensor size (always 1024 for MobileSAM) */
+  tensorSize: number;
+  /** Horizontal padding offset in the tensor (from getScaledDims) */
+  padX: number;
+  /** Vertical padding offset in the tensor (from getScaledDims) */
+  padY: number;
+  /** Scale ratio from original image to padded tensor space */
+  scaleRatio: number;
+}
+
+/**
  * State shape for the SAM slice.
  * Separate from the slice definition to allow type-only imports.
  */
@@ -194,7 +231,8 @@ export interface SamState {
   samPrompts: SAMPrompt[];
   samMaskBlobUrl: string | null;
   samPromptCount: number;
-  samMaskData: { maskData: Uint8Array; width: number; height: number } | null;
+    samMaskData: { maskData: Uint8Array; width: number; height: number } | null;
+  samLogitData: SamLogitData | null;
   samWarning: string | null;
 
   setSamStatus: (status: SAMStatus) => void;
@@ -208,6 +246,7 @@ export interface SamState {
   resetSamState: () => void;
   clearSamSession: () => void;
   setSamMaskData: (data: { maskData: Uint8Array; width: number; height: number } | null) => void;
+  setSamLogitData: (data: SamLogitData | null) => void;
   setSamWarning: (warning: string | null) => void;
 }
 

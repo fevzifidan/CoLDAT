@@ -335,13 +335,24 @@ async function computeEmbedding(
  *   - orig_im_size:     Tensor of shape [2] — original image dimensions [H, W]
  *
  * @param prompts — Array of prompts in 1024×1024 model coordinates
- * @returns The raw mask output tensor (Float32Array of size 1024×1024)
+ * @returns
+ *   - data: Float32Array — full-res mask (1024×1024, padded, for overlay rendering)
+ *   - width, height: dimensions of full-res mask
+ *   - lowResData: Float32Array — low-res mask (256×256, unpadded, for d3-contour)
+ *   - lowResWidth, lowResHeight: dimensions of low-res mask
  */
 async function generateMask(
   prompts: PromptMessage[],
   originalWidth: number,
   originalHeight: number
-): Promise<{ data: Float32Array; width: number; height: number }> {
+): Promise<{
+  data: Float32Array;
+  width: number;
+  height: number;
+  lowResData: Float32Array;
+  lowResWidth: number;
+  lowResHeight: number;
+}> {
   logDebug('[SAM Worker] generateMask called. decoderSession=', !!decoderSession, 'currentEmbedding=', !!currentEmbedding, 'prompts=', prompts.length);
 
   // Check both prerequisites immediately - no polling (MODELS_READY event handles init order)
@@ -494,7 +505,7 @@ async function generateMask(
     );
   }
   
-  // Log ALL outputs for debugging purposes
+    // Log ALL outputs for debugging purposes
   for (const name of outputNames) {
     const t = results[name];
     if (!t) {
@@ -505,6 +516,7 @@ async function generateMask(
     logDebug('[SAM Worker] Output', name, 'dims:', t.dims, 'type:', t.type, 'len:', d?.length, 'first5:', d?.subarray ? Array.from(d.subarray(0, Math.min(5, d.length))) : 'N/A');
   }
   
+  // ── Extract full-res mask ────────────────────────────────────────────────
   const rawData = outputTensor.data as any;
   logDebug('[SAM Worker] outputTensor type:', typeof rawData, 'constructor:', rawData?.constructor?.name, 'length:', rawData?.length);
   logDebug('[SAM Worker] outputTensor dims:', outputTensor.dims, 'type:', outputTensor.type);
@@ -565,6 +577,36 @@ async function generateMask(
     resultHeight = MODEL_SIZE;
   }
 
+    // ── Extract low-res mask for d3-contour ──────────────────────────────
+  // `low_res_masks` is [1, 1, 256, 256] — unpadded, raw logits.
+  // This is what we pass to d3-contour for sub-pixel contour detection.
+  let lowResData: Float32Array;
+  let lowResWidth = 256;
+  let lowResHeight = 256;
+
+  const lowResTensor = results['low_res_masks'];
+  if (lowResTensor && lowResTensor.dims && lowResTensor.dims.length === 4) {
+    const lrH = lowResTensor.dims[2];
+    const lrW = lowResTensor.dims[3];
+    const lrRaw = lowResTensor.data as Float32Array;
+    if (lrRaw && lrRaw.length >= lrH * lrW) {
+      lowResData = new Float32Array(lrRaw.subarray(0, lrH * lrW));
+      lowResWidth = lrW;
+      lowResHeight = lrH;
+      logDebug('[SAM Worker] Extracted low_res_masks:', lrW, 'x', lrH, 'len:', lowResData.length);
+    } else {
+      // Fallback: downsample from full-res mask
+      lowResData = new Float32Array(256 * 256);
+      lowResWidth = 256;
+      lowResHeight = 256;
+      logDebug('[SAM Worker] low_res_masks unavailable, using empty fallback');
+    }
+  } else {
+    // Fallback: downsample from full-res mask
+    lowResData = new Float32Array(256 * 256);
+    logDebug('[SAM Worker] low_res_masks not found in results, using empty fallback');
+  }
+
   // Log some stats about the mask for debugging
   let minV = Infinity, maxV = -Infinity;
   for (let i = 0; i < Math.min(resultData.length, 100); i++) {
@@ -573,7 +615,14 @@ async function generateMask(
   }
   logDebug('[SAM Worker] Mask stats (first 100): min=', minV, 'max=', maxV);
 
-  return { data: resultData, width: resultWidth, height: resultHeight };
+  return {
+    data: resultData,
+    width: resultWidth,
+    height: resultHeight,
+    lowResData,
+    lowResWidth,
+    lowResHeight,
+  };
 }
 
 // ─── Mask Upsampling ─────────────────────────────────────────────────────────
@@ -810,10 +859,17 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
             return;
           }
 
-          logDebug('[SAM Worker] Calling generateMask() ...');
+                    logDebug('[SAM Worker] Calling generateMask() ...');
           const decodeStart = performance.now();
 
-          const { data: maskData, width: maskW, height: maskH } = await generateMask(prompts, originalWidth, originalHeight);
+          const {
+            data: maskData,
+            width: maskW,
+            height: maskH,
+            lowResData,
+            lowResWidth,
+            lowResHeight,
+          } = await generateMask(prompts, originalWidth, originalHeight);
 
           logDebug(
             '[SAM Worker] Mask generated in',
@@ -822,11 +878,16 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
             '- size:',
             maskW,
             'x',
-            maskH
+            maskH,
+            '- lowRes:',
+            lowResWidth,
+            'x',
+            lowResHeight
           );
 
-          // Create a Transferable copy
+          // Create transferable copies for both buffers
           const maskBuffer = maskData.buffer.slice(0) as ArrayBuffer;
+          const lowResBuffer = lowResData.buffer.slice(0) as ArrayBuffer;
 
           self.postMessage(
             {
@@ -835,11 +896,14 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
                 mask: maskBuffer,
                 width: maskW,
                 height: maskH,
+                lowResMask: lowResBuffer,
+                lowResWidth,
+                lowResHeight,
                 originalWidth,
                 originalHeight,
               },
             },
-            { transfer: [maskBuffer] }
+            { transfer: [maskBuffer, lowResBuffer] }
           );
         } catch (caseErr) {
           const errMsg = caseErr instanceof Error ? caseErr.message : String(caseErr);
