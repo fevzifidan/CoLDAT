@@ -6,6 +6,7 @@ import { useUploads } from '@/shared/services/s3upload/useUploads';
 import { uploadService } from '@/shared/services/s3upload/s3upload.service';
 import { useAppStore } from '@/store';
 import { getAggregateStatus, getVisibleTaskCount } from '../utils/aggregateStatus';
+import { useShallow } from 'zustand/react/shallow';
 
 /**
  * Mini Island: Sayfanın sağ alt köşesinde görünen collapsed pill.
@@ -36,7 +37,13 @@ const MiniIsland: React.FC = () => {
     collapsePanel,
     allUploadsCompleted,
     setAllUploadsCompleted,
-  } = useAppStore();
+  } = useAppStore(useShallow(state => ({
+    isExpanded: state.isExpanded,
+    expandPanel: state.expandPanel,
+    collapsePanel: state.collapsePanel,
+    allUploadsCompleted: state.allUploadsCompleted,
+    setAllUploadsCompleted: state.setAllUploadsCompleted,
+  })));
 
   const aggregate = React.useMemo(() => getAggregateStatus(tasks), [tasks]);
   const visibleTaskCount = getVisibleTaskCount(tasks);

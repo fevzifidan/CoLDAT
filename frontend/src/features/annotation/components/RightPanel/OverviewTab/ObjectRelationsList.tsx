@@ -1,6 +1,7 @@
 import { ArrowRight, Trash2 } from 'lucide-react';
 import type { ObjectRelation, AnnotatedObject } from '../../../types/annotation.types';
 import { useAppStore } from '../../../../../store/hooks/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 
@@ -14,7 +15,11 @@ export default function ObjectRelationsList({ relations, objects }: ObjectRelati
   const getColor = (id: string) =>
     objects.find((o) => o.id === id)?.color ?? '#94a3b8';
 
-  const { objectRelations, setObjectRelations, isReadOnly } = useAppStore();
+  const { objectRelations, setObjectRelations, isReadOnly } = useAppStore(useShallow(state => ({
+    objectRelations: state.objectRelations,
+    setObjectRelations: state.setObjectRelations,
+    isReadOnly: state.isReadOnly,
+  })));
   const { t } = useTranslation('annotation');
 
   const handleDelete = (id: string) => {

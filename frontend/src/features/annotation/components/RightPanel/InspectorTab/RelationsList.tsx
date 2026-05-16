@@ -1,6 +1,7 @@
 import { ArrowRight, Trash2 } from 'lucide-react';
 import type { ObjectRelation, AnnotatedObject } from '../../../types/annotation.types';
 import { useAppStore } from '../../../../../store/hooks/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 
@@ -10,7 +11,12 @@ interface RelationsListProps {
 
 export default function RelationsList({ selectedObjectId }: RelationsListProps) {
   const { t } = useTranslation('annotation');
-  const { annotatedObjects, objectRelations, setObjectRelations, isReadOnly } = useAppStore();
+  const { annotatedObjects, objectRelations, setObjectRelations, isReadOnly } = useAppStore(useShallow(state => ({
+    annotatedObjects: state.annotatedObjects,
+    objectRelations: state.objectRelations,
+    setObjectRelations: state.setObjectRelations,
+    isReadOnly: state.isReadOnly,
+  })));
 
   const filteredRelations = objectRelations.filter(
     (rel) => rel.sourceId === selectedObjectId || rel.targetId === selectedObjectId

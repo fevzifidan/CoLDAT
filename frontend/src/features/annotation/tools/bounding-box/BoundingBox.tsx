@@ -3,7 +3,6 @@ import { Rect, Group, Text } from 'react-konva';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
 import type { AnnotatedObject } from '../../types/annotation.types';
 import { clampBox } from '../../../viewer/utils/coordinateUtils';
-import Konva from 'konva';
 import { Html } from 'react-konva-utils';
 import { ObjectMenu } from '../../components/RightPanel/InspectorTab/ObjectMenu';
 
@@ -27,6 +26,38 @@ const hexToRGBA = (hex: string, alpha: number) => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+const BoundingBoxSelectedOverlay = memo(({ data, x, y, color }: { data: AnnotatedObject; x: number; y: number; color: string }) => {
+  const scale = useAppStore(state => state.scale);
+  const isReadOnly = useAppStore(state => state.isReadOnly);
+
+  return (
+    <>
+      <Rect
+        x={x}
+        y={y - 20 / scale}
+        width={Math.max(60, 100 / scale)}
+        height={20 / scale}
+        fill={color}
+      />
+      <Text
+        x={x + 4 / scale}
+        y={y - 16 / scale}
+        text={data.label}
+        fill="white"
+        fontSize={12 / scale}
+        fontFamily="sans-serif"
+      />
+      {!isReadOnly && (
+        <Html divProps={{ style: { pointerEvents: 'auto' } }}>
+          <div style={{ position: 'absolute', top: `${y - 24}px`, left: `${x + 102}px` }}>
+            <ObjectMenu object={data} />
+          </div>
+        </Html>
+      )}
+    </>
+  );
+});
+
 export const BoundingBox: React.FC<BoundingBoxProps> = memo(({ data }) => {
   if (data.coordinates.length < 4) return null;
   const [x, y, w, h] = data.coordinates;
@@ -40,7 +71,6 @@ export const BoundingBox: React.FC<BoundingBoxProps> = memo(({ data }) => {
   const opacity = useAppStore(state => state.opacity);
   const imgDimensions = useAppStore(state => state.imgDimensions);
   const isReadOnly = useAppStore(state => state.isReadOnly);
-  const scale = useAppStore(state => state.scale);
 
   const isSelected = selectedObjectId === data.id;
   const isSelectMode = activeTool === 'select';
@@ -90,40 +120,17 @@ export const BoundingBox: React.FC<BoundingBoxProps> = memo(({ data }) => {
         startCoords.current = null;
       }}
     >
-      {/* Background for text */}
-      <Rect
-        x={x}
-        y={y - 20 / scale}
-        width={Math.max(60, 100 / scale)}
-        height={20 / scale}
-        fill={color}
-        visible={isSelected}
-      />
-      <Text
-        x={x + 4 / scale}
-        y={y - 16 / scale}
-        text={data.label}
-        fill="white"
-        fontSize={12 / scale}
-        fontFamily="sans-serif"
-        visible={isSelected}
-      />
-      {isSelected && !isReadOnly && (
-        <Html divProps={{ style: { pointerEvents: 'auto' } }}>
-          <div style={{ position: 'absolute', top: `${y - 24}px`, left: `${x + 102}px` }}>
-            <ObjectMenu object={data} />
-          </div>
-        </Html>
-      )}
+      {isSelected && <BoundingBoxSelectedOverlay data={data} x={x} y={y} color={color} />}
       <Rect
         x={x}
         y={y}
         width={w}
         height={h}
         stroke={color}
-        strokeWidth={(isSelected ? 3 : 2) / scale}
+        strokeWidth={isSelected ? 3 : 2}
+        strokeScaleEnabled={false}
         fill={fillColor}
-        hitStrokeWidth={10 / scale}
+        hitStrokeWidth={10}
       />
     </Group>
   );

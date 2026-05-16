@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, X, Pause, FileText } from 'lucide-react';
 import FileItem from './FileItem';
 import { getAggregateStatus, getVisibleTaskCount } from '../utils/aggregateStatus';
+import { useShallow } from 'zustand/react/shallow';
 
 /**
  * Expanded Panel: Sağ tarafta full-height non-modal side drawer.
@@ -38,7 +39,12 @@ const ExpandedPanel: React.FC = () => {
     collapsePanel,
     allUploadsCompleted,
     setAllUploadsCompleted,
-  } = useAppStore();
+  } = useAppStore(useShallow(state => ({
+    isExpanded: state.isExpanded,
+    collapsePanel: state.collapsePanel,
+    allUploadsCompleted: state.allUploadsCompleted,
+    setAllUploadsCompleted: state.setAllUploadsCompleted,
+  })));
 
   const visibleTasks = React.useMemo(() => tasks.filter(t => !t.hidden), [tasks]);
   const aggregate = React.useMemo(() => getAggregateStatus(visibleTasks), [visibleTasks]);
