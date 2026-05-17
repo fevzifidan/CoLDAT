@@ -18,12 +18,12 @@
  */
 
 import type { StateCreator } from 'zustand';
-import type { SAMStatus, SAMPrompt, SamState, SamLogitData } from '../types/annotation.types';
+import type { SAMStatus, SAMPrompt, SAMBboxPrompt, SAMSubMode, SamState, SamLogitData } from '../types/annotation.types';
 
 export type { SamState };
 
 export const createSamSlice: StateCreator<SamState> = (set) => ({
-  // ─── Initial State ──────────────────────────────────────────────────────────
+    // ─── Initial State ──────────────────────────────────────────────────────────
   samStatus: 'idle',
   samDownloadProgress: 0,
   samEmbeddingReady: false,
@@ -33,6 +33,8 @@ export const createSamSlice: StateCreator<SamState> = (set) => ({
   samMaskData: null,
   samLogitData: null,
   samWarning: null,
+  samSubMode: 'point' as SAMSubMode,
+  samBboxPrompt: null as SAMBboxPrompt | null,
 
   // ─── Status Setters ─────────────────────────────────────────────────────────
 
@@ -71,8 +73,38 @@ export const createSamSlice: StateCreator<SamState> = (set) => ({
     });
   },
 
-  clearSamPrompts: () => {
+    clearSamPrompts: () => {
     set({ samPrompts: [], samPromptCount: 0 });
+  },
+
+  // ─── Sub-mode Management ──────────────────────────────────────────────────
+
+  setSamSubMode: (mode: SAMSubMode) => {
+    set((state) => {
+      // Switching sub-modes clears the current prompt type
+      const next: Partial<SamState> = { samSubMode: mode };
+      if (mode === 'bbox') {
+        // Switching to bbox: clear point prompts
+        next.samPrompts = [];
+        next.samPromptCount = 0;
+      } else {
+        // Switching to point: clear bbox prompt
+        next.samBboxPrompt = null;
+      }
+      return next;
+    });
+  },
+
+  setSamBboxPrompt: (bbox: SAMBboxPrompt | null) => {
+    set((state) => {
+      const next: Partial<SamState> = { samBboxPrompt: bbox };
+      if (bbox) {
+        // Setting a bbox clears point prompts
+        next.samPrompts = [];
+        next.samPromptCount = 0;
+      }
+      return next;
+    });
   },
 
   // ─── Mask Management ────────────────────────────────────────────────────────
@@ -93,7 +125,7 @@ export const createSamSlice: StateCreator<SamState> = (set) => ({
 
   // ─── Full Reset ─────────────────────────────────────────────────────────────
 
-  resetSamState: () => {
+    resetSamState: () => {
     set((state) => {
       // Revoke the object URL if one exists
       if (state.samMaskBlobUrl) {
@@ -109,13 +141,15 @@ export const createSamSlice: StateCreator<SamState> = (set) => ({
         samMaskData: null,
         samLogitData: null,
         samWarning: null,
+        samSubMode: 'point' as SAMSubMode,
+        samBboxPrompt: null,
       };
     });
   },
 
   // ─── Clear SAM session (prompts + mask, keep embedding ready) ──────────────
 
-  clearSamSession: () => {
+    clearSamSession: () => {
     set((state) => {
       if (state.samMaskBlobUrl) {
         URL.revokeObjectURL(state.samMaskBlobUrl);
@@ -127,6 +161,7 @@ export const createSamSlice: StateCreator<SamState> = (set) => ({
         samMaskData: null,
         samLogitData: null,
         samWarning: null,
+        samBboxPrompt: null,
       };
     });
   },

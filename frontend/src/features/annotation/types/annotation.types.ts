@@ -184,6 +184,17 @@ export interface SAMPrompt {
   type: 'positive' | 'negative';
 }
 
+/** SAM tool sub-mode: which type of prompt the user is placing */
+export type SAMSubMode = 'point' | 'bbox';
+
+/** A bounding box prompt for the SAM decoder, stored in original image pixel coordinates */
+export interface SAMBboxPrompt {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
 /**
  * Low-resolution logit data from the SAM decoder for contour detection.
  *
@@ -232,9 +243,11 @@ export interface SamState {
   samPrompts: SAMPrompt[];
   samMaskBlobUrl: string | null;
   samPromptCount: number;
-    samMaskData: { maskData: Uint8Array; width: number; height: number } | null;
+  samMaskData: { maskData: Uint8Array; width: number; height: number } | null;
   samLogitData: SamLogitData | null;
   samWarning: string | null;
+  samSubMode: SAMSubMode;
+  samBboxPrompt: SAMBboxPrompt | null;
 
   setSamStatus: (status: SAMStatus) => void;
   setSamDownloadProgress: (progress: number) => void;
@@ -249,5 +262,7 @@ export interface SamState {
   setSamMaskData: (data: { maskData: Uint8Array; width: number; height: number } | null) => void;
   setSamLogitData: (data: SamLogitData | null) => void;
   setSamWarning: (warning: string | null) => void;
+  setSamSubMode: (mode: SAMSubMode) => void;
+  setSamBboxPrompt: (bbox: SAMBboxPrompt | null) => void;
 }
 

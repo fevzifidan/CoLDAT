@@ -43,14 +43,17 @@
     "submit": "Onaya Gönder",
     "submitTooltip": "Bu görevi admin onayı için gönder."
   },
-  "sideToolbar": {
+    "sideToolbar": {
     "select": "Seç (V)",
     "bbox": "Dikdörtgen (R)",
     "polygon": "Poligon (P)",
     "points": "Noktalar (K)",
     "pen": "Kalem (B)",
     "eraser": "Silgi (E)",
-    "livewire": "Akıllı Makas (L)"
+    "livewire": "Akıllı Makas (L)",
+    "sam": "SAM (S)",
+    "samPoint": "Nokta Promptu",
+    "samBbox": "BBox Promptu"
   },
   "leftPanel": {
     "search": "Mevcut sayfada ara...",
@@ -129,8 +132,9 @@
       "page": "Sayfa {{page}}"
     }
   },
-  "sam": {
+    "sam": {
     "actionHint": "Poligon için Q, sınırlayıcı kutu (BBox) için W tuşuna basın",
+    "bboxActionHint": "Sınırlayıcı kutu çizmek için sürükleyin",
     "noMaskFound": "Seçili bölgede maske bulunamadı."
   }
 }

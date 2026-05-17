@@ -586,3 +586,49 @@ function perpendicularDistance(
 
   return Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
 }
+
+// ─── BBox → Model Coordinates (For SAM Decoder) ────────────────────────────
+
+/**
+ * Convert a bounding box from image pixel coordinates to model (1024×1024)
+ * padded tensor space. Both corners of the bbox are independently mapped
+ * using mapClickToModel, ensuring the box remains axis-aligned.
+ *
+ * @param x1             — Left (or right) X in original image pixels
+ * @param y1             — Top (or bottom) Y in original image pixels
+ * @param x2             — Opposite corner X
+ * @param y2             — Opposite corner Y
+ * @param originalWidth  — Image width in pixels
+ * @param originalHeight — Image height in pixels
+ * @param targetSize     — Target tensor size (default: 1024)
+ * @returns
+ *   Normalized bbox { x1, y1, x2, y2 } with x1<x2 and y1<y2 in model space,
+ *   or null if either corner is out of bounds.
+ */
+export function mapBboxToModel(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  originalWidth: number,
+  originalHeight: number,
+  targetSize: number = SAM_TENSOR_SIZE
+): { x1: number; y1: number; x2: number; y2: number } | null {
+  // Normalize: ensure x1<x2 and y1<y2
+  const nx1 = Math.min(x1, x2);
+  const ny1 = Math.min(y1, y2);
+  const nx2 = Math.max(x1, x2);
+  const ny2 = Math.max(y1, y2);
+
+  const topLeft = mapClickToModel(nx1, ny1, originalWidth, originalHeight, targetSize);
+  const bottomRight = mapClickToModel(nx2, ny2, originalWidth, originalHeight, targetSize);
+
+  if (!topLeft || !bottomRight) return null;
+
+  return {
+    x1: topLeft.x,
+    y1: topLeft.y,
+    x2: bottomRight.x,
+    y2: bottomRight.y,
+  };
+}

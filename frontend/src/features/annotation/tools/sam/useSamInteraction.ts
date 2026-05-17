@@ -58,19 +58,28 @@ export interface UseSamInteractionOptions {
    * Default: false.
    */
   disabled?: boolean;
+  /**
+   * SAM sub-mode. When set to 'bbox', this hook defers to the bbox interaction.
+   * Point prompts are only placed when subMode is 'point'.
+   * Default: 'point'.
+   */
+  subMode?: 'point' | 'bbox';
 }
 
 export function useSamInteraction(options: UseSamInteractionOptions = {}) {
-  const { disabled = false } = options;
+  const { disabled = false, subMode = 'point' } = options;
 
   const { getRelativePointerPosition } = useCoordinateTransform();
 
   // Ref to track mouse-down position for drag detection
   const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
 
-  const handleMouseDown = useCallback(
+    const handleMouseDown = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
       if (disabled) return;
+
+      // Only handle point prompts in 'point' sub-mode
+      if (subMode !== 'point') return;
 
       // Ctrl+click should pass through for panning (handled upstream)
       if (e.evt.ctrlKey) return;
@@ -94,9 +103,12 @@ export function useSamInteraction(options: UseSamInteractionOptions = {}) {
     [disabled, getRelativePointerPosition]
   );
 
-  const handleMouseUp = useCallback(
+    const handleMouseUp = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
       if (disabled) return;
+
+      // Only handle point prompts in 'point' sub-mode
+      if (subMode !== 'point') return;
 
       // Ctrl+click pass-through
       if (e.evt.ctrlKey) return;
@@ -133,8 +145,11 @@ export function useSamInteraction(options: UseSamInteractionOptions = {}) {
         return;
       }
 
-      // Determine prompt type
+            // Determine prompt type
       const type: 'positive' | 'negative' = e.evt.button === 2 ? 'negative' : 'positive';
+
+      // Clear any existing bbox prompt when placing a point prompt
+      useAppStore.getState().setSamBboxPrompt(null);
 
       // Dispatch to Zustand store.
       // The orchestrator (useSamOrchestrator) watches samPrompts changes

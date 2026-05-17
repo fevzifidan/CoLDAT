@@ -81,8 +81,8 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAppStore } from '@/store/hooks/useAppStore';
 import { getEmbedding, saveEmbedding } from './embeddingCache';
-import { mapClickToModel, cropAndScaleMask, getScaledDims, SAM_TENSOR_SIZE } from './samCoords';
-import type { TaskImage, SAMStatus, SAMPrompt, SamLogitData } from '../../types/annotation.types';
+import { mapClickToModel, cropAndScaleMask, getScaledDims, SAM_TENSOR_SIZE, mapBboxToModel } from './samCoords';
+import type { TaskImage, SAMStatus, SAMPrompt, SAMBboxPrompt, SamLogitData } from '../../types/annotation.types';
 import { uploadService } from '@/shared/services/s3upload/s3upload.service';
 import notificationService from '@/shared/services/notification';
 
@@ -288,7 +288,7 @@ export function useSamOrchestrator(
 ): {
   status: SAMStatus;
   isReady: boolean;
-  generateMask: (prompts: SAMPrompt[]) => Promise<void>;
+  generateMask: (prompts: SAMPrompt[], bbox?: SAMBboxPrompt | null) => Promise<void>;
   resetSession: () => void;
 } {
   // ─── Store Accessors ──────────────────────────────────────────────────────
@@ -578,9 +578,17 @@ export function useSamOrchestrator(
 
   // ─── Generate Mask (called after prompts change) ─────────────────────────
 
-        const generateMask = useCallback(
-      async (prompts: SAMPrompt[]): Promise<void> => {
-        if (!workerRef.current || prompts.length === 0 || !enabledRef.current) {
+                const generateMask = useCallback(
+      async (prompts: SAMPrompt[], bbox?: SAMBboxPrompt | null): Promise<void> => {
+        if (!workerRef.current || !enabledRef.current) {
+          clearSamMask();
+          return;
+        }
+
+        // Require at least one prompt or bbox
+        const hasPoints = prompts && prompts.length > 0;
+        const hasBbox = !!bbox;
+        if (!hasPoints && !hasBbox) {
           clearSamMask();
           return;
         }
@@ -615,21 +623,34 @@ export function useSamOrchestrator(
       const origW = imgDimensions?.width ?? 1024;
       const origH = imgDimensions?.height ?? 1024;
 
-      try {
+            try {
         // Convert prompts from image coordinates to model (1024×1024) coordinates
-        const modelPrompts = prompts
-          .map((p) => {
-            const coords = mapClickToModel(p.x, p.y, origW, origH, SAM_TENSOR_SIZE);
-            if (!coords) return null;
-            return {
-              x: coords.x,
-              y: coords.y,
-              type: p.type,
-            };
-          })
-          .filter((p): p is { x: number; y: number; type: 'positive' | 'negative' } => p !== null);
+        const modelPrompts = hasPoints
+          ? prompts
+              .map((p) => {
+                const coords = mapClickToModel(p.x, p.y, origW, origH, SAM_TENSOR_SIZE);
+                if (!coords) return null;
+                return {
+                  x: coords.x,
+                  y: coords.y,
+                  type: p.type,
+                };
+              })
+              .filter((p): p is { x: number; y: number; type: 'positive' | 'negative' } => p !== null)
+          : [];
 
-        if (modelPrompts.length === 0) {
+        // Convert bbox to model coordinates
+        let modelBox: { x1: number; y1: number; x2: number; y2: number } | undefined;
+        if (hasBbox && bbox) {
+          const mapped = mapBboxToModel(
+            bbox.x1, bbox.y1, bbox.x2, bbox.y2,
+            origW, origH,
+            SAM_TENSOR_SIZE
+          );
+          if (mapped) modelBox = mapped;
+        }
+
+                if (modelPrompts.length === 0 && !modelBox) {
           clearSamMask();
           return;
         }
@@ -681,11 +702,12 @@ export function useSamOrchestrator(
 
           workerRef.current!.addEventListener('message', handler);
 
-          console.error('[SAM Orchestrator DEBUG] Sending GENERATE_MASK to worker. prompts:', modelPrompts.length, 'origW:', origW, 'origH:', origH); // CRITICAL DEBUG
+                    console.error('[SAM Orchestrator DEBUG] Sending GENERATE_MASK to worker. prompts:', modelPrompts.length, 'box:', !!modelBox, 'origW:', origW, 'origH:', origH); // CRITICAL DEBUG
           workerRef.current!.postMessage({
             type: 'GENERATE_MASK',
             data: {
               prompts: modelPrompts,
+              box: modelBox,
               originalWidth: origW,
               originalHeight: origH,
             },
@@ -733,13 +755,17 @@ export function useSamOrchestrator(
           nonZeroCount
         });
 
-        if (nonZeroCount === 0) {
-          console.log('[SAM Orchestrator] No mask detected. Triggering warning and removing prompt.');
+                if (nonZeroCount === 0) {
+          console.log('[SAM Orchestrator] No mask detected. Triggering warning.');
           clearSamMask();
-          const { setSamWarning, removeSamPrompt, samPrompts } = useAppStore.getState();
+          const { setSamWarning, removeSamPrompt, samPrompts, samBboxPrompt } = useAppStore.getState();
           setSamWarning('sam.noMaskFound');
-          
-          if (samPrompts.length > 0) {
+
+          if (samBboxPrompt) {
+            // Bbox prompt produced no mask — clear it
+            useAppStore.getState().setSamBboxPrompt(null);
+          } else if (samPrompts.length > 0) {
+            // Point prompt produced no mask — remove last prompt
             removeSamPrompt(samPrompts.length - 1);
           }
 
@@ -832,20 +858,23 @@ export function useSamOrchestrator(
   // We subscribe to samPromptCount (a number) instead of the full samPrompts
   // array to avoid unnecessary re-renders from array reference changes.
   const samPromptCount = useAppStore((s) => s.samPromptCount);
+  const samBboxPrompt = useAppStore((s) => s.samBboxPrompt);
 
   useEffect(() => {
     if (samStatus !== 'ready') return;
 
     const prompts = useAppStore.getState().samPrompts;
-    if (prompts.length === 0) {
+    const bbox = useAppStore.getState().samBboxPrompt;
+
+    if (prompts.length === 0 && !bbox) {
       clearSamMask();
       return;
     }
 
-    // Generate mask for the current prompts
-    generateMask(prompts);
+    // Generate mask for the current prompts/bbox
+    generateMask(prompts, bbox);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [samStatus, samPromptCount, generateMask, clearSamMask]);
+  }, [samStatus, samPromptCount, samBboxPrompt, generateMask, clearSamMask]);
 
   // ─── Return ───────────────────────────────────────────────────────────────
 

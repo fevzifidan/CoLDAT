@@ -12,6 +12,7 @@ import { MagnifierLens } from './MagnifierLens';
 import { useLivewire } from '../../tools/livewire/useLivewire';
 import { LivewirePreview } from '../../tools/livewire/LivewirePreview';
 import { useSamInteraction } from '../../tools/sam/useSamInteraction';
+import { useSamBboxInteraction } from '../../tools/sam/useSamBboxInteraction';
 
 
 interface InteractionLayerProps {
@@ -19,7 +20,7 @@ interface InteractionLayerProps {
 }
 
 export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) => {
-  const { activeTool, imgDimensions, isReadOnly, scale, samStatus, samEmbeddingReady } = useAppStore(
+  const { activeTool, imgDimensions, isReadOnly, scale, samStatus, samEmbeddingReady, samSubMode } = useAppStore(
     useShallow((state) => ({
       activeTool: state.activeTool,
       imgDimensions: state.imgDimensions,
@@ -27,14 +28,16 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
       scale: state.scale,
       samStatus: state.samStatus,
       samEmbeddingReady: state.samEmbeddingReady,
+      samSubMode: state.samSubMode,
     }))
   );
   
   const draftBoxRef = useRef<Konva.Rect>(null);
   const draftPolyRef = useRef<Konva.Line>(null);
   const draftPenRef = useRef<Konva.Line>(null);
-  const livewireMainRef = useRef<Konva.Line>(null);
+    const livewireMainRef = useRef<Konva.Line>(null);
   const livewireMagnifierRef = useRef<Konva.Line>(null);
+  const samBboxDraftRef = useRef<Konva.Rect>(null);
 
   
   const { handleWheel } = useZoom();
@@ -78,17 +81,26 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
     isDrawing: isLivewireDrawing
   } = useLivewire([livewireMainRef, livewireMagnifierRef]);
 
-  // SAM interaction — handles left-click (positive) and right-click (negative) prompts
+    // SAM interaction — handles left-click (positive) and right-click (negative) prompts
   const isSamDisabled = isReadOnly || !samEmbeddingReady || samStatus !== 'ready';
   const {
     handleMouseDown: samDown,
     handleMouseUp: samUp,
-  } = useSamInteraction({ disabled: isSamDisabled });
+  } = useSamInteraction({ disabled: isSamDisabled, subMode: samSubMode });
+
+  // SAM bbox interaction — handles drag-to-draw bounding box prompt
+  const {
+    handleMouseDown: samBboxDown,
+    handleMouseMove: samBboxMove,
+    handleMouseUp: samBboxUp,
+  } = useSamBboxInteraction({ disabled: isSamDisabled, draftRef: samBboxDraftRef });
 
   // Get SAM store actions for keyboard shortcuts
-  const clearSamPrompts = useAppStore(state => state.clearSamPrompts);
+    const clearSamPrompts = useAppStore(state => state.clearSamPrompts);
+  const setSamBboxPrompt = useAppStore(state => state.setSamBboxPrompt);
   const removeSamPrompt = useAppStore(state => state.removeSamPrompt);
   const samPromptCount = useAppStore(state => state.samPromptCount);
+  const samBboxPrompt = useAppStore(state => state.samBboxPrompt);
 
   // Keyboard shortcut for cancelling and SAM prompt management
   React.useEffect(() => {
@@ -98,9 +110,10 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
         if (activeTool === 'polygon') cancelPoly();
         if (activeTool === 'pen') cancelPen();
         if (activeTool === 'livewire') livewireReset();
-        if (activeTool === 'sam') {
+                if (activeTool === 'sam') {
           e.preventDefault();
           clearSamPrompts();
+          setSamBboxPrompt(null);
         }
       }
       
@@ -113,9 +126,13 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
           e.preventDefault();
           livewireUndo();
         }
-        if (activeTool === 'sam') {
+                if (activeTool === 'sam') {
           e.preventDefault();
-          removeSamPrompt(samPromptCount - 1);
+          if (samBboxPrompt) {
+            setSamBboxPrompt(null);
+          } else if (samPromptCount > 0) {
+            removeSamPrompt(samPromptCount - 1);
+          }
         }
       }
 
@@ -127,15 +144,16 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTool, cancelPoly, cancelPen, undoPoly, livewireFinalize, livewireUndo, livewireReset, isReadOnly, clearSamPrompts, removeSamPrompt, samPromptCount]);
+  }, [activeTool, cancelPoly, cancelPen, undoPoly, livewireFinalize, livewireUndo, livewireReset, isReadOnly, clearSamPrompts, removeSamPrompt, samPromptCount, setSamBboxPrompt, samBboxPrompt]);
 
-  const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (e.evt.ctrlKey) return; // Ctrl + LMB is for panning
     if (activeTool === 'bbox') boxDown(e);
     else if (activeTool === 'polygon') polyDown(e);
     else if (activeTool === 'pen') penDown(e);
     else if (activeTool === 'eraser') eraserDown(e);
     else if (activeTool === 'livewire') livewireDown(e);
+    else if (activeTool === 'sam' && samSubMode === 'bbox') samBboxDown(e);
     else if (activeTool === 'sam') samDown(e);
   };
   const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -144,6 +162,7 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
     else if (activeTool === 'pen') penMove(e);
     else if (activeTool === 'eraser') eraserMove(e);
     else if (activeTool === 'livewire') livewireMove(e);
+    else if (activeTool === 'sam' && samSubMode === 'bbox') samBboxMove(e);
   };
 
 
@@ -151,7 +170,8 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
     if (activeTool === 'bbox') boxUp(e);
     else if (activeTool === 'polygon') polyUp(e);
     else if (activeTool === 'pen') penUp(e);
-    else if (activeTool === 'eraser') eraserUp();
+        else if (activeTool === 'eraser') eraserUp();
+    else if (activeTool === 'sam' && samSubMode === 'bbox') samBboxUp(e);
     else if (activeTool === 'sam') samUp(e);
   };
 
@@ -173,7 +193,7 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
       />
 
       
-      {/* Draft Box */}
+            {/* Draft Box */}
       <Rect
         ref={draftBoxRef}
         visible={false}
@@ -181,6 +201,19 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
         strokeWidth={2 / scale}
         listening={false}
       />
+      
+      {/* SAM BBox Prompt Draft */}
+      {activeTool === 'sam' && samSubMode === 'bbox' && (
+        <Rect
+          ref={samBboxDraftRef}
+          visible={false}
+          stroke="#22c55e"
+          strokeWidth={2 / scale}
+          dash={[6 / scale, 4 / scale]}
+          fill="rgba(34, 197, 94, 0.08)"
+          listening={false}
+        />
+      )}
       
       {/* Draft Polygon */}
       <Line
@@ -222,7 +255,7 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
         );
       })}
       
-      <MagnifierLens imageUrl={imageUrl}>
+            <MagnifierLens imageUrl={imageUrl}>
         {/* Draft Box */}
         <Rect
           visible={draftBoxRef.current?.visible()}
@@ -234,6 +267,21 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
           strokeWidth={2 / scale}
           listening={false}
         />
+
+        {/* SAM BBox Prompt Draft (magnified) */}
+        {activeTool === 'sam' && samSubMode === 'bbox' && samBboxDraftRef.current?.visible() && (
+          <Rect
+            x={samBboxDraftRef.current.x()}
+            y={samBboxDraftRef.current.y()}
+            width={samBboxDraftRef.current.width()}
+            height={samBboxDraftRef.current.height()}
+            stroke="#22c55e"
+            strokeWidth={2 / scale}
+            dash={[6 / scale, 4 / scale]}
+            fill="rgba(34, 197, 94, 0.08)"
+            listening={false}
+          />
+        )}
         
         {/* Draft Polygon */}
         <Line

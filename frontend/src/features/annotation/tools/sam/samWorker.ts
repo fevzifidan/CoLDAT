@@ -68,14 +68,30 @@ interface PromptMessage {
   type: 'positive' | 'negative';
 }
 
-interface PointCoords {
-  x: number;
-  y: number;
+interface BBoxMessage {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+interface WorkerData {
+  [key: string]: unknown;
+  encoderPath?: string;
+  decoderPath?: string;
+  imageData?: ImageData;
+  originalWidth?: number;
+  originalHeight?: number;
+  outputDims?: { padX: number; padY: number; scaledW: number; scaledH: number };
+  embedding?: ArrayBuffer;
+  dims?: number[];
+  prompts?: PromptMessage[];
+  box?: BBoxMessage;
 }
 
 interface WorkerMessage {
   type: 'INIT_MODELS' | 'COMPUTE_EMBEDDING' | 'LOAD_EMBEDDING' | 'GENERATE_MASK';
-  data: Record<string, unknown>;
+  data: WorkerData;
 }
 
 // ─── Internal State ─────────────────────────────────────────────────────────
@@ -341,10 +357,15 @@ async function computeEmbedding(
  *   - lowResData: Float32Array — low-res mask (256×256, unpadded, for d3-contour)
  *   - lowResWidth, lowResHeight: dimensions of low-res mask
  */
+interface GenerateMaskParams {
+  prompts: PromptMessage[];
+  box?: BBoxMessage | null;
+  originalWidth: number;
+  originalHeight: number;
+}
+
 async function generateMask(
-  prompts: PromptMessage[],
-  originalWidth: number,
-  originalHeight: number
+  params: GenerateMaskParams
 ): Promise<{
   data: Float32Array;
   width: number;
@@ -353,7 +374,8 @@ async function generateMask(
   lowResWidth: number;
   lowResHeight: number;
 }> {
-  logDebug('[SAM Worker] generateMask called. decoderSession=', !!decoderSession, 'currentEmbedding=', !!currentEmbedding, 'prompts=', prompts.length);
+  const { prompts, box, originalWidth, originalHeight } = params;
+  logDebug('[SAM Worker] generateMask called. decoderSession=', !!decoderSession, 'currentEmbedding=', !!currentEmbedding, 'prompts=', prompts.length, 'box=', box ? `[${box.x1},${box.y1},${box.x2},${box.y2}]` : 'none');
 
   // Check both prerequisites immediately - no polling (MODELS_READY event handles init order)
   if (!decoderSession) {
@@ -378,19 +400,31 @@ async function generateMask(
   const numPoints = prompts.length;
 
   // ── Build point_coords tensor [N, 2] ─────────────────────────────────────
-  const pointCoordsData = new Float32Array(numPoints * 2);
-  const pointLabelsData = new Float32Array(numPoints);
+  // When a bbox is provided without point prompts, we still need valid point tensors.
+  // SAM expects at least one point coordinate. We use the bbox center as a dummy point.
+  const effectiveNumPoints = numPoints > 0 ? numPoints : (box ? 1 : 0);
+  const pointCoordsData = new Float32Array(effectiveNumPoints * 2);
+  const pointLabelsData = new Float32Array(effectiveNumPoints);
 
-  for (let i = 0; i < numPoints; i++) {
-    const p = prompts[i];
-    pointCoordsData[i * 2] = p.x;
-    pointCoordsData[i * 2 + 1] = p.y;
-    pointLabelsData[i] = p.type === 'positive' ? 1.0 : 0.0;
+  if (numPoints > 0) {
+    for (let i = 0; i < numPoints; i++) {
+      const p = prompts[i];
+      pointCoordsData[i * 2] = p.x;
+      pointCoordsData[i * 2 + 1] = p.y;
+      pointLabelsData[i] = p.type === 'positive' ? 1.0 : 0.0;
+    }
+  } else if (box) {
+    // Bbox without points: provide bbox center as a point prompt (label=2 means bbox center in SAM convention)
+    const cx = (box.x1 + box.x2) / 2;
+    const cy = (box.y1 + box.y2) / 2;
+    pointCoordsData[0] = cx;
+    pointCoordsData[1] = cy;
+    pointLabelsData[0] = 2.0; // SAM: label=2 indicates bbox center point
   }
 
   // MobileSAM decoder expects batch dimension: [1, numPoints, 2] and [1, numPoints]
-  const pointCoordsTensor = new ort.Tensor('float32', pointCoordsData, [1, numPoints, 2]);
-  const pointLabelsTensor = new ort.Tensor('float32', pointLabelsData, [1, numPoints]);
+  const pointCoordsTensor = new ort.Tensor('float32', pointCoordsData, [1, effectiveNumPoints, 2]);
+  const pointLabelsTensor = new ort.Tensor('float32', pointLabelsData, [1, effectiveNumPoints]);
 
   // ── Build mask_input tensor (zero) ──────────────────────────────────────
   // MobileSAM doesn't use iterative mask refinement from the decoder,
@@ -402,12 +436,20 @@ async function generateMask(
   const hasMaskInputData = new Float32Array([0.0]);
   const hasMaskInputTensor = new ort.Tensor('float32', hasMaskInputData, [1]);
 
+        // ── Build box tensor [1, 4] (optional) ──────────────────────────────────
+        let boxTensor: ort.Tensor | null = null;
+        if (box) {
+          const boxData = new Float32Array([box.x1, box.y1, box.x2, box.y2]);
+          boxTensor = new ort.Tensor('float32', boxData, [1, 4]);
+          logDebug('[SAM Worker] Box tensor created:', boxData);
+        }
+
         // ── Build orig_im_size tensor ───────────────────────────────────────────
-  // CRITICAL: orig_im_size MUST be the actual original image dimensions [H, W]
-  // NOT a fixed value. The decoder uses this to properly scale/align the output.
-  // Passing wrong dimensions causes the decoder to hang or produce invalid results.
-  const origImSizeData = new Float32Array([originalHeight, originalWidth]);
-  const origImSizeTensor = new ort.Tensor('float32', origImSizeData, [2]);
+        // CRITICAL: orig_im_size MUST be the actual original image dimensions [H, W]
+        // NOT a fixed value. The decoder uses this to properly scale/align the output.
+        // Passing wrong dimensions causes the decoder to hang or produce invalid results.
+        const origImSizeData = new Float32Array([originalHeight, originalWidth]);
+        const origImSizeTensor = new ort.Tensor('float32', origImSizeData, [2]);
 
   // ── Prepare feeds ───────────────────────────────────────────────────────
   const inputNames = decoderSession.inputNames;
@@ -442,6 +484,9 @@ async function generateMask(
     } else if (nameLower.includes('mask_input') || nameLower.includes('maskinput')) {
       logDebug('[SAM Worker] Matching', name, '→ mask_input [1,1,256,256]');
       feeds[name] = maskInputTensor;
+        } else if ((nameLower.includes('box') || nameLower.includes('bbox')) && boxTensor) {
+      logDebug('[SAM Worker] Matching', name, '→ box [1,4]');
+      feeds[name] = boxTensor;
     } else if (nameLower.includes('orig_im_size') || nameLower.includes('origimsize')) {
       logDebug('[SAM Worker] Matching', name, '→ orig_im_size [', originalHeight, ',', originalWidth, ']');
       feeds[name] = origImSizeTensor;
@@ -844,17 +889,18 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
       case 'GENERATE_MASK': {
         logDebug('[SAM Worker] GENERATE_MASK case reached!');
         
-        try {
-          const prompts = data.prompts as PromptMessage[];
+                try {
+          const prompts = data.prompts as PromptMessage[] || [];
+          const box = data.box as BBoxMessage | undefined;
           const originalWidth = (data.originalWidth as number) || currentImageDims?.w || 1024;
           const originalHeight = (data.originalHeight as number) || currentImageDims?.h || 1024;
 
-          logDebug('[SAM Worker] GENERATE_MASK params: prompts.length=', prompts.length, 'origW=', originalWidth, 'origH=', originalHeight);
+          logDebug('[SAM Worker] GENERATE_MASK params: prompts.length=', prompts.length, 'box=', !!box, 'origW=', originalWidth, 'origH=', originalHeight);
 
-          if (!prompts || prompts.length === 0) {
+          if ((!prompts || prompts.length === 0) && !box) {
             self.postMessage({
               type: 'ERROR',
-              data: { message: 'GENERATE_MASK: At least one prompt is required.' },
+              data: { message: 'GENERATE_MASK: At least one prompt or a bounding box is required.' },
             });
             return;
           }
@@ -869,7 +915,12 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
             lowResData,
             lowResWidth,
             lowResHeight,
-          } = await generateMask(prompts, originalWidth, originalHeight);
+          } = await generateMask({
+            prompts: prompts || [],
+            box: box || null,
+            originalWidth,
+            originalHeight,
+          });
 
           logDebug(
             '[SAM Worker] Mask generated in',

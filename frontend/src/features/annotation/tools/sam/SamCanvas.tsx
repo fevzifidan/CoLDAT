@@ -26,7 +26,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Layer, Image as KonvaImage, Circle } from 'react-konva';
+import { Layer, Image as KonvaImage, Circle, Rect } from 'react-konva';
 import Konva from 'konva';
 import { useAppStore } from '@/store/hooks/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -149,11 +149,12 @@ PromptIndicators.displayName = 'PromptIndicators';
  * inside <Stage> in MainStage.tsx.
  */
 export const SamCanvas: React.FC = () => {
-  const { samMaskBlobUrl, samPrompts, activeTool, imgDimensions, scale } =
+  const { samMaskBlobUrl, samPrompts, samBboxPrompt, activeTool, imgDimensions, scale } =
     useAppStore(
       useShallow((state) => ({
         samMaskBlobUrl: state.samMaskBlobUrl,
         samPrompts: state.samPrompts,
+        samBboxPrompt: state.samBboxPrompt,
         activeTool: state.activeTool,
         imgDimensions: state.imgDimensions,
         scale: state.scale,
@@ -163,7 +164,7 @@ export const SamCanvas: React.FC = () => {
   // Only render when SAM tool is active and we have image dimensions
   if (activeTool !== 'sam' || !imgDimensions) return null;
 
-  const hasVisibleContent = samMaskBlobUrl !== null || samPrompts.length > 0;
+  const hasVisibleContent = samMaskBlobUrl !== null || samPrompts.length > 0 || samBboxPrompt !== null;
 
   if (!hasVisibleContent) {
     // Render an empty Layer so the layer index stays consistent when switching tools.
@@ -182,9 +183,25 @@ export const SamCanvas: React.FC = () => {
         />
       )}
 
-      {/* Prompt indicator dots */}
+            {/* Prompt indicator dots */}
       {samPrompts.length > 0 && (
         <PromptIndicators prompts={samPrompts} scale={scale} />
+      )}
+
+      {/* BBox prompt indicator */}
+      {samBboxPrompt && (
+        <Rect
+          x={Math.min(samBboxPrompt.x1, samBboxPrompt.x2)}
+          y={Math.min(samBboxPrompt.y1, samBboxPrompt.y2)}
+          width={Math.abs(samBboxPrompt.x2 - samBboxPrompt.x1)}
+          height={Math.abs(samBboxPrompt.y2 - samBboxPrompt.y1)}
+          stroke="#22c55e"
+          strokeWidth={2 / scale}
+          dash={[6 / scale, 4 / scale]}
+          fill="rgba(34, 197, 94, 0.08)"
+          listening={false}
+          perfectDrawEnabled={false}
+        />
       )}
     </Layer>
   );

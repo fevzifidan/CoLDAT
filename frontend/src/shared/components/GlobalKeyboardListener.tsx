@@ -38,9 +38,9 @@ export const GlobalKeyboardListener = () => {
         const samMaskBlobUrl = state.samMaskBlobUrl;
         const samPromptCount = state.samPromptCount;
 
-        if (activeTool === 'sam') {
-          // Backspace → Clear SAM session (prompts + mask)
-          if (e.key === 'Backspace' && samPromptCount > 0) {
+                if (activeTool === 'sam') {
+          // Backspace → Clear SAM session (prompts + mask + bbox)
+          if (e.key === 'Backspace' && (samPromptCount > 0 || state.samBboxPrompt)) {
             e.preventDefault();
             state.clearSamSession();
           }

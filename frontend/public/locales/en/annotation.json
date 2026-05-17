@@ -43,14 +43,17 @@
     "submit": "Submit for Review",
     "submitTooltip": "Submit this task for admin review."
   },
-  "sideToolbar": {
+    "sideToolbar": {
     "select": "Select (V)",
     "bbox": "Rectangle (R)",
     "polygon": "Polygon (P)",
     "points": "Points (K)",
     "pen": "Pen (B)",
     "eraser": "Eraser (E)",
-    "livewire": "Livewire (L)"
+    "livewire": "Livewire (L)",
+    "sam": "SAM (S)",
+    "samPoint": "Point Prompt",
+    "samBbox": "BBox Prompt"
   },
   "leftPanel": {
     "search": "Search in current page...",
@@ -129,8 +132,9 @@
       "page": "Page {{page}}"
     }
   },
-  "sam": {
+    "sam": {
     "actionHint": "Press Q for polygon, W for bounding box",
+    "bboxActionHint": "Drag to draw a bounding box prompt",
     "noMaskFound": "No mask found in the selected region."
   }
 }
