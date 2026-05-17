@@ -1,153 +1,82 @@
 {
-
   "brand": "CoLDAT",
-
   "actions": {
-
     "save": "Save",
-
     "cancel": "Cancel",
-
     "delete": "Delete",
-
     "edit": "Edit",
-
     "back": "Back",
-
     "next": "Next",
-
     "yes": "Yes",
-
     "no": "No",
-
     "close": "Close",
-
     "create": "Create"
-
   },
-
   "status": {
-
     "loading": "Loading...",
-
     "success": "Successful!",
-
     "error": "An error occurred!",
-
     "server_error": "Server error!",
-
     "deleting": "Deleting...",
-
     "updating": "Updating...",
-
     "saving": "Saving...",
-
     "load_more": "Load More"
-
   },
-
   "error": {
-
     "err_reach_server": "Could not reach server!"
-
   },
-
   "theme": {
-
     "header": "Change Theme",
-
     "appearance": "Appearance",
-
     "light": "Light",
-
     "dark": "Dark",
-
     "system": "System"
-
   },
-
   "dashboard": {
-
     "title": "Dashboard",
-
     "description": "CoLDAT project current progress.",
-
     "no_assigned_tasks": "There are no active tasks assigned to you.",
-
     "show_more": "SHOW MORE",
-
     "files": "PROCESSED FILES",
-
     "sections": {
-
       "recent_tasks": "Recent Tasks",
-
       "tasks_description": "Your assigned workflow progress",
-
       "recent_datasets": "Recent Datasets",
-
       "recent_projects": "Recent Projects"
-
     },
-
     "buttons": {
-
       "manage": "MANAGE",
-
       "start_labeling": "START LABELING",
-
       "open": "OPEN PROJECT",
-
       "create_project": "Create New Project"
-
     },
-
     "status": {
-
       "completed": "Completed",
-
       "new": "New",
-
       "in_progress": "In Progress"
-
     },
-
     "tasks": {
-
       "object_detection": "Object Detection",
-
       "entity_recognition": "Entity Recognition",
-
       "semantic_relation": "Semantic Relation"
-
     },
-
     "roles": {
-
       "no_assigned_tasks": "No Assigned Tasks",
-
       "annotator": "Annotator",
-
       "viewer": "Viewer",
-
       "admin": "Admin"
-
     }
-
   },
-
-    "sidebar": {
-
+  "sidebar": {
     "projects": "Projects",
-
     "tasks": "Tasks",
-
     "datasets": "Datasets",
-
     "api_keys": "API Keys"
-
   },
-
+  "projects": {
+    "title": "Projects",
+    "create_new": "Create New Project"
+  },
   "datasets": {
     "title": "Datasets",
     "description": "Manage versioned data collections and track progress.",
@@ -158,7 +87,34 @@
     "view_data": "View Data",
     "members": "Members"
   },
-
+  "tasks": {
+    "title": "Tasks",
+    "create_new": "Create New Task"
+  },
+  "search": {
+    "placeholder": "Search..."
+  },
+  "filter": {
+    "all_roles": "All Roles",
+    "all_progress": "All Progress",
+    "roles": {
+      "admin": "Admin",
+      "viewer": "Viewer",
+      "annotator": "Annotator"
+    },
+    "status": {
+      "new": "NEW",
+      "in_progress": "IN PROGRESS",
+      "completed": "COMPLETED"
+    }
+  },
+  "trash": {
+    "title": "Trash",
+    "modal_title": "Trash Bin",
+    "empty": "Your trash is currently empty.",
+    "recover": "Recover",
+    "permanent_delete": "Delete"
+  },
   "api_keys": {
     "description": "Manage your API keys to access CoLDAT services securely.",
     "create_new": "Create New Key",
@@ -171,7 +127,6 @@
       "actions": "Actions"
     }
   },
-
   "project_detail": {
     "not_found": "Project Not Found.",
     "save_all": "Save All Changes",
@@ -185,7 +140,6 @@
       "export": "Export"
     }
   },
-
   "project_general": {
     "metadata": "Project Metadata",
     "project_name": "PROJECT NAME",
@@ -204,7 +158,6 @@
       "classification": "Classification"
     }
   },
-
   "taxonomy": {
     "title": "Project Taxonomy",
     "description": "Manage object classes and their relationships.",
@@ -219,7 +172,6 @@
     "default_new_class": "New Class",
     "default_new_relation": "new_relation"
   },
-
   "assets": {
     "search_placeholder": "Search assets...",
     "upload_items": "Upload Items",
@@ -232,7 +184,6 @@
       "pending": "Pending"
     }
   },
-
   "team": {
     "title": "Project Team",
     "description": "Manage collaborators and their access levels.",
@@ -253,7 +204,6 @@
       "reviewer": "Reviewer"
     }
   },
-
   "export": {
     "title": "Export Dataset",
     "description": "Download your annotations in industry standard formats.",
@@ -267,9 +217,6 @@
       "pascal_desc": "XML format for object detection"
     }
   },
-
   "language": "Language",
-
   "logout": "Logout"
-
 }

@@ -1,7 +1,5 @@
-// frontend/src/assets/AssetManager.tsx
-
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next'; // i18n hook'u eklendi
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +7,7 @@ import { Upload, Image as ImageIcon, X, FilePlus, Search, Trash2 } from "lucide-
 import { Badge } from "@/components/ui/badge";
 
 const AssetManager = () => {
-  const { t } = useTranslation(); // t fonksiyonu tanımlandı
+  const { t } = useTranslation();
 
   const [isUploading, setIsUploading] = useState(false);
   const [assets, setAssets] = useState([
@@ -27,11 +25,13 @@ const AssetManager = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Üst Kontrol Paneli */}
       <div className="flex justify-between items-center">
         <div className="relative w-72">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-          <Input placeholder={t("assets.search_placeholder")} className="pl-9 h-9" />
+          <Input 
+            placeholder={t("search.placeholder", "Search...")} 
+            className="pl-9 h-9" 
+          />
         </div>
         <Button 
           onClick={handleUploadClick}
@@ -41,7 +41,6 @@ const AssetManager = () => {
         </Button>
       </div>
 
-      {/* Upload Alanı (Koşullu Gösterim) */}
       {isUploading && (
         <Card className="border-2 border-dashed border-indigo-200 bg-indigo-50/30 animate-in zoom-in-95 duration-300">
           <CardContent className="p-10 flex flex-col items-center justify-center text-center">
@@ -60,7 +59,6 @@ const AssetManager = () => {
         </Card>
       )}
 
-      {/* Asset Listesi / Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {assets.map((asset) => (
           <Card key={asset.id} className="group overflow-hidden border-slate-200 hover:border-indigo-300 transition-all shadow-sm">
