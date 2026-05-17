@@ -166,6 +166,7 @@ export interface DatasetDetails {
  */
 export type SAMStatus =
   | 'idle'
+  | 'loading_models'
   | 'checking_cache'
   | 'checking_backend'
   | 'downloading_embedding'

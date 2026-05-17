@@ -31,6 +31,7 @@ import type { SAMStatus } from '../../types/annotation.types';
 
 /** Statuses during which the overlay should be visible */
 const VISIBLE_STATUSES: ReadonlySet<SAMStatus> = new Set([
+  'loading_models',
   'checking_cache',
   'checking_backend',
   'downloading_embedding',
@@ -40,6 +41,7 @@ const VISIBLE_STATUSES: ReadonlySet<SAMStatus> = new Set([
 /** Human-readable labels for each status */
 const STATUS_LABELS: Record<SAMStatus, string> = {
   idle: '',
+  loading_models: 'Loading MobileSAM models (first-time setup)...',
   checking_cache: 'Checking local cache...',
   checking_backend: 'Checking for precomputed embedding...',
   downloading_embedding: 'Downloading SAM embedding from server...',
@@ -269,6 +271,9 @@ const OverlayContent: React.FC<OverlayContentProps> = React.memo(({ status, prog
       )}
       {status === 'computing_local' && (
         <div className="sam-overlay-subtext">This may take a moment...</div>
+      )}
+      {status === 'loading_models' && (
+        <div className="sam-overlay-subtext">Downloading static model assets (~44MB). This may take a moment...</div>
       )}
     </>
   );

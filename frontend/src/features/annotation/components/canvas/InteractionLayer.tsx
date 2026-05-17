@@ -19,12 +19,14 @@ interface InteractionLayerProps {
 }
 
 export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) => {
-  const { activeTool, imgDimensions, isReadOnly, scale } = useAppStore(
+  const { activeTool, imgDimensions, isReadOnly, scale, samStatus, samEmbeddingReady } = useAppStore(
     useShallow((state) => ({
       activeTool: state.activeTool,
       imgDimensions: state.imgDimensions,
       isReadOnly: state.isReadOnly,
       scale: state.scale,
+      samStatus: state.samStatus,
+      samEmbeddingReady: state.samEmbeddingReady,
     }))
   );
   
@@ -77,10 +79,11 @@ export const InteractionLayer: React.FC<InteractionLayerProps> = ({ imageUrl }) 
   } = useLivewire([livewireMainRef, livewireMagnifierRef]);
 
   // SAM interaction — handles left-click (positive) and right-click (negative) prompts
+  const isSamDisabled = isReadOnly || !samEmbeddingReady || samStatus !== 'ready';
   const {
     handleMouseDown: samDown,
     handleMouseUp: samUp,
-  } = useSamInteraction({ disabled: isReadOnly });
+  } = useSamInteraction({ disabled: isSamDisabled });
 
   // Get SAM store actions for keyboard shortcuts
   const clearSamPrompts = useAppStore(state => state.clearSamPrompts);

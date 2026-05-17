@@ -438,6 +438,9 @@ export function useSamOrchestrator(
   // ─── Worker Bootstrap ────────────────────────────────────────────────────
 
   const bootstrapWorker = useCallback(async (): Promise<Worker> => {
+    // Set status to loading_models
+    setSamStatus('loading_models');
+
     // Terminate any existing worker
     workerRef.current?.terminate();
 
