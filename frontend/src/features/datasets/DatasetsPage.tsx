@@ -1,92 +1,148 @@
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+// src/features/datasets/DatasetsPage.tsx
+import { useState, useEffect } from 'react';
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Database, UserPlus, Image as ImageIcon, CheckCircle2, Shield, Search, Trash2, RotateCcw, X, Trash } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useTranslation } from "react-i18next"; 
+import { Textarea } from "@/components/ui/textarea";
+import { Search, Trash2, RotateCcw, X, Trash, Plus, FolderPlus } from "lucide-react"; 
+import { DatasetCard } from './components/DatasetCard'; // Import yolu düzeltildi
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { datasetService } from './services/datasetService';
 
 interface Dataset {
-  id: string;              
-  project_id: string;      
-  name: string;            
-  description: string;      
-  current_version: string;  
-  total_images: number;     
-  annotated_images: number; 
-  role: 'admin' | 'annotator' | 'viewer'; 
+  id: string;
+  name: string;
+  description?: string;
+  dataset_type: string;
+  created_at: string;
+  status?: string;
+  role?: string;
+  isDeleted?: boolean;
+  isPermanentlyDeleted?: boolean;
 }
 
 const DatasetsPage = () => {
-  const { t } = useTranslation(); 
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState("ALL"); 
+  const [roleFilter, setRoleFilter] = useState("ALL");
+  const [displayLimit, setDisplayLimit] = useState(4);
+  
+  const [datasetList, setDatasetList] = useState<Dataset[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isTrashOpen, setIsTrashOpen] = useState(false);
 
-  const datasets: Dataset[] = [
-    {
-      id: "d1773663-d17e-468a-b851-f762f2759e6c",
-      project_id: "p1-uuid",
-      name: "Traffic_Sign_Detection",
-      description: "YOLOv8 training dataset for urban traffic signs.",
-      current_version: "v1.2",
-      total_images: 1500,
-      annotated_images: 1200,
-      role: "admin"
-    },
-    {
-      id: "a2223663-b27e-422a-b851-a123f2759e11",
-      project_id: "p1-uuid",
-      name: "Pedestrian_Safety_Dataset",
-      description: "Night vision infrared images for pedestrian detection.",
-      current_version: "v1.0",
-      total_images: 800,
-      annotated_images: 250,
-      role: "viewer"
-    }
-  ];
+  // Yeni Dataset Modal Stateleri
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [datasetName, setDatasetName] = useState("");
+  const [datasetDesc, setDatasetDesc] = useState("");
+  const [datasetType, setDatasetType] = useState("text");
+  const [submitting, setSubmitting] = useState(false);
 
-  const [deletedDatasetIds, setDeletedDatasetIds] = useState<string[]>([]);
-  const [permanentDeletedIds, setPermanentDeletedIds] = useState<string[]>([]);
+  useEffect(() => {
+    fetchDatasets();
+  }, []);
 
-  const activeDatasets = datasets.filter(
-    ds => !deletedDatasetIds.includes(ds.id) && !permanentDeletedIds.includes(ds.id)
+  const fetchDatasets = () => {
+    setLoading(true);
+    datasetService.getAllDatasets()
+      .then((data: any) => {
+        const enrichedDatasets = (data || []).map((d: any) => ({
+          ...d,
+          isDeleted: d.isDeleted ?? false,
+          isPermanentlyDeleted: d.isPermanentlyDeleted ?? false
+        }));
+        setDatasetList(enrichedDatasets);
+      })
+      .catch((error: any) => {
+        console.error("Dataset yükleme hatası:", error);
+        toast.error(t("apiService:error.unexpected_err", "Veri setleri yüklenemedi."));
+      })
+      .finally(() => setLoading(false));
+  };
+
+  const handleCreateDataset = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!datasetName.trim()) return;
+
+    setSubmitting(true);
+    
+    datasetService.createDataset({ 
+      name: datasetName, 
+      description: datasetDesc, 
+      dataset_type: datasetType 
+    })
+      .then(() => {
+        toast.success(t("datasets.created_success", "Veri seti başarıyla oluşturuldu."));
+        setIsModalOpen(false);
+        setDatasetName("");
+        setDatasetDesc("");
+        setDatasetType("text");
+        fetchDatasets(); 
+      })
+      .catch((err: any) => {
+        console.error("Dataset oluşturma hatası:", err);
+        toast.error(t("datasets.create_failed", "Veri seti oluşturulurken bir hata oluştu."));
+      })
+      .finally(() => setSubmitting(false));
+  };
+
+  const activeDatasets = datasetList.filter(
+    (d) => !d.isDeleted && !d.isPermanentlyDeleted
+  );
+  
+  const archivedDatasets = datasetList.filter(
+    (d) => d.isDeleted && !d.isPermanentlyDeleted
   );
 
-  const archivedDatasets = datasets.filter(
-    ds => deletedDatasetIds.includes(ds.id) && !permanentDeletedIds.includes(ds.id)
-  );
-
-  const filteredDatasets = activeDatasets.filter(ds => {
-    const matchesSearch = ds.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          ds.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = roleFilter === "ALL" || ds.role === roleFilter.toLowerCase();
+  const filteredDatasets = activeDatasets.filter(dataset => {
+    const matchesSearch = dataset.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const datasetRole = dataset.role?.toUpperCase() || dataset.status?.toUpperCase() || "OWNER";
+    const matchesRole = roleFilter === "ALL" || datasetRole === roleFilter;
     return matchesSearch && matchesRole;
   });
 
-  const handleDeleteDataset = (id: string) => {
-    setDeletedDatasetIds(prev => [...prev, id]);
+  const visibleDatasets = filteredDatasets.slice(0, displayLimit);
+
+  const handleDeleteDataset = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDatasetList(prev => prev.map(d => d.id === id ? { ...d, isDeleted: true } : d));
+    toast.info(t("datasets.moved_to_trash", "Veri seti çöp kutusuna taşındı."));
   };
 
   const handleRecoverDataset = (id: string) => {
-    setDeletedDatasetIds(prev => prev.filter(item => item !== id));
+    setDatasetList(prev => prev.map(d => d.id === id ? { ...d, isDeleted: false } : d));
+    toast.success(t("datasets.recovered", "Veri seti geri yüklendi."));
   };
 
   const handlePermanentDelete = (id: string) => {
-    setPermanentDeletedIds(prev => [...prev, id]);
+    datasetService.deleteDataset(id)
+      .then(() => {
+        setDatasetList(prev => prev.filter(d => d.id !== id));
+        toast.success(t("datasets.permanently_deleted", "Veri seti sistemden kalıcı olarak silindi."));
+      })
+      .catch((err: any) => {
+        console.error("Kalıcı silme hatası:", err);
+        toast.error(t("datasets.delete_failed", "Veri seti silinirken hata oluştu."));
+      });
   };
 
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center font-mono text-muted-foreground">
+        {t("common.loading", "Veriler yükleniyor...")}
+      </div>
+    );
+  }
+
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto bg-slate-50/50 min-h-screen relative">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-6 gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-            {t('datasets.title')}
-          </h1>
-          <p className="text-slate-500 mt-1">
-            {t('datasets.description')}
-          </p>
-        </div>
+    <div className="p-6 space-y-6 max-w-7xl mx-auto relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+          {t('datasets.title', "Datasets")}
+        </h1>
         
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative w-64">
@@ -99,21 +155,76 @@ const DatasetsPage = () => {
             />
           </div>
 
-          <Button className="bg-indigo-600 hover:bg-indigo-700 shadow-md transition-all h-9 font-medium">
-            <Database className="mr-2 h-4 w-4" /> {t('datasets.create_new')}
+          <Button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-indigo-600 hover:bg-indigo-700 h-9 font-medium shadow-sm gap-1.5"
+          >
+            <Plus size={16} /> {t('datasets.create_dataset', "Create Dataset")}
           </Button>
 
-          {/* Dinamik Role Filtresi */}
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogContent className="sm:max-w-[425px] bg-white border-2">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-slate-900">
+                  <FolderPlus className="text-indigo-600 h-5 w-5" /> 
+                  {t('datasets.create_dataset', "Create Dataset")}
+                </DialogTitle>
+                <DialogDescription>
+                  Create a new target dataset repository to manage your ground truth data.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateDataset} className="space-y-4 pt-2">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Dataset Name</label>
+                  <Input 
+                    value={datasetName} 
+                    onChange={(e) => setDatasetName(e.target.value)} 
+                    placeholder="e.g., Medical Records Corpus" 
+                    required 
+                    maxLength={100}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Dataset Type</label>
+                  <select
+                    value={datasetType}
+                    onChange={(e) => setDatasetType(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer text-slate-700 font-medium focus-visible:outline-none"
+                  >
+                    <option value="text">📄 Text / Document Data</option>
+                    <option value="image">🖼️ Image / Vision Data</option>
+                    <option value="tabular">📊 Tabular / Structured Data</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Description</label>
+                  <Textarea 
+                    value={datasetDesc} 
+                    onChange={(e) => setDatasetDesc(e.target.value)} 
+                    placeholder="Describe the distribution, schema, or purpose of this dataset..." 
+                    rows={3} 
+                    maxLength={300}
+                  />
+                </div>
+                <Button type="submit" disabled={submitting} className="w-full bg-indigo-600 hover:bg-indigo-700 mt-2 font-bold">
+                  {submitting ? t("common.saving", "Saving...") : t("common.save", "Create Dataset")}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+
           <div>
             <select
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
+              onChange={(e) => {
+                setRoleFilter(e.target.value);
+                setDisplayLimit(4); 
+              }}
               className="flex h-9 w-40 rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer focus-visible:outline-none text-slate-700 font-medium"
             >
               <option value="ALL">✨ {t('filter.all_roles')}</option>
-              <option value="ADMIN">{t('filter.roles.admin')}</option>
-              <option value="ANNOTATOR">{t('filter.roles.annotator')}</option>
-              <option value="VIEWER">{t('filter.roles.viewer')}</option>
+              <option value="OWNER">Owner</option>
+              <option value="MEMBER">Member</option>
             </select>
           </div>
 
@@ -128,115 +239,59 @@ const DatasetsPage = () => {
                 {archivedDatasets.length}
               </span>
             )}
-            {t('trash.title')}
+            {t('trash.title', "Trash")}
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredDatasets.map((ds) => {
-          const progress = Math.round((ds.annotated_images / ds.total_images) * 100);
-          
-          return (
-            <Card key={ds.id} className="relative overflow-hidden border-2 hover:border-indigo-200 transition-all group">
-              <div className="absolute top-0 right-0 flex flex-col items-end z-10">
-                {/* Dinamik Kart Rol Alanı */}
-                <div className={cn(
-                  "px-3 py-1 text-[10px] font-bold uppercase rounded-bl-lg border-b border-l",
-                  ds.role === 'admin' ? "bg-amber-100 text-amber-700 border-amber-200" : 
-                  ds.role === 'viewer' ? "bg-slate-100 text-slate-600 border-slate-200" :
-                  "bg-blue-100 text-blue-700 border-blue-200"
-                )}>
-                  <span className="flex items-center gap-1">
-                    <Shield size={10} /> {t(`filter.roles.${ds.role}`)}
-                  </span>
-                </div>
-                
-                <button
-                  onClick={() => handleDeleteDataset(ds.id)}
-                  className="mt-2 mr-2 p-1.5 rounded-md bg-rose-50 text-rose-600 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-100 border border-rose-200 shadow-sm"
-                  title="Move to Trash"
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
+      {visibleDatasets.length === 0 ? (
+        <div className="text-center py-12 text-slate-400">
+          <p>{t('datasets.empty_list', "Görüntülenecek veri seti bulunamadı.")}</p>
+        </div>
+      ) : (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {visibleDatasets.map((dataset) => (
+            <div 
+              key={dataset.id} 
+              onClick={() => navigate(`/datasets/${dataset.id}`)}
+              className="cursor-pointer transition-transform hover:scale-[1.02] relative group"
+            >
+              <DatasetCard dataset={dataset} />
+              
+              <button
+                onClick={(e) => handleDeleteDataset(dataset.id, e)}
+                className="absolute bottom-4 right-4 p-2 rounded-lg bg-rose-50 text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-100 border border-rose-200 shadow-sm"
+                title="Move to Trash"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
-              <CardHeader>
-                <div className="flex items-center gap-2 text-indigo-600 mb-1">
-                  <span className="text-[10px] font-mono bg-indigo-50 px-2 py-0.5 rounded italic">
-                    {ds.current_version}
-                  </span>
-                </div>
-                <CardTitle className="text-xl font-bold text-slate-800 leading-none pr-16">
-                  {ds.name.replace(/_/g, ' ')}
-                </CardTitle>
-                <CardDescription className="line-clamp-2 mt-2 leading-relaxed italic text-slate-500">
-                  {ds.description}
-                </CardDescription>
-              </CardHeader>
+      {displayLimit < filteredDatasets.length && (
+        <div className="flex justify-center mt-12">
+          <Button onClick={() => setDisplayLimit(prev => prev + 4)} variant="outline" className="px-8">
+            {t('tasks.load_more', "Load More")} 
+          </Button>
+        </div>
+      )}
 
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">
-                      {t('datasets.total')}
-                    </p>
-                    <div className="flex items-center gap-2 text-slate-700">
-                      <ImageIcon size={14} className="text-slate-400" />
-                      <span className="font-bold">{ds.total_images}</span>
-                    </div>
-                  </div>
-                  <div className="bg-green-50/50 p-3 rounded-lg border border-green-100">
-                    <p className="text-[10px] text-green-600/70 uppercase font-bold mb-1">
-                      {t('datasets.annotated')}
-                    </p>
-                    <div className="flex items-center gap-2 text-green-700">
-                      <CheckCircle2 size={14} />
-                      <span className="font-bold">{ds.annotated_images}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-500">{t('datasets.progress')}</span>
-                    <span className="text-indigo-600">%{progress}</span>
-                  </div>
-                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-500 transition-all duration-700" style={{ width: `${progress}%` }} />
-                  </div>
-                </div>
-              </CardContent>
-
-              <CardFooter className="bg-slate-50/80 border-t p-4 flex gap-3 mt-2">
-                <Button variant="outline" size="sm" className="flex-1 text-[11px] font-bold h-9 border-2 hover:bg-white">
-                  {t('datasets.view_data')}
-                </Button>
-                <Button 
-                  size="sm" disabled={ds.role !== 'admin'}
-                  className={cn(
-                    "flex-1 text-[11px] font-bold h-9 shadow-sm",
-                    ds.role === 'admin' ? "bg-indigo-600 hover:bg-indigo-700 text-white" : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                  )}
-                >
-                  <UserPlus className="mr-1.5 h-3.5 w-3.5" /> {t('datasets.members')}
-                </Button>
-              </CardFooter>
-            </Card>
-          );
-        })}
-      </div>
-
+      {/* Çöp Kutusu Modalı */}
       {isTrashOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-2xl border w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl border w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
             
             <div className="p-4 border-b flex items-center justify-between bg-slate-50">
               <div className="flex items-center gap-2 text-slate-800">
                 <Trash2 size={18} className="text-rose-500" />
-                <h3 className="font-bold text-lg">{t('trash.modal_title')}</h3>
+                <h3 className="font-bold text-lg">{t('trash.modal_title', "Trash Bin")}</h3>
               </div>
-              <button onClick={() => setIsTrashOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-600">
+              <button 
+                onClick={() => setIsTrashOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors text-slate-400 hover:text-slate-600"
+              >
                 <X size={18} />
               </button>
             </div>
@@ -245,29 +300,39 @@ const DatasetsPage = () => {
               {archivedDatasets.length === 0 ? (
                 <div className="text-center py-12 text-slate-400 space-y-2">
                   <Trash2 size={40} className="mx-auto text-slate-200" />
-                  <p className="text-sm">{t('trash.empty')}</p>
+                  <p className="text-sm">{t('trash.empty', "Trash is empty")}</p>
                 </div>
               ) : (
-                archivedDatasets.map((ds) => (
-                  <div key={ds.id} className="flex items-center justify-between p-3 border rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors gap-4">
+                archivedDatasets.map((dataset) => (
+                  <div 
+                    key={dataset.id} 
+                    className="flex items-center justify-between p-3 border rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors gap-4"
+                  >
                     <div>
-                      <h4 className="font-semibold text-slate-800 text-sm">{ds.name.replace(/_/g, ' ')}</h4>
-                      <p className="text-xs text-slate-400 capitalize">Version: {ds.current_version} | Role: {t(`filter.roles.${ds.role}`)}</p>
+                      <h4 className="font-semibold text-slate-800 text-sm">{dataset.name}</h4>
+                      <p className="text-xs text-slate-400 capitalize">Type: {dataset.dataset_type}</p>
                     </div>
                     
                     <div className="flex items-center gap-2 shrink-0">
                       <Button 
-                        size="sm" variant="outline" onClick={() => handleRecoverDataset(ds.id)}
-                        className="h-8 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-bold gap-1.5"
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleRecoverDataset(dataset.id)}
+                        className="h-8 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 text-xs font-bold gap-1.5"
                       >
-                        <RotateCcw size={13} /> {t('trash.recover')}
+                        <RotateCcw size={13} />
+                        {t('trash.recover', "Recover")}
                       </Button>
 
                       <Button 
-                        size="sm" variant="outline" onClick={() => handlePermanentDelete(ds.id)}
-                        className="h-8 border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-bold gap-1.5"
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handlePermanentDelete(dataset.id)}
+                        className="h-8 border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800 text-xs font-bold gap-1.5"
+                        title="Delete Permanently"
                       >
-                        <Trash2 size={13} /> {t('trash.permanent_delete')}
+                        <Trash2 size={13} />
+                        {t('trash.permanent_delete', "Delete")}
                       </Button>
                     </div>
                   </div>
@@ -277,9 +342,10 @@ const DatasetsPage = () => {
 
             <div className="p-3 border-t bg-slate-50 flex justify-end">
               <Button size="sm" onClick={() => setIsTrashOpen(false)} className="bg-slate-800 hover:bg-slate-900 text-xs font-medium">
-                {t('common.close')}
+                {t('common.close', "Close")}
               </Button>
             </div>
+
           </div>
         </div>
       )}

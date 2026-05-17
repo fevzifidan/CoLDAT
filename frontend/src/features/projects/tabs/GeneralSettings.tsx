@@ -1,6 +1,6 @@
 // frontend/src/features/projects/tabs/GeneralSettings.tsx
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next'; // i18n hook'u eklendi
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,24 +8,52 @@ import { Textarea } from "@/components/ui/textarea";
 import { Settings, Trash2, Globe, Lock, AlertCircle } from "lucide-react";
 
 interface GeneralSettingsProps {
-  project: any;
+  project: {
+    id: string;
+    name: string;
+    description?: string;
+    project_type: 'object_detection' | 'entity_recognition' | 'semantic_relation' | string;
+    dataset_id: string;
+    status?: string;
+    task?: string | number;
+  };
   onUpdate: (data: any) => void;
 }
 
 const GeneralSettings = ({ project, onUpdate }: GeneralSettingsProps) => {
-  const { t } = useTranslation(); // defaultNS common.json'dan okur
+  const { t } = useTranslation();
   
+  // Form verilerini backend alan adlarıyla (project_type, status) senkronize ediyoruz
   const [formData, setFormData] = useState({
-    name: project.name,
-    description: project.description || "",
-    task: project.task,
-    status: project.status
+    name: project?.name || "",
+    description: project?.description || "",
+    project_type: project?.project_type || "object_detection",
+    status: project?.status || "ACTIVE"
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  // Üst bileşenden (ProjectDetailPage) asenkron veri geldiğinde formun içini doldurmasını garanti ediyoruz
+  useEffect(() => {
+    if (project) {
+      setFormData({
+        name: project.name || "",
+        description: project.description || "",
+        project_type: project.project_type || "object_detection",
+        status: project.status || "ACTIVE"
+      });
+    }
+  }, [project]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    onUpdate({ ...formData, [name]: value }); 
+    const updatedData = { ...formData, [name]: value };
+    setFormData(updatedData);
+    onUpdate(updatedData); 
+  };
+
+  const handleStatusChange = (newStatus: string) => {
+    const updatedData = { ...formData, status: newStatus };
+    setFormData(updatedData);
+    onUpdate(updatedData);
   };
 
   return (
@@ -62,32 +90,34 @@ const GeneralSettings = ({ project, onUpdate }: GeneralSettingsProps) => {
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase text-slate-500">{t('project_general.task_type')}</label>
                 <select 
-                  name="task"
-                  className="w-full h-10 px-3 bg-white border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                  value={formData.task}
-                  onChange={(any) => handleChange(any as any)}
+                  name="project_type"
+                  className="w-full h-10 px-3 bg-white border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer dark:bg-slate-900"
+                  value={formData.project_type}
+                  onChange={handleChange}
                 >
-                  <option value="Object Detection">{t('project_general.tasks.object_detection')}</option>
-                  <option value="Instance Segmentation">{t('project_general.tasks.instance_segmentation')}</option>
-                  <option value="Classification">{t('project_general.tasks.classification')}</option>
+                  <option value="object_detection">{t('project_general.tasks.object_detection', 'Object Detection')}</option>
+                  <option value="entity_recognition">{t('project_general.tasks.entity_recognition', 'Entity Recognition')}</option>
+                  <option value="semantic_relation">{t('project_general.tasks.semantic_relation', 'Semantic Relation')}</option>
                 </select>
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase text-slate-500">{t('project_general.privacy_status')}</label>
                 <div className="flex gap-2">
                   <Button 
-                    variant={formData.status === 'Active' ? 'default' : 'outline'} 
+                    type="button"
+                    variant={formData.status === 'ACTIVE' ? 'default' : 'outline'} 
                     size="sm" 
                     className="flex-1"
-                    onClick={() => setFormData({...formData, status: 'Active'})}
+                    onClick={() => handleStatusChange('ACTIVE')}
                   >
                     <Globe className="mr-2 h-4 w-4" /> {t('project_general.public')}
                   </Button>
                   <Button 
-                    variant={formData.status === 'Archived' ? 'default' : 'outline'} 
+                    type="button"
+                    variant={formData.status === 'ARCHIVED' ? 'default' : 'outline'} 
                     size="sm" 
                     className="flex-1"
-                    onClick={() => setFormData({...formData, status: 'Archived'})}
+                    onClick={() => handleStatusChange('ARCHIVED')}
                   >
                     <Lock className="mr-2 h-4 w-4" /> {t('project_general.private')}
                   </Button>

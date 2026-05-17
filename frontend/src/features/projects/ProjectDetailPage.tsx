@@ -1,10 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { projects, type Project } from '@/shared/utils/projectsData'; 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Settings, Tag, Image as ImageIcon, Users, Download, ArrowLeft, Save } from "lucide-react";
-import { useState } from 'react'; 
-import { useTranslation } from 'react-i18next'; // i18n hook'u eklendi
+import { useState, useEffect } from 'react'; 
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+
+// Az önce JSDoc ile güncellediğimiz gerçek servis import ediliyor
+import { projectService } from './services/projectService';
 
 // Bileşen Importları
 import TaxonomyManager from '@/features/datasets/taxonomy/TaxonomyManager';
@@ -13,12 +16,29 @@ import TeamManager from '@/assets/TeamManager';
 import ExportManager from '@/assets/ExportManager';
 import GeneralSettings from './tabs/GeneralSettings'; 
 
+// Backend YAML dökümantasyonu ve UI gereksinimleriyle uyumlu TypeScript Tipi
+interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  project_type: 'object_detection' | 'entity_recognition' | 'semantic_relation';
+  dataset_id: string;
+  created_at: string;
+  status?: string; 
+  role?: string;
+  task?: string | number;
+}
+
 const ProjectDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation(); // t fonksiyonu tanımlandı
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('general');
   
+  // Backend'den gelecek veriyi tutacak stateler
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+
   // Global Değişiklik Takibi
   const [pendingChanges, setPendingChanges] = useState({
     general: null,
@@ -26,9 +46,26 @@ const ProjectDetailPage = () => {
     team: null
   });
 
-  const project = projects.find((p: Project) => String(p.id) === id);
+  // Sayfa yüklendiğinde veya ID değiştiğinde backend'den veriyi çekiyoruz
+  useEffect(() => {
+    if (!id) return;
 
-  if (!project) return <div className="p-8 text-center text-slate-500">{t('project_detail.not_found')}</div>;
+    setLoading(true);
+    projectService.getProjectById(id)
+      .then((data: any) => {
+        // Backend verisini eski UI field'ları (task, status) çökmesin diye default değerlerle sarmalıyoruz
+        setProject({
+          ...data,
+          task: data.task || data.project_type || 'OBJECT_DETECTION',
+          status: data.status || 'ACTIVE'
+        });
+      })
+      .catch((error: any) => {
+        console.error("Proje detayı yüklenirken hata oluştu:", error);
+        toast.error(t('project_detail.not_found', "Proje detayları backend'den alınamadı."));
+      })
+      .finally(() => setLoading(false));
+  }, [id, t]);
 
   // Veri güncelleme yakalayıcı
   const handleDataUpdate = (tab: string, data: any) => {
@@ -41,10 +78,29 @@ const ProjectDetailPage = () => {
   // Kaydetme işlemi
   const handleGlobalSave = async () => {
     console.log("Kaydedilecek Değişiklikler:", pendingChanges);
-    alert(t('project_detail.alert_success'));
+    // TODO: İlerleyen süreçte pendingChanges durumuna göre POST/PUT istekleri buraya bağlanacak
+    toast.success(t('project_detail.alert_success', "Değişiklikler başarıyla kaydedildi!"));
   };
 
-  // Sekme isimleri dinamik hale getirildi
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center font-mono text-slate-500 bg-white dark:bg-slate-950">
+        {t('common.loading', 'Yükleniyor...')}
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="p-8 text-center text-slate-500 bg-white dark:bg-slate-950 min-h-screen flex flex-col items-center justify-center gap-4">
+        <p>{t('project_detail.not_found', 'Proje bulunamadı.')}</p>
+        <Button onClick={() => navigate(-1)} variant="outline" size="sm">
+          <ArrowLeft className="mr-2 h-4 w-4" /> {t('common.back', 'Geri Dön')}
+        </Button>
+      </div>
+    );
+  }
+
   const tabs = [
     { value: 'general', label: t('project_detail.tabs.general'), icon: Settings },
     { value: 'taxonomy', label: t('project_detail.tabs.taxonomy'), icon: Tag },
@@ -113,7 +169,7 @@ const ProjectDetailPage = () => {
           <div className="pb-20">
               {activeTab === 'general' && (
                 <GeneralSettings 
-                  project={project} 
+                  project={project as any} // Alt bileşenin katı tip kurallarını rahatlatmak için casting yapıldı
                   onUpdate={(data) => handleDataUpdate('general', data)} 
                 />
               )}

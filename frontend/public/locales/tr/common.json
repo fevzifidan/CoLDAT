@@ -2,7 +2,7 @@
   "brand": "CoLDAT",
   "actions": {
     "save": "Kaydet",
-    "cancel": "İptal",
+    "cancel": "İptal Et",
     "delete": "Sil",
     "edit": "Düzenle",
     "back": "Geri",
@@ -23,24 +23,24 @@
     "load_more": "Daha Fazla Yükle"
   },
   "error": {
-    "err_reach_server": "Sunucuya ulaşılamadı!"
+    "err_reach_server": "Sunucuya erişilemedi!"
   },
   "theme": {
     "header": "Temayı Değiştir",
     "appearance": "Görünüm",
-    "light": "Aydınlık",
-    "dark": "Karanlık",
+    "light": "Açık",
+    "dark": "Koyu",
     "system": "Sistem"
   },
   "dashboard": {
-    "title": "Panel",
+    "title": "Kontrol Paneli",
     "description": "CoLDAT projesi güncel ilerlemesi.",
-    "no_assigned_tasks": "Üzerinize atanmış aktif bir görev bulunmamaktadır.",
-    "show_more": "DAHA FAZLA",
-    "files": "İŞLENEN DOSYALAR",
+    "no_assigned_tasks": "Size atanmış aktif bir görev bulunmamaktadır.",
+    "show_more": "DAHA FAZLA GÖSTER",
+    "files": "İŞLENMİŞ DOSYALAR",
     "sections": {
       "recent_tasks": "Son Görevler",
-      "tasks_description": "Size atanan iş akışı ilerlemesi",
+      "tasks_description": "Atanmış iş akışı ilerlemeniz",
       "recent_datasets": "Son Veri Setleri",
       "recent_projects": "Son Projeler"
     },
@@ -53,7 +53,7 @@
     "status": {
       "completed": "Tamamlandı",
       "new": "Yeni",
-      "in_progress": "İşlemde"
+      "in_progress": "Devam Ediyor"
     },
     "tasks": {
       "object_detection": "Nesne Algılama",
@@ -96,7 +96,7 @@
   },
   "filter": {
     "all_roles": "Tüm Roller",
-    "all_progress": "Tüm Aşamalar",
+    "all_progress": "Tüm İlerlemeler",
     "roles": {
       "admin": "Yönetici",
       "viewer": "İzleyici",
@@ -104,7 +104,7 @@
     },
     "status": {
       "new": "YENİ",
-      "in_progress": "İŞLEMDE",
+      "in_progress": "DEVAM EDİYOR",
       "completed": "TAMAMLANDI"
     }
   },
@@ -118,7 +118,7 @@
   "api_keys": {
     "description": "CoLDAT servislerine güvenli bir şekilde erişmek için API anahtarlarınızı yönetin.",
     "create_new": "Yeni Anahtar Oluştur",
-    "no_keys": "API anahtarı bulunamadı. Başlamak için yeni bir tane oluşturun.",
+    "no_keys": "API anahtarı bulunamadı. Başlamak için bir tane oluşturun.",
     "table": {
       "name": "İsim",
       "key": "API Anahtarı",
@@ -154,7 +154,7 @@
     "placeholder_desc": "Bu veri setinin amacını açıklayın...",
     "tasks": {
       "object_detection": "Nesne Algılama",
-      "instance_segmentation": "Örneklem Bölütleme",
+      "instance_segmentation": "Örnek Segmentasyonu",
       "classification": "Sınıflandırma"
     }
   },
@@ -163,18 +163,18 @@
     "description": "Nesne sınıflarını ve aralarındaki ilişkileri yönetin.",
     "save_changes": "Değişiklikleri Kaydet",
     "alert_saved": "Değişiklikler Kaydedildi!",
-    "object_classes": "Nesne Sınıfları (Object Classes)",
+    "object_classes": "Nesne Sınıfları",
     "predicates": "Yüklemler (Predicates)",
-    "no_global_attributes": "Tanımlanmış Küresel Öznitelik Yok",
-    "add_global_attribute": "Küresel öznitelik ekle",
-    "global_attributes_title": "Küresel Öznitelikler",
-    "prompt_msg": "Yeni öznitelik adını girin (Örn: color, truncate):",
+    "no_global_attributes": "Tanımlanmış Genel Öznitelik Yok",
+    "add_global_attribute": "Genel öznitelik ekle",
+    "global_attributes_title": "Genel Öznitelikler",
+    "prompt_msg": "Yeni öznitelik adı girin (Örn. renk, kesiklik):",
     "default_new_class": "Yeni Sınıf",
-    "default_new_relation": "yeni_iliski"
+    "default_new_relation": "yeni_iliskiler"
   },
   "assets": {
     "search_placeholder": "Varlıklarda ara...",
-    "upload_items": "Ögeleri Yükle",
+    "upload_items": "Öğeleri Yükle",
     "cancel": "İptal Et",
     "upload_title": "Görsellerinizi veya videolarınızı yükleyin",
     "upload_desc": "Dosyaları buraya sürükleyip bırakın veya göz atmak için tıklayın. JPG, PNG, MP4 desteklenir.",
@@ -186,35 +186,35 @@
   },
   "team": {
     "title": "Proje Ekibi",
-    "description": "Ekip çalışanlarını ve erişim yetkilerini yönetin.",
+    "description": "İş ortaklarını ve erişim düzeylerini yönetin.",
     "cancel": "İptal Et",
     "add_member": "Üye Ekle",
     "email_label": "E-posta Adresi",
     "role_label": "Rol",
-    "send_invitation": "Davetiye Gönder",
-    "alert_invited": "{{email}} adresine davetiye gönderildi!",
+    "send_invitation": "Davet Gönder",
+    "alert_invited": "Davetiye {{email}} adresine gönderildi!",
     "status": {
       "active": "AKTİF",
       "invited": "DAVET EDİLDİ"
     },
     "roles": {
-      "admin": "Yönetici (Admin)",
-      "manager": "Müdür (Manager)",
-      "labeler": "Etiketleyici (Labeler)",
-      "reviewer": "Denetleyici (Reviewer)"
+      "admin": "Yönetici",
+      "manager": "Yönetici (Manager)",
+      "labeler": "Etiketleyici",
+      "reviewer": "Denetleyici"
     }
   },
   "export": {
-    "title": "Verisetini Dışa Aktar",
+    "title": "Veri Setini Dışa Aktar",
     "description": "Etiketlerinizi endüstri standardı formatlarda indirin.",
     "ready_title": "Oluşturmaya Hazır",
-    "ready_desc": "Bu işlem, etiketlenmiş tüm varlıkları bir {{format}} dosyası olarak paketleyecektir.",
+    "ready_desc": "Bu işlem, tüm etiketli varlıkları bir {{format}} dosyası halinde paketleyecektir.",
     "btn_generating": "Oluşturuluyor...",
     "btn_export_now": "Şimdi Dışa Aktar",
     "formats": {
-      "coco_desc": "Common Objects in Context (COCO)",
+      "coco_desc": "Common Objects in Context formatı",
       "yolo_desc": "Darknet / PyTorch formatı",
-      "pascal_desc": "Nesne tespiti için XML formatı"
+      "pascal_desc": "Nesne algılama için XML formatı"
     }
   },
   "language": "Dil",

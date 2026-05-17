@@ -1,4 +1,4 @@
-// src/shared/services/api.service.js
+// src/shared/services/api/api.service.js
 import axios from 'axios';
 import notificationService from '@/shared/services/notification';
 import i18n from "@/i18n";
@@ -6,9 +6,10 @@ import i18n from "@/i18n";
 let navigateFn = null;
 
 // 1. Axios Instance Oluşturma
-// Base URL'i environment variable'dan alınır.
+// Base URL önce environment variable'dan (.env) okunur. 
+// Eğer tanımlanmamışsa yerel backend adresi (http://localhost:8000) fallback olarak atanır.
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000', 
   timeout: 10000, // 10 seconds timeout
 });
 
