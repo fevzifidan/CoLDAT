@@ -34,6 +34,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '@/store/hooks/useAppStore';
 import { useConfirm } from '@/shared/services/confirmation/useConfirm';
@@ -41,7 +42,7 @@ import { clearCache, getCacheSize } from '@/features/annotation/tools/sam/embedd
 import { notificationService } from '@/shared/services/notification/notification.service';
 import LanguageSelector from '@/components/custom/LanguageSelector/LanguageSelector';
 
-type SettingsPage = 'main' | 'view';
+type SettingsPage = 'main' | 'view' | 'sam';
 
 export default function SettingsPopover() {
   const { t } = useTranslation('annotation');
@@ -84,9 +85,9 @@ export default function SettingsPopover() {
     }
   }, [settingsOpen]);
 
-  // Cache boyutunu yükle — ana sayfadayken
+  // Cache boyutunu yükle — SAM sayfasındayken
   useEffect(() => {
-    if (settingsOpen && page === 'main') {
+    if (settingsOpen && page === 'sam') {
       getCacheSize().then(setCacheSize);
     }
   }, [settingsOpen, page]);
@@ -141,225 +142,266 @@ export default function SettingsPopover() {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-72 p-2" align="end">
-        {page === 'main' && (
-          <div className="flex flex-col gap-1">
-            {/* === TEMA SECTION === */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-between h-9 px-2"
+      <PopoverContent className="w-72 p-0" align="end">
+        <div className="max-h-[350px] overflow-y-auto w-full">
+          {page === 'main' && (
+            <div className="p-2 flex flex-col gap-1 pb-3">
+              {/* === TEMA SECTION === */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between h-9 px-2"
+                  >
+                    <span className="flex items-center gap-2 text-sm">
+                      {theme === 'light' && <Sun size={16} />}
+                      {theme === 'dark' && <Moon size={16} />}
+                      {theme === 'system' && <Monitor size={16} />}
+                      {t('toolbar.theme')}
+                    </span>
+                    <span className="text-xs text-muted-foreground capitalize">
+                      {theme === 'light'
+                        ? t('common:theme.light')
+                        : theme === 'dark'
+                          ? t('common:theme.dark')
+                          : t('common:theme.system')}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-44"
+                  align="start"
+                  side="left"
+                  sideOffset={12}
                 >
-                  <span className="flex items-center gap-2 text-sm">
-                    {theme === 'light' && <Sun size={16} />}
-                    {theme === 'dark' && <Moon size={16} />}
-                    {theme === 'system' && <Monitor size={16} />}
-                    {t('toolbar.theme')}
-                  </span>
-                  <span className="text-xs text-muted-foreground capitalize">
-                    {theme === 'light'
-                      ? t('common:theme.light')
-                      : theme === 'dark'
-                        ? t('common:theme.dark')
-                        : t('common:theme.system')}
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-44"
-                align="start"
-                side="left"
-                sideOffset={12}
-              >
-                <DropdownMenuLabel>
-                  {t('common:theme.appearance')}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup
-                  value={theme}
-                  onValueChange={setTheme}
-                >
-                  <DropdownMenuRadioItem
-                    value="light"
-                    className="cursor-pointer"
+                  <DropdownMenuLabel>
+                    {t('common:theme.appearance')}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup
+                    value={theme}
+                    onValueChange={setTheme}
                   >
-                    <Sun className="mr-2 h-4 w-4" />
-                    <span>{t('common:theme.light')}</span>
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem
-                    value="dark"
-                    className="cursor-pointer"
-                  >
-                    <Moon className="mr-2 h-4 w-4" />
-                    <span>{t('common:theme.dark')}</span>
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem
-                    value="system"
-                    className="cursor-pointer"
-                  >
-                    <Monitor className="mr-2 h-4 w-4" />
-                    <span>{t('common:theme.system')}</span>
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-          <Separator className="my-1" />
-
-            {/* === GÖRÜNÜM SECTION === */}
-            <Button
-              variant="ghost"
-              className="w-full justify-between h-9 px-2"
-              onClick={() => setPage('view')}
-            >
-              <span className="flex items-center gap-2 text-sm">
-                <SlidersHorizontal size={16} />
-                {t('toolbar.viewSettings')}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {t('toolbar.viewSettingsDescription')}
-              </span>
-            </Button>
+                    <DropdownMenuRadioItem
+                      value="light"
+                      className="cursor-pointer"
+                    >
+                      <Sun className="mr-2 h-4 w-4" />
+                      <span>{t('common:theme.light')}</span>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem
+                      value="dark"
+                      className="cursor-pointer"
+                    >
+                      <Moon className="mr-2 h-4 w-4" />
+                      <span>{t('common:theme.dark')}</span>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem
+                      value="system"
+                      className="cursor-pointer"
+                    >
+                      <Monitor className="mr-2 h-4 w-4" />
+                      <span>{t('common:theme.system')}</span>
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
             <Separator className="my-1" />
 
-            {/* === DİL SECTION === */}
-            <div className="px-2 py-1.5">
-              <LanguageSelector className='max-w-full'/>
-            </div>
-
-            <Separator className="my-1" />
-
-            {/* === SAM CACHE SECTION === */}
-            <div className="px-2 py-1.5">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                <Database size={16} />
-                <span>{t('toolbar.samCache')}</span>
-              </div>
-              <p className="text-[11px] text-muted-foreground/70 mb-2 px-6">
-                {cacheSize > 0
-                  ? t('toolbar.samCacheEntries', { count: cacheSize })
-                  : t('toolbar.samCacheInfo')}
-              </p>
+              {/* === GÖRÜNÜM SECTION === */}
               <Button
-                variant="destructive"
-                size="sm"
-                className="w-full h-8 gap-1.5 text-xs"
-                onClick={handleClearSAMCache}
-                disabled={cacheSize === 0}
+                variant="ghost"
+                className="w-full justify-between h-9 px-2"
+                onClick={() => setPage('view')}
               >
-                <Trash2 size={13} />
-                {t('toolbar.clearSAMCache')}
+                <span className="flex items-center gap-2 text-sm">
+                  <SlidersHorizontal size={16} />
+                  {t('toolbar.viewSettings')}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {t('toolbar.viewSettingsDescription')}
+                </span>
               </Button>
-            </div>
-          </div>
-        )}
 
-        {page === 'view' && (
-          <div className="space-y-4">
-            {/* Geri butonu */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-1 gap-1 text-xs text-muted-foreground"
-              onClick={() => setPage('main')}
-            >
-              <ChevronLeft size={14} />
-              {t('toolbar.settings')}
-            </Button>
+              <Separator className="my-1" />
 
-            <div className="px-1 space-y-6">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium leading-none text-sm">
-                  {t('toolbar.imageSettings')}
-                </h4>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 px-2 text-[10px]"
-                  onClick={resetFilters}
-                >
-                  <RotateCcw size={10} className="mr-1" />{' '}
-                  {t('toolbar.reset')}
-                </Button>
-              </div>
+              {/* === SAM SETTINGS SECTION === */}
+              <Button
+                variant="ghost"
+                className="w-full justify-between h-9 px-2"
+                onClick={() => setPage('sam')}
+              >
+                <span className="flex items-center gap-2 text-sm">
+                  <Database size={16} />
+                  {t('toolbar.samSettings')}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {t('toolbar.samSettingsDescription')}
+                </span>
+              </Button>
 
-              {/* Parlaklık */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs flex items-center gap-2">
-                    <Sun size={12} /> {t('toolbar.brightness')}
-                  </Label>
-                  <span className="text-[10px] text-muted-foreground">
-                    {brightness}%
-                  </span>
-                </div>
-                <Slider
-                  value={[brightness]}
-                  onValueChange={handleBrightnessChange}
-                  max={200}
-                  step={1}
-                />
-              </div>
+              <Separator className="my-1" />
 
-              {/* Kontrast */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs flex items-center gap-2">
-                    <Contrast size={12} /> {t('toolbar.contrast')}
-                  </Label>
-                  <span className="text-[10px] text-muted-foreground">
-                    {contrast}%
-                  </span>
-                </div>
-                <Slider
-                  value={[contrast]}
-                  onValueChange={handleContrastChange}
-                  max={200}
-                  step={1}
-                />
-              </div>
-
-              {/* Doygunluk */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs flex items-center gap-2">
-                    <Droplets size={12} /> {t('toolbar.saturation')}
-                  </Label>
-                  <span className="text-[10px] text-muted-foreground">
-                    {saturation}%
-                  </span>
-                </div>
-                <Slider
-                  value={[saturation]}
-                  onValueChange={handleSaturationChange}
-                  max={200}
-                  step={1}
-                />
-              </div>
-
-              <Separator />
-
-              {/* Opaklık (Maske/Poligonlar için) */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs flex items-center gap-2 font-semibold text-primary">
-                    <Layers size={12} /> {t('toolbar.maskOpacity')}
-                  </Label>
-                  <span className="text-[10px] font-mono">{opacity}%</span>
-                </div>
-                <Slider
-                  value={[opacity]}
-                  onValueChange={handleOpacityChange}
-                  max={100}
-                  step={1}
-                />
+              {/* === DİL SECTION === */}
+              <div className="px-2 py-1.5">
+                <LanguageSelector className='max-w-full'/>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {page === 'view' && (
+            <div className="p-2 space-y-4 pb-6">
+              {/* Geri butonu */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-1 gap-1 text-xs text-muted-foreground"
+                onClick={() => setPage('main')}
+              >
+                <ChevronLeft size={14} />
+                {t('toolbar.settings')}
+              </Button>
+
+                <div className="px-1 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium leading-none text-sm">
+                    {t('toolbar.imageSettings')}
+                  </h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[10px]"
+                    onClick={resetFilters}
+                  >
+                    <RotateCcw size={10} className="mr-1" />{' '}
+                    {t('toolbar.reset')}
+                  </Button>
+                </div>
+
+                {/* Parlaklık */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs flex items-center gap-2">
+                      <Sun size={12} /> {t('toolbar.brightness')}
+                    </Label>
+                    <span className="text-[10px] text-muted-foreground">
+                      {brightness}%
+                    </span>
+                  </div>
+                  <Slider
+                    value={[brightness]}
+                    onValueChange={handleBrightnessChange}
+                    max={200}
+                    step={1}
+                  />
+                </div>
+
+                {/* Kontrast */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs flex items-center gap-2">
+                      <Contrast size={12} /> {t('toolbar.contrast')}
+                    </Label>
+                    <span className="text-[10px] text-muted-foreground">
+                      {contrast}%
+                    </span>
+                  </div>
+                  <Slider
+                    value={[contrast]}
+                    onValueChange={handleContrastChange}
+                    max={200}
+                    step={1}
+                  />
+                </div>
+
+                {/* Doygunluk */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs flex items-center gap-2">
+                      <Droplets size={12} /> {t('toolbar.saturation')}
+                    </Label>
+                    <span className="text-[10px] text-muted-foreground">
+                      {saturation}%
+                    </span>
+                  </div>
+                  <Slider
+                    value={[saturation]}
+                    onValueChange={handleSaturationChange}
+                    max={200}
+                    step={1}
+                  />
+                </div>
+
+                <Separator />
+
+                {/* Opaklık (Maske/Poligonlar için) */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs flex items-center gap-2 font-semibold text-primary">
+                      <Layers size={12} /> {t('toolbar.maskOpacity')}
+                    </Label>
+                    <span className="text-[10px] font-mono">{opacity}%</span>
+                  </div>
+                  <Slider
+                    value={[opacity]}
+                    onValueChange={handleOpacityChange}
+                    max={100}
+                    step={1}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {page === 'sam' && (
+            <div className="p-2 space-y-4 pb-6">
+              {/* Geri butonu */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-1 gap-1 text-xs text-muted-foreground"
+                onClick={() => setPage('main')}
+              >
+                <ChevronLeft size={14} />
+                {t('toolbar.settings')}
+              </Button>
+
+              <div className="px-1 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium leading-none text-sm">
+                    {t('toolbar.samSettings')}
+                  </h4>
+                </div>
+
+                {/* === SAM CACHE SECTION === */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Database size={14} />
+                    <span>{t('toolbar.samCache')}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground/70 px-1">
+                    {cacheSize > 0
+                      ? t('toolbar.samCacheEntries', { count: cacheSize })
+                      : t('toolbar.samCacheInfo')}
+                  </p>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full h-8 gap-1.5 text-xs mt-1"
+                    onClick={handleClearSAMCache}
+                    disabled={cacheSize === 0}
+                  >
+                    <Trash2 size={13} />
+                    {t('toolbar.clearSAMCache')}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </PopoverContent>
+      
     </Popover>
   );
 }

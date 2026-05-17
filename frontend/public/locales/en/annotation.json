@@ -20,6 +20,8 @@
     "settingsTitle": "Settings",
     "theme": "Theme",
     "viewSettingsDescription": "Canvas Area",
+    "samSettings": "SAM Settings",
+    "samSettingsDescription": "Cache and Model",
     "samCache": "SAM Cache",
     "samCacheInfo": "Embedding cache helps SAM model run faster.",
     "samCacheEntries": "{{count}} cached embeddings",

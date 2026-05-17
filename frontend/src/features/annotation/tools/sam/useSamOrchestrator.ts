@@ -75,7 +75,7 @@
  *     isReady,
  *     generateMask,
  *     resetSession
- *   } = useSamOrchestrator(imageId, taskImage, datasetId);
+ *   } = useSamOrchestrator(imageId, taskImage, datasetId, enabled);
  */
 
 import { useEffect, useRef, useCallback } from 'react';
@@ -283,7 +283,8 @@ interface OrchestratorState {
 export function useSamOrchestrator(
   imageId: string,
   taskImage: TaskImage | null,
-  datasetId: string
+  datasetId: string,
+  enabled: boolean = true
 ): {
   status: SAMStatus;
   isReady: boolean;
@@ -294,7 +295,7 @@ export function useSamOrchestrator(
   const setSamStatus = useAppStore((s) => s.setSamStatus);
   const setSamDownloadProgress = useAppStore((s) => s.setSamDownloadProgress);
   const setSamEmbeddingReady = useAppStore((s) => s.setSamEmbeddingReady);
-    const setSamMaskBlobUrl = useAppStore((s) => s.setSamMaskBlobUrl);
+  const setSamMaskBlobUrl = useAppStore((s) => s.setSamMaskBlobUrl);
   const setSamMaskData = useAppStore((s) => s.setSamMaskData);
   const setSamLogitData = useAppStore((s) => s.setSamLogitData);
   const clearSamMask = useAppStore((s) => s.clearSamMask);
@@ -303,7 +304,7 @@ export function useSamOrchestrator(
   const samStatus = useAppStore((s) => s.samStatus);
   const imgDimensions = useAppStore((s) => s.imgDimensions);
 
-    // ─── Refs (persist across renders without causing re-renders) ────────────
+  // ─── Refs (persist across renders without causing re-renders) ────────────
   const workerRef = useRef<Worker | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isInitializedRef = useRef(false);
@@ -314,13 +315,22 @@ export function useSamOrchestrator(
   // generateMask checks this ref before sending GENERATE_MASK to the worker.
   const modelsReadyRef = useRef(false);
 
-  // Track whether the component is still mounted to avoid state updates after unmount
+    // Track whether the component is still mounted to avoid state updates after unmount
   const isMountedRef = useRef(true);
+  // Track enabled value separately to avoid stale closure issues
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
 
   // ─── Initialize Embedding ─────────────────────────────────────────────────
 
-  const initializeEmbedding = useCallback(async () => {
+    const initializeEmbedding = useCallback(async () => {
     if (!imageId || !taskImage) return;
+
+    // ── enabled kontrolü ──────────────────────────────────────────────────
+    // Eğer SAM tool'u artık aktif değilse embedding başlatma.
+    // Bu, render-phase'de setActiveTool('select') çağrıldığında oluşan
+    // geçici durumu (bir sonraki render'a kadar enabled=true kalması) önler.
+    if (!enabledRef.current) return;
 
     // Cancel any previous in-flight operations
     abortControllerRef.current?.abort();
@@ -372,7 +382,7 @@ export function useSamOrchestrator(
         return;
       }
 
-            if (abortController.signal.aborted) return;
+      if (abortController.signal.aborted) return;
 
       // ── Step 2 & 3 combined: Compute embedding locally if we get here
       // (cache miss OR cache hit but EMBEDDING_LOADED not confirmed).
@@ -435,7 +445,7 @@ export function useSamOrchestrator(
     const worker = new Worker(new URL('./samWorker', import.meta.url), { type: 'module' });
     workerRef.current = worker;
 
-        // Log all worker messages (LOG, ERROR, etc.)
+    // Log all worker messages (LOG, ERROR, etc.)
     worker.addEventListener('message', (e: MessageEvent) => {
       const msg = e.data;
       if (msg.type === 'LOG') {
@@ -503,9 +513,15 @@ export function useSamOrchestrator(
   // re-fires, but WITHOUT re-bootstrapping the worker (which would re-download
   // the ONNX models and cause a "Encoder not initialized" race).
 
-  useEffect(() => {
+    useEffect(() => {
     isMountedRef.current = true;
     imageIdRef.current = imageId;
+
+    // ── enabled kontrolü ──────────────────────────────────────────────────
+    // SAM tool'u aktif değilse embedding pipeline'ını başlatma.
+    // Worker ve önceden yüklenmiş embedding korunur, böylece kullanıcı
+    // tekrar SAM'a döndüğünde süreç baştan başlamaz.
+    if (!enabled) return;
 
     let isCancelled = false;
 
@@ -542,9 +558,10 @@ export function useSamOrchestrator(
       isCancelled = true;
       isMountedRef.current = false;
 
-            // Cleanup: when imageId changes, only abort inflight operations and reset state.
-      // Do NOT terminate the worker — ONNX model loading is expensive (seconds).
-      // The same worker can process multiple images sequentially.
+      // Cleanup: sadece imageId değiştiğinde state ve inflight işlemleri temizle.
+      // enabled değişikliklerinde (tool değişimi) worker ve embedding korunur.
+      // Aynı resim üzerinde SAM ↔ diğer tool'lar arası geçişlerde
+      // embedding'in tekrar hesaplanmasını önler.
       if (imageIdRef.current !== imageId) {
         abortControllerRef.current?.abort();
         // Keep the worker alive for the next image
@@ -554,13 +571,13 @@ export function useSamOrchestrator(
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imageId, taskImage]);
+  }, [imageId, taskImage, enabled]);
 
   // ─── Generate Mask (called after prompts change) ─────────────────────────
 
-    const generateMask = useCallback(
+        const generateMask = useCallback(
       async (prompts: SAMPrompt[]): Promise<void> => {
-        if (!workerRef.current || prompts.length === 0) {
+        if (!workerRef.current || prompts.length === 0 || !enabledRef.current) {
           clearSamMask();
           return;
         }
@@ -829,9 +846,9 @@ export function useSamOrchestrator(
 
   // ─── Return ───────────────────────────────────────────────────────────────
 
-  return {
+    return {
     status: samStatus,
-    isReady: samStatus === 'ready' && useAppStore.getState().samEmbeddingReady,
+    isReady: enabled && samStatus === 'ready' && useAppStore.getState().samEmbeddingReady,
     generateMask,
     resetSession,
   };

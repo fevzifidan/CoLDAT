@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const useLanguage = (onLanguageChangeCallback) => {
-  const { i18n, t } = useTranslation(["component"]);
+  const { i18n, t } = useTranslation();
 
   // Mevcut dili güvenli bir şekilde belirle
   const currentLanguage = i18n.resolvedLanguage || i18n.language || 'tr';

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/hooks/useAppStore';
 import { useAnnotationData } from './hooks/useAnnotationData';
@@ -48,17 +48,38 @@ export default function AnnotationPage() {
     return taskImages.find(img => img.asset_id === imageId) ?? null;
   }, [imageId, taskImages]);
 
+  // ─── Reset to Select tool on image change ─────────────────────────────────
+  // We must ensure the SAM embedding pipeline is NOT triggered for the new image.
+  // To avoid updating store state during render, we track image change in render
+  // and pass enabled=false to useSamOrchestrator, then reset the tool in useEffect.
+  const lastRenderedImageIdRef = useRef(imageId);
+  const isImageChanged = imageId !== lastRenderedImageIdRef.current;
+  const setActiveTool = useAppStore(state => state.setActiveTool);
+
+  useEffect(() => {
+    if (imageId && imageId !== lastRenderedImageIdRef.current) {
+      lastRenderedImageIdRef.current = imageId;
+      setActiveTool('select');
+    }
+  }, [imageId, setActiveTool]);
+
   // ─── Wire the SAM orchestrator ───────────────────────────────────────────
   // This hook handles the entire MobileSAM embedding lifecycle (cache check,
-  // backend download, local computation) and mask generation. It runs
-  // automatically when imageId, taskImageMeta, or datasetId changes.
+  // backend download, local computation) and mask generation.
+  // enabled = activeTool === 'sam' → SAM tool'u seçili değilken embedding
+  // pipeline'ı başlamaz. Worker ve embedding korunur, böylece kullanıcı
+  // tekrar SAM'a döndüğünde süreç baştan başlamaz.
+  const activeTool = useAppStore(state => state.activeTool);
+  const isSamEnabled = activeTool === 'sam' && !isImageChanged;
+
   const { isReady: isSamReady } = useSamOrchestrator(
     imageId ?? '',
     taskImageMeta,
-    datasetId
+    datasetId,
+    isSamEnabled
   );
 
-  // (Optional) Log when SAM becomes available for debugging
+    // (Optional) Log when SAM becomes available for debugging
   useEffect(() => {
     if (isSamReady && process.env.NODE_ENV === 'development') {
       console.info('[AnnotationPage] MobileSAM embedding ready for image:', imageId);

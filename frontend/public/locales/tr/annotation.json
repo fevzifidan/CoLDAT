@@ -20,6 +20,8 @@
     "settingsTitle": "Ayarlar",
     "theme": "Tema",
     "viewSettingsDescription": "Kanvas Alanı",
+    "samSettings": "SAM Ayarları",
+    "samSettingsDescription": "Önbellek ve Model",
     "samCache": "SAM Önbelleği",
     "samCacheInfo": "Embedding önbelleği, SAM modelinin daha hızlı çalışmasını sağlar.",
     "samCacheEntries": "{{count}} önbelleğe alınmış embedding",
