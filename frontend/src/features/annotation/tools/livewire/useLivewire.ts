@@ -2,123 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Konva from 'konva';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
 import { useCoordinateTransform } from '../../../viewer/hooks/useCoordinateTransform';
-import LivewireWorker from './livewire.worker?worker';
 
 interface Point {
   x: number;
   y: number;
 }
-
-interface Bounds {
-  minX: number;
-  minY: number;
-  maxX: number;
-  maxY: number;
-}
-
-// ─── ROI Hesaplama ──────────────────────────────────────────────────────────
-
-function computeROI(seed: Point, target: Point, imgW: number, imgH: number): Bounds {
-  const PADDING_RATIO = 0.40; // Increased from 0.20 for better context around edges
-  const MIN_SIZE = 200; // Increased from 150
-  
-  let minX = Math.min(seed.x, target.x);
-  let minY = Math.min(seed.y, target.y);
-  let maxX = Math.max(seed.x, target.x);
-  let maxY = Math.max(seed.y, target.y);
-  
-  const dx = (maxX - minX) * PADDING_RATIO;
-  const dy = (maxY - minY) * PADDING_RATIO;
-  minX = Math.max(0, Math.floor(minX - dx));
-  minY = Math.max(0, Math.floor(minY - dy));
-  maxX = Math.min(imgW, Math.ceil(maxX + dx));
-  maxY = Math.min(imgH, Math.ceil(maxY + dy));
-  
-  if (maxX - minX < MIN_SIZE) {
-    const center = (minX + maxX) / 2;
-    minX = Math.max(0, Math.floor(center - MIN_SIZE / 2));
-    maxX = Math.min(imgW, Math.ceil(center + MIN_SIZE / 2));
-  }
-  if (maxY - minY < MIN_SIZE) {
-    const center = (minY + maxY) / 2;
-    minY = Math.max(0, Math.floor(center - MIN_SIZE / 2));
-    maxY = Math.min(imgH, Math.ceil(center + MIN_SIZE / 2));
-  }
-  
-  return { minX, minY, maxX, maxY };
-}
-
-// ─── Açı Hesaplama (derece cinsinden) ───────────────────────────────────────
-
-function computeAngle(p1: Point, p2: Point, p3: Point): number {
-  // p1->p2 vektörü ile p2->p3 vektörü arasındaki açı
-  const v1x = p2.x - p1.x;
-  const v1y = p2.y - p1.y;
-  const v2x = p3.x - p2.x;
-  const v2y = p3.y - p2.y;
-  
-  const dot = v1x * v2x + v1y * v2y;
-  const mag1 = Math.sqrt(v1x * v1x + v1y * v1y);
-  const mag2 = Math.sqrt(v2x * v2x + v2y * v2y);
-  
-  if (mag1 < 1 || mag2 < 1) return 0;
-  
-  const cosAngle = Math.max(-1, Math.min(1, dot / (mag1 * mag2)));
-  return Math.acos(cosAngle) * (180 / Math.PI);
-}
-
-// ─── Dynamic Anchor Kontrolü ────────────────────────────────────────────────
-
-const ANCHOR_COST_THRESHOLD = 300;   // Increased from 50 - reduces auto-anchor frequency significantly
-const ANCHOR_ANGLE_THRESHOLD = 60;   // Increased from 45 - only anchor on sharper turns
-const ANCHOR_DISTANCE_THRESHOLD = 250; // Increased from 100 - allows longer segments before auto-anchoring
-
-interface AnchorCheckResult {
-  shouldAnchor: boolean;
-  reason: 'cost' | 'angle' | 'distance' | null;
-}
-
-function shouldAutoAnchor(
-  currentSnappedPoint: Point,
-  seeds: Point[],
-  committedPoints: number[],
-  totalCost: number
-): AnchorCheckResult {
-  // 1. Cost threshold
-  if (totalCost > ANCHOR_COST_THRESHOLD) {
-    return { shouldAnchor: true, reason: 'cost' };
-  }
-  
-  // 2. Açı sapması (son 3 committed nokta üzerinden, yeterli nokta varsa)
-  if (committedPoints.length >= 6) {
-    const lastThree = committedPoints.slice(-6); // [x1, y1, x2, y2, x3, y3]
-    if (lastThree.length === 6) {
-      const p1: Point = { x: lastThree[0], y: lastThree[1] };
-      const p2: Point = { x: lastThree[2], y: lastThree[3] };
-      const p3: Point = { x: lastThree[4], y: lastThree[5] };
-      const angle = computeAngle(p1, p2, p3);
-      if (angle > ANCHOR_ANGLE_THRESHOLD) {
-        return { shouldAnchor: true, reason: 'angle' };
-      }
-    }
-  }
-  
-  // 3. Mesafe kontrolü (son seed ile current arası)
-  if (seeds.length > 0) {
-    const lastSeed = seeds[seeds.length - 1];
-    const dist = Math.sqrt(
-      (currentSnappedPoint.x - lastSeed.x) ** 2 +
-      (currentSnappedPoint.y - lastSeed.y) ** 2
-    );
-    if (dist > ANCHOR_DISTANCE_THRESHOLD) {
-      return { shouldAnchor: true, reason: 'distance' };
-    }
-  }
-  
-  return { shouldAnchor: false, reason: null };
-}
-
-// ─── Hook ────────────────────────────────────────────────────────────────────
 
 export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[]) => {
   const activeTool = useAppStore(state => state.activeTool);
@@ -126,6 +14,13 @@ export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[
   const annotatedObjects = useAppStore(state => state.annotatedObjects);
   const setAnnotatedObjects = useAppStore(state => state.setAnnotatedObjects);
   const imgDimensions = useAppStore(state => state.imgDimensions);
+
+  // Livewire store states
+  const setLivewireStatus = useAppStore(state => state.setLivewireStatus);
+  const setLivewireProgress = useAppStore(state => state.setLivewireProgress);
+  const resetLivewireState = useAppStore(state => state.resetLivewireState);
+
+  const scale = useAppStore(state => state.scale);
 
   const { getRelativePointerPosition } = useCoordinateTransform();
   
@@ -137,137 +32,120 @@ export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastSnappedPoint, setLastSnappedPoint] = useState<Point | null>(null);
   
-  const lastRequestId = useRef(0);
-  const autoAnchorRequestId = useRef(0); // Track auto-anchor request IDs separately
-  const lastBoundsRef = useRef<Bounds | null>(null);
-  const isProcessingRef = useRef(false);
-  const isAutoAnchoringRef = useRef(false); // Separate flag for auto-anchor in progress
-  const pendingAutoAnchorRef = useRef<Point | null>(null);
-  const lastPathTotalCostRef = useRef(0);
-  const lastPathPointsRef = useRef<number[]>([]);
+  const parentPointsRef = useRef<Int32Array | null>(null);
+  const gradientRef = useRef<Float32Array | null>(null);
 
-  // ── Worker'a auto anchor mesajı gönder (only if not already auto-anchoring) ──
-  const triggerAutoAnchor = useCallback((snappedPoint: Point) => {
-    if (!workerRef.current || seeds.length === 0) return;
-    // Prevent concurrent auto-anchors
-    if (isAutoAnchoringRef.current) return;
+  // ─── Client-Side Snapping ───
+  const snapPoint = useCallback((p: Point): Point => {
+    const gradient = gradientRef.current;
+    if (!gradient || !imgDimensions) return p;
+    const { width, height } = imgDimensions;
     
-    const lastSeed = seeds[seeds.length - 1];
-    let bounds: Bounds | undefined;
-    if (imgDimensions) {
-      bounds = computeROI(lastSeed, snappedPoint, imgDimensions.width, imgDimensions.height);
+    // 1. First anchor snap-to-close check (using scale-adjusted threshold)
+    if (isDrawing && seeds.length > 0) {
+      const firstSeed = seeds[0];
+      const dist = Math.sqrt((p.x - firstSeed.x) ** 2 + (p.y - firstSeed.y) ** 2);
+      const visualSnapRadius = 12 / Math.max(scale, 0.01);
+      if (dist < visualSnapRadius) { 
+        return firstSeed;
+      }
     }
     
-    isAutoAnchoringRef.current = true;
-    isProcessingRef.current = true;
-    autoAnchorRequestId.current++;
+    let minGrad = Infinity;
+    let bestX = Math.round(p.x);
+    let bestY = Math.round(p.y);
     
-    workerRef.current.postMessage({
-      type: 'SNAP',
-      data: { 
-        point: snappedPoint,
-        seed: lastSeed,
-        bounds,
-        isAutoAnchor: true,
-        requestId: autoAnchorRequestId.current
+    const snapSize = 2; // Match desktop's default 5x5 window for maximum control and precision
+    const sx = Math.max(0, bestX - snapSize);
+    const sy = Math.max(0, bestY - snapSize);
+    const ex = Math.min(width - 1, bestX + snapSize);
+    const ey = Math.min(height - 1, bestY + snapSize);
+    
+    for (let y = sy; y <= ey; y++) {
+      for (let x = sx; x <= ex; x++) {
+        const idx = y * width + x;
+        const grad = gradient[idx];
+        if (grad < minGrad) {
+          minGrad = grad;
+          bestX = x;
+          bestY = y;
+        }
       }
-    });
-  }, [seeds, imgDimensions]);
+    }
+    
+    return { x: bestX, y: bestY };
+  }, [imgDimensions, seeds, isDrawing, scale]);
+
+  // ─── Client-Side Path Tracing (O(N) Backpointer Traversal) ───
+  const getPathFrom = useCallback((target: Point, seed: Point): Point[] => {
+    const path: Point[] = [];
+    if (!parentPointsRef.current || !imgDimensions) return [];
+    
+    const { width } = imgDimensions;
+    const targetX = Math.round(target.x);
+    const targetY = Math.round(target.y);
+    const seedX = Math.round(seed.x);
+    const seedY = Math.round(seed.y);
+    
+    let currIdx = targetY * width + targetX;
+    const seedIdx = seedY * width + seedX;
+    
+    const visited = new Set<number>();
+    
+    while (currIdx !== -1 && currIdx !== seedIdx && !visited.has(currIdx)) {
+      visited.add(currIdx);
+      const x = currIdx % width;
+      const y = Math.floor(currIdx / width);
+      path.push({ x, y });
+      currIdx = parentPointsRef.current[currIdx];
+    }
+    
+    if (currIdx === seedIdx) {
+      path.push(seed);
+    }
+    
+    return path; // returns target -> ... -> seed
+  }, [imgDimensions]);
 
   // ── Worker initialization ──
   useEffect(() => {
     if (activeTool !== 'livewire' || !currentImage?.asset_url) return;
 
-    const worker = new LivewireWorker();
+    setLivewireStatus('preprocessing');
+    setLivewireProgress('Initializing background worker...');
+
+    const worker = new Worker('/external/scissors/scissorsWorker.js');
     workerRef.current = worker;
 
     worker.onmessage = (e) => {
-      const { type, data } = e.data;
+      const { msgType, results, status, gradient } = e.data;
       
-      if (type === 'INIT_DONE') {
-        setIsWorkerReady(true);
-        
-      } else if (type === 'PATH_RESULT') {
-        isProcessingRef.current = false;
-        
-        // Only process non-auto-anchor path results or interactive preview paths
-        if (data.requestId === lastRequestId.current) {
-          // Son snapped noktayı güncelle
-          if (data.points && data.points.length >= 2) {
-            const lastX = data.points[data.points.length - 2];
-            const lastY = data.points[data.points.length - 1];
-            const snappedPoint: Point = { x: lastX, y: lastY };
-            setLastSnappedPoint(snappedPoint);
-            
-            // Dynamic anchor kontrolü (daha az agresif - sadece mesafe bazlı)
-            if (seeds.length > 0 && !isAutoAnchoringRef.current) {
-              const lastSeed = seeds[seeds.length - 1];
-              const dist = Math.sqrt(
-                (snappedPoint.x - lastSeed.x) ** 2 +
-                (snappedPoint.y - lastSeed.y) ** 2
-              );
-              // Only auto-anchor if distance is very large (user moved far)
-              if (dist > ANCHOR_DISTANCE_THRESHOLD && data.totalCost > ANCHOR_COST_THRESHOLD) {
-                pendingAutoAnchorRef.current = snappedPoint;
-              }
+      switch (msgType) {
+        case -1: // Message.STATUS
+          if (status) {
+            setLivewireProgress(status);
+          }
+          break;
+          
+        case -3: // Message.RESULTS
+          if (results && parentPointsRef.current) {
+            for (let i = 0; i < results.length; i += 2) {
+              const p = results[i];
+              const q = results[i + 1];
+              parentPointsRef.current[p] = q;
             }
+            // Ask worker to continue computing next batch
+            worker.postMessage({ msgType: 2 }); // Message.CONTINUE
           }
-
-          previewLineRefs.forEach(ref => {
-            if (ref.current) {
-              ref.current.points(data.points);
-              ref.current.getLayer()?.batchDraw();
-            }
-          });
-        }
-        
-      } else if (type === 'SNAP_RESULT') {
-        // Clear both processing flags
-        if (data.isAutoAnchor) {
-          isAutoAnchoringRef.current = false;
-        }
-        isProcessingRef.current = false;
-        
-        // Only clear pending auto-anchor if this result matches
-        if (pendingAutoAnchorRef.current) {
-          pendingAutoAnchorRef.current = null;
-        }
-        
-        const snappedPoint = data.point;
-        const snapPath = data.path || [];
-        
-        setLastSnappedPoint(snappedPoint);
-        setSeeds(prev => [...prev, snappedPoint]);
-        
-        setCommittedPoints(prev => {
-          if (prev.length === 0) {
-            setSegmentSizes([2]);
-            return [snappedPoint.x, snappedPoint.y];
-          } else {
-            // Fix: Include the full path without slicing off start point
-            // This prevents gaps between segments
-            const newSegment = snapPath.length > 2 
-              ? snapPath.slice(2) // skip the first point (it's the previous seed)
-              : [snappedPoint.x, snappedPoint.y];
-            setSegmentSizes(sizes => [...sizes, newSegment.length]);
-            return [...prev, ...newSegment];
+          break;
+          
+        case -4: // Message.GRADIENT
+          if (gradient) {
+            gradientRef.current = gradient;
+            setLivewireStatus('ready');
+            setIsWorkerReady(true);
           }
-        });
-        
-        // Preview temizle
-        previewLineRefs.forEach(ref => {
-          if (ref.current) {
-            ref.current.points([]);
-            ref.current.getLayer()?.batchDraw();
-          }
-        });
-
-        // Eğer bekleyen auto-anchor varsa ve worker boşsa, hemen tetikle
-        if (pendingAutoAnchorRef.current && !isAutoAnchoringRef.current) {
-          const pending = pendingAutoAnchorRef.current;
-          pendingAutoAnchorRef.current = null;
-          triggerAutoAnchor(pending);
-        }
+          break;
       }
     };
 
@@ -280,29 +158,47 @@ export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[
       if (ctx) {
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        
+        const data = imageData.data;
+        const greyscale = new Float32Array(data.length / 4);
+        for (let i = 0; i < data.length; i += 4) {
+          greyscale[i / 4] = (data[i] + data[i + 1] + data[i + 2]) / (3 * 255);
+        }
+
+        // Initialize client-side arrays
+        parentPointsRef.current = new Int32Array(img.width * img.height);
+        parentPointsRef.current.fill(-1);
+
+        setLivewireProgress('Analyzing image details...');
+        
+        // Post greyscale image buffer to worker (Message.IMAGE = 4)
         worker.postMessage({
-          type: 'INIT',
-          data: {
-            imageData: imageData.data,
-            width: img.width,
-            height: img.height
-          }
-        }, [imageData.data.buffer]);
+          msgType: 4,
+          imageData: greyscale,
+          mask: null,
+          width: img.width,
+          height: img.height
+        }, [greyscale.buffer]);
+
+        // Enable on-the-fly interactive training (Message.TRAIN = 6)
+        worker.postMessage({ msgType: 6, train: true });
       }
+    };
+
+    img.onerror = () => {
+      setLivewireStatus('idle');
+      setLivewireProgress('Error loading image.');
     };
 
     return () => {
       worker.terminate();
       workerRef.current = null;
       setIsWorkerReady(false);
-      isProcessingRef.current = false;
-      isAutoAnchoringRef.current = false;
-      pendingAutoAnchorRef.current = null;
+      gradientRef.current = null;
+      parentPointsRef.current = null;
+      resetLivewireState();
     };
-    // Note: We deliberately exclude `seeds` and `committedPoints` from dependencies
-    // to avoid re-initializing the worker on every seed change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTool, currentImage?.asset_url, triggerAutoAnchor]);
+  }, [activeTool, currentImage?.asset_url, setLivewireStatus, setLivewireProgress, resetLivewireState]);
 
   // ── Reset ──
   const resetDrawing = useCallback(() => {
@@ -311,12 +207,14 @@ export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[
     setSegmentSizes([]);
     setLastSnappedPoint(null);
     setIsDrawing(false);
-    lastBoundsRef.current = null;
-    isProcessingRef.current = false;
-    isAutoAnchoringRef.current = false;
-    pendingAutoAnchorRef.current = null;
-    lastPathTotalCostRef.current = 0;
-    lastPathPointsRef.current = [];
+    
+    if (parentPointsRef.current) {
+      parentPointsRef.current.fill(-1);
+    }
+    if (workerRef.current) {
+      workerRef.current.postMessage({ msgType: 3 }); // Message.STOP
+    }
+
     previewLineRefs.forEach(ref => {
       if (ref.current) {
         ref.current.points([]);
@@ -327,17 +225,26 @@ export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[
 
   // ── Finalize ──
   const finalizeDrawing = useCallback(() => {
-    if (committedPoints.length < 6) { 
+    if (seeds.length < 3 || committedPoints.length < 6) { 
       resetDrawing();
       return;
     }
+
+    // Close the loop perfectly by finding the optimized cost path from the first seed back to the last seed
+    const lastSeed = seeds[seeds.length - 1];
+    const firstSeed = seeds[0];
+    const closingPath = getPathFrom(firstSeed, lastSeed).reverse();
+    const closingCoords = closingPath.flatMap(p => [p.x, p.y]);
+    const closingSegment = closingCoords.slice(2); // skip first [x, y] to avoid duplicates
+
+    const finalCoords = [...committedPoints, ...closingSegment];
 
     const newObject = {
       id: crypto.randomUUID(),
       label: `Polygon_${annotatedObjects.length + 1}`,
       classId: '', 
       type: 'polygon' as const,
-      coordinates: [...committedPoints],
+      coordinates: finalCoords,
       color: '#22c55e',
       zIndex: annotatedObjects.length,
       visible: true,
@@ -346,12 +253,11 @@ export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[
 
     setAnnotatedObjects([...annotatedObjects, newObject]);
     resetDrawing();
-  }, [committedPoints, annotatedObjects, setAnnotatedObjects, resetDrawing]);
+  }, [committedPoints, seeds, annotatedObjects, setAnnotatedObjects, resetDrawing, getPathFrom]);
 
-  // ── Mouse Down (Seed / Anchor) ──
+  // ── Mouse Down (Seed / Anchor Placement) ──
   const handleMouseDown = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
     if (activeTool !== 'livewire' || !isWorkerReady || !workerRef.current) return;
-    if (isProcessingRef.current) return;
     
     const stage = e.target.getStage();
     if (!stage) return;
@@ -359,78 +265,82 @@ export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[
     const pos = getRelativePointerPosition(stage);
     if (!pos) return;
 
-    // İlk seed'e geri dönüş kontrolü (polygon kapatma)
+    const snapped = snapPoint(pos);
+
+    // Loop closing check (using scale-adjusted threshold)
     if (seeds.length >= 3) {
       const firstSeed = seeds[0];
-      const dist = Math.sqrt((pos.x - firstSeed.x) ** 2 + (pos.y - firstSeed.y) ** 2);
-      if (dist < 10) { 
+      const dist = Math.sqrt((snapped.x - firstSeed.x) ** 2 + (snapped.y - firstSeed.y) ** 2);
+      const visualSnapRadius = 12 / Math.max(scale, 0.01);
+      if (dist < visualSnapRadius) { 
         finalizeDrawing();
         return;
       }
     }
 
-    isProcessingRef.current = true;
-    pendingAutoAnchorRef.current = null;
-    
-    let bounds: Bounds | undefined;
-    const lastSeed = seeds.length > 0 ? seeds[seeds.length - 1] : null;
-    if (lastSeed && imgDimensions) {
-      bounds = computeROI(lastSeed, pos, imgDimensions.width, imgDimensions.height);
-      lastBoundsRef.current = bounds;
+    if (seeds.length === 0) {
+      // First seed
+      setSeeds([snapped]);
+      setCommittedPoints([snapped.x, snapped.y]);
+      setSegmentSizes([2]);
+    } else {
+      // Subsequent seed: Trace optimal path from snapped target back to last seed
+      const lastSeed = seeds[seeds.length - 1];
+      const path = getPathFrom(snapped, lastSeed).reverse();
+      const pathCoords = path.flatMap(p => [p.x, p.y]);
+      const newSegment = pathCoords.slice(2); // skip the last seed to avoid duplicating it
+
+      setCommittedPoints(prev => [...prev, ...newSegment]);
+      setSegmentSizes(prev => [...prev, newSegment.length]);
+      setSeeds(prev => [...prev, snapped]);
     }
 
+    if (parentPointsRef.current) {
+      parentPointsRef.current.fill(-1);
+    }
+
+    // Set new seed point inside the worker (Message.POINT = 1)
     workerRef.current.postMessage({
-      type: 'SNAP',
-      data: { 
-        point: pos,
-        seed: lastSeed,
-        bounds
-      }
+      msgType: 1,
+      point: snapped
     });
     
     setIsDrawing(true);
-  }, [activeTool, isWorkerReady, getRelativePointerPosition, seeds, finalizeDrawing, imgDimensions]);
+    setLastSnappedPoint(snapped);
 
-  // ── Mouse Move (Live Path) ──
-  const lastRequestTime = useRef(0);
-  const THROTTLE_MS = 16;
+    // Clear preview line
+    previewLineRefs.forEach(ref => {
+      if (ref.current) {
+        ref.current.points([]);
+        ref.current.getLayer()?.batchDraw();
+      }
+    });
+  }, [activeTool, isWorkerReady, getRelativePointerPosition, seeds, snapPoint, getPathFrom, finalizeDrawing, previewLineRefs, scale]);
 
+  // ── Mouse Move (Live Preview Path) ──
   const handleMouseMove = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (activeTool !== 'livewire' || !isDrawing || !workerRef.current || seeds.length === 0) return;
-    // Auto anchor işleniyorsa veya worker meşgulse bekle
-    if (isProcessingRef.current) return;
+    if (activeTool !== 'livewire' || !isDrawing || seeds.length === 0) return;
     
-    const now = Date.now();
-    if (now - lastRequestTime.current < THROTTLE_MS) return;
-    lastRequestTime.current = now;
-
     const stage = e.target.getStage();
     if (!stage) return;
 
     const pos = getRelativePointerPosition(stage);
     if (!pos) return;
 
+    const snapped = snapPoint(pos);
+    setLastSnappedPoint(snapped);
+
     const seed = seeds[seeds.length - 1];
-    
-    let bounds: Bounds | undefined;
-    if (imgDimensions) {
-      bounds = computeROI(seed, pos, imgDimensions.width, imgDimensions.height);
-      lastBoundsRef.current = bounds;
-    }
-    
-    lastRequestId.current++;
-    isProcessingRef.current = true;
-    
-    workerRef.current.postMessage({
-      type: 'FIND_PATH',
-      data: { 
-        seed, 
-        target: pos, 
-        requestId: lastRequestId.current,
-        bounds
+    const path = getPathFrom(snapped, seed).reverse();
+    const flatPoints = path.flatMap(p => [p.x, p.y]);
+
+    previewLineRefs.forEach(ref => {
+      if (ref.current) {
+        ref.current.points(flatPoints);
+        ref.current.getLayer()?.batchDraw();
       }
     });
-  }, [activeTool, isDrawing, seeds, getRelativePointerPosition, imgDimensions]);
+  }, [activeTool, isDrawing, seeds, snapPoint, getPathFrom, previewLineRefs]);
 
   // ── Undo Last Point ──
   const undoLastPoint = useCallback(() => {
@@ -439,10 +349,14 @@ export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[
       return;
     }
 
-    const lastSegmentSize = segmentSizes[segmentSizes.length - 1] || 0;
-    setSeeds(prev => prev.slice(0, -1));
-    setSegmentSizes(prev => prev.slice(0, -1));
-    setCommittedPoints(prev => prev.slice(0, -lastSegmentSize));
+    const lastSize = segmentSizes[segmentSizes.length - 1] || 0;
+    const nextSeeds = seeds.slice(0, -1);
+    const nextSizes = segmentSizes.slice(0, -1);
+    const nextCommitted = committedPoints.slice(0, -lastSize);
+
+    setSeeds(nextSeeds);
+    setSegmentSizes(nextSizes);
+    setCommittedPoints(nextCommitted);
 
     previewLineRefs.forEach(ref => {
       if (ref.current) {
@@ -451,10 +365,20 @@ export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[
       }
     });
     
-    pendingAutoAnchorRef.current = null;
-    lastPathTotalCostRef.current = 0;
-    lastPathPointsRef.current = [];
-  }, [seeds, segmentSizes, resetDrawing, previewLineRefs]);
+    if (workerRef.current) {
+      if (parentPointsRef.current) {
+        parentPointsRef.current.fill(-1);
+      }
+      workerRef.current.postMessage({ msgType: 3 }); // Message.STOP
+      workerRef.current.postMessage({
+        msgType: 1, // Message.POINT
+        point: nextSeeds[nextSeeds.length - 1]
+      });
+    }
+
+    const newLastSeed = nextSeeds[nextSeeds.length - 1];
+    setLastSnappedPoint(newLastSeed);
+  }, [seeds, segmentSizes, committedPoints, resetDrawing, previewLineRefs]);
 
   return {
     handleMouseDown,
@@ -468,3 +392,4 @@ export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[
     isWorkerReady
   };
 };
+
