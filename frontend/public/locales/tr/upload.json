@@ -1,0 +1,37 @@
+{
+  "title": "Uploads",
+  "mini_island": {
+    "uploading": "Uploading {{count}} file...",
+    "uploading_plural": "Uploading {{count}} files...",
+    "all_complete": "All uploads complete",
+    "all_cancelled": "Uploads cancelled",
+    "upload_failed": "Upload failed",
+    "uploads_complete": "Uploads complete",
+    "expand": "Expand upload panel",
+    "close": "Close upload panel"
+  },
+  "expanded_panel": {
+    "title": "Uploads",
+    "pause_all": "Pause All",
+    "minimize": "Minimize",
+    "close": "Close",
+    "empty": "No uploads yet."
+  },
+  "file_item": {
+    "status": {
+      "idle": "Waiting...",
+      "preprocessing": "Preprocessing...",
+      "hashing": "Computing hash...",
+      "requesting_url": "Preparing upload...",
+      "uploading": "Uploading...",
+      "success": "Complete",
+      "failed": "Network error",
+      "cancelled": "Cancelled"
+    },
+    "progress_completed": "{{percent}}% COMPLETED",
+    "retry": "Retry upload",
+    "cancel": "Cancel upload",
+    "hash_computing": "Computing...",
+    "dimensions_unknown": "Unknown"
+  }
+}

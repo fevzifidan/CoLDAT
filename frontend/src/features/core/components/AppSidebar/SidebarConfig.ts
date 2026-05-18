@@ -1,0 +1,46 @@
+// src/features/core/components/SidebarConfig.ts
+import { 
+  LayoutDashboard, 
+  FolderKanban, 
+  Database, 
+  CheckSquare, 
+  Key 
+} from "lucide-react";
+// LucideIcon'u "import type" ile çağırarak hatayı gideriyoruz
+import type { LucideIcon } from "lucide-react";
+
+export interface SidebarItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  isPlaceholder?: boolean;
+}
+
+export const SIDEBAR_ITEMS: SidebarItem[] = [
+  {
+    title: "dashboard",
+    url: "/",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "projects",
+    url: "/projects",
+    icon: FolderKanban,
+  },
+  {
+    title: "datasets",
+    url: "/datasets",
+    icon: Database,
+  },
+  {
+    title: "tasks",
+    url: "/tasks",
+    icon: CheckSquare,
+  },
+  {
+    title: "api_keys",
+    url: "/api-keys",
+    icon: Key,
+    isPlaceholder: false 
+  }
+];

@@ -1,0 +1,137 @@
+import React, { useRef, memo, useMemo } from 'react';
+import { Rect, Group, Text } from 'react-konva';
+import { useAppStore } from '../../../../store/hooks/useAppStore';
+import type { AnnotatedObject } from '../../types/annotation.types';
+import { clampBox } from '../../../viewer/utils/coordinateUtils';
+import { Html } from 'react-konva-utils';
+import { ObjectMenu } from '../../components/RightPanel/InspectorTab/ObjectMenu';
+
+interface BoundingBoxProps {
+  data: AnnotatedObject;
+}
+
+const hexToRGBA = (hex: string, alpha: number) => {
+  let r = 0, g = 0, b = 0;
+  if (hex.startsWith('#')) {
+    if (hex.length === 4) {
+      r = parseInt(hex[1] + hex[1], 16);
+      g = parseInt(hex[2] + hex[2], 16);
+      b = parseInt(hex[3] + hex[3], 16);
+    } else if (hex.length === 7) {
+      r = parseInt(hex.slice(1, 3), 16);
+      g = parseInt(hex.slice(3, 5), 16);
+      b = parseInt(hex.slice(5, 7), 16);
+    }
+  }
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const BoundingBoxSelectedOverlay = memo(({ data, x, y, color }: { data: AnnotatedObject; x: number; y: number; color: string }) => {
+  const scale = useAppStore(state => state.scale);
+  const isReadOnly = useAppStore(state => state.isReadOnly);
+
+  return (
+    <>
+      <Rect
+        x={x}
+        y={y - 20 / scale}
+        width={Math.max(60, 100 / scale)}
+        height={20 / scale}
+        fill={color}
+      />
+      <Text
+        x={x + 4 / scale}
+        y={y - 16 / scale}
+        text={data.label}
+        fill="white"
+        fontSize={12 / scale}
+        fontFamily="sans-serif"
+      />
+      {!isReadOnly && (
+        <Html divProps={{ style: { pointerEvents: 'auto' } }}>
+          <div style={{ position: 'absolute', top: `${y - 24}px`, left: `${x + 102}px` }}>
+            <ObjectMenu object={data} />
+          </div>
+        </Html>
+      )}
+    </>
+  );
+});
+
+export const BoundingBox: React.FC<BoundingBoxProps> = memo(({ data }) => {
+  if (data.coordinates.length < 4) return null;
+  const [x, y, w, h] = data.coordinates;
+  const startCoords = useRef<number[] | null>(null);
+
+  const selectedObjectId = useAppStore(state => state.selectedObjectId);
+  const setSelectedObjectId = useAppStore(state => state.setSelectedObjectId);
+  const activeTool = useAppStore(state => state.activeTool);
+  const updateObject = useAppStore(state => state.updateObject);
+  const deleteObject = useAppStore(state => state.deleteObject);
+  const opacity = useAppStore(state => state.opacity);
+  const imgDimensions = useAppStore(state => state.imgDimensions);
+  const isReadOnly = useAppStore(state => state.isReadOnly);
+
+  const isSelected = selectedObjectId === data.id;
+  const isSelectMode = activeTool === 'select';
+  const isEraserMode = activeTool === 'eraser';
+
+  const handlePointerDown = () => {
+    if (isReadOnly) {
+      setSelectedObjectId(data.id);
+      return;
+    }
+    if (isSelectMode) setSelectedObjectId(data.id);
+    if (isEraserMode) deleteObject(data.id);
+  };
+
+  const color = data.color || '#3b82f6';
+  const fillColor = useMemo(() => hexToRGBA(color, opacity / 100), [color, opacity]);
+
+  return (
+    <Group
+      onClick={handlePointerDown}
+      onTap={handlePointerDown}
+      onMouseEnter={(e) => {
+        if (!isReadOnly && isEraserMode && e.evt.buttons === 1) deleteObject(data.id);
+      }}
+      draggable={!isReadOnly && !data.locked && isSelected && isSelectMode}
+      onDragStart={() => {
+        startCoords.current = [...data.coordinates];
+      }}
+      onDragEnd={(e) => {
+        if (e.target !== e.currentTarget || !startCoords.current) return;
+
+        const xOffset = e.target.x();
+        const yOffset = e.target.y();
+        const [oldX, oldY, oldW, oldH] = startCoords.current;
+
+        let newX = oldX + xOffset;
+        let newY = oldY + yOffset;
+        let newW = oldW;
+        let newH = oldH;
+
+        if (imgDimensions) {
+          [newX, newY, newW, newH] = clampBox(newX, newY, newW, newH, imgDimensions.width, imgDimensions.height);
+        }
+
+        e.target.position({ x: 0, y: 0 }); // Reset visual position after store update
+        updateObject(data.id, { coordinates: [newX, newY, newW, newH] });
+        startCoords.current = null;
+      }}
+    >
+      {isSelected && <BoundingBoxSelectedOverlay data={data} x={x} y={y} color={color} />}
+      <Rect
+        x={x}
+        y={y}
+        width={w}
+        height={h}
+        stroke={color}
+        strokeWidth={isSelected ? 3 : 2}
+        strokeScaleEnabled={false}
+        fill={fillColor}
+        hitStrokeWidth={10}
+      />
+    </Group>
+  );
+});

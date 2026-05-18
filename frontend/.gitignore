@@ -22,9 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.env
 
 **/test/
+implementation_plan.md
 CoLDAT API Design.yaml
 CoLDAT API Design.yml
-implementation_plan.md
-.env
+.aider*
