@@ -1,3 +1,4 @@
+// src/features/core/components/AppSidebar/AppSidebar.tsx
 import { LogOut, Languages, Monitor, Moon, Sun, PanelLeftClose } from "lucide-react";
 import {
   Sidebar,
@@ -25,11 +26,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
 import { SIDEBAR_ITEMS } from "./SidebarConfig";
+import { cn } from "@/lib/utils";
 
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t, i18n } = useTranslation(["common", "sidebar"]);
+  const { t, i18n } = useTranslation(["common"]);
   const { toggleSidebar } = useSidebar();
   const { theme, setTheme } = useTheme();
 
@@ -40,40 +42,56 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      variant="inset" 
+      variant="inset" // Orijinal gömülü moda geri alındı
       collapsible="icon"
       className="border-r shadow-sm"
     >
+      {/* Header Bölümü */}
       <SidebarHeader className="h-14 flex flex-row items-center justify-between border-b px-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center overflow-hidden transition-all duration-500 ease-in-out">
          <div className="flex items-center whitespace-nowrap overflow-hidden transition-all duration-500 ease-in-out max-w-[200px] opacity-100 group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0">
-            <span className="text-primary font-bold italic text-lg tracking-tight">COLDAT</span>
+            <span className="text-primary font-bold italic text-lg tracking-tight pl-2">COLDAT</span>
          </div>
          <Button 
-           variant="ghost" 
-           size="icon" 
-           onClick={toggleSidebar} 
-           className="text-muted-foreground hover:text-foreground shrink-0 ml-auto group-data-[collapsible=icon]:ml-0 hover:bg-transparent bg-transparent border-none"
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleSidebar} 
+            className="text-muted-foreground hover:text-foreground shrink-0 ml-auto group-data-[collapsible=icon]:ml-0 hover:bg-transparent bg-transparent border-none"
          >
             <PanelLeftClose size={20} className="transition-transform duration-500 ease-in-out group-data-[state=collapsed]:rotate-180" />
          </Button>
       </SidebarHeader>
 
+      {/* Menü İçeriği */}
       <SidebarContent className="overflow-x-hidden">
         <SidebarGroup>
           <SidebarMenu className="mt-2 gap-1">
             {SIDEBAR_ITEMS.map((item) => {
               const isActive = location.pathname === item.url || 
                                (item.url !== "/" && location.pathname.startsWith(item.url));
+              
+              const translatedTitle = item.title === "dashboard" 
+                ? t("dashboard.title") 
+                : t(`sidebar.${item.title}`);
+
               return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
-                    tooltip={t(item.title, { ns: 'sidebar' })} 
+                    tooltip={translatedTitle} 
                     onClick={() => navigate(item.url)}
                     isActive={isActive}
-                    className="transition-all duration-500 hover:bg-accent hover:text-accent-foreground data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-semibold"
+                    className={cn(
+                      "transition-all duration-500 hover:bg-accent hover:text-accent-foreground",
+                      "data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-semibold",
+                      item.isPlaceholder && "opacity-80"
+                    )}
                   >
                     <item.icon className="shrink-0" size={20} />
-                    <span className="truncate ml-2">{t(item.title, { ns: 'sidebar' })}</span>
+                    <span className="truncate ml-2">
+                      {translatedTitle}
+                      {item.isPlaceholder && (
+                        <span className="ml-2 text-[10px] italic opacity-60">(Soon)</span>
+                      )}
+                    </span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               );
@@ -82,15 +100,14 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
+      {/* Footer Bölümü */}
       <SidebarFooter className="border-t p-2 bg-background/50 backdrop-blur-sm">
         <SidebarMenu className="gap-2">
-          
-          {/* Appearance Dropdown */}
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton tooltip={t("theme.appearance")}>
-                  <Monitor size={20} className="shrink-0 text-muted-foreground md:transition-colors md:hover:text-foreground" />
+                  <Monitor size={20} className="shrink-0 text-muted-foreground" />
                   <span className="ml-2 font-medium text-muted-foreground">{t("theme.appearance")}</span>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
@@ -117,10 +134,10 @@ export function AppSidebar() {
 
           <SidebarMenuItem>
             <SidebarMenuButton 
-              tooltip={t("language")} 
+              tooltip={i18n.language.startsWith('tr') ? 'English' : 'Türkçe'} 
               onClick={toggleLanguage}
             >
-              <Languages size={20} className="shrink-0 text-muted-foreground md:transition-colors md:hover:text-foreground" />
+              <Languages size={20} className="shrink-0 text-muted-foreground" />
               <span className="ml-2 font-medium uppercase text-muted-foreground">
                 {i18n.language.startsWith('tr') ? 'Türkçe' : 'English'}
               </span>
@@ -139,7 +156,6 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-      
       <SidebarRail />
     </Sidebar>
   );
