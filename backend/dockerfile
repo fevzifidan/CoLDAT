@@ -1,0 +1,35 @@
+# ============================================================
+# Stage 1: Builder
+# - Install Python dependencies into a virtual environment
+# - psycopg2-binary is used, so no build tools needed
+# ============================================================
+FROM python:3.13-slim AS builder
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ============================================================
+# Stage 2: Final
+# - Minimal runtime image
+# ============================================================
+FROM python:3.13-slim
+
+# Virtual environment'ı builder stage'den kopyala
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+
+# Proje dosyalarını kopyala (apps dahil)
+# NOT: Runtime'da ./apps volume bind ile mount edilecek
+COPY . .
+
+# Volume mount noktasını bildir
+VOLUME ["/app/apps"]
+
+EXPOSE 8000
+
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000 --noreload"]

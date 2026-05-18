@@ -1,0 +1,175 @@
+# ========================
+# Git
+# ========================
+.git
+.gitignore
+.gitattributes
+.gitmodules
+.github
+
+# ========================
+# Python
+# ========================
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+*.egg-info
+*.egg
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+pip-wheel-metadata
+share
+man
+include
+src/*.egg-info
+
+# ========================
+# Virtual Environment
+# ========================
+venv
+.venv
+env
+.env
+.venv
+.virtualenv
+ENV
+env.bak
+venv.bak
+
+# ========================
+# IDE / Editor
+# ========================
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings
+*.sublime-workspace
+*.sublime-project
+.vim
+*.komodoproject
+
+# ========================
+# OS Artifacts
+# ========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+*.bak
+*.orig
+
+# ========================
+# Docker
+# ========================
+Dockerfile
+dockerfile
+docker-compose.yml
+docker-compose*.yml
+.dockerignore
+.docker
+
+# ========================
+# Environment / Secrets
+# ========================
+.env
+.env.*
+!.env.example
+
+# ========================
+# Test / Coverage
+# ========================
+.pytest_cache
+.tox
+htmlcov
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis
+.nox
+.pytest_cache
+
+# ========================
+# Database
+# ========================
+*.sqlite3
+*.sqlite
+*.db
+dumps
+*.dump
+
+# ========================
+# Logs
+# ========================
+*.log
+logs
+
+# ========================
+# Static / Media (runtime generated)
+# ========================
+staticfiles
+static_root
+media
+media_root
+collected_static
+static_collected
+upload
+uploads
+
+# ========================
+# Node / Frontend
+# ========================
+node_modules
+package-lock.json
+yarn.lock
+.npm
+package.json
+bower_components
+
+# ========================
+# CI/CD
+# ========================
+.github
+.gitlab-ci.yml
+Jenkinsfile
+.travis.yml
+.circleci
+.ci
+circle.yml
+
+# ========================
+# Docs & Misc
+# ========================
+docs
+README.md
+LICENSE
+CHANGELOG.md
+AUTHORS
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
+
+# ========================
+# OS / System
+# ========================
+*.pid
+*.seed
+*.pid.lock

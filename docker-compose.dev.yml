@@ -1,16 +1,70 @@
 name: CoLDAT
 
 services:
+  # ========================
+  # PostgreSQL 18
+  # ========================
+  db:
+    container_name: "coldat-db"
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: coldat_dev
+      POSTGRES_USER: coldat_user
+      POSTGRES_PASSWORD: coldat_password
+    volumes:
+      - pgdata:/var/lib/postgresql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coldat_user -d coldat_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  # ========================
+  # Django Backend
+  # ========================
+  backend:
+    container_name: "coldat-backend"
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/apps:/app/apps
+    environment:
+      DB_NAME: coldat_dev
+      DB_USER: coldat_user
+      DB_PASSWORD: coldat_password
+      DB_HOST: db
+      DB_PORT: 5432
+      SECRET_KEY: dev-secret-key-change-in-production
+      DEBUG: "True"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  # ========================
+  # Frontend
+  # ========================
   frontend:
     container_name: "coldat-frontend"
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
     ports:
-      - "5173" # container 5173, host random
+      - "5174:5173" # host 5174, container 5173
     volumes:
       - ./frontend:/app
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=false
       - NODE_ENV=development
+
+volumes:
+  pgdata:
+
