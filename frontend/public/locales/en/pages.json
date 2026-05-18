@@ -1,0 +1,19 @@
+{
+  "projects": {
+    "title": "Projects",
+    "create_new": "Create New Project",
+    "import": "Import Project",
+    "search_placeholder": "Search projects..."
+  },
+  "datasets": {
+    "title": "Datasets",
+    "create_new": "Create New Dataset",
+    "import": "Import Dataset",
+    "search_placeholder": "Search datasets..."
+  },
+  "api_keys": {
+    "title": "API Keys",
+    "create_new": "Create New Key",
+    "description": "Manage your API keys to access the external endpoints."
+  }
+}
