@@ -15,6 +15,7 @@
   "status": {
     "loading": "Loading...",
     "success": "Successful!",
+    "success_copied": "Copied to clipboard!",
     "error": "An error occurred!",
     "server_error": "Server error!",
     "deleting": "Deleting...",
@@ -115,16 +116,35 @@
     "recover": "Recover",
     "permanent_delete": "Delete"
   },
-  "api_keys": {
-    "description": "Manage your API keys to access CoLDAT services securely.",
-    "create_new": "Create New Key",
-    "no_keys": "No API keys found. Create one to get started.",
-    "table": {
-      "name": "Name",
-      "key": "API Key",
-      "created_at": "Created At",
-      "status": "Status",
-      "actions": "Actions"
+  "apikeys": {
+    "title": "Integration API Keys",
+    "description": "Manage secret keys to access your datasets securely from external applications or SDKs.",
+    "generate_title": "Create New Token",
+    "generate_desc": "Give your key a descriptive name to remember where it is used.",
+    "placeholder": "e.g., Python SDK Production, Jenkins CI",
+    "generate_btn": "Generate Key",
+    "warning_title": "Security Warning:",
+    "security_notice": "Do not share your API keys in public repositories or client-side code. Anyone with this key can modify your dataset configurations.",
+    "list_title": "Active API Keys",
+    "list_desc": "Tokens currently authorized to make requests under this account.",
+    "empty_list": "No API keys generated yet.",
+    "status_inactive": "Inactive",
+    "created_on": "Created on:",
+    "revoke_btn": "Revoke Key",
+    "tooltips": {
+      "refresh": "Refresh List",
+      "hide": "Hide Key",
+      "reveal": "Reveal Key",
+      "copy": "Copy to Clipboard"
+    },
+    "messages": {
+      "load_failed": "Failed to load API keys.",
+      "created_success": "New API key generated successfully.",
+      "create_failed": "An error occurred while generating the key.",
+      "reveal_failed": "Key authentication failed.",
+      "confirm_revoke": "Are you sure you want to revoke this API key? This action cannot be undone.",
+      "revoked_success": "API key has been permanently revoked.",
+      "revoke_failed": "An API error occurred while revoking the key."
     }
   },
   "project_detail": {
