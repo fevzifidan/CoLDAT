@@ -1,0 +1,13 @@
+{
+  "title": "Projects",
+  "create_new": "Create New Project",
+  "import": "Import Project",
+  "search_placeholder": "Search projects...",
+  "more_load": "Load More",
+  "filter": {
+    "all_roles": "All Roles",
+    "owner": "Owner",
+    "member": "Member"
+  },
+  "trash_btn": "Trash"
+}

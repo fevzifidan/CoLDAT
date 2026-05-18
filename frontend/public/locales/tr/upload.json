@@ -1,37 +1,36 @@
 {
-  "title": "Uploads",
+  "title": "Yüklemeler",
   "mini_island": {
-    "uploading": "Uploading {{count}} file...",
-    "uploading_plural": "Uploading {{count}} files...",
-    "all_complete": "All uploads complete",
-    "all_cancelled": "Uploads cancelled",
-    "upload_failed": "Upload failed",
-    "uploads_complete": "Uploads complete",
-    "expand": "Expand upload panel",
-    "close": "Close upload panel"
+    "uploading": "{{count}} dosya yükleniyor...",
+    "uploading_plural": "{{count}} dosya yükleniyor...",
+    "all_complete": "Tüm yüklemeler tamamlandı",
+    "upload_failed": "Yükleme başarısız oldu",
+    "uploads_complete": "Yüklemeler tamamlandı",
+    "expand": "Yükleme panelini genişlet",
+    "close": "Yükleme panelini kapat"
   },
   "expanded_panel": {
-    "title": "Uploads",
-    "pause_all": "Pause All",
-    "minimize": "Minimize",
-    "close": "Close",
-    "empty": "No uploads yet."
+    "title": "Yüklemeler",
+    "pause_all": "Tümünü Duraklat",
+    "minimize": "Küçült",
+    "close": "Kapat",
+    "empty": "Henüz yükleme yok."
   },
   "file_item": {
     "status": {
-      "idle": "Waiting...",
-      "preprocessing": "Preprocessing...",
-      "hashing": "Computing hash...",
-      "requesting_url": "Preparing upload...",
-      "uploading": "Uploading...",
-      "success": "Complete",
-      "failed": "Network error",
-      "cancelled": "Cancelled"
+      "idle": "Bekliyor...",
+      "preprocessing": "Ön işleniyor...",
+      "hashing": "Karma (hash) hesaplanıyor...",
+      "requesting_url": "Yükleme hazırlanıyor...",
+      "uploading": "Yükleniyor...",
+      "success": "Tamamlandı",
+      "failed": "Ağ hatası",
+      "cancelled": "İptal edildi"
     },
-    "progress_completed": "{{percent}}% COMPLETED",
-    "retry": "Retry upload",
-    "cancel": "Cancel upload",
-    "hash_computing": "Computing...",
-    "dimensions_unknown": "Unknown"
+    "progress_completed": "%{{percent}} TAMAMLANDI",
+    "retry": "Yeniden dene",
+    "cancel": "Yüklemeyi iptal et",
+    "hash_computing": "Hesaplanıyor...",
+    "dimensions_unknown": "Bilinmiyor"
   }
 }

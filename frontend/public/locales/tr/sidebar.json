@@ -1,9 +1,8 @@
 {
-
-  "dashboard": "Panel",
-
-  "annotate": "Anotasyon",
-
+  "dashboard": "Genel Bakış",
+  "projects": "Projeler",
+  "datasets": "Veri Setleri",
+  "tasks": "Görevler",
+  "api_keys": "API Anahtarları",
   "settings": "Ayarlar"
-
 }

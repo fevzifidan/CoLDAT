@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Search, Trash2, RotateCcw, X, Trash, Plus } from "lucide-react";
 
 const TasksPage = () => {
-  const { t } = useTranslation('common');
+  // Çoklu dil dosyası desteği için namespaces tanımlaması
+  const { t } = useTranslation(['pages', 'common']);
   const [searchQuery, setSearchQuery] = useState("");
   const [progressFilter, setProgressFilter] = useState("ALL");
   const [displayLimit, setDisplayLimit] = useState(4);
@@ -90,7 +91,7 @@ const TasksPage = () => {
     <div className="p-6 space-y-6 max-w-7xl mx-auto relative text-slate-900 dark:text-slate-100">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 dark:border-slate-800">
         <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-          {t('tasks.title', 'Tasks')}
+          {t('pages:tasks.title', 'Tasks')}
         </h1>
         
         <div className="flex flex-wrap items-center gap-3">
@@ -98,7 +99,7 @@ const TasksPage = () => {
           <div className="relative w-64">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
             <Input 
-              placeholder={t("search.placeholder", "Search...")} 
+              placeholder={t("pages:tasks.search_placeholder", "Search tasks...")} 
               className="pl-9 h-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -111,7 +112,7 @@ const TasksPage = () => {
             className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 h-9 font-medium shadow-sm gap-1.5 text-white"
           >
             <Plus size={16} />
-            {t('tasks.create_new', 'Create New Task')}
+            {t('pages:tasks.create_new', 'Create New Task')}
           </Button>
 
           {/* Progress Filtresi */}
@@ -124,10 +125,10 @@ const TasksPage = () => {
               }}
               className="flex h-9 w-44 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer focus-visible:outline-none text-slate-700 dark:text-slate-300 font-medium"
             >
-              <option value="ALL">✨ {t('filter.all_progress', 'All Progress')}</option>
-              <option value="NEW">🆕 {t('filter.status.new', 'NEW')}</option>
-              <option value="IN PROGRESS">⚡ {t('filter.status.in_progress', 'IN PROGRESS')}</option>
-              <option value="COMPLETED">✅ {t('filter.status.completed', 'COMPLETED')}</option>
+              <option value="ALL">✨ {t('pages:tasks.filter.all_progress', 'All Progress')}</option>
+              <option value="NEW">🆕 {t('pages:tasks.filter.status.new', 'NEW')}</option>
+              <option value="IN PROGRESS">⚡ {t('pages:tasks.filter.status.in_progress', 'IN PROGRESS')}</option>
+              <option value="COMPLETED">✅ {t('pages:tasks.filter.status.completed', 'COMPLETED')}</option>
             </select>
           </div>
 
@@ -143,7 +144,7 @@ const TasksPage = () => {
                 {archivedTasks.length}
               </span>
             )}
-            {t('trash.title', 'Trash')}
+            {t('pages:trash.title', 'Trash')}
           </Button>
         </div>
       </div>
@@ -162,7 +163,7 @@ const TasksPage = () => {
             <button
               onClick={(e) => handleDeleteTask(item.id, e)}
               className="absolute bottom-4 right-4 p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/50 shadow-sm z-10"
-              title="Move to Trash"
+              title={t('pages:trash.permanent_delete', 'Delete')}
             >
               <Trash2 size={14} />
             </button>
@@ -173,7 +174,7 @@ const TasksPage = () => {
       {displayLimit < filteredTasks.length && (
         <div className="flex justify-center mt-8">
           <Button onClick={() => setDisplayLimit(prev => prev + 4)} variant="outline" className="dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-900">
-            {t('status.load_more', 'Load More')} 
+            {t('pages:dashboard.show_more', 'Load More')} 
           </Button>
         </div>
       )}
@@ -183,7 +184,7 @@ const TasksPage = () => {
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl shadow-2xl border dark:border-slate-800 w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
             <div className="p-4 border-b dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950">
-              <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">{t('tasks.create_new', 'Create New Task')}</h3>
+              <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">{t('pages:tasks.create_new', 'Create New Task')}</h3>
               <button onClick={() => setIsCreateModalOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                 <X size={18} />
               </button>
@@ -193,13 +194,13 @@ const TasksPage = () => {
               <div className="p-4 space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    {t('project_general.project_name', 'Task Name')}
+                    {t('pages:project_general.project_name', 'Task Name')}
                   </label>
                   <Input
                     required
                     value={newTaskName}
                     onChange={(e) => setNewTaskName(e.target.value)}
-                    placeholder={t('project_general.placeholder_name', 'E.g. Classify Dataset...')}
+                    placeholder={t('pages:project_general.placeholder_name', 'E.g. Classify Dataset...')}
                     className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
                   />
                 </div>
@@ -207,10 +208,10 @@ const TasksPage = () => {
 
               <div className="p-3 border-t dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-end gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateModalOpen(false)} className="dark:border-slate-800 dark:hover:bg-slate-800">
-                  {t('actions.cancel', 'Cancel')}
+                  {t('pages:actions.cancel', 'Cancel')}
                 </Button>
                 <Button type="submit" size="sm" className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white">
-                  {t('actions.create', 'Create')}
+                  {t('pages:actions.create', 'Create')}
                 </Button>
               </div>
             </form>
@@ -226,7 +227,7 @@ const TasksPage = () => {
             <div className="p-4 border-b dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950">
               <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
                 <Trash2 size={18} className="text-rose-500" />
-                <h3 className="font-bold text-lg">{t('trash.modal_title', 'Trash Bin')}</h3>
+                <h3 className="font-bold text-lg">{t('pages:trash.modal_title', 'Trash Bin')}</h3>
               </div>
               <button onClick={() => setIsTrashOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                 <X size={18} />
@@ -237,7 +238,7 @@ const TasksPage = () => {
               {archivedTasks.length === 0 ? (
                 <div className="text-center py-12 text-slate-400 space-y-2">
                   <Trash2 size={40} className="mx-auto text-slate-200 dark:text-slate-800" />
-                  <p className="text-sm">{t('trash.empty', 'Your trash is currently empty.')}</p>
+                  <p className="text-sm">{t('pages:tasks.empty_list', 'Your trash is currently empty.')}</p>
                 </div>
               ) : (
                 archivedTasks.map((task) => (
@@ -252,14 +253,14 @@ const TasksPage = () => {
                         size="sm" variant="outline" onClick={() => handleRecoverTask(task.id)}
                         className="h-8 border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-xs font-bold gap-1.5"
                       >
-                        <RotateCcw size={13} /> {t('trash.recover', 'Recover')}
+                        <RotateCcw size={13} /> {t('pages:trash.recover', 'Recover')}
                       </Button>
 
                       <Button 
                         size="sm" variant="outline" onClick={() => handlePermanentDelete(task.id)}
                         className="h-8 border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-xs font-bold gap-1.5"
                       >
-                        <Trash2 size={13} /> {t('trash.permanent_delete', 'Delete')}
+                        <Trash2 size={13} /> {t('pages:trash.permanent_delete', 'Delete')}
                       </Button>
                     </div>
                   </div>
@@ -269,7 +270,7 @@ const TasksPage = () => {
 
             <div className="p-3 border-t dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-end">
               <Button size="sm" onClick={() => setIsTrashOpen(false)} className="bg-slate-800 hover:bg-slate-900 dark:bg-slate-200 dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium">
-                {t('actions.close', 'Close')}
+                {t('pages:actions.close', 'Close')}
               </Button>
             </div>
           </div>

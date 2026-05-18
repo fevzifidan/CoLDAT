@@ -1,9 +1,8 @@
 {
-
   "dashboard": "Dashboard",
-
-  "annotate": "Annotate",
-
+  "projects": "Projects",
+  "datasets": "Datasets",
+  "tasks": "Tasks",
+  "api_keys": "API Keys",
   "settings": "Settings"
-
 }
