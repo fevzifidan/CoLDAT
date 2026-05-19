@@ -8,9 +8,10 @@ interface PolygonAnchorProps {
   color: string;
   onDrag: (index: number, x: number, y: number) => void;
   onDragEnd: (index: number, x: number, y: number) => void;
+  onDelete?: (index: number) => void;
 }
 
-export const PolygonAnchor: React.FC<PolygonAnchorProps> = ({ x, y, index, color, onDrag, onDragEnd }) => {
+export const PolygonAnchor: React.FC<PolygonAnchorProps> = ({ x, y, index, color, onDrag, onDragEnd, onDelete }) => {
   const scale = useAppStore(state => state.scale);
 
   return (
@@ -27,6 +28,14 @@ export const PolygonAnchor: React.FC<PolygonAnchorProps> = ({ x, y, index, color
       }}
       onDragEnd={(e) => {
         onDragEnd(index, e.target.x(), e.target.y());
+      }}
+      onDblClick={(e) => {
+        e.cancelBubble = true;
+        if (onDelete) onDelete(index);
+      }}
+      onDblTap={(e) => {
+        e.cancelBubble = true;
+        if (onDelete) onDelete(index);
       }}
       hitStrokeWidth={12 / scale}
       onMouseEnter={(e) => {

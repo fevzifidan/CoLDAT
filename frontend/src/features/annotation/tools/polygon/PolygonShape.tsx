@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../store/hooks/useAppStore';
 import { clampPoint } from '../../../viewer/utils/coordinateUtils';
 import { Html } from 'react-konva-utils';
 import { ObjectMenu } from '../../components/RightPanel/InspectorTab/ObjectMenu';
+import { useCoordinateTransform } from '../../../viewer/hooks/useCoordinateTransform';
 
 interface PolygonShapeProps {
   data: AnnotatedObject;
@@ -27,6 +28,50 @@ const hexToRGBA = (hex: string, alpha: number) => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+function getClosestSegment(
+  clickX: number,
+  clickY: number,
+  coords: number[]
+): { insertIndex: number; distance: number } {
+  let minDistance = Infinity;
+  let insertIndex = -1;
+  const numPoints = coords.length / 2;
+
+  for (let i = 0; i < numPoints; i++) {
+    const ax = coords[i * 2];
+    const ay = coords[i * 2 + 1];
+    
+    const nextIdx = (i + 1) % numPoints;
+    const bx = coords[nextIdx * 2];
+    const by = coords[nextIdx * 2 + 1];
+
+    const abx = bx - ax;
+    const aby = by - ay;
+    const acx = clickX - ax;
+    const acy = clickY - ay;
+
+    const abLenSq = abx * abx + aby * aby;
+    let t = 0;
+    if (abLenSq > 0) {
+      t = (acx * abx + acy * aby) / abLenSq;
+      t = Math.max(0, Math.min(1, t));
+    }
+
+    const px = ax + t * abx;
+    const py = ay + t * aby;
+
+    const dx = clickX - px;
+    const dy = clickY - py;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < minDistance) {
+      minDistance = dist;
+      insertIndex = nextIdx;
+    }
+  }
+  return { insertIndex, distance: minDistance };
+}
+
 export const PolygonShape: React.FC<PolygonShapeProps> = memo(({ data }) => {
   const selectedObjectId = useAppStore(state => state.selectedObjectId);
   const setSelectedObjectId = useAppStore(state => state.setSelectedObjectId);
@@ -36,7 +81,9 @@ export const PolygonShape: React.FC<PolygonShapeProps> = memo(({ data }) => {
   const opacity = useAppStore(state => state.opacity);
   const imgDimensions = useAppStore(state => state.imgDimensions);
   const isReadOnly = useAppStore(state => state.isReadOnly);
+  const scale = useAppStore(state => state.scale);
   
+  const { getRelativePointerPosition } = useCoordinateTransform();
   const startCoords = useRef<number[] | null>(null);
 
   const isSelected = selectedObjectId === data.id;
@@ -69,6 +116,33 @@ export const PolygonShape: React.FC<PolygonShapeProps> = memo(({ data }) => {
     newCoords[index * 2 + 1] = clamped.y;
     updateObject(data.id, { coordinates: newCoords }, false); // save history on drag end
   }, [data.coordinates, data.id, updateObject, imgDimensions]);
+
+  const handlePointDelete = useCallback((index: number) => {
+    if (data.coordinates.length <= 6) return; // Keep at least 3 points
+    const newCoords = [...data.coordinates];
+    newCoords.splice(index * 2, 2);
+    updateObject(data.id, { coordinates: newCoords }, false); // Save history
+  }, [data.coordinates, data.id, updateObject]);
+
+  const handleLineClick = useCallback((e: any) => {
+    if (isReadOnly || !isSelected || !isSelectMode) return;
+    e.cancelBubble = true;
+
+    const stage = e.target.getStage();
+    if (!stage) return;
+
+    const pos = getRelativePointerPosition(stage);
+    if (!pos) return;
+
+    const { insertIndex, distance } = getClosestSegment(pos.x, pos.y, data.coordinates);
+    const threshold = 15 / scale;
+
+    if (distance <= threshold) {
+      const newCoords = [...data.coordinates];
+      newCoords.splice(insertIndex * 2, 0, pos.x, pos.y);
+      updateObject(data.id, { coordinates: newCoords }, false); // Save history
+    }
+  }, [data.coordinates, data.id, isSelected, isSelectMode, isReadOnly, scale, getRelativePointerPosition, updateObject]);
 
   if (data.coordinates.length < 6) return null; // Needs at least 3 points
 
@@ -130,6 +204,20 @@ export const PolygonShape: React.FC<PolygonShapeProps> = memo(({ data }) => {
         closed
         fill={fillColor}
         hitStrokeWidth={10}
+        onClick={handleLineClick}
+        onTap={handleLineClick}
+        onMouseEnter={(e) => {
+          if (!isReadOnly && isSelected && isSelectMode) {
+            const container = e.target.getStage()?.container();
+            if (container) container.style.cursor = 'crosshair';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isReadOnly && isSelected && isSelectMode) {
+            const container = e.target.getStage()?.container();
+            if (container) container.style.cursor = '';
+          }
+        }}
       />
       
       {/* Label */}
@@ -162,6 +250,7 @@ export const PolygonShape: React.FC<PolygonShapeProps> = memo(({ data }) => {
               index={i / 2}
               onDrag={handlePointDrag}
               onDragEnd={handlePointDragEnd}
+              onDelete={handlePointDelete}
               color={data.color || '#3b82f6'}
             />
           );
