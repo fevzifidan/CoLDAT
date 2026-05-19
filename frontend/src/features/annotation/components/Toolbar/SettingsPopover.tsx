@@ -135,6 +135,9 @@ export default function SettingsPopover() {
     (vals: number[]) => setOpacity(vals[0]),
     [setOpacity]
   );
+  const handleLivewireSettingsReset = useCallback(() => {
+    setLivewireEpsilon(1.0);
+  }, [setLivewireEpsilon]);
 
   return (
     <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -214,7 +217,7 @@ export default function SettingsPopover() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-            <Separator className="my-1" />
+              <Separator className="my-1" />
 
               {/* === GÖRÜNÜM SECTION === */}
               <Button
@@ -269,7 +272,7 @@ export default function SettingsPopover() {
 
               {/* === DİL SECTION === */}
               <div className="px-2 py-1.5">
-                <LanguageSelector className='max-w-full'/>
+                <LanguageSelector className='max-w-full' />
               </div>
             </div>
           )}
@@ -287,7 +290,7 @@ export default function SettingsPopover() {
                 {t('toolbar.settings')}
               </Button>
 
-                <div className="px-1 space-y-6">
+              <div className="px-1 space-y-6">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium leading-none text-sm">
                     {t('toolbar.imageSettings')}
@@ -442,6 +445,15 @@ export default function SettingsPopover() {
                   <h4 className="font-medium leading-none text-sm">
                     {t('toolbar.livewireSettings')}
                   </h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[10px]"
+                    onClick={handleLivewireSettingsReset}
+                  >
+                    <RotateCcw size={10} className="mr-1" />{' '}
+                    {t('toolbar.reset')}
+                  </Button>
                 </div>
 
                 {/* === EPSILON SLIDER === */}
@@ -471,7 +483,7 @@ export default function SettingsPopover() {
           )}
         </div>
       </PopoverContent>
-      
+
     </Popover>
   );
 }
