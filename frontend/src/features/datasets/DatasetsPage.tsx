@@ -45,11 +45,15 @@ const DatasetsPage = () => {
     fetchDatasets();
   }, []);
 
-  const fetchDatasets = () => {
+const fetchDatasets = () => {
     setLoading(true);
     datasetService.getAllDatasets()
       .then((data: any) => {
-        const enrichedDatasets = (data || []).map((d: any) => ({
+        // HATA BURADA: Eğer data bir obje ise ve içindeki bir anahtarda (örneğin 'results') listeyi tutuyorsa
+        // Hata almamak için verinin tipini kontrol ediyoruz:
+        const dataArray = Array.isArray(data) ? data : (data?.results || []);
+        
+        const enrichedDatasets = dataArray.map((d: any) => ({
           ...d,
           isDeleted: d.isDeleted ?? false,
           isPermanentlyDeleted: d.isPermanentlyDeleted ?? false
@@ -58,7 +62,8 @@ const DatasetsPage = () => {
       })
       .catch((error: any) => {
         console.error("Dataset yükleme hatası:", error);
-        toast.error(t("pages:datasets.messages.load_failed", "Failed to load datasets."));
+        // Hata durumunda boş liste ile devam et
+        setDatasetList([]); 
       })
       .finally(() => setLoading(false));
   };
