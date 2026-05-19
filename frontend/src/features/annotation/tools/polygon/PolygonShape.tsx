@@ -252,6 +252,7 @@ export const PolygonShape: React.FC<PolygonShapeProps> = memo(({ data }) => {
               onDragEnd={handlePointDragEnd}
               onDelete={handlePointDelete}
               color={data.color || '#3b82f6'}
+              scale={scale}
             />
           );
         })

@@ -1,19 +1,18 @@
+import React, { memo } from 'react';
 import { Circle } from 'react-konva';
-import { useAppStore } from '../../../../store/hooks/useAppStore';
 
 interface PolygonAnchorProps {
   x: number;
   y: number;
   index: number;
   color: string;
+  scale: number;
   onDrag: (index: number, x: number, y: number) => void;
   onDragEnd: (index: number, x: number, y: number) => void;
   onDelete?: (index: number) => void;
 }
 
-export const PolygonAnchor: React.FC<PolygonAnchorProps> = ({ x, y, index, color, onDrag, onDragEnd, onDelete }) => {
-  const scale = useAppStore(state => state.scale);
-
+export const PolygonAnchor: React.FC<PolygonAnchorProps> = memo(({ x, y, index, color, scale, onDrag, onDragEnd, onDelete }) => {
   return (
     <Circle
       x={x}
@@ -48,4 +47,6 @@ export const PolygonAnchor: React.FC<PolygonAnchorProps> = ({ x, y, index, color
       }}
     />
   );
-};
+});
+
+PolygonAnchor.displayName = 'PolygonAnchor';
