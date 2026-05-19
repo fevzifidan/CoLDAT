@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Konva from 'konva';
+import simplify from 'simplify-js';
 import { useAppStore } from '../../../../store/hooks/useAppStore';
 import { useCoordinateTransform } from '../../../viewer/hooks/useCoordinateTransform';
 
@@ -19,6 +20,7 @@ export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[
   const setLivewireStatus = useAppStore(state => state.setLivewireStatus);
   const setLivewireProgress = useAppStore(state => state.setLivewireProgress);
   const resetLivewireState = useAppStore(state => state.resetLivewireState);
+  const livewireEpsilon = useAppStore(state => state.livewireEpsilon);
 
   const scale = useAppStore(state => state.scale);
 
@@ -239,12 +241,27 @@ export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[
 
     const finalCoords = [...committedPoints, ...closingSegment];
 
+    // Convert flat coordinates array [x1, y1, x2, y2, ...] to Point[] array for simplify-js
+    const rawPoints: Point[] = [];
+    for (let i = 0; i < finalCoords.length; i += 2) {
+      rawPoints.push({ x: finalCoords[i], y: finalCoords[i + 1] });
+    }
+
+    // Simplify polygon coordinates using simplify-js
+    const simplifiedPoints = simplify(rawPoints, livewireEpsilon, true);
+
+    // Convert back to flat coordinates array
+    const simplifiedCoords: number[] = [];
+    for (const pt of simplifiedPoints) {
+      simplifiedCoords.push(pt.x, pt.y);
+    }
+
     const newObject = {
       id: crypto.randomUUID(),
       label: `Polygon_${annotatedObjects.length + 1}`,
       classId: '', 
       type: 'polygon' as const,
-      coordinates: finalCoords,
+      coordinates: simplifiedCoords,
       color: '#22c55e',
       zIndex: annotatedObjects.length,
       visible: true,
@@ -253,7 +270,7 @@ export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[
 
     setAnnotatedObjects([...annotatedObjects, newObject]);
     resetDrawing();
-  }, [committedPoints, seeds, annotatedObjects, setAnnotatedObjects, resetDrawing, getPathFrom]);
+  }, [committedPoints, seeds, annotatedObjects, setAnnotatedObjects, resetDrawing, getPathFrom, livewireEpsilon]);
 
   // ── Mouse Down (Seed / Anchor Placement) ──
   const handleMouseDown = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
