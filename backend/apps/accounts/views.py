@@ -7,9 +7,11 @@ from .serializers import (
     AccountUpdateSerializer,
     LoginSerializer,
     RegisterSerializer,
+    UserLookupSerializer,
     UserSerializer,
 )
 from .services import update_user_account
+from .selectors import user_lookup
 
 # Create your views here.
 
@@ -23,7 +25,10 @@ class RegisterView(APIView):
         user = serializer.save()
 
         return Response(
-            UserSerializer(user).data,
+            {
+                "message": "Account created successfully. Please verify your email before logging in.",
+                "user": UserSerializer(user).data,
+            },
             status=status.HTTP_201_CREATED,
         )
     
@@ -41,8 +46,8 @@ class LoginView(APIView):
 
         return Response(
             {
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),
+                "access_token": str(refresh.access_token),
+                "refresh_token": str(refresh),
                 "user": UserSerializer(user).data,
             },
             status=status.HTTP_200_OK,
@@ -70,6 +75,17 @@ class AccountMeView(APIView):
 
         return Response(
             UserSerializer(user).data,
+            status=status.HTTP_200_OK,
+        )
+    
+class UserLookupView(APIView):
+    def get(self, request):
+        query = request.query_params.get("q", "")
+
+        users = user_lookup(query=query)
+
+        return Response(
+            UserLookupSerializer(users, many=True).data,
             status=status.HTTP_200_OK,
         )
 
