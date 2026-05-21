@@ -4,5 +4,7 @@
   "datasets": "Datasets",
   "tasks": "Tasks",
   "api_keys": "API Keys",
-  "settings": "Settings"
+  "settings": "Settings",
+  "synthetic_data": "Synthetic Data"
+  
 }

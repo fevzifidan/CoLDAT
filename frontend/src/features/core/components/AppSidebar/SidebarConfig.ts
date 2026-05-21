@@ -4,7 +4,8 @@ import {
   FolderKanban, 
   Database, 
   CheckSquare, 
-  Key 
+  Key,
+  Sparkles // Yapay zeka ve sentetik veri için Sparkles ikonunu ekledik
 } from "lucide-react";
 // LucideIcon'u "import type" ile çağırarak hatayı gideriyoruz
 import type { LucideIcon } from "lucide-react";
@@ -36,6 +37,11 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     title: "tasks",
     url: "/tasks",
     icon: CheckSquare,
+  },
+  {
+    title: "synthetic_data", // Çeviri (i18n) anahtarı
+    url: "/synthetic",       // Sayfanın yönlendirileceği url patika adresi
+    icon: Sparkles,          // Sol menüde görünecek ikon
   },
   {
     title: "api_keys",

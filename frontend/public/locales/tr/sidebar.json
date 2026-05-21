@@ -4,5 +4,6 @@
   "datasets": "Veri Setleri",
   "tasks": "Görevler",
   "api_keys": "API Anahtarları",
-  "settings": "Ayarlar"
+  "settings": "Ayarlar",
+  "synthetic_data": "Sentetik Veri"
 }
