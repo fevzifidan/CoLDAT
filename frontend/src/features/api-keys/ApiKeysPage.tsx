@@ -33,13 +33,19 @@ const ApiKeysPage = () => {
       .finally(() => setLoading(false));
   };
 
-  const handleCreateKey = (e: React.FormEvent) => {
+const handleCreateKey = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = newKeyName.trim();
-    if (!trimmedName) return;
+    if (!trimmedName) {
+      toast.error("İsim boş olamaz!"); // Kullanıcıya geri bildirim ver
+      return;
+    }
+
+    console.log("Key oluşturuluyor, datasetId:", datasetId); // Burayı kontrol et
 
     apiKeyService.createApiKey(datasetId, { name: trimmedName })
       .then((createdKey) => {
+        console.log("Başarılı:", createdKey);
         setApiKeys(prev => [createdKey, ...prev]);
         setNewKeyName("");
         toast.success(t("pages:apikeys_detail.messages.created_success", "New API key generated successfully."));
@@ -49,32 +55,38 @@ const ApiKeysPage = () => {
         }
       })
       .catch((error) => {
-        console.error("Key oluşturma hatası:", error);
-        toast.error(t("pages:apikeys_detail.messages.create_failed", "An error occurred while generating the key."));
+        // Hatanın detaylarını konsola yazdır
+        console.error("DEBUG - Key oluşturma hatası:", error);
+        toast.error("Oluşturma başarısız oldu, konsolu kontrol et.");
       });
   };
 
-  const handleToggleReveal = (keyId: string) => {
-    if (revealedKeys[keyId]) {
-      setRevealedKeys(prev => {
-        const copy = { ...prev };
-        delete copy[keyId];
-        return copy;
-      });
-      return;
-    }
+const handleToggleReveal = (keyId: string) => {
+  // Eğer zaten görünürse kapat
+  if (revealedKeys[keyId]) {
+    setRevealedKeys(prev => {
+      const copy = { ...prev };
+      delete copy[keyId];
+      return copy;
+    });
+    return;
+  }
 
-    apiKeyService.revealApiKey(datasetId, keyId)
-      .then((data) => {
-        if (data.api_key) {
-          setRevealedKeys(prev => ({ ...prev, [keyId]: data.api_key! }));
-        }
-      })
-      .catch((error) => {
-        console.error("Key reveal hatası:", error);
-        toast.error(t("pages:apikeys_detail.messages.reveal_failed", "Key authentication failed."));
-      });
-  };
+  // Backend'e sor
+  apiKeyService.revealApiKey(datasetId, keyId)
+    .then((data) => {
+      if (data && (data.api_key || data.api_key === "")) { 
+        setRevealedKeys(prev => ({ ...prev, [keyId]: data.api_key! }));
+      } else {
+        console.warn("Backend'den anahtar içeriği dönmedi:", data);
+        toast.error("Anahtar içeriği alınamadı (Backend yanıtı boş).");
+      }
+    })
+    .catch((error) => {
+      console.error("Key reveal hatası:", error);
+      toast.error("İstek başarısız oldu.");
+    });
+};
 
   const handleRevokeKey = (keyId: string) => {
     if (!confirm(t("pages:apikeys_detail.messages.confirm_revoke", "Are you sure you want to revoke this API key? This action cannot be undone."))) {
