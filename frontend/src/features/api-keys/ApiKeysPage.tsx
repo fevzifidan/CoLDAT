@@ -7,7 +7,6 @@ import { Key, Eye, EyeOff, Trash2, Plus, Check, Copy, AlertCircle, RefreshCw } f
 import { useTranslation } from "react-i18next";
 import { toast } from 'sonner';
 import { apiKeyService, type ApiKey } from './services/apiKeyService';
-import { Logger } from '@/shared/services/logging/logging';
 
 const ApiKeysPage = () => {
   const { t } = useTranslation();
@@ -28,10 +27,6 @@ const ApiKeysPage = () => {
     apiKeyService.getApiKeys(datasetId)
       .then((data) => setApiKeys(data || []))
       .catch((error) => {
-        Logger.warn("API keys load failed", {
-          error: error instanceof Error ? error.message : String(error),
-          status: error.response?.status,
-        });
         console.error("API Key yükleme hatası:", error);
         toast.error(t("apiService:error.unexpected_err", "API anahtarları yüklenemedi."));
       })
@@ -47,7 +42,6 @@ const ApiKeysPage = () => {
       .then((createdKey) => {
         setApiKeys(prev => [createdKey, ...prev]);
         setNewKeyName("");
-        Logger.info("API key created", { keyId: createdKey.id });
         toast.success(t("apikeys.created_success", "Yeni API anahtarı başarıyla oluşturuldu."));
         
         if (createdKey.api_key) {
@@ -55,10 +49,6 @@ const ApiKeysPage = () => {
         }
       })
             .catch((error) => {
-        Logger.info("API key creation failed", {
-          error: error instanceof Error ? error.message : String(error),
-          status: error.response?.status,
-        });
         console.error("Key oluşturma hatası:", error);
         toast.error(t("apikeys.create_failed", "Anahtar oluşturulurken bir hata meydana geldi."));
       });
@@ -81,10 +71,6 @@ const ApiKeysPage = () => {
         }
       })
       .catch((error) => {
-        Logger.warn("API key reveal failed", {
-          error: error instanceof Error ? error.message : String(error),
-          status: error.response?.status,
-        });
         console.error("Key reveal hatası:", error);
         toast.error(t("apikeys.reveal_failed", "Anahtar doğrulaması başarısız oldu."));
       });
@@ -98,15 +84,10 @@ const ApiKeysPage = () => {
       apiKeyService.deleteApiKey(datasetId, keyId)
       .then(() => {
         setApiKeys(prev => prev.filter(k => k.id !== keyId));
-        Logger.info("API key deleted", { keyId });
         toast.success(t("apikeys.revoked_success", "API anahtarı kalıcı olarak iptal edildi."));
       })
       .catch((error) => {
         console.error("Key silme hatası:", error);
-        Logger.warn("API key deletion failed", {
-          error: error instanceof Error ? error.message : String(error),
-          status: error.response?.status,
-        });
         toast.error(t("apikeys.revoke_failed", "Anahtar iptal edilirken bir API hatası oluştu."));
       });
   };

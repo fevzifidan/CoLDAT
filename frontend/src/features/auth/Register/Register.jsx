@@ -15,7 +15,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { User, Mail, Lock } from "lucide-react";
 import { FaMicrosoft, FaGithub } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { Logger } from '@/shared/services/logging/logging';
 
 const RegisterPage = () => {
   const { login } = useAuth();
@@ -40,13 +39,6 @@ const RegisterPage = () => {
       });
 
       await login({ email: data.email, password: data.password });
-      Logger.info("Registration successful", { traceId: Logger.getTraceId() });
-    } catch (error) {
-      Logger.info("Registration failed", {
-        errorCode: error.response?.data?.errorCode,
-        status: error.response?.status,
-        traceId: Logger.getTraceId(),
-      });
     } finally {
       setLoading(false);
     }

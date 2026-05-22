@@ -5,7 +5,6 @@ import * as yup from 'yup';
 import { passwordResetService } from '../services/resetPassword.service';
 import { useSearchParams } from 'react-router-dom';
 import notificationService from '@/shared/services/notification';
-import { Logger } from '@/shared/services/logging/logging';
 
 const schema = yup.object().shape({
     password: yup.string()
@@ -44,13 +43,8 @@ export const usePasswordReset = () => {
         setIsLoading(true);
         try {
             await passwordResetService.resetPassword(token ? token : "", data.password);
-            Logger.info("Password reset successful", { traceId: Logger.getTraceId() });
             notificationService.success('Password reset successful!');
         } catch (error) {
-            Logger.info("Invalid password reset token", {
-              errorCode: error.response?.data?.errorCode,
-              status: error.response?.status,
-            });
             notificationService.error(`Error during password reset: ${error}`);
         } finally {
             setIsLoading(false);
