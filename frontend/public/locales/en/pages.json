@@ -2,12 +2,12 @@
   "dashboard": {
     "title": "Overview",
     "description": "Welcome back! Here is a quick summary of your ecosystem.",
-    "no_assigned_tasks": "No tasks assigned to you at the moment.",
+    "no_assigned_tasks": "There are no tasks assigned to you at the moment.",
     "show_more": "Show More",
-    "files": "PROCESSED FILES",
+    "files": "PROCESSED FILE",
     "sections": {
       "recent_tasks": "Recent Tasks",
-      "tasks_description": "Active annotation jobs assigned to you.",
+      "tasks_description": "Active labeling jobs assigned to you.",
       "recent_datasets": "Recent Datasets",
       "recent_projects": "Recent Projects"
     },
@@ -72,6 +72,13 @@
     "status_inactive": "Inactive",
     "created_on": "Created on:",
     "revoke_btn": "Revoke Key",
+    "external_provider_title": "External Model Provider Configuration (Presentation Mode)",
+    "external_provider_desc": "Connect your own OpenAI API key to run models and send commands within the synthetic data studio.",
+    "external_privacy_notice": "Privacy Guarantee: Your key is strictly never saved to the remote database (backend). It is stored only in this browser's local storage and routed directly to the AI engine.",
+    "external_success_msg": "Key verified successfully and connected to the browser session. Synthetic Data Studio is active!",
+    "external_btn_clear": "Clear",
+    "external_btn_update": "Update Key",
+    "external_btn_connect": "Connect Key",
     "tooltips": {
       "refresh": "Refresh List",
       "hide": "Hide Key",
@@ -85,7 +92,11 @@
       "reveal_failed": "Key authentication failed.",
       "confirm_revoke": "Are you sure you want to revoke this API key? This action cannot be undone.",
       "revoked_success": "API key has been permanently revoked.",
-      "revoke_failed": "An API error occurred while revoking the key."
+      "revoke_failed": "An API error occurred while revoking the key.",
+      "name_required": "Name cannot be empty!",
+      "invalid_key": "Please enter a valid key.",
+      "external_success_toast": "External API key securely connected to your browser session!",
+      "key_cleared": "External key cleared from browser storage."
     }
   },
   "project_detail": {
@@ -111,7 +122,7 @@
     "private": "Private",
     "delete_project": "Delete Project",
     "delete_warning": "This action is permanent and cannot be undone.",
-    "placeholder_name": "E.g. Autonomous Driving Dataset",
+    "placeholder_name": "e.g., Autonomous Driving Dataset",
     "placeholder_desc": "Describe the purpose of this dataset...",
     "tasks": {
       "object_detection": "Object Detection",
@@ -121,7 +132,7 @@
   },
   "taxonomy": {
     "title": "Project Taxonomy",
-    "description": "Manage object classes and their relationships.",
+    "description": "Manage object classes and the relations between them.",
     "save_changes": "Save Changes",
     "alert_saved": "Changes Saved!",
     "object_classes": "Object Classes",
@@ -129,7 +140,7 @@
     "no_global_attributes": "No Global Attributes Defined",
     "add_global_attribute": "Add global attribute",
     "global_attributes_title": "Global Attributes",
-    "prompt_msg": "Enter new attribute name (E.g. color, truncate):",
+    "prompt_msg": "Enter new attribute name (e.g., color, truncation):",
     "default_new_class": "New Class",
     "default_new_relation": "new_relation"
   },
@@ -147,7 +158,7 @@
   },
   "team": {
     "title": "Project Team",
-    "description": "Manage collaborators and their access levels.",
+    "description": "Manage collaborators and access levels.",
     "cancel": "Cancel",
     "add_member": "Add Member",
     "email_label": "Email Address",
@@ -167,13 +178,13 @@
   },
   "export": {
     "title": "Export Dataset",
-    "description": "Download your annotations in industry standard formats.",
+    "description": "Download your annotations in industry-standard formats.",
     "ready_title": "Ready to Generate",
-    "ready_desc": "This will package all annotated assets into a {{format}} file.",
+    "ready_desc": "This process will package all annotated assets into a {{format}} file.",
     "btn_generating": "Generating...",
     "btn_export_now": "Export Now",
     "formats": {
-      "coco_desc": "Common Objects in Context",
+      "coco_desc": "Common Objects in Context format",
       "yolo_desc": "Darknet / PyTorch format",
       "pascal_desc": "XML format for object detection"
     }
@@ -183,9 +194,9 @@
     "create_new": "Create New Task",
     "search_placeholder": "Search tasks...",
     "empty_list": "Your trash is currently empty.",
-    "load_more": "Load More",
+    "load_more": "Show More",
     "filter": {
-      "all_progress": "All Progress",
+      "all_progress": "All Statuses",
       "status": {
         "new": "NEW",
         "in_progress": "IN PROGRESS",
@@ -197,7 +208,7 @@
     "new": "NEW",
     "in_progress": "IN PROGRESS",
     "completed": "COMPLETED",
-    "load_more": "Load More"
+    "load_more": "Show More"
   },
   "actions": {
     "cancel": "Cancel",

@@ -1,6 +1,8 @@
 // src/features/synthetic/pages/SyntheticPage.tsx
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { apiKeyService } from '../api-keys/services/apiKeyService';
 import { 
   Sparkles, 
   Check, 
@@ -81,13 +83,12 @@ export default function SyntheticPage() {
 
   const [messages, setMessages] = useState<Message[]>([]);
 
-  // İlk açılışta veya dil değiştiğinde hoş geldin mesajını senkronize etmek için
   useEffect(() => {
     setMessages([
       {
         id: 'm1',
         sender: 'ai',
-        text: t('aiResponses.welcome'),
+        text: t('aiResponses.welcome', 'Welcome to Synthetic Data Studio. Please verify your provider API keys before running generation prompts.'),
         timestamp: '2026-05-21 20:00'
       }
     ]);
@@ -101,7 +102,20 @@ export default function SyntheticPage() {
     setFilters({ invert: false, grayscale: false, sepia: false, blur: 0, brightness: 100 });
   };
 
+  // API Anahtarının geçerliliğini kontrol eden ortak yardımcı fonksiyon (10 Karakter Sınırı)
+  const checkHasValidKey = (): boolean => {
+    const activeKey = apiKeyService.getExternalKey()?.trim();
+    if (!activeKey || !activeKey.startsWith("sk-") || activeKey.length < 10) {
+      toast.error("İşlem Başarısız: Lütfen önce API Anahtarları sayfasından 'sk-' ile başlayan en az 10 karakterli geçerli bir OpenAI API anahtarı bağlayın.");
+      return false;
+    }
+    return true;
+  };
+
   const triggerImageGeneration = (customPrompt?: string) => {
+    // 1. KONTROL: Kaydedilmiş API Anahtarı geçerli mi?
+    if (!checkHasValidKey()) return;
+
     if (isGenerating) return;
     setIsGenerating(true);
     resetEditorSettings();
@@ -164,16 +178,26 @@ export default function SyntheticPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentIndex, images, isGenerating]);
 
-  // --- CO-PILOT AKILLI DİL VE KOMUT PARSERI ---
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatInput.trim() || isGenerating) return;
+    const trimmedInput = chatInput.trim();
+    if (!trimmedInput || isGenerating) return;
 
-    const userText = chatInput.toLowerCase();
+    // 2. KONTROL: Kullanıcı chat kutusuna doğrudan API key yapıştırırsa engelle ve uyar
+    if (trimmedInput.startsWith("sk-")) {
+      toast.warning("Güvenlik Uyarısı: API Anahtarınızı sohbet kutusuna yazamazsınız. Lütfen sol menüdeki 'API Anahtarları' sayfasından tanımlayın.");
+      setChatInput('');
+      return;
+    }
+
+    // 3. KONTROL: Sayfada işlem yapabilmek için tanımlanmış anahtarın kontrolü
+    if (!checkHasValidKey()) return;
+
+    const userText = trimmedInput.toLowerCase();
     const userMsg: Message = {
       id: `m_user_${Date.now()}`,
       sender: 'user',
-      text: chatInput,
+      text: trimmedInput,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
@@ -183,62 +207,57 @@ export default function SyntheticPage() {
     let aiResponseText = "";
     let isCommandAction = false;
 
-    // 1. RESET / SIFIRLAMA
     if (userText.includes('sıfırla') || userText.includes('temizle') || userText.includes('orijinal') || userText.includes('reset') || userText.includes('clear')) {
       resetEditorSettings();
-      aiResponseText = t('aiResponses.reset');
+      aiResponseText = t('aiResponses.reset', 'Canvas and filters successfully reset to original state.');
       isCommandAction = true;
     }
 
-    // 2. DINAMIK DERECELI ROTASYON (Hem Türkçe hem İngilizce tetikleyiciler)
     if (userText.includes('döndür') || userText.includes('çevir') || userText.includes('derece') || userText.includes('rotate') || userText.includes('degree')) {
       const degreeMatch = userText.match(/(-?\d+)/); 
       
       if (degreeMatch) {
         const customDegree = parseInt(degreeMatch[1], 10);
         setRotation(prev => prev + customDegree);
-        aiResponseText += t('aiResponses.rotate', { degree: customDegree });
+        aiResponseText += t('aiResponses.rotate', 'Rotated by {{degree}} degrees.', { degree: customDegree });
       } else {
         setRotation(prev => prev + 90);
-        aiResponseText += t('aiResponses.rotateDefault');
+        aiResponseText += t('aiResponses.rotateDefault', 'Rotated canvas by 90 degrees.');
       }
       isCommandAction = true;
     }
 
-    // 3. ZOOM LAYER
     if (userText.includes('zoom in') || userText.includes('yakınlaştır') || userText.includes('büyüt') || userText.includes('enlarge')) {
       setZoom(prev => Math.min(prev + 0.3, 3));
-      aiResponseText += t('aiResponses.zoomIn');
+      aiResponseText += t('aiResponses.zoomIn', 'Zoomed in successfully.');
       isCommandAction = true;
     } else if (userText.includes('zoom out') || userText.includes('uzaklaştır') || userText.includes('küçült') || userText.includes('shrink')) {
       setZoom(prev => Math.max(prev - 0.3, 0.5));
-      aiResponseText += t('aiResponses.zoomOut');
+      aiResponseText += t('aiResponses.zoomOut', 'Zoomed out successfully.');
       isCommandAction = true;
     }
 
-    // 4. FILTERS (INVERT, GRAYSCALE, SEPIA, BLUR)
     if (userText.includes('invert') || userText.includes('tersine çevir')) {
       setFilters(prev => ({ ...prev, invert: !prev.invert }));
-      aiResponseText += t('aiResponses.invert');
+      aiResponseText += t('aiResponses.invert', 'Invert filter toggled.');
       isCommandAction = true;
     }
     if (userText.includes('siyah beyaz') || userText.includes('grayscale') || userText.includes('gri') || userText.includes('monochrome')) {
       setFilters(prev => ({ ...prev, grayscale: true, sepia: false }));
-      aiResponseText += t('aiResponses.grayscale');
+      aiResponseText += t('aiResponses.grayscale', 'Applied grayscale effect.');
       isCommandAction = true;
     }
     if (userText.includes('sepya') || userText.includes('sepia')) {
       setFilters(prev => ({ ...prev, sepia: true, grayscale: false }));
-      aiResponseText += t('aiResponses.sepia');
+      aiResponseText += t('aiResponses.sepia', 'Applied sepia effect.');
       isCommandAction = true;
     }
     if (userText.includes('blur') || userText.includes('bulanık')) {
       setFilters(prev => ({ ...prev, blur: prev.blur === 0 ? 4 : 0 }));
-      aiResponseText += t('aiResponses.blur');
+      aiResponseText += t('aiResponses.blur', 'Blur filter changed.');
       isCommandAction = true;
     }
 
-    // YANIT TETIKLEME SÜRECI
     setTimeout(() => {
       if (isCommandAction) {
         setMessages(prev => [...prev, {
@@ -248,11 +267,10 @@ export default function SyntheticPage() {
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }]);
       } else {
-        // Eğer editör komutu yakalanmadıysa doğrudan yeni sentetik prompt üretimine yönlendirilir
         setMessages(prev => [...prev, {
           id: `m_ai_${Date.now()}`,
           sender: 'ai',
-          text: t('aiResponses.generationStarted', { text: userText }),
+          text: t('aiResponses.generationStarted', 'Generation pipeline triggered for prompt: "{{text}}"', { text: userText }),
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }]);
         triggerImageGeneration(userText);
@@ -269,26 +287,25 @@ export default function SyntheticPage() {
   `.trim();
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-[1600px] mx-auto p-4 space-y-4 text-slate-800">
-      
+    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-[1600px] mx-auto p-4 space-y-4 text-slate-800 dark:text-slate-200">
       {/* Üst Bilgi Barı */}
-      <div className="flex items-center justify-between bg-white border border-slate-100 p-4 rounded-2xl shadow-sm shrink-0">
+      <div className="flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm shrink-0">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <Sparkles className="text-violet-600 w-5 h-5" /> {t('title')}
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Sparkles className="text-violet-600 dark:text-violet-400 w-5 h-5" /> {t('title', 'Synthetic Generation Studio')}
           </h1>
-          <p className="text-xs text-slate-500">{t('subtitle')}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('subtitle', 'Generate and annotate synthetic images using customized AI setups')}</p>
         </div>
-        <div className="flex items-center gap-4 text-sm bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-          <span className="font-medium text-slate-600">{t('image')}: <strong className="text-slate-900">{images.length > 0 ? currentIndex + 1 : 0} / {images.length}</strong></span>
-          <span className="text-slate-300">|</span>
+        <div className="flex items-center gap-4 text-sm bg-slate-50 dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-100 dark:border-slate-800">
+          <span className="font-medium text-slate-600 dark:text-slate-400">{t('image', 'Image')}: <strong className="text-slate-900 dark:text-white">{images.length > 0 ? currentIndex + 1 : 0} / {images.length}</strong></span>
+          <span className="text-slate-300 dark:text-slate-700">|</span>
           <span className="flex items-center gap-1.5">
-            {t('status')}: 
+            {t('status', 'Status')}: 
             <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${
-              currentImage.status === 'accepted' ? 'bg-emerald-50 text-emerald-700' :
-              currentImage.status === 'rejected' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'
+              currentImage.status === 'accepted' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400' :
+              currentImage.status === 'rejected' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400'
             }`}>
-              {t(currentImage.status)}
+              {t(currentImage.status, currentImage.status.toUpperCase())}
             </span>
           </span>
         </div>
@@ -296,32 +313,33 @@ export default function SyntheticPage() {
 
       {/* Ana Çalışma Alanı */}
       <div className="flex-1 flex flex-col md:flex-row gap-4 min-h-0">
-        
         {/* SOL TARAF: CHAT PANELİ */}
-        <div className="w-full md:w-5/12 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col min-h-0">
-          <div className="p-4 border-b border-slate-50 flex items-center gap-2 bg-slate-50/50 rounded-t-2xl">
-            <Bot className="w-5 h-5 text-violet-600" />
-            <h3 className="font-semibold text-slate-900 text-sm">{t('copilotTitle')}</h3>
+        <div className="w-full md:w-5/12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col min-h-0">
+          <div className="p-4 border-b border-slate-50 dark:border-slate-800 flex items-center gap-2 bg-slate-50/50 dark:bg-slate-950/50 rounded-t-2xl">
+            <Bot className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+            <h3 className="font-semibold text-slate-900 dark:text-white text-sm">{t('copilotTitle', 'AI Co-Pilot Workspace')}</h3>
           </div>
           
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {msg.sender === 'ai' && (
-                  <div className="w-7 h-7 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-400 flex items-center justify-center shrink-0">
                     <Bot size={16} />
                   </div>
                 )}
-                <div className={`max-w-[85%] rounded-2xl p-3 text-sm shadow-2xs ${
-                  msg.sender === 'user' ? 'bg-violet-600 text-white rounded-tr-none' : 'bg-slate-100 text-slate-800 rounded-tl-none'
+                <div className={`max-w-[85%] rounded-2xl p-3 text-sm shadow-sm ${
+                  msg.sender === 'user' 
+                    ? 'bg-violet-600 text-white rounded-tr-none' 
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-none'
                 }`}>
                   <p className="leading-relaxed">{msg.text}</p>
-                  <span className={`block text-[10px] mt-1 text-right ${msg.sender === 'user' ? 'text-violet-200' : 'text-slate-400'}`}>
+                  <span className={`block text-[10px] mt-1 text-right ${msg.sender === 'user' ? 'text-violet-200' : 'text-slate-400 dark:text-slate-500'}`}>
                     {msg.timestamp}
                   </span>
                 </div>
                 {msg.sender === 'user' && (
-                  <div className="w-7 h-7 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
                     <User size={16} />
                   </div>
                 )}
@@ -329,25 +347,24 @@ export default function SyntheticPage() {
             ))}
           </div>
 
-          <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl flex gap-2">
+          <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 rounded-b-2xl flex gap-2">
             <input 
               type="text"
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
               disabled={isGenerating}
-              placeholder={isGenerating ? t('inputPlaceholderGenerating') : t('inputPlaceholder')}
-              className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-violet-500 disabled:opacity-50"
+              placeholder={isGenerating ? t('inputPlaceholderGenerating', 'AI Engine processing response...') : t('inputPlaceholder', 'Ask Co-Pilot to edit canvas or generate new samples...')}
+              className="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500 dark:focus:border-violet-400 disabled:opacity-50"
             />
-            <button type="submit" disabled={isGenerating} className="bg-violet-600 hover:bg-violet-700 text-white p-2 rounded-xl transition shadow-xs disabled:opacity-50">
+            <button type="submit" disabled={isGenerating} className="bg-violet-600 hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600 text-white p-2 rounded-xl transition shadow-sm disabled:opacity-50">
               <Send size={18} />
             </button>
           </form>
         </div>
 
         {/* SAĞ TARAF: GÖRSEL SEKMESİ VE EDİTÖRÜ */}
-        <div className="w-full md:w-7/12 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col min-h-0 overflow-hidden">
-          
-          <div className="p-3 bg-slate-900 text-slate-200 text-xs font-mono flex items-center justify-between shrink-0 min-w-0">
+        <div className="w-full md:w-7/12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col min-h-0 overflow-hidden">
+          <div className="p-3 bg-slate-900 dark:bg-slate-950 text-slate-200 text-xs font-mono flex items-center justify-between shrink-0 min-w-0 border-b dark:border-slate-800">
             <div className="flex items-center gap-2 truncate flex-1 mr-2">
               <ImageIcon size={14} className="text-violet-400 shrink-0" />
               <span className="truncate">"{isGenerating ? "Generating..." : currentImage.prompt || "No prompt"}"</span>
@@ -365,10 +382,10 @@ export default function SyntheticPage() {
                 type="button"
                 onClick={() => triggerImageGeneration()}
                 disabled={isGenerating}
-                className="flex items-center gap-1 bg-violet-600 hover:bg-violet-700 text-white px-2 py-1 rounded-md transition disabled:opacity-50 font-sans font-medium"
+                className="flex items-center gap-1 bg-violet-600 hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600 text-white px-2 py-1 rounded-md transition disabled:opacity-50 font-sans font-medium"
               >
                 <RefreshCw size={12} className={isGenerating ? "animate-spin" : ""} />
-                <span>{t('regenerate')}</span>
+                <span>{t('regenerate', 'Regenerate')}</span>
               </button>
             </div>
           </div>
@@ -377,7 +394,7 @@ export default function SyntheticPage() {
             {isGenerating ? (
               <div className="flex flex-col items-center gap-3 text-slate-400 font-mono text-sm animate-pulse">
                 <Loader2 size={36} className="animate-spin text-violet-500" />
-                <span>{t('generatingText')}</span>
+                <span>{t('generatingText', 'Synthesizing layout data...')}</span>
               </div>
             ) : currentImage.url ? (
               <div 
@@ -398,42 +415,41 @@ export default function SyntheticPage() {
                     }`}
                     style={{ transform: `rotate(${-rotation}deg) scale(${1 / zoom})` }}
                   >
-                    {t(currentImage.status)}
+                    {t(currentImage.status, currentImage.status.toUpperCase())}
                   </div>
                 )}
               </div>
             ) : (
-              <span className="text-slate-500 font-mono text-sm">{t('noImage')}</span>
+              <span className="text-slate-500 font-mono text-sm">{t('noImage', 'No viewport track loaded')}</span>
             )}
 
             {/* Filtre Bilgi Katmanı */}
             {(filters.invert || filters.grayscale || filters.sepia || filters.blur > 0 || zoom !== 1 || rotation !== 0) && (
               <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md text-[10px] text-violet-300 font-mono px-2 py-1 rounded border border-slate-800 flex items-center gap-1.5 pointer-events-none">
                 <SlidersHorizontal size={10} />
-                <span>{t('activeFilters', { rotation, zoom: zoom.toFixed(1) })}</span>
+                <span>{t('activeFilters', 'Rotation: {{rotation}}°, Zoom: {{zoom}}x', { rotation, zoom: zoom.toFixed(1) })}</span>
               </div>
             )}
           </div>
         </div>
-
       </div>
 
       {/* ALT PANEL: REDDET / ONAYLA */}
-      <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="hidden lg:flex items-center gap-4 text-xs text-slate-400 font-medium">
-          <div className="flex items-center gap-1"><span className="bg-slate-100 border px-1.5 py-0.5 rounded shadow-2xs text-slate-600">A</span> {t('accept')}</div>
-          <div className="flex items-center gap-1"><span className="bg-slate-100 border px-1.5 py-0.5 rounded shadow-2xs text-slate-600">R</span> {t('reject')}</div>
-          <div className="flex items-center gap-1"><span className="bg-slate-100 border px-1.5 py-0.5 rounded shadow-2xs text-slate-600">←</span> {t('guidePrev')}</div>
-          <div className="flex items-center gap-1"><span className="bg-slate-100 border px-1.5 py-0.5 rounded shadow-2xs text-slate-600">→</span> {t('guideNext')}</div>
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="hidden lg:flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500 font-medium">
+          <div className="flex items-center gap-1"><span className="bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 px-1.5 py-0.5 rounded shadow-sm text-slate-600 dark:text-slate-300">A</span> {t('accept', 'Accept')}</div>
+          <div className="flex items-center gap-1"><span className="bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 px-1.5 py-0.5 rounded shadow-sm text-slate-600 dark:text-slate-300">R</span> {t('reject', 'Reject')}</div>
+          <div className="flex items-center gap-1"><span className="bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 px-1.5 py-0.5 rounded shadow-sm text-slate-600 dark:text-slate-300">←</span> {t('guidePrev', 'Prev')}</div>
+          <div className="flex items-center gap-1"><span className="bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 px-1.5 py-0.5 rounded shadow-sm text-slate-600 dark:text-slate-300">→</span> {t('guideNext', 'Next')}</div>
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto justify-center">
           <button 
             onClick={() => handleDecision('rejected')}
             disabled={images.length === 0 || isGenerating}
-            className="flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-6 py-3 rounded-xl font-semibold text-sm transition shadow-xs active:scale-95 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 px-6 py-3 rounded-xl font-semibold text-sm transition shadow-sm active:scale-95 disabled:opacity-50"
           >
-            <X size={18} /> {t('reject')} (R)
+            <X size={18} /> {t('reject', 'Reject')} (R)
           </button>
 
           <button 
@@ -441,7 +457,7 @@ export default function SyntheticPage() {
             disabled={images.length === 0 || isGenerating}
             className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-semibold text-sm transition shadow-md active:scale-95 disabled:opacity-50"
           >
-            <Check size={18} /> {t('accept')} (A)
+            <Check size={18} /> {t('accept', 'Accept')} (A)
           </button>
         </div>
 
@@ -449,23 +465,22 @@ export default function SyntheticPage() {
           <button 
             onClick={handlePrev}
             disabled={currentIndex === 0 || isGenerating}
-            className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 disabled:opacity-40 transition"
+            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-40 transition"
           >
             <ArrowLeft size={18} />
           </button>
-          <span className="text-xs font-mono font-bold text-slate-400 bg-slate-50 px-2.5 py-1.5 border rounded-lg">
+          <span className="text-xs font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 border dark:border-slate-800 rounded-lg">
             {images.length > 0 ? currentIndex + 1 : 0} / {images.length}
           </span>
           <button 
             onClick={handleNext}
             disabled={currentIndex === images.length - 1 || isGenerating}
-            className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 disabled:opacity-40 transition"
+            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-40 transition"
           >
             <ArrowRight size={18} />
           </button>
         </div>
       </div>
-
     </div>
   );
 }

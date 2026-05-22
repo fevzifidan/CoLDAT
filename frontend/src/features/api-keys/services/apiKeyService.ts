@@ -17,6 +17,20 @@ const MOCK_API_KEYS: ApiKey[] = [
 ];
 
 export const apiKeyService = {
+  // --- HARİCİ YAPAY ZEKA SAĞLAYICI ANAHTARI (Hoca Sunumu İçin Yerel Yönetim) ---
+  saveExternalKey: (key: string): void => {
+    localStorage.setItem('ai_api_key', key);
+  },
+
+  getExternalKey: (): string => {
+    return localStorage.getItem('ai_api_key') || '';
+  },
+
+  clearExternalKey: (): void => {
+    localStorage.removeItem('ai_api_key');
+  },
+
+  // --- COLDAT SİSTEM API ANAHTARLARI ---
   getApiKeys: async (datasetId: string): Promise<ApiKey[]> => {
     try {
       const res = await apiService.get(`/datasets/${datasetId}/api-keys`);
@@ -33,7 +47,6 @@ export const apiKeyService = {
       return res.data || res;
     } catch (error) {
       console.warn("Mocking createApiKey...", keyData);
-      // Sayfadaki "Successful" akışını tetiklemek ve listeye eklenmesini simüle etmek için düzgün nesne dönüyoruz
       return {
         id: "mock_" + Date.now(),
         name: keyData.name || "Generated Key",
