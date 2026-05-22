@@ -47,7 +47,7 @@ export const usePasswordReset = () => {
             Logger.info("Password reset successful", { traceId: Logger.getTraceId() });
             notificationService.success('Password reset successful!');
         } catch (error) {
-            Logger.warn("Invalid password reset token", {
+            Logger.info("Invalid password reset token", {
               errorCode: error.response?.data?.errorCode,
               status: error.response?.status,
             });

@@ -27,7 +27,7 @@ export const BackgroundImage: React.FC<BackgroundImageProps> = ({ url }) => {
       });
       setIsLoaded(true);
     } else if (imageStatus === 'failed') {
-      Logger.error("Viewer image load failed", {
+      Logger.warn("Viewer image load failed", {
         url,
         error: 'Image failed to load via useImage hook',
       });

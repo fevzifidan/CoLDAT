@@ -43,7 +43,7 @@ const ApiKeysPage = () => {
     const trimmedName = newKeyName.trim();
     if (!trimmedName) return;
 
-        apiKeyService.createApiKey(datasetId, { name: trimmedName })
+      apiKeyService.createApiKey(datasetId, { name: trimmedName })
       .then((createdKey) => {
         setApiKeys(prev => [createdKey, ...prev]);
         setNewKeyName("");
@@ -81,6 +81,10 @@ const ApiKeysPage = () => {
         }
       })
       .catch((error) => {
+        Logger.warn("API key reveal failed", {
+          error: error instanceof Error ? error.message : String(error),
+          status: error.response?.status,
+        });
         console.error("Key reveal hatası:", error);
         toast.error(t("apikeys.reveal_failed", "Anahtar doğrulaması başarısız oldu."));
       });
@@ -91,7 +95,7 @@ const ApiKeysPage = () => {
       return;
     }
 
-        apiKeyService.deleteApiKey(datasetId, keyId)
+      apiKeyService.deleteApiKey(datasetId, keyId)
       .then(() => {
         setApiKeys(prev => prev.filter(k => k.id !== keyId));
         Logger.info("API key deleted", { keyId });
@@ -99,6 +103,10 @@ const ApiKeysPage = () => {
       })
       .catch((error) => {
         console.error("Key silme hatası:", error);
+        Logger.warn("API key deletion failed", {
+          error: error instanceof Error ? error.message : String(error),
+          status: error.response?.status,
+        });
         toast.error(t("apikeys.revoke_failed", "Anahtar iptal edilirken bir API hatası oluştu."));
       });
   };
