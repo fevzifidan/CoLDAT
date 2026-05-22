@@ -4,11 +4,22 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-def create_user(*, username: str, email: str, password: str) -> User:
+def create_user(
+    *,
+    username: str,
+    email: str,
+    password: str,
+    first_name: str,
+    last_name: str,
+) -> User:
     user = User.objects.create_user(
         username=username,
         email=email,
         password=password,
+        first_name=first_name,
+        last_name=last_name,
+        auth_provider=User.AuthProvider.EMAIL,
+        is_active=False,
     )
 
     return user

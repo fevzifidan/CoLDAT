@@ -9,10 +9,13 @@ def list_datasets(request):
 urlpatterns = [
     path("admin/", admin.site.urls),
 
-    path("api/v1/auth/", include("apps.accounts.urls")),
-    path("api/v1/account/", include("apps.accounts.account_urls")),
-
-    # İŞTE EKSİK OLAN KISIM BURASI:
-    path("api/v1/datasets", list_datasets),
-    path("api/v1/datasets/", list_datasets),
+    path("assets/", include("apps.assets.urls")),
+    path("datasets/", include("apps.datasets.urls")),
+    path("auth/", include("apps.accounts.urls")),
+    path("account/", include("apps.accounts.account_urls")),
+    path("users/", include("apps.accounts.users_urls")),
+    path("projects/", include("apps.projects.urls")),
+    path("tasks/", include("apps.tasks.urls")),
+    path("images/", include("apps.annotations.urls")),
+    path("datasets/", include("apps.exports.urls")),
 ]
