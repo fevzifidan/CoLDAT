@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -43,13 +44,22 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "rest_framework",
+    "corsheaders",
 
     "apps.accounts.apps.AccountsConfig",
+    "apps.projects.apps.ProjectsConfig",
+    "apps.datasets.apps.DatasetsConfig",
+    "apps.assets.apps.AssetsConfig",
+    "apps.tasks.apps.TasksConfig",
+    "apps.taxonomy.apps.TaxonomyConfig",
+    "apps.annotations.apps.AnnotationsConfig",
+    "apps.exports.apps.ExportsConfig",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -74,6 +84,13 @@ TEMPLATES = [
         },
     },
 ]
+
+CORS_ALLOW_HEADERS = (
+    *default_headers,
+    "sentry-trace",
+    "baggage",
+    "traceparent",
+)
 
 WSGI_APPLICATION = "config.wsgi.application"
 
@@ -117,6 +134,18 @@ REST_FRAMEWORK = {
     ],
 }
 
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://localhost:9000")
+MINIO_INTERNAL_ENDPOINT = os.getenv("MINIO_INTERNAL_ENDPOINT", MINIO_ENDPOINT)
+
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin123")
+MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "coldat-assets")
+MINIO_REGION = os.getenv("MINIO_REGION", "us-east-1")
+MINIO_USE_SSL = os.getenv("MINIO_USE_SSL", "False") == "True"
+
+ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS = int(
+    os.getenv("ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS", "900")
+)
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
