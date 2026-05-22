@@ -1,8 +1,8 @@
 from apps.projects.models import ProjectMembership
-
+from django.contrib.auth import get_user_model
 from .models import Dataset, DatasetMember
 
-
+User = get_user_model()
 
 def create_dataset(
     *,
@@ -37,3 +37,40 @@ def create_dataset(
 def delete_dataset(*, dataset: Dataset):
     dataset.is_deleted = True
     dataset.save(update_fields=["is_deleted", "updated_at"])
+
+def add_or_update_dataset_member(
+    *,
+    dataset: Dataset,
+    username: str,
+    role: str,
+) -> DatasetMember:
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        raise ValidationError("User with this username does not exist.")
+
+    membership, created = DatasetMember.objects.get_or_create(
+        dataset=dataset,
+        user=user,
+        defaults={"role": role},
+    )
+
+    if not created:
+        membership.role = role
+        membership.save(update_fields=["role"])
+
+    return membership
+
+
+def update_dataset_member_role(
+    *,
+    membership: DatasetMember,
+    role: str,
+) -> DatasetMember:
+    membership.role = role
+    membership.save(update_fields=["role"])
+    return membership
+
+
+def remove_dataset_member(*, membership: DatasetMember):
+    membership.delete()

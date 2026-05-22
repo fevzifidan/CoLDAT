@@ -40,3 +40,10 @@ def user_is_project_admin(*, project, user) -> bool:
         user=user,
         role=ProjectMembership.Role.ADMIN,
     ).exists()
+
+def get_dataset_member_by_id(*, dataset, member_id):
+    return get_object_or_404(
+        DatasetMember,
+        id=member_id,
+        dataset=dataset,
+    )

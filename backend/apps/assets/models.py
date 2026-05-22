@@ -12,11 +12,19 @@ class Asset(models.Model):
         FAILED = "failed", "Failed"
         VERIFICATION_FAILED = "verification_failed", "Verification Failed"
 
+    class EmbeddingStatus(models.TextChoices):
+        NOT_REQUESTED = "not_requested", "Not Requested"
+        PENDING = "pending", "Pending"
+        UPLOADED = "uploaded", "Uploaded"
+        FAILED = "failed", "Failed"
+        VERIFICATION_FAILED = "verification_failed", "Verification Failed"
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
         editable=False,
     )
+
 
     dataset = models.ForeignKey(
         Dataset,
@@ -34,6 +42,35 @@ class Asset(models.Model):
         blank=True,
         help_text="Optional path/key for MobileSAM embedding file.",
     )
+
+    embedding_status = models.CharField(
+    max_length=30,
+    choices=EmbeddingStatus.choices,
+    default=EmbeddingStatus.NOT_REQUESTED,
+    )
+
+    embedding_sha256 = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text="SHA256 hash of the uploaded MobileSAM embedding file.",
+    )
+
+    embedding_upload_url_valid_until = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    embedding_uploaded_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    embedding_verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    embedding_error_message = models.TextField(blank=True)
 
     filename = models.CharField(max_length=255)
 

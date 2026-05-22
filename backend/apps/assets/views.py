@@ -4,7 +4,11 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .storage import create_presigned_upload_url, generate_asset_storage_key
+from .storage import (
+    create_presigned_upload_url,
+    generate_asset_storage_key,
+    generate_embedding_storage_key,
+)
 
 from .permissions import CanManageDatasetAssets
 from .selectors import (
@@ -24,6 +28,7 @@ from .services import (
     bulk_update_asset_upload_status,
     create_asset,
     create_pending_asset_upload,
+    create_pending_embedding_upload,
     delete_asset,
     retry_asset_upload,
 )
@@ -96,48 +101,94 @@ class AssetUploadURLCreateView(APIView):
         urls = []
 
         for file_data in serializer.validated_data["files"]:
+            upload_type = file_data["upload_type"]
             filename = file_data["filename"]
             mime_type = file_data["mime_type"]
-            content_sha256 = file_data["file_sha256"]
+            file_sha256 = file_data["file_sha256"]
 
-            storage_key = generate_asset_storage_key(
-                dataset_id=dataset.id,
-                filename=filename,
-            )
+            if upload_type == "asset":
+                storage_key = generate_asset_storage_key(
+                    dataset_id=dataset.id,
+                    filename=filename,
+                )
 
-            asset = create_pending_asset_upload(
-                dataset=dataset,
-                uploaded_by=request.user,
-                storage_key=storage_key,
-                filename=filename,
-                mime_type=mime_type,
-                content_sha256=content_sha256,
-                width=file_data.get("width"),
-                height=file_data.get("height"),
-                embedding_storage_key=file_data.get("embedding_storage_key", ""),
-            )
+                asset = create_pending_asset_upload(
+                    dataset=dataset,
+                    uploaded_by=request.user,
+                    storage_key=storage_key,
+                    filename=filename,
+                    mime_type=mime_type,
+                    content_sha256=file_sha256,
+                    width=file_data.get("width"),
+                    height=file_data.get("height"),
+                )
 
-            upload_url = create_presigned_upload_url(
-                storage_key=storage_key,
-                mime_type=mime_type,
-                content_sha256=content_sha256,
-                expires_in=settings.ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS,
-            )
+                upload_url = create_presigned_upload_url(
+                    storage_key=storage_key,
+                    mime_type=mime_type,
+                    content_sha256=file_sha256,
+                    expires_in=settings.ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS,
+                )
 
-            urls.append(
-                {
-                    "upload_id": file_data["upload_id"],
-                    "upload_type": file_data["upload_type"],
-                    "asset_id": str(asset.id),
-                    "upload_url": upload_url,
-                    "storage_key": storage_key,
-                    "expiry_at": asset.upload_url_valid_until,
-                    "headers": {
-                        "Content-Type": mime_type,
-                        "x-amz-checksum-sha256": content_sha256,
-                    },
-                }
-            )
+                urls.append(
+                    {
+                        "upload_id": file_data["upload_id"],
+                        "upload_type": upload_type,
+                        "asset_id": str(asset.id),
+                        "upload_url": upload_url,
+                        "storage_key": storage_key,
+                        "expiry_at": asset.upload_url_valid_until,
+                        "headers": {
+                            "Content-Type": mime_type,
+                            "x-amz-checksum-sha256": file_sha256,
+                        },
+                    }
+                )
+
+            elif upload_type == "embedding":
+                asset = get_asset_for_user(
+                    asset_id=file_data["asset_id"],
+                    user=request.user,
+                )
+
+                if asset.dataset_id != dataset.id:
+                    return Response(
+                        {"detail": "Embedding asset does not belong to this dataset."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                storage_key = generate_embedding_storage_key(
+                    asset_id=asset.id,
+                    filename=filename,
+                )
+
+                asset = create_pending_embedding_upload(
+                    asset=asset,
+                    storage_key=storage_key,
+                    embedding_sha256=file_sha256,
+                )
+
+                upload_url = create_presigned_upload_url(
+                    storage_key=storage_key,
+                    mime_type=mime_type,
+                    content_sha256=file_sha256,
+                    expires_in=settings.ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS,
+                )
+
+                urls.append(
+                    {
+                        "upload_id": file_data["upload_id"],
+                        "upload_type": upload_type,
+                        "asset_id": str(asset.id),
+                        "upload_url": upload_url,
+                        "storage_key": storage_key,
+                        "expiry_at": asset.embedding_upload_url_valid_until,
+                        "headers": {
+                            "Content-Type": mime_type,
+                            "x-amz-checksum-sha256": file_sha256,
+                        },
+                    }
+                )
 
         return Response(
             {

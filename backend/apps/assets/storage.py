@@ -36,6 +36,14 @@ def generate_asset_storage_key(*, dataset_id, filename: str) -> str:
 
     return f"datasets/{dataset_id}/assets/{uuid.uuid4()}{extension}"
 
+def generate_embedding_storage_key(*, asset_id, filename: str) -> str:
+    extension = ""
+
+    if "." in filename:
+        extension = "." + filename.split(".")[-1].lower()
+
+    return f"assets/{asset_id}/embeddings/{uuid.uuid4()}{extension}"
+
 
 def convert_internal_url_to_public(url: str) -> str:
     internal = urlparse(settings.MINIO_INTERNAL_ENDPOINT)

@@ -33,6 +33,12 @@ class AssetSerializer(serializers.ModelSerializer):
             "uploaded_at",
             "verified_at",
             "upload_error_message",
+            "embedding_status",
+            "embedding_sha256",
+            "embedding_upload_url_valid_until",
+            "embedding_uploaded_at",
+            "embedding_verified_at",
+            "embedding_error_message",
         ]
         read_only_fields = [
             "id",
@@ -42,6 +48,12 @@ class AssetSerializer(serializers.ModelSerializer):
             "is_deleted",
             "created_at",
             "updated_at",
+            "embedding_status",
+            "embedding_sha256",
+            "embedding_upload_url_valid_until",
+            "embedding_uploaded_at",
+            "embedding_verified_at",
+            "embedding_error_message",
         ]
 
 
@@ -117,11 +129,7 @@ class S3UploadURLRequestItemSerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     "asset_id is required for embedding uploads."
                 )
-
-            raise serializers.ValidationError(
-                "Embedding upload support is not implemented yet."
-            )
-
+            
         return attrs
 
 

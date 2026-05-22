@@ -69,3 +69,11 @@ class DatasetMemberSerializer(serializers.ModelSerializer):
             "last_name",
             "joined_at",
         ]
+
+class DatasetMemberCreateSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150)
+    role = serializers.ChoiceField(choices=DatasetMember.Role.choices)
+
+
+class DatasetMemberUpdateSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=DatasetMember.Role.choices)
