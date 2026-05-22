@@ -2,6 +2,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
 import notificationService from '@/shared/services/notification';
 import i18n from "@/i18n";
+import { Logger } from '@/shared/services/logging/logging';
 
 // Silent mod desteği için AxiosRequestConfig'i genişletiyoruz
 declare module 'axios' {
@@ -26,9 +27,20 @@ apiClient.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    Logger.debug(`[API] → ${config.method?.toUpperCase()} ${config.url}`, {
+      method: config.method,
+      url: config.url,
+      traceId: Logger.getTraceId(),
+    });
+
     return config;
   },
   (error) => {
+    Logger.error('API request configuration failed', {
+      error: error.message,
+      traceId: Logger.getTraceId(),
+    });
     return Promise.reject(error);
   }
 );
@@ -36,6 +48,12 @@ apiClient.interceptors.request.use(
 // 3. Response Interceptor
 apiClient.interceptors.response.use(
   (response) => {
+    Logger.debug(`[API] ← ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`, {
+      status: response.status,
+      method: response.config.method,
+      url: response.config.url,
+      traceId: Logger.getTraceId(),
+    });
     return response.data;
   },
   (error) => {
@@ -43,6 +61,31 @@ apiClient.interceptors.response.use(
     const backendMessage = error.response?.data?.message;
     const errorMessage = backendMessage || i18n.t("apiService:error.unexpected_err");
     const isSilent = error.config?.silent === true;
+
+    // Log API errors with appropriate levels
+    if (status >= 500) {
+      Logger.error(`[API] ← ${status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
+        status,
+        url: error.config?.url,
+        method: error.config?.method,
+        message: backendMessage,
+        traceId: Logger.getTraceId(),
+      });
+    } else if (status >= 400) {
+      Logger.warn(`[API] ← ${status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
+        status,
+        url: error.config?.url,
+        method: error.config?.method,
+        message: backendMessage,
+        traceId: Logger.getTraceId(),
+      });
+    } else if (error.code === 'ERR_NETWORK') {
+      Logger.error('API Network Error', {
+        url: error.config?.url,
+        code: error.code,
+        traceId: Logger.getTraceId(),
+      });
+    }
 
     if (!isSilent) {
       switch (status) {
@@ -102,3 +145,4 @@ export const apiService = {
 };
 
 export default apiService;
+

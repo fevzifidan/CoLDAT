@@ -1,4 +1,3 @@
-// src/App.tsx
 import './App.css';
 import { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
@@ -12,6 +11,9 @@ import { ConfirmProvider } from './shared/services/confirmation/ConfirmContext.j
 import { BannerProvider } from './components/custom/GlobalBanner/BannerContext.js';
 import { GlobalBanner } from './components/custom/GlobalBanner/GlobalBanner.js';
 import { GlobalKeyboardListener } from './shared/components/GlobalKeyboardListener';
+
+// Error Boundary
+import { ErrorBoundary } from './providers/ErrorBoundary';
 
 // Upload Manager
 import { UploadManager } from '@/features/upload_manager';
@@ -34,7 +36,8 @@ import AccountNotVerifiedPage from '@/features/auth/AccountNotVerified/AccountNo
 
 function App() {
   return (
-    <>
+    <ErrorBoundary>
+      <>
       <UploadManager />
       <Suspense fallback={<div className="flex h-screen items-center justify-center text-white font-mono">Yükleniyor...</div>}>
         <BrowserRouter>
@@ -78,6 +81,7 @@ function App() {
         </BrowserRouter>
       </Suspense>
     </>
+    </ErrorBoundary>
   );
 }
 

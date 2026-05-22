@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../../../store/hooks/useAppStore';
 import type { AnnotationData } from '../types/annotation.types';
+import { Logger } from '@/shared/services/logging/logging';
 
 const IS_TEST_MODE = import.meta.env.VITE_TEST_MODE === 'true';
 const AUTO_SAVE_INTERVAL_MS = 60_000; // 60 saniye
@@ -46,7 +47,7 @@ export function useAnnotationAutoSave(imageId: string) {
     isSavingRef.current = true;
     setIsSaving(true);
 
-    try {
+        try {
       const { annotatedObjects, objectRelations } = useAppStore.getState();
       const payload = buildAnnotationPayload(annotatedObjects, objectRelations);
 
@@ -57,6 +58,17 @@ export function useAnnotationAutoSave(imageId: string) {
         const { saveAnnotations } = await import('../services/annotation.api');
         await saveAnnotations(imageId, payload, silent);
       }
+    } catch (error) {
+      Logger.error("Annotation auto-save failed", {
+        objectCount: useAppStore.getState().annotatedObjects.length,
+        relationCount: useAppStore.getState().objectRelations.length,
+        objects: useAppStore.getState().annotatedObjects.map(o => ({ id: o.id, label: o.label, classId: o.classId })),
+        relations: useAppStore.getState().objectRelations.map(r => ({ sourceId: r.sourceId, targetId: r.targetId, type: r.relationTypeName })),
+        errorMessage: error instanceof Error ? error.message : String(error),
+        status: error.response?.status,
+        traceId: Logger.getTraceId(),
+      });
+      throw error;
     } finally {
       isSavingRef.current = false;
       setIsSaving(false);

@@ -54,12 +54,23 @@ export class Logger {
     };
   }
 
-  /**
+    /**
    * LOCAL SCOPE UYUMU:
    */
   public static startNewTraceScope<T>(callback: () => T): T {
     if (!Sentry.isInitialized()) return callback(); // Yerleşik durum kontrolü
     return Sentry.startNewTrace(callback); 
+  }
+
+  /** 🆕 Breadcrumb ekleme */
+  public static addBreadcrumb(message: string, category?: string, data?: Record<string, any>) {
+    if (!Sentry.isInitialized()) return;
+    Sentry.addBreadcrumb({
+      message,
+      category: category || 'custom',
+      data: data,
+      level: 'info',
+    });
   }
 
   public static info(message: string, context?: Record<string, any>) {

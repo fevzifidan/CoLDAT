@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../../../store/hooks/useAppStore';
+import { Logger } from '@/shared/services/logging/logging';
 
 export const useUndoRedo = () => {
   const undo = useAppStore(state => state.undo);
@@ -10,13 +11,13 @@ export const useUndoRedo = () => {
       if (e.ctrlKey && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (e.shiftKey) {
-          redo();
+          try { redo(); } catch (error) { Logger.error("Undo/Redo failed", { direction: 'redo', error }); }
         } else {
-          undo();
+          try { undo(); } catch (error) { Logger.error("Undo/Redo failed", { direction: 'undo', error }); }
         }
       } else if (e.ctrlKey && e.key.toLowerCase() === 'y') {
         e.preventDefault();
-        redo();
+        try { redo(); } catch (error) { Logger.error("Undo/Redo failed", { direction: 'redo', error }); }
       }
     };
 

@@ -7,6 +7,7 @@ import { forgotPasswordService } from '../services/forgotPassword.service';
 import { useTranslation } from 'react-i18next';
 import { t } from 'i18next';
 import notificationService from '@/shared/services/notification';
+import { Logger } from '@/shared/services/logging/logging';
 
 const schema = yup.object().shape({
     email: yup.string()
@@ -30,11 +31,16 @@ export const useForgotPassword = () => {
     const onSubmit = async (data: ForgotPasswordFormValues) => {
         setIsLoading(true);
         setIsSuccess(false);
-        try {
+                try {
             await forgotPasswordService.sendResetLink(data.email);
+            Logger.info("Password reset email requested", { traceId: Logger.getTraceId() });
             setIsSuccess(true);
             form.reset();
         } catch (error) {
+            Logger.info("Password reset email request failed", {
+              errorCode: error.response?.data?.errorCode,
+              status: error.response?.status,
+            });
             notificationService.error(t('auth:forgotPassword.errorMessage'));
         } finally {
             setIsLoading(false);

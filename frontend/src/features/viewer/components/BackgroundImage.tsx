@@ -3,13 +3,14 @@ import { Image as KonvaImage } from 'react-konva';
 import useImage from 'use-image';
 import Konva from 'konva';
 import { useAppStore } from '../../../store/hooks/useAppStore';
+import { Logger } from '@/shared/services/logging/logging';
 
 interface BackgroundImageProps {
   url: string;
 }
 
 export const BackgroundImage: React.FC<BackgroundImageProps> = ({ url }) => {
-  const [image] = useImage(url, 'anonymous');
+  const [image, imageStatus] = useImage(url, 'anonymous');
   const imgRef = useRef<Konva.Image>(null);
   
   const setImgDimensions = useAppStore(state => state.setImgDimensions);
@@ -25,8 +26,13 @@ export const BackgroundImage: React.FC<BackgroundImageProps> = ({ url }) => {
         height: image.naturalHeight
       });
       setIsLoaded(true);
+    } else if (imageStatus === 'failed') {
+      Logger.error("Viewer image load failed", {
+        url,
+        error: 'Image failed to load via useImage hook',
+      });
     }
-  }, [image, setImgDimensions, setIsLoaded]);
+  }, [image, imageStatus, setImgDimensions, setIsLoaded, url]);
 
   // Apply filters caching
   useEffect(() => {

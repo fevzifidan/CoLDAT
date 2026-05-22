@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { getLoginSchema } from "./validations/loginSchema";
 import { useNavigate } from "react-router-dom";
 import notificationService from "@/shared/services/notification";
+import { Logger } from '@/shared/services/logging/logging';
 
 const LoginForm = () => {
   const { t } = useTranslation(["auth"]);
@@ -35,9 +36,14 @@ const LoginForm = () => {
         navigate("/home");
       }
     } catch (error) {
-      if (error.response?.data?.errorCode === "ACCOUNT_NOT_VERIFIED") {
+            if (error.response?.data?.errorCode === "ACCOUNT_NOT_VERIFIED") {
+        Logger.info("Login redirect to verification", { errorCode: "ACCOUNT_NOT_VERIFIED" });
         navigate("/account-not-verified", { state: { email: data.identifier } });
       } else {
+        Logger.info("Login form submission failed", {
+          errorCode: error.response?.data?.errorCode,
+          message: error.response?.data?.message,
+        });
         const backendMessage = error.response?.data?.message;
         notificationService.error(backendMessage || t("auth:login.errorMessage", "An unexpected error occurred."));
       }

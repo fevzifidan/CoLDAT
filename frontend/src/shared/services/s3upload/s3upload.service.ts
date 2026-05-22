@@ -1,6 +1,7 @@
 import type { UploadTask, UploadPriority, UploadStatus, UploadType } from './types';
 import apiService from '@/shared/services/api';
 import { saveTasks, loadPersistedTasks, clearPersistedTasks, type PersistedTask } from './uploadPersistence';
+import { Logger } from '@/shared/services/logging/logging';
 
 // Debounce timer for persistence saves
 let persistenceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -69,19 +70,27 @@ class UploadService {
 
             this.activeUploads.set(task.upload_id, task);
 
-            if (isActive) {
+                        if (isActive) {
                 hasChanges = true;
+                Logger.info("Active task marked FAILED on reload", {
+                  upload_id: persisted.upload_id,
+                  fileName: persisted.fileName,
+                  reason: "page_reload",
+                });
                 console.log(`[UploadService] Active task ${persisted.upload_id} (${persisted.fileName}) marked as FAILED due to page reload`);
             }
         });
 
-        if (hasChanges) {
+                if (hasChanges) {
             // Değişiklikleri kalıcı depoya yaz
             await saveTasks(this.activeUploads);
         }
 
         this.persistenceReady = true;
         this.notify();
+        Logger.info(`UploadService initialized with ${this.activeUploads.size} persisted tasks`, {
+          activeCount: this.activeUploads.size,
+        });
         console.log(`[UploadService] Initialized with ${this.activeUploads.size} persisted tasks`);
     }
 
@@ -153,11 +162,19 @@ class UploadService {
 
         this.activeUploads.set(upload_id, task);
 
-        if (priority === 'HIGH') this.queue.unshift(task);
+                if (priority === 'HIGH') this.queue.unshift(task);
         else this.queue.push(task);
 
         this.notify();
         this.processQueue();
+        Logger.info("Upload added to queue", {
+          upload_id,
+          upload_type,
+          dataset_id,
+          fileName: file.name,
+          fileSize: file.size,
+          priority,
+        });
     }
 
     private async processQueue() {
@@ -212,12 +229,19 @@ class UploadService {
             this.updateTaskStatus(task.upload_id, 'SUCCESS', 100);
             this.bufferStatusUpdate(task.asset_id!, task.upload_type, true);
 
-        } catch (error) {
+                } catch (error) {
             if ((error as any).name === 'AbortError') return;
             this.updateTaskStatus(task.upload_id, 'FAILED');
             if (task.asset_id) {
                 this.bufferStatusUpdate(task.asset_id, task.upload_type, false);
             }
+            Logger.warn("Upload failed", {
+              upload_id: task.upload_id,
+              asset_id: task.asset_id,
+              upload_type: task.upload_type,
+              error: error instanceof Error ? error.message : String(error),
+              status: task.status,
+            });
         } finally {
             this.processQueue();
         }
@@ -279,7 +303,7 @@ class UploadService {
     }
 
         // API Tasarımı ile Tam Uyumlu Retry ( /assets/{asset_id}/retry-upload )
-    public async retryUpload(upload_id: string) {
+        public async retryUpload(upload_id: string) {
         const task = this.activeUploads.get(upload_id);
         if (!task || task.status !== 'FAILED' || !task.asset_id) return;
 
@@ -291,6 +315,10 @@ class UploadService {
 
         this.queue.unshift(task);
         this.processQueue();
+        Logger.info("Upload retry initiated", {
+          upload_id,
+          upload_type: task.upload_type,
+        });
     }
 
     // Expiration Süresi Kontrolü ve Refresh
@@ -337,9 +365,13 @@ class UploadService {
             return;
         }
 
-        try {
+                try {
             await apiService.post('/assets/bulk-update-status', { updates }, { silent: true });
         } catch (error) {
+            Logger.warn("Status flush failed", {
+              updateCount: updates.length,
+              error: error instanceof Error ? error.message : String(error),
+            });
             console.error('Failed to flush status updates. Cron job will handle the reconciliation.', error);
         }
     }
@@ -398,7 +430,7 @@ class UploadService {
     }
 
         // --- İptal Etme ---
-    public cancelUpload(upload_id: string) {
+        public cancelUpload(upload_id: string) {
         const task = this.activeUploads.get(upload_id);
         if (!task) return;
 
@@ -408,6 +440,7 @@ class UploadService {
         this.queue = this.queue.filter(t => t.upload_id !== upload_id);
         this.updateTaskStatus(upload_id, 'CANCELLED');
         this.processQueue();
+        Logger.info("Upload cancelled", { upload_id });
     }
 
     /**
@@ -428,24 +461,28 @@ class UploadService {
      * Tüm terminal durumdaki task'leri UI'dan kaldırır ve kalıcı depoyu temizler.
      * Close/X butonu için — başarılı, hatalı ve iptal edilmiş dosyaları temizler.
      */
-    public async dismissAllCompleted() {
+        public async dismissAllCompleted() {
+        let dismissedCount = 0;
         this.activeUploads.forEach((task, id) => {
             if (!task.hidden && ['SUCCESS', 'FAILED', 'CANCELLED'].includes(task.status)) {
                 this.activeUploads.delete(id);
+                dismissedCount++;
             }
         });
         // Tüm kalıcı depoyu temizle (görünür terminal task kalmadı)
         await clearPersistedTasks();
         this.notify();
+        Logger.info("Completed uploads dismissed", { dismissedCount });
     }
 
     /**
      * Tüm aktif (terminal olmayan) task'leri iptal eder.
      * "Pause All" butonu için — tüm kuyruğu ve aktif yüklemeleri durdurur.
      */
-    public cancelAll() {
+        public cancelAll() {
         // Önce kuyruğu temizle (yeni task başlamasın)
         this.queue = [];
+        let cancelledCount = 0;
         // Tüm aktif task'leri iptal et
         this.activeUploads.forEach((task, upload_id) => {
             if (!['SUCCESS', 'FAILED', 'CANCELLED'].includes(task.status)) {
@@ -453,9 +490,11 @@ class UploadService {
                 else if (task.abortController) task.abortController.abort();
                 task.status = 'CANCELLED';
                 task.progress = 0;
+                cancelledCount++;
             }
         });
         this.notify();
+        Logger.info("All uploads cancelled", { cancelledCount });
     }
 
     // --- Yardımcı Fonksiyonlar ---
