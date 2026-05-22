@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react';
 import type { SentryConfig, LogLevel } from './types';
 
-export class SentryLogger {
+export class Logger {
 
   public static init(config: SentryConfig) {
     // Sentry zaten başka bir katmanda başlatılmışsa tekrar başlatmıyoruz
