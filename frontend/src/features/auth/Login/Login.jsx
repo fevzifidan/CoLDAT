@@ -14,6 +14,7 @@ import { getLoginSchema } from "./validations/loginSchema";
 import { useNavigate } from "react-router-dom";
 import notificationService from "@/shared/services/notification";
 import { Logger } from '@/shared/services/logging/logging';
+import { LoginLayout } from "./layouts/LoginLayout";
 
 const LoginForm = () => {
   const { t } = useTranslation(["auth"]);
@@ -53,22 +54,22 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] flex items-center justify-center w-full px-4 sm:px-0">
-      <Card className="w-full max-w-[540px] border-none shadow-none md:shadow-2xl rounded-[2.5rem] md:rounded-[3rem] bg-card text-card-foreground overflow-hidden">
-        <CardContent className="p-8 md:p-14 space-y-10">
+    <LoginLayout>
+      <Card className="w-full max-w-[460px] shadow-lg border-border/50 rounded-2xl bg-card text-card-foreground">
+        <CardContent className="p-8 sm:p-10 space-y-8">
 
           {/* Header Section */}
-          <div className="text-center space-y-3">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+          <div className="text-center space-y-2">
+            <h1 className="text-[26px] font-semibold text-foreground">
               {t("auth:login.title")}
             </h1>
-            <p className="text-muted-foreground text-lg font-medium">
+            <p className="text-muted-foreground text-[15px]">
               {t("auth:login.description")}
             </p>
           </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
 
               <FormField
                 control={form.control}
@@ -80,12 +81,12 @@ const LoginForm = () => {
                         <Input
                           placeholder="test@test.com"
                           {...field}
-                          className="h-14 rounded-full border-none bg-secondary/50 px-8 text-base focus-visible:ring-2 focus-visible:ring-primary"
+                          className="h-12 bg-background border-border placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
                         />
-                        <div className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 border-muted-foreground/30" />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-muted-foreground/30" />
                       </div>
                     </FormControl>
-                    <FormMessage className="ml-6 text-primary" />
+                    <FormMessage className="text-xs text-destructive ml-1" />
                   </FormItem>
                 )}
               />
@@ -101,21 +102,21 @@ const LoginForm = () => {
                           type="password"
                           placeholder="••••••••••••"
                           {...field}
-                          className="h-14 rounded-full border-none bg-secondary/50 px-8 text-base focus-visible:ring-2 focus-visible:ring-primary"
+                          className="h-12 bg-background border-border placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
                         />
-                        <div className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 border-muted-foreground/30" />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-muted-foreground/30" />
                       </div>
                     </FormControl>
-                    <FormMessage className="ml-6 text-primary" />
+                    <FormMessage className="text-xs text-destructive ml-1" />
                   </FormItem>
                 )}
               />
 
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-12 h-14 text-lg font-bold shadow-lg shadow-primary/20 transition-all active:scale-95"
+                  className="w-full h-12 text-[15px] font-medium rounded-xl flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground transition-all active:scale-95"
                 >
                   {loading ? "..." : t("auth:login.title")}
                 </Button>
@@ -124,7 +125,7 @@ const LoginForm = () => {
                   variant="link"
                   type="button"
                   onClick={() => navigate("/forgot-password")}
-                  className="text-muted-foreground font-semibold hover:text-primary transition-colors"
+                  className="text-muted-foreground font-medium text-[13px] hover:text-primary transition-colors"
                 >
                   {t("auth:login.forgotPassword")}
                 </Button>
@@ -140,25 +141,25 @@ const LoginForm = () => {
                 {t("auth:login.orLoginWith")}
               </span>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 pt-2">
-              <Button variant="outline" className="flex-1 rounded-full bg-secondary/30 border-none h-12 gap-3 hover:bg-secondary/50 transition-colors">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button variant="outline" className="flex-1 rounded-xl bg-secondary/30 border-none h-11 gap-3 hover:bg-secondary/50 transition-colors">
                 <FaMicrosoft className="w-4 h-4 text-primary" />
-                <span className="text-sm font-bold opacity-80">{t("auth:login.microsoft")}</span>
+                <span className="text-sm font-semibold opacity-80">{t("auth:login.microsoft")}</span>
               </Button>
-              <Button variant="outline" className="flex-1 rounded-full bg-secondary/30 border-none h-12 gap-3 hover:bg-secondary/50 transition-colors">
+              <Button variant="outline" className="flex-1 rounded-xl bg-secondary/30 border-none h-11 gap-3 hover:bg-secondary/50 transition-colors">
                 <FaGithub className="w-4 h-4 fill-current" />
-                <span className="text-sm font-bold opacity-80">{t("auth:login.github")}</span>
+                <span className="text-sm font-semibold opacity-80">{t("auth:login.github")}</span>
               </Button>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="pt-6 border-t border-border flex justify-between items-center px-2">
-            <span className="text-muted-foreground font-medium">{t("auth:login.noAccount")}</span>
+          <div className="pt-4 border-t border-border flex justify-between items-center">
+            <span className="text-muted-foreground font-medium text-sm">{t("auth:login.noAccount")}</span>
             <Button
               onClick={() => navigate("/register")}
               variant="link"
-              className="text-primary font-bold p-0 text-lg hover:no-underline"
+              className="text-primary font-semibold p-0 text-[14px] hover:no-underline"
             >
               {t("auth:login.signUp")}
             </Button>
@@ -166,7 +167,7 @@ const LoginForm = () => {
 
         </CardContent>
       </Card>
-    </div>
+    </LoginLayout>
   );
 };
 
