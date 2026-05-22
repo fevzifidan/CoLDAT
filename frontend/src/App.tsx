@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from "@/components/ui/sonner";
 import ApiKeysPage from "./features/api-keys/ApiKeysPage";
+import SyntheticPage from "./features/synthetic/SyntheticPage";
 
 import AxiosInterceptorSetup from './components/custom/AxiosInterceptorSetup/AxiosInterceptorSetup.jsx';
 import { ConfirmProvider } from './shared/services/confirmation/ConfirmContext.js';
@@ -64,6 +65,9 @@ function App() {
                         <Route path="/datasets" element={<DatasetsPage />} />
                         <Route path="/tasks" element={<TasksPage />} />
                         <Route path="/api-keys" element={<ApiKeysPage />} />
+                        
+                        {/* YENİ ROTAMIZ: Sol tarafta tıklandığında yüklenecek alan */}
+                        <Route path="/synthetic" element={<SyntheticPage />} />
 
                         {/* Detay sayfası */}
                         <Route path="/projects/:id" element={<ProjectDetailPage />} />

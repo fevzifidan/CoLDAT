@@ -1,19 +1,218 @@
 {
-  "projects": {
-    "title": "Projeler",
-    "create_new": "Yeni Proje Oluştur",
-    "import": "Proje İçe Aktar",
-    "search_placeholder": "Projelerde ara..."
+  "dashboard": {
+    "title": "Genel Bakış",
+    "description": "Tekrar hoş geldiniz! İşte ekosisteminizin hızlı bir özeti.",
+    "no_assigned_tasks": "Şu anda size atanmış bir g​​örev bulunmuyor.",
+    "show_more": "Daha Fazla Göster",
+    "files": "İŞLENMİŞ DOSYA",
+    "sections": {
+      "recent_tasks": "Son Görevler",
+      "tasks_description": "Size atanmış aktif etiketleme işleri.",
+      "recent_datasets": "Son Veri Setleri",
+      "recent_projects": "Son Projeler"
+    },
+    "buttons": {
+      "manage": "YÖNET",
+      "start_labeling": "ETİKETLEMEYE BAŞLA",
+      "open": "PROJEYİ AÇ",
+      "create_project": "Yeni Proje Oluştur"
+    },
+    "status": {
+      "new": "YENİ",
+      "in_progress": "DEVAM EDİYOR",
+      "completed": "TAMAMLANDI"
+    },
+    "tasks": {
+      "object_detection": "Nesne Algılama",
+      "entity_recognition": "Varlık Tanıma",
+      "semantic_relation": "Anlamsal İlişki"
+    },
+    "roles": {
+      "all_roles": "Tüm Roller",
+      "annotator": "Etiketleyici",
+      "viewer": "İzleyici",
+      "admin": "Yönetici"
+    }
   },
   "datasets": {
     "title": "Veri Setleri",
-    "create_new": "Yeni Veri Seti Oluştur",
-    "import": "Veri Seti İçe Aktar",
-    "search_placeholder": "Veri setlerinde ara..."
+    "create_dataset": "Veri Seti Oluştur",
+    "search_placeholder": "Veri setlerinde ara...",
+    "empty_list": "Kriterlere uygun veri seti bulunamadı.",
+    "more_load": "Daha Fazla Yükle",
+    "description": "Versiyonlanmış veri koleksiyonlarını yönetin ve ilerlemeyi takip edin.",
+    "filter": {
+      "all_roles": "Tüm Roller",
+      "owner": "Sahibi",
+      "member": "Üye"
+    }
   },
-  "api_keys": {
-    "title": "API Anahtarları",
-    "create_new": "Yeni Anahtar Oluştur",
-    "description": "Dış sistemlerin erişimi için API anahtarlarınızı yönetin."
+  "trash": {
+    "title": "Çöp Kutusu",
+    "modal_title": "Çöp Kutusu",
+    "empty": "Çöp kutusu boş",
+    "recover": "Geri Yükle",
+    "permanent_delete": "Sil",
+    "tooltips": {
+      "delete_permanently": "Kalıcı Olarak Sil"
+    }
+  },
+  "apikeys_detail": {
+    "title": "Entegrasyon API Anahtarları",
+    "description": "Harici uygulamalardan veya SDK'lardan veri setlerinize güvenli bir şekilde erişmek için gizli anahtarları yönetin.",
+    "generate_title": "Yeni Token Oluştur",
+    "generate_desc": "Nerede kullanıldığını hatırlamak için anahtarınıza açıklayıcı bir ad verin.",
+    "placeholder": "örn. Python SDK Üretim, Jenkins CI",
+    "generate_btn": "Anahtar Üret",
+    "warning_title": "Güvenlik Uyarısı:",
+    "security_notice": "API anahtarlarınızı genel depolarda (public repositories) veya istemci tarafı kodlarında paylaşmayın. Bu anahtara sahip olan herkes veri seti yapılandırmalarınızı değiştirebilir.",
+    "list_title": "Aktif API Anahtarları",
+    "list_desc": "Şu anda bu hesap altında istek yapmaya yetkili tokenlar.",
+    "empty_list": "Henüz bir API anahtarı üretilmedi.",
+    "status_inactive": "Pasif",
+    "created_on": "Oluşturulma tarihi:",
+    "revoke_btn": "Anahtarı İptal Et",
+    "external_provider_title": "Harici Model Sağlayıcı Yapılandırması (Sunum Modu)",
+    "external_provider_desc": "Sentetik veri stüdyosunda model çalıştırmak ve komut göndermek için kendi OpenAI API anahtarınızı bağlayın.",
+    "external_privacy_notice": "Gizlilik Garantisi: Girdiğiniz anahtar kesinlikle uzak veritabanına (backend) kaydedilmez. Sadece bu tarayıcının yerel hafızasında saklanır ve doğrudan yapay zeka motoruna yönlendirilir.",
+    "external_success_msg": "Anahtar başarıyla doğrulandı ve tarayıcı oturumuna bağlandı. Sentetik Veri Stüdyosu aktif!",
+    "external_btn_clear": "Temizle",
+    "external_btn_update": "Anahtarı Güncelle",
+    "external_btn_connect": "Anahtarı Bağla",
+    "tooltips": {
+      "refresh": "Listeyi Yenile",
+      "hide": "Anahtarı Gizle",
+      "reveal": "Anahtarı Göster",
+      "copy": "Panoya Kopyala"
+    },
+    "messages": {
+      "load_failed": "API anahtarları yüklenemedi.",
+      "created_success": "Yeni API anahtarı başarıyla oluşturuldu.",
+      "create_failed": "Anahtar oluşturulurken bir hata oluştu.",
+      "reveal_failed": "Anahtar doğrulaması başarısız oldu.",
+      "confirm_revoke": "Bu API anahtarını iptal etmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+      "revoked_success": "API anahtarı kalıcı olarak iptal edildi.",
+      "revoke_failed": "Anahtar iptal edilirken bir API hatası oluştu.",
+      "name_required": "İsim boş olamaz!",
+      "invalid_key": "Lütfen geçerli bir anahtar girin.",
+      "external_success_toast": "Harici API anahtarı tarayıcı oturumunuza güvenle bağlandı!",
+      "key_cleared": "Harici anahtar tarayıcı hafızasından silindi."
+    }
+  },
+  "project_detail": {
+    "not_found": "Proje Bulunamadı.",
+    "save_all": "Tüm Değişiklikleri Kaydet",
+    "annotate_data": "Veriyi Etiketle",
+    "alert_success": "Değişiklikler başarıyla kaydedildi (Konsolu kontrol edin).",
+    "tabs": {
+      "general": "Genel",
+      "taxonomy": "Taksonomi",
+      "assets": "Varlıklar (Assets)",
+      "users": "Kullanıcılar",
+      "export": "Dışa Aktar"
+    }
+  },
+  "project_general": {
+    "metadata": "Proje Meta Verileri",
+    "project_name": "PROJE ADI",
+    "description": "AÇIKLAMA",
+    "task_type": "GÖREV TÜRÜ",
+    "privacy_status": "GİZLİLİK DURUMU",
+    "public": "Açık (Public)",
+    "private": "Gizli (Private)",
+    "delete_project": "Projeyi Sil",
+    "delete_warning": "Bu işlem kalıcıdır ve geri alınamaz.",
+    "placeholder_name": "Örn. Otonom Sürüş Veri Seti",
+    "placeholder_desc": "Bu veri setinin amacını açıklayın...",
+    "tasks": {
+      "object_detection": "Nesne Algılama",
+      "instance_segmentation": "Örnek Segmentasyonu",
+      "classification": "Sınıflandırma"
+    }
+  },
+  "taxonomy": {
+    "title": "Proje Taksonomisi",
+    "description": "Nesne sınıflarını ve aralarındaki ilişkileri yönetin.",
+    "save_changes": "Değişiklikleri Kaydet",
+    "alert_saved": "Değişiklikler Kaydedildi!",
+    "object_classes": "Nesne Sınıfları",
+    "predicates": "Yüklemler (Predicates)",
+    "no_global_attributes": "Tanımlanmış Genel Öznitelik Yok",
+    "add_global_attribute": "Genel öznitelik ekle",
+    "global_attributes_title": "Genel Öznitelikler",
+    "prompt_msg": "Yeni öznitelik adı girin (Örn. renk, kesiklik):",
+    "default_new_class": "Yeni Sınıf",
+    "default_new_relation": "yeni_iliski"
+  },
+  "assets": {
+    "search_placeholder": "Varlıklarda ara...",
+    "upload_items": "Ögeleri Yükle",
+    "cancel": "İptal",
+    "upload_title": "Görsellerinizi veya videolarınızı yükleyin",
+    "upload_desc": "Dosyaları buraya sürükleyip bırakın veya göz atmak için tıklayın. JPG, PNG, MP4 destekler.",
+    "select_files": "Dosyaları Seçin",
+    "status": {
+      "annotated": "Etiketlendi",
+      "pending": "Beklemede"
+    }
+  },
+  "team": {
+    "title": "Proje Ekibi",
+    "description": "Ortak çalışanları ve erişim seviyelerini yönetin.",
+    "cancel": "İptal",
+    "add_member": "Üye Ekle",
+    "email_label": "E-posta Adresi",
+    "role_label": "Rol",
+    "send_invitation": "Davet Gönder",
+    "alert_invited": "Davet {{email}} adresine gönderildi!",
+    "status": {
+      "active": "AKTİF",
+      "invited": "DAVET EDİLDİ"
+    },
+    "roles": {
+      "admin": "Yönetici",
+      "manager": "Müdür",
+      "labeler": "Etiketleyici",
+      "reviewer": "Denetleyici"
+    }
+  },
+  "export": {
+    "title": "Veri Setini Dışa Aktar",
+    "description": "Etiketlerinizi endüstri standardı formatlarda indirin.",
+    "ready_title": "Oluşturulmaya Hazır",
+    "ready_desc": "Bu işlem, etiketlenmiş tüm varlıkları bir {{format}} dosyası olarak paketleyecektir.",
+    "btn_generating": "Oluşturuluyor...",
+    "btn_export_now": "Şimdi Dışa Aktar",
+    "formats": {
+      "coco_desc": "Common Objects in Context formatı",
+      "yolo_desc": "Darknet / PyTorch formatı",
+      "pascal_desc": "Nesne algılama için XML formatı"
+    }
+  },
+  "tasks": {
+    "title": "Görevler",
+    "create_new": "Yeni Görev Oluştur",
+    "search_placeholder": "Görevlerde ara...",
+    "empty_list": "Çöp kutunuz şu anda boş.",
+    "load_more": "Daha Fazla Göster",
+    "filter": {
+      "all_progress": "Tüm Durumlar",
+      "status": {
+        "new": "YENİ",
+        "in_progress": "DEVAM EDİYOR",
+        "completed": "TAMAMLANDI"
+      }
+    }
+  },
+  "status": {
+    "new": "YENİ",
+    "in_progress": "DEVAM EDİYOR",
+    "completed": "TAMAMLANDI",
+    "load_more": "Daha Fazla Göster"
+  },
+  "actions": {
+    "cancel": "İptal",
+    "create": "Oluştur",
+    "close": "Kapat"
   }
 }

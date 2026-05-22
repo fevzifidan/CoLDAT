@@ -1,0 +1,18 @@
+{
+  "title": "Veri Setleri",
+  "create_dataset": "Veri Seti Oluştur",
+  "empty_list": "Kriterlere uygun veri seti bulunamadı.",
+  "description": "Sürüm dosyalarını yönetin ve ilerlemeyi takip edin.",
+  "search_placeholder": "Veri setlerinde ara...",
+  "total": "Toplam",
+  "annotated": "Etiketlenen",
+  "progress": "İlerleme",
+  "view_data": "Veriyi Görüntüle",
+  "members": "Üyeler",
+  "filter": {
+    "all_roles": "Tüm Roller"
+  },
+  "messages": {
+    "load_failed": "Veri setleri yüklenemedi."
+  }
+}
