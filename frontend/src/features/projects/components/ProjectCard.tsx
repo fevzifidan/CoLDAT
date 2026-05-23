@@ -4,17 +4,28 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowUpRight, Settings, Eye } from "lucide-react";
-import type { Project } from '@/shared/utils/projectsData';
+
+// API ve Sayfa yapısındaki ExtendedProject alanlarıyla tam uyum sağlamak için 
+// esnek bir yerel tip tanımı oluşturuyoruz.
+interface CardProject {
+  id: string;
+  name: string;
+  description?: string;
+  project_type?: string; // API'deki karşılığı (task yerine)
+  status?: string;
+  count?: number;
+  role?: string;
+  created_at?: string;
+}
 
 interface ProjectCardProps {
-  project: Project;
+  project: CardProject;
   cardType: 'task' | 'dataset' | 'project';
   onStatusChange?: () => void;
 }
 
 export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardProps) => {
   const navigate = useNavigate();
-  // Fevzi abinin mimarisine uygun olarak 'pages' namespace'ini yüklüyoruz
   const { t } = useTranslation(['pages']);
   
   const rawRole = project.role?.toLowerCase() || 'viewer';
@@ -55,15 +66,19 @@ export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardPr
       return 'border-amber-100 dark:border-amber-900/50 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100/70 dark:hover:bg-amber-900/40';
     }
     if (normalized === 'completed') {
-      return 'border-emerald-100 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/40';
+      return 'border-emerald-100 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100/70 dark:hover:bg-amber-900/40';
     }
     return 'border-blue-100 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/40 hover:bg-blue-100/70 dark:hover:bg-blue-900/40';
   };
 
-  // Güvenli key dönüşümleri için helper fonksiyonlar
-  const statusKey = project.status?.toLowerCase().replace(/ /g, '_') || 'new';
-  const taskKey = project.task?.toLowerCase().replace(/ /g, '_') || 'object_detection';
-  const roleKey = rawRole.replace(/ /g, '_');
+  // Güvenli key dönüşümleri ve backend API haritalaması (project_type)
+const currentStatus = project.status ? String(project.status) : 'New';
+// project_type yoksa fallback olarak 'Object Detection' string'ini garantiye alıyoruz
+const currentType = project.project_type ? String(project.project_type) : 'Object Detection';
+
+const statusKey = currentStatus.toLowerCase().replace(/ /g, '_');
+const typeKey = currentType.toLowerCase().replace(/ /g, '_');
+const roleKey = rawRole.replace(/ /g, '_');
 
   return (
     <Card className="group relative overflow-hidden rounded-[2rem] bg-white dark:bg-slate-900 shadow-sm hover:shadow-xl dark:hover:shadow-black/40 transition-all duration-300 border border-slate-100 dark:border-slate-800">
@@ -79,11 +94,11 @@ export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardPr
               className={`text-[9px] font-bold uppercase rounded-lg border px-2 py-0.5 transition-colors cursor-pointer select-none ${getStatusStyles(project.status)}`}
               title="Click to cycle status"
             >
-              ⚡ {t(`pages:dashboard.status.${statusKey}`, project.status)}
+              ⚡ {t(`pages:dashboard.status.${statusKey}`, currentStatus)}
             </button>
           ) : (
             <Badge variant="secondary" className="text-[8px] opacity-70 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 uppercase px-2 py-0">
-              {t(`pages:dashboard.roles.${roleKey}`, project.role)}
+              {t(`pages:dashboard.roles.${roleKey}`, project.role || 'Viewer')}
             </Badge>
           )}
         </div>
@@ -93,13 +108,15 @@ export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardPr
         </CardTitle>
         
         <CardDescription className="text-[11px] font-medium leading-none mt-1 uppercase tracking-tight text-slate-400 dark:text-slate-500">
-          {t(`pages:dashboard.tasks.${taskKey}`, project.task)}
+          {t(`pages:dashboard.tasks.${typeKey}`, currentType)}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="text-left px-5 py-2">
         <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-black tracking-tighter text-slate-900 dark:text-white">{project.count}</span>
+          <span className="text-3xl font-black tracking-tighter text-slate-900 dark:text-white">
+            {project.count ?? 0}
+          </span>
           <span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-widest italic">
             {t('pages:dashboard.files', 'PROCESSED FILES')}
           </span>

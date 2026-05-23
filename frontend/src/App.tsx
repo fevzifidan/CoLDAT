@@ -62,7 +62,7 @@ function App() {
 
                         {/* Ana Sayfa */}
                         <Route path="/projects" element={<ProjectsPage />} />
-                        <Route path="/datasets" element={<DatasetsPage />} />
+                        <Route path="/projects/:projectId/datasets" element={<DatasetsPage />} />
                         <Route path="/tasks" element={<TasksPage />} />
                         <Route path="/api-keys" element={<ApiKeysPage />} />
                         
