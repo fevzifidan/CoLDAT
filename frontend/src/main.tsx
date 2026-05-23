@@ -36,6 +36,9 @@ Sentry.init({
   integrations: [
     // 1. Tarayıcı izlemesini aktif ediyoruz
     Sentry.browserTracingIntegration(),
+    Sentry.httpClientIntegration({
+      failedRequestStatusCodes: [[400, 599]],
+    }),
   ],
   // 2. Sentry'nin otomatik Trace ID (sentry-trace) ekleyeceği backend adreslerimiz
   tracePropagationTargets: [
