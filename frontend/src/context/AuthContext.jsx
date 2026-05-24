@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
   // 1. Uygulama ilk açıldığında token'ı kontrol et
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
       
       if (token) {
         try {
@@ -31,8 +31,8 @@ export const AuthProvider = ({ children }) => {
   // 2. Login Fonksiyonu
   const login = async (credentials, config = {}) => {
     try {
-    const response = await apiService.post("/auth/login", credentials, config);
-    localStorage.setItem("token", response.token);
+    const response = await apiService.post("/auth/login/", credentials, config);
+    localStorage.setItem("access_token", response.access_token);
     setUser(response.user);
     return response;
     } catch (error) {
@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
 
   // 3. Logout Fonksiyonu
   const logout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
     setUser(null);
   };
 

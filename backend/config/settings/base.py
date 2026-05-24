@@ -21,7 +21,10 @@ from rest_framework.views import exception_handler
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-load_dotenv(BASE_DIR / ".env")
+env_path = BASE_DIR / ".env"
+
+if env_path.exists():
+    load_dotenv(env_path)  # override=False varsayılan, güvenli
 
 
 # Quick-start development settings - unsuitable for production
@@ -68,6 +71,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "config.middleware.SentryClientErrorMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -135,6 +139,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    "EXCEPTION_HANDLER": "config.settings.base.custom_exception_handler",
 }
 
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://localhost:9000")
@@ -361,8 +366,10 @@ def before_send(event, hint):
     # Her durumda event'i döndür (None dönersek Sentry event'i göndermez!)
     return event
 
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+
 sentry_sdk.init(
-    dsn="https://fcdca9cf547089b337d0b6399b481f3a@o4511429159485440.ingest.de.sentry.io/4511436493029456",
+    dsn=SENTRY_DSN,
     integrations=[
         DjangoIntegration(
             # İsteklerin Sentry'de nasıl gruplanacağını belirler. 
@@ -383,13 +390,20 @@ sentry_sdk.init(
     before_send=before_send,
 )
 
-def custom_exception_handler(exc, context):
-    # DRF'in standart exception handler'ını çağırıyoruz
-    response = exception_handler(exc, context)
+client_errors_to_be_captured = [400, 404, 405, 406, 409, 413, 414, 415, 416, 422, 425, 428, 429, 431, 444, 494, 495, 496, 497, 499]
 
-    # Eğer hata bir API istisnası değil de beklenmedik bir sistem hatasıysa (500)
-    # veya response None döndüyse (sunucu hatası) hatayı Sentry'ye manuel bildiriyoruz.
-    if response is None or response.status_code == 500:
+def custom_exception_handler(exc, context):
+    response = exception_handler(exc, context)
+    request = context.get("request")
+
+    if response is None or response.status_code >= 500:
         sentry_sdk.capture_exception(exc)
+    elif response.status_code in client_errors_to_be_captured:
+        sentry_sdk.capture_message(
+            f"Client Error {response.status_code}: {exc}", 
+            level="warning"
+        )
+        if request:
+            request._sentry_captured = True
 
     return response

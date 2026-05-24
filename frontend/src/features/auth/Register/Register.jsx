@@ -31,11 +31,12 @@ const RegisterPage = () => {
     const onSubmit = async (data) => {
     setLoading(true);
     try {
-      await apiService.post("/auth/register", {
-        givenName: data.name,
-        familyName: data.surname,
+      await apiService.post("/auth/register/", {
         email: data.email,
         password: data.password,
+        first_name: data.name,
+        last_name: data.surname,
+        username: data.username,
       });
 
       await login({ email: data.email, password: data.password });
