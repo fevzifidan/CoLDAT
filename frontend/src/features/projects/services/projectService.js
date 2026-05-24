@@ -1,15 +1,19 @@
 // src/features/projects/services/projectService.js
 import apiService from '@/shared/services/api/apiClient';
 
+// Backend'de taxonomy endpoint'i hazır olana kadar burayı true tutuyoruz.
+// Django tarafında bu rotalar eklendiğinde tek yapman gereken burayı false yapmak!
+const IS_TAXONOMY_MOCK = true;
+
 export const projectService = {
   /**
    * 1. Tüm projeleri listele (GET /projects/)
    */
   getAllProjects: async () => {
-    // apiService interceptor kullanarak 'Authorization: Bearer <token>' başlığını otomatik ekler
+    // apiClient interceptor zaten response.data'yı dönüyor.
+    // O yüzden doğrudan gelen yanıtı yukarı fırlatıyoruz!
     const response = await apiService.get('projects/');
-    // Axios her zaman veriyi .data içinde taşır.
-    return response.data;
+    return response; 
   },
 
   /**
@@ -17,7 +21,7 @@ export const projectService = {
    */
   createProject: async (projectData) => {
     const response = await apiService.post('projects/', projectData);
-    return response.data;
+    return response;
   },
 
   /**
@@ -25,7 +29,7 @@ export const projectService = {
    */
   getProjectById: async (id) => {
     const response = await apiService.get(`projects/${id}/`);
-    return response.data;
+    return response;
   },
 
   /**
@@ -33,7 +37,7 @@ export const projectService = {
    */
   updateProject: async (id, projectData) => {
     const response = await apiService.patch(`projects/${id}/`, projectData);
-    return response.data;
+    return response;
   },
 
   /**
@@ -41,45 +45,70 @@ export const projectService = {
    */
   deleteProject: async (id) => {
     const response = await apiService.delete(`projects/${id}/`);
-    return response.data;
+    return response;
   },
 
   /**
    * ================= MEMBERS ENDPOINTS =================
    */
 
-  /**
-   * 6. Proje üyelerini listele (GET /projects/{id}/members/)
-   */
   getProjectMembers: async (projectId) => {
     const response = await apiService.get(`projects/${projectId}/members/`);
-    return response.data;
+    return response;
   },
 
-  /**
-   * 7. Projeye üye ekle (POST /projects/{id}/members/)
-   */
   addProjectMember: async (projectId, memberData) => {
     const response = await apiService.post(`projects/${projectId}/members/`, memberData);
-    return response.data;
+    return response;
   },
 
-  /**
-   * 8. Proje üye rolünü güncelle (PATCH /projects/{id}/members/${membershipId}/)
-   */
   updateProjectMember: async (projectId, membershipId, memberData) => {
     const response = await apiService.patch(`projects/${projectId}/members/${membershipId}/`, memberData);
-    return response.data;
+    return response;
+  },
+
+  removeProjectMember: async (projectId, membershipId) => {
+    const response = await apiService.delete(`projects/${projectId}/members/${membershipId}/`);
+    return response;
   },
 
   /**
-   * 9. Projeden üye çıkar (DELETE /projects/{id}/members/${membershipId}/)
+   * ================= TAXONOMY ENDPOINTS =================
    */
-  removeProjectMember: async (projectId, membershipId) => {
-    const response = await apiService.delete(`projects/${projectId}/members/${membershipId}/`);
-    return response.data;
+
+  /**
+   * Projenin etiket şemasını/sınıflarını getirir (GET /projects/{projectId}/taxonomy/)
+   */
+  getProjectTaxonomy: async (projectId) => {
+    if (IS_TAXONOMY_MOCK) {
+      // Backend 404 hatası verdiği için veriyi geçici olarak localStorage'dan simüle ediyoruz
+      const localData = localStorage.getItem(`mock_taxonomy_${projectId}`);
+      if (localData) {
+        return JSON.parse(localData);
+      }
+      // Eğer proje için ilk defa taxonomy açılıyorsa varsayılan boş şema yapısını dönüyoruz
+      return { classes: [], predicates: [], attributes: [] };
+    }
+
+    // Gerçek backend endpoint'i aktif olduğunda çalışacak kısım:
+    const response = await apiService.get(`projects/${projectId}/taxonomy/`);
+    return response;
+  },
+
+  /**
+   * Projenin etiket şemasını günceller/üzerine yazar (PUT /projects/{projectId}/taxonomy/)
+   */
+  updateProjectTaxonomy: async (projectId, taxonomyData) => {
+    if (IS_TAXONOMY_MOCK) {
+      // Backend'e giden isteği simüle edip verileri tarayıcı hafızasına yazıyoruz
+      localStorage.setItem(`mock_taxonomy_${projectId}`, JSON.stringify(taxonomyData));
+      return { success: true, message: "Taxonomy saved locally." };
+    }
+
+    // Gerçek backend endpoint'i aktif olduğunda çalışacak kısım:
+    const response = await apiService.put(`projects/${projectId}/taxonomy/`, taxonomyData);
+    return response;
   }
 };
 
-// KRİTİK DÜZELTME: Projenin her iki çağırım tarzını da (named/default) desteklemesi için default export ekliyoruz.
 export default projectService;

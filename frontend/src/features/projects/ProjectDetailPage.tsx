@@ -35,17 +35,22 @@ const ProjectDetailPage = () => {
   
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false); // Kayıt esnasında butonları kilitlemek için
 
   // Global Değişiklik Takibi
-  const [pendingChanges, setPendingChanges] = useState({
+  const [pendingChanges, setPendingChanges] = useState<{
+    general: any;
+    taxonomy: any;
+    team: any;
+  }>({
     general: null,
     taxonomy: null,
     team: null
   });
 
-  useEffect(() => {
+  // Proje detayını backend'den çekme fonksiyonu
+  const loadProjectDetails = () => {
     if (!id) return;
-
     setLoading(true);
     projectService.getProjectById(id)
       .then((data: any) => {
@@ -60,6 +65,10 @@ const ProjectDetailPage = () => {
         toast.error(t('pages:project_detail.not_found', "Project details could not be retrieved from backend."));
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadProjectDetails();
   }, [id, t]);
 
   const handleDataUpdate = (tab: string, data: any) => {
@@ -69,9 +78,37 @@ const ProjectDetailPage = () => {
     }));
   };
 
+  // BACKEND'E KAYDETME MOTORU (Global Save)
   const handleGlobalSave = async () => {
-    console.log("Kaydedilecek Değişiklikler:", pendingChanges);
-    toast.success(t('pages:project_detail.alert_success', "Changes saved successfully!"));
+    if (!id) return;
+    
+    setIsSaving(true);
+    const saveToastId = toast.loading(t('common:status.saving', 'Saving changes...'));
+
+    try {
+      // 1. Adım: Eğer General sekmesinde değişiklik yapılmışsa
+      if (pendingChanges.general) {
+        await projectService.updateProject(id, pendingChanges.general);
+      }
+
+      // 2. Adım: Eğer Taxonomy sekmesinde değişiklik yapılmışsa
+      if (pendingChanges.taxonomy) {
+        await projectService.updateProjectTaxonomy(id, pendingChanges.taxonomy);
+      }
+
+      toast.success(t('pages:project_detail.alert_success', "Changes saved successfully!"), { id: saveToastId });
+      
+      // Kaydedilen değişikliklerin state'ini sıfırlıyoruz
+      setPendingChanges({ general: null, taxonomy: null, team: null });
+      
+      // Ekrandaki verileri tazelemek için projeyi backend'den yeniden çekiyoruz
+      loadProjectDetails();
+    } catch (error: any) {
+      console.error("Kayıt esnasında hata meydana geldi:", error);
+      toast.error(t('pages:errors.save_failed', "Failed to save some configurations to backend."), { id: saveToastId });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (loading) {
@@ -101,6 +138,9 @@ const ProjectDetailPage = () => {
     { value: 'export', label: t('pages:project_detail.tabs.export', 'Export'), icon: Download },
   ];
 
+  // Herhangi bir tab'de kaydedilmemiş bir veri var mı kontrolü (Buton aktifliği için)
+  const hasChanges = !!(pendingChanges.general || pendingChanges.taxonomy || pendingChanges.team);
+
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       {/* Sticky Header */}
@@ -121,12 +161,13 @@ const ProjectDetailPage = () => {
         <div className="flex gap-2">
           <Button 
             size="sm" 
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
             onClick={handleGlobalSave}
+            disabled={isSaving || !hasChanges} // Değişiklik yoksa veya kaydediliyorsa buton kilitlenir
           >
             <Save className="mr-2 h-4 w-4" /> {t('pages:project_detail.save_all', 'Save All')}
           </Button>
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
+          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" onClick={() => navigate(`/projects/${project.id}/datasets`)}>
             {t('pages:project_detail.annotate_data', 'Annotate Data')}
           </Button>
         </div>
@@ -167,20 +208,15 @@ const ProjectDetailPage = () => {
               )}
 
               {activeTab === 'taxonomy' && (
-                <TaxonomyManager />
+                <TaxonomyManager 
+                  projectId={id} 
+                  onUpdate={(data) => handleDataUpdate('taxonomy', data)} 
+                />
               )}
 
-              {activeTab === 'assets' && (
-                <AssetManager />
-              )}
-
-              {activeTab === 'team' && (
-                <TeamManager />
-              )}
-
-              {activeTab === 'export' && (
-                <ExportManager />
-              )}
+              {activeTab === 'assets' && <AssetManager />}
+              {activeTab === 'team' && <TeamManager />}
+              {activeTab === 'export' && <ExportManager />}
           </div>
         </div>
       </div>

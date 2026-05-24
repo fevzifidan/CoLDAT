@@ -63,10 +63,14 @@ function App() {
                         {/* Ana Sayfa */}
                         <Route path="/projects" element={<ProjectsPage />} />
                         <Route path="/projects/:projectId/datasets" element={<DatasetsPage />} />
+                        
+                        {/* Sol menü veya doğrudan erişim için genel Datasets rotası */}
+                        <Route path="/datasets" element={<DatasetsPage />} />
+
                         <Route path="/tasks" element={<TasksPage />} />
                         <Route path="/api-keys" element={<ApiKeysPage />} />
                         
-                        {/* YENİ ROTAMIZ: Sol tarafta tıklandığında yüklenecek alan */}
+                        {/* Sol tarafta tıklandığında yüklenecek alan */}
                         <Route path="/synthetic" element={<SyntheticPage />} />
 
                         {/* Detay sayfası */}

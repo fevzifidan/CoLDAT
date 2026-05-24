@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+// src/features/datasets/DatasetsPage.tsx
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Trash2, RotateCcw, X, Trash, Plus, FolderPlus } from "lucide-react"; 
+import { Search, Trash2, RotateCcw, X, Plus, FolderPlus, Trash } from "lucide-react"; 
 import { DatasetCard } from './components/DatasetCard';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { datasetService } from './services/datasetService';
@@ -23,9 +24,22 @@ interface Dataset {
 }
 
 const DatasetsPage = () => {
-  // pages.json dosyasını doğru okumak için namespaces yapılandırması
   const { t } = useTranslation(['pages', 'common']);
   const navigate = useNavigate();
+  
+  // URL'den projectId parametresini yakalıyoruz
+  const { projectId } = useParams<{ projectId: string }>();
+
+  // Gelen verinin geçerli bir UUID standartında olup olmadığını doğrulamak için regex
+  const isUUID = (str?: string) => {
+    if (!str) return false;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+  };
+
+  // Eğer geçerli bir UUID varsa onu kullanıyoruz, yoksa backend'e göndermemek için null kalıyor
+  const activeProjectId = isUUID(projectId) ? projectId : null;
+
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [displayLimit, setDisplayLimit] = useState(4);
@@ -41,19 +55,14 @@ const DatasetsPage = () => {
   const [datasetType, setDatasetType] = useState("text");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchDatasets();
-  }, []);
-
-const fetchDatasets = () => {
+  // fetchDatasets fonksiyonu
+  const fetchDatasets = useCallback(() => {
     setLoading(true);
-    datasetService.getAllDatasets()
-      .then((data: any) => {
-        // HATA BURADA: Eğer data bir obje ise ve içindeki bir anahtarda (örneğin 'results') listeyi tutuyorsa
-        // Hata almamak için verinin tipini kontrol ediyoruz:
-        const dataArray = Array.isArray(data) ? data : (data?.results || []);
-        
-        const enrichedDatasets = dataArray.map((d: any) => ({
+
+    // activeProjectId yoksa servis doğrudan [] dönecektir
+    datasetService.getAllDatasets(activeProjectId)
+      .then((dataArray: any) => {
+        const enrichedDatasets = (dataArray || []).map((d: any) => ({
           ...d,
           isDeleted: d.isDeleted ?? false,
           isPermanentlyDeleted: d.isPermanentlyDeleted ?? false
@@ -62,19 +71,27 @@ const fetchDatasets = () => {
       })
       .catch((error: any) => {
         console.error("Dataset yükleme hatası:", error);
-        // Hata durumunda boş liste ile devam et
         setDatasetList([]); 
       })
       .finally(() => setLoading(false));
-  };
+  }, [activeProjectId]);
+
+  useEffect(() => {
+    fetchDatasets();
+  }, [fetchDatasets]);
 
   const handleCreateDataset = (e: React.FormEvent) => {
     e.preventDefault();
     if (!datasetName.trim()) return;
 
+    if (!activeProjectId) {
+      toast.error("Dataset oluşturabilmek için öncelikle 'Projects' sayfasından bir projenin içerisine girmelisiniz.");
+      return;
+    }
+
     setSubmitting(true);
     
-    datasetService.createDataset({ 
+    datasetService.createDataset(activeProjectId, { 
       name: datasetName, 
       description: datasetDesc, 
       dataset_type: datasetType 
@@ -89,7 +106,7 @@ const fetchDatasets = () => {
       })
       .catch((err: any) => {
         console.error("Dataset oluşturma hatası:", err);
-        toast.error(t("common:status.error", "An error occurred."));
+        toast.error(err?.message || t("common:status.error", "An error occurred."));
       })
       .finally(() => setSubmitting(false));
   };
@@ -103,7 +120,7 @@ const fetchDatasets = () => {
   );
 
   const filteredDatasets = activeDatasets.filter(dataset => {
-    const matchesSearch = dataset.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = dataset.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false;
     const datasetRole = dataset.role?.toUpperCase() || dataset.status?.toUpperCase() || "OWNER";
     const matchesRole = roleFilter === "ALL" || datasetRole === roleFilter;
     return matchesSearch && matchesRole;

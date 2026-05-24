@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Trash2, RotateCcw, X, Trash, Plus } from "lucide-react";
 import { ProjectCard } from './components/ProjectCard';
-import { projectService } from './services/projectService'; // Yolu projenize göre kontrol edin
+import { projectService } from './services/projectService';
+import { useNavigate } from 'react-router-dom'; // 1. Bunu ekledik
 
-// Tip tanımını API'den gelecek alanlara göre genişletiyoruz
 interface ExtendedProject {
   id: string;
   name: string;
@@ -16,36 +16,40 @@ interface ExtendedProject {
   count?: number;
   role?: string;
   created_at?: string;
-  isDeleted?: boolean; // UI'daki çöp kutusu takibi için
+  isDeleted?: boolean;
 }
 
 const ProjectsPage = () => {
   const { t } = useTranslation(['pages']);
+  const navigate = useNavigate(); // 2. Bunu tanımladık
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [displayLimit, setDisplayLimit] = useState<number>(4);
   const [isTrashOpen, setIsTrashOpen] = useState<boolean>(false);
 
-  // API State'leri
   const [projectList, setProjectList] = useState<ExtendedProject[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // --- Yeni Proje Ekleme State'leri ---
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [newProjectName, setNewProjectName] = useState("");
 
-  // 1. BACKEND'DEN VERİLERİ ÇEKME (GET /projects/)
   const fetchProjects = async () => {
     try {
       setIsLoading(true);
       setApiError(null);
-      const data = await projectService.getAllProjects();
+      const response = await projectService.getAllProjects();
       
-      // Backend'den gelen verileri UI'daki silinme bayrağıyla (isDeleted) sarmalıyoruz
-      const formatted = Array.isArray(data) 
-        ? data.map((p: any) => ({ ...p, isDeleted: false })) 
-        : [];
+      const projectDataArray = response && Array.isArray(response.data) 
+        ? response.data 
+        : (Array.isArray(response) ? response : []);
+
+      const formatted = projectDataArray.map((p: any) => ({ 
+        ...p, 
+        isDeleted: p.isDeleted ?? false,
+        role: p.role || "ADMIN" 
+      }));
+
       setProjectList(formatted);
     } catch (err: any) {
       console.error("API error fetching projects:", err);
@@ -59,23 +63,19 @@ const ProjectsPage = () => {
     fetchProjects();
   }, []);
 
-  // 2. AKTİF PROJELER (Silinmemiş olanlar)
-  const activeProjects = projectList.filter(p => !p.isDeleted);
-  
-  // 3. ÇÖPTEKİ PROJELER (Yumuşak Silinenler)
-  const archivedProjects = projectList.filter(p => p.isDeleted);
+  const activeProjects = projectList.filter(p => p.isDeleted === false || !p.isDeleted);
+  const archivedProjects = projectList.filter(p => p.isDeleted === true);
 
-  // Arama ve Rol Filtreleme Mantığı
   const filteredProjects = activeProjects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const projectRole = project.role?.toUpperCase() || "ANNOTATOR";
+    const projectName = project.name ? String(project.name) : "";
+    const matchesSearch = projectName.toLowerCase().includes(searchQuery.toLowerCase());
+    const projectRole = (project.role || "ADMIN").toUpperCase();
     const matchesRole = roleFilter === "ALL" || projectRole === roleFilter;
     return matchesSearch && matchesRole;
   });
 
   const visibleProjects = filteredProjects.slice(0, displayLimit);
 
-  // 4. YENİ PROJE OLUŞTURMA (POST /projects/)
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProjectName.trim()) return;
@@ -84,39 +84,32 @@ const ProjectsPage = () => {
       const payload = {
         name: newProjectName,
         description: "No description provided yet.",
-        project_type: "object_detection", // Varsayılan tip
+        project_type: "object_detection",
       };
 
-      const created = await projectService.createProject(payload);
-      
-      // Başarılıysa listeye ekle ve modalı kapat
-      setProjectList(prev => [{ ...created, isDeleted: false }, ...prev]);
+      await projectService.createProject(payload);
       setNewProjectName("");
       setIsCreateModalOpen(false);
+      await fetchProjects();
     } catch (err) {
+      console.error("Proje oluşturulurken hata:", err);
       alert("Project creation failed on backend.");
     }
   };
 
-  // 5. GEÇİCİ SİLME / ÇÖPE ATMA (PATCH veya local state yönetimi)
-  // Eğer backend soft-delete desteklemiyorsa local state'de tutabiliriz, yoksa update isteği atılabilir.
   const handleDeleteProject = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setProjectList(prev => prev.map(p => p.id === id ? { ...p, isDeleted: true } : p));
   };
 
-  // 6. ÇÖPTEN GERİ KURTARMA
   const handleRecoverProject = (id: string) => {
     setProjectList(prev => prev.map(p => p.id === id ? { ...p, isDeleted: false } : p));
   };
 
-  // 7. KALICI OLARAK SİLME (DELETE /projects/{id}/)
   const handlePermanentDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to permanently delete this project?")) return;
-    
     try {
       await projectService.deleteProject(id);
-      // Başarılıysa state listesinden tamamen uçur
       setProjectList(prev => prev.filter(p => p.id !== id));
     } catch (err) {
       alert("Failed to permanently delete the project from backend.");
@@ -131,7 +124,6 @@ const ProjectsPage = () => {
         </h1>
         
         <div className="flex flex-wrap items-center gap-3">
-          {/* Arama Input */}
           <div className="relative w-64">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
             <Input 
@@ -142,7 +134,6 @@ const ProjectsPage = () => {
             />
           </div>
 
-          {/* Create New Project Butonu */}
           <Button 
             onClick={() => setIsCreateModalOpen(true)}
             className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 h-9 font-medium shadow-sm gap-1.5 text-white"
@@ -151,7 +142,6 @@ const ProjectsPage = () => {
             {t('pages:dashboard.buttons.create_project', 'Create New Project')}
           </Button>
 
-          {/* Role Filtresi */}
           <div>
             <select
               value={roleFilter}
@@ -168,7 +158,6 @@ const ProjectsPage = () => {
             </select>
           </div>
 
-          {/* Trash Butonu */}
           <Button 
             variant="outline" 
             className="h-9 relative border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 gap-2 font-medium"
@@ -185,7 +174,6 @@ const ProjectsPage = () => {
         </div>
       </div>
 
-      {/* API DURUM KONTROLLERİ */}
       {isLoading && (
         <div className="flex justify-center items-center py-24 text-indigo-600 dark:text-indigo-400 font-medium">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current mr-3" />
@@ -202,7 +190,6 @@ const ProjectsPage = () => {
         </div>
       )}
 
-      {/* Proje Kartları Grid Yapısı */}
       {!isLoading && !apiError && (
         <>
           {visibleProjects.length === 0 ? (
@@ -212,10 +199,14 @@ const ProjectsPage = () => {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {visibleProjects.map(item => (
-                <div key={item.id} className="relative group transition-transform hover:scale-[1.01]">
+                /* 3. BURASI GÜNCELLENDİ: Tıklayınca projenin datasetlerine yönlendiriyor */
+                <div 
+                  key={item.id} 
+                  onClick={() => navigate(`/projects/${item.id}/datasets`)} 
+                  className="relative group transition-transform hover:scale-[1.01] cursor-pointer"
+                >
                   <ProjectCard project={item} cardType="project" />
                   
-                  {/* Kart Hızlı Silme Butonu */}
                   <button
                     onClick={(e) => handleDeleteProject(item.id, e)}
                     className="absolute bottom-4 right-4 p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/50 shadow-sm z-10"
@@ -230,7 +221,6 @@ const ProjectsPage = () => {
         </>
       )}
 
-      {/* Daha Fazla Yükle Mantığı */}
       {!isLoading && displayLimit < filteredProjects.length && (
         <div className="flex justify-center mt-8">
           <Button onClick={() => setDisplayLimit(prev => prev + 4)} variant="outline" className="dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-900">
@@ -239,7 +229,7 @@ const ProjectsPage = () => {
         </div>
       )}
 
-      {/* ================= CREATE PROJECT MODAL ================= */}
+      {/* MODAL & TRASH kısımları aynı kalıyor */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl shadow-2xl border dark:border-slate-800 w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
@@ -249,7 +239,6 @@ const ProjectsPage = () => {
                 <X size={18} />
               </button>
             </div>
-
             <form onSubmit={handleCreateProject}>
               <div className="p-4 space-y-4">
                 <div className="space-y-1.5">
@@ -265,7 +254,6 @@ const ProjectsPage = () => {
                   />
                 </div>
               </div>
-
               <div className="p-3 border-t dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-end gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateModalOpen(false)} className="dark:border-slate-800 dark:hover:bg-slate-800">
                   {t('pages:assets.cancel', 'Cancel')}
@@ -279,11 +267,9 @@ const ProjectsPage = () => {
         </div>
       )}
 
-      {/* ================= PROJECTS TRASH MODAL ================= */}
       {isTrashOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl shadow-2xl border dark:border-slate-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-200">
-            
             <div className="p-4 border-b dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950">
               <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
                 <Trash2 size={18} className="text-rose-500" />
@@ -293,7 +279,6 @@ const ProjectsPage = () => {
                 <X size={18} />
               </button>
             </div>
-
             <div className="p-4 overflow-y-auto space-y-3 flex-1 min-h-[200px]">
               {archivedProjects.length === 0 ? (
                 <div className="text-center py-12 text-slate-400 space-y-2">
@@ -307,7 +292,6 @@ const ProjectsPage = () => {
                       <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{project.name}</h4>
                       <p className="text-xs text-slate-400 dark:text-slate-500 uppercase">Role: {project.role || 'N/A'} | Type: {project.project_type || 'N/A'}</p>
                     </div>
-                    
                     <div className="flex items-center gap-2 shrink-0">
                       <Button 
                         size="sm" variant="outline" onClick={() => handleRecoverProject(project.id)}
@@ -315,7 +299,6 @@ const ProjectsPage = () => {
                       >
                         <RotateCcw size={13} /> {t('pages:trash.recover', 'Recover')}
                       </Button>
-
                       <Button 
                         size="sm" variant="outline" onClick={() => handlePermanentDelete(project.id)}
                         className="h-8 border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-xs font-bold gap-1.5"
@@ -327,7 +310,6 @@ const ProjectsPage = () => {
                 ))
               )}
             </div>
-
             <div className="p-3 border-t dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-end">
               <Button size="sm" onClick={() => setIsTrashOpen(false)} className="bg-slate-800 hover:bg-slate-900 dark:bg-slate-200 dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium">
                 {t('pages:assets.cancel', 'Close')}

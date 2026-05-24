@@ -1,6 +1,6 @@
-// src/context/AuthContext.js
 import { createContext, useContext, useState, useEffect } from "react";
-import apiService from "@/shared/services/api/apiClient";
+// FEVZİ'NİN UYARISI & KLASÖR DÜZELTMESİ: Doğru merkezi servise bağlandık
+import apiService from "@/shared/services/api/api.service";
 
 const AuthContext = createContext();
 
@@ -15,10 +15,8 @@ export const AuthProvider = ({ children }) => {
       
       if (token) {
         try {
-          // Port karmaşasını önlemek için doğrudan Django adresine (8000) tam URL ile istek atıyoruz
-          const response = await apiService.get("http://localhost:8000/account/me/", {
-            headers: { Authorization: `Bearer ${token}` }
-          }); 
+          // FEVZİ'NİN UYARISI: Hardcoded localhost kaldırıldı. apiService zaten baseUrl'e sahip.
+          const response = await apiService.get("/account/me/"); 
           const responseData = response?.data || response;
           setUser(responseData);
         } catch (error) {
@@ -33,28 +31,37 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-  // 2. Login Fonksiyonu
+// 2. Login Fonksiyonu
+// 2. Login Fonksiyonu
   const login = async (credentials, config = {}) => {
-    // KRİTİK DÜZELTME: İsteğin 5174'e gitmesini engellemek için doğrudan Django portunu (8000) açıkça yazıyoruz!
-    const response = await apiService.post("http://localhost:8000/auth/login/", credentials, config);
-    
-    console.log("Backend'den gelen yanıt:", response);
+    try {
+      // Ekranda kullanıcı ne yazdıysa (ister email kutusu, ister username) 
+      // onu alıp backend'in ZORUNLU istediği 'email' anahtarına koyuyoruz.
+      const djangoPayload = {
+        email: credentials.email || credentials.username || credentials.identifier,
+        password: credentials.password
+      };
 
-    const dataInside = response?.data || response;
-    
-    // Django / SimpleJWT yapılarına göre token ayıklama
-    const token = dataInside?.access || dataInside?.token || dataInside?.access_token || response?.data?.access;
-    const userData = dataInside?.user || dataInside;
+      console.log("Çalışan URL'e giden paket:", djangoPayload);
 
-    if (token) {
-      console.log("Token başarıyla alındı ve hafızaya kaydediliyor.");
-      localStorage.setItem("access_token", token);
-      setUser(userData);
-    } else {
-      console.error("Giriş başarılı ancak response içerisinden token okunamadı!", dataInside);
+      // Çalışan tam backend URL'iniz (http://localhost:8000/auth/login/)
+      const response = await apiService.post("/auth/login/", djangoPayload, config);
+      
+      console.log("Backend'den gelen yanıt:", response);
+
+      const token = response?.access || response?.token || response?.access_token || response?.data?.access;
+      const userData = response?.user || response;
+
+      if (token) {
+        localStorage.setItem("access_token", token);
+        setUser(userData);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error("Giriş hatası:", error.response?.data || error);
+      throw error;
     }
-    
-    return response;
   };
 
   // 3. Logout Fonksiyonu
