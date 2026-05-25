@@ -26,6 +26,7 @@ import Register from "@/features/auth/Register/Register";
 
 import TasksPage from '@/features/tasks/TasksPage';
 import DatasetsPage from '@/features/datasets/DatasetsPage';
+import { ProjectDatasetsPage } from '@/features/projects/ProjectDatasetsPage'; // 🎯 DOĞRU İMPORT
 import ProjectsPage from '@/features/projects/ProjectsPage';
 import ViewerPage from '@/features/viewer/ViewerPage';
 import { VerificationPage } from '@/features/auth/EmailVerification/EmailVerification';
@@ -55,14 +56,16 @@ function App() {
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                   <Route path="/reset-password" element={<PasswordResetPage />} />
                   <Route path="/account-not-verified" element={<AccountNotVerifiedPage />} />
-                  <Route path="/*" element={
+                  <Route path="/*" element = {
                     <DashboardLayout>
                       <Routes>
                         <Route path="/" element={<DashboardHome />} />
 
                         {/* Ana Sayfa */}
                         <Route path="/projects" element={<ProjectsPage />} />
-                        <Route path="/projects/:projectId/datasets" element={<DatasetsPage />} />
+                        
+                        {/* 🎯 DEĞİŞEN KISIM: Proje scope altındayken senin hazırladığın detay paneli açılacak */}
+                        <Route path="/projects/:projectId/datasets" element={<ProjectDatasetsPage />} />
                         
                         {/* Sol menü veya doğrudan erişim için genel Datasets rotası */}
                         <Route path="/datasets" element={<DatasetsPage />} />

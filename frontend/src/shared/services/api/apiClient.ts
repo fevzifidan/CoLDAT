@@ -1,7 +1,14 @@
-// FEVZİ'NİN UYARISI: Mükerrer interceptor ezildi. Dosya silinmeden ana servise köprü yapıldı.
-// Fix: correct relative path to api.service in the same folder
-import apiService from './api.service';
+import axios from 'axios';
 
-export const apiClient = apiService.client;
+// YAML dökümanındaki base URL: http://localhost:8000
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
+export const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// projectService'in apiService adıyla default import edebilmesi için ekledik:
 export default apiClient;

@@ -2,13 +2,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Settings, Tag, Image as ImageIcon, Users, Download, ArrowLeft, Save } from "lucide-react";
-import { useState, useEffect } from 'react'; 
+import { useState, useEffect, useCallback } from 'react'; 
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import { projectService } from './services/projectService';
 
-// Bileşen Importları
 import TaxonomyManager from '@/features/datasets/taxonomy/TaxonomyManager';
 import AssetManager from '@/assets/AssetManager';
 import TeamManager from '@/assets/TeamManager';
@@ -19,7 +18,7 @@ interface Project {
   id: string;
   name: string;
   description?: string;
-  project_type: 'object_detection' | 'entity_recognition' | 'semantic_relation';
+  project_type: string;
   dataset_id: string;
   created_at: string;
   status?: string; 
@@ -35,9 +34,8 @@ const ProjectDetailPage = () => {
   
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false); // Kayıt esnasında butonları kilitlemek için
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Global Değişiklik Takibi
   const [pendingChanges, setPendingChanges] = useState<{
     general: any;
     taxonomy: any;
@@ -48,7 +46,6 @@ const ProjectDetailPage = () => {
     team: null
   });
 
-  // Proje detayını backend'den çekme fonksiyonu
   const loadProjectDetails = () => {
     if (!id) return;
     setLoading(true);
@@ -69,16 +66,16 @@ const ProjectDetailPage = () => {
 
   useEffect(() => {
     loadProjectDetails();
-  }, [id, t]);
+  }, [id]);
 
-  const handleDataUpdate = (tab: string, data: any) => {
+  // 🎯 CRITICAL FIX: useCallback ekleyerek alt bileşene giden fonksiyonun stabil kalmasını sağladık
+  const handleDataUpdate = useCallback((tab: string, data: any) => {
     setPendingChanges(prev => ({
       ...prev,
       [tab]: data
     }));
-  };
+  }, []);
 
-  // BACKEND'E KAYDETME MOTORU (Global Save)
   const handleGlobalSave = async () => {
     if (!id) return;
     
@@ -86,22 +83,17 @@ const ProjectDetailPage = () => {
     const saveToastId = toast.loading(t('common:status.saving', 'Saving changes...'));
 
     try {
-      // 1. Adım: Eğer General sekmesinde değişiklik yapılmışsa
       if (pendingChanges.general) {
         await projectService.updateProject(id, pendingChanges.general);
       }
 
-      // 2. Adım: Eğer Taxonomy sekmesinde değişiklik yapılmışsa
       if (pendingChanges.taxonomy) {
         await projectService.updateProjectTaxonomy(id, pendingChanges.taxonomy);
       }
 
       toast.success(t('pages:project_detail.alert_success', "Changes saved successfully!"), { id: saveToastId });
       
-      // Kaydedilen değişikliklerin state'ini sıfırlıyoruz
       setPendingChanges({ general: null, taxonomy: null, team: null });
-      
-      // Ekrandaki verileri tazelemek için projeyi backend'den yeniden çekiyoruz
       loadProjectDetails();
     } catch (error: any) {
       console.error("Kayıt esnasında hata meydana geldi:", error);
@@ -138,12 +130,10 @@ const ProjectDetailPage = () => {
     { value: 'export', label: t('pages:project_detail.tabs.export', 'Export'), icon: Download },
   ];
 
-  // Herhangi bir tab'de kaydedilmemiş bir veri var mı kontrolü (Buton aktifliği için)
   const hasChanges = !!(pendingChanges.general || pendingChanges.taxonomy || pendingChanges.team);
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      {/* Sticky Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 shadow-sm">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
@@ -163,7 +153,7 @@ const ProjectDetailPage = () => {
             size="sm" 
             className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
             onClick={handleGlobalSave}
-            disabled={isSaving || !hasChanges} // Değişiklik yoksa veya kaydediliyorsa buton kilitlenir
+            disabled={isSaving || !hasChanges}
           >
             <Save className="mr-2 h-4 w-4" /> {t('pages:project_detail.save_all', 'Save All')}
           </Button>
@@ -175,8 +165,6 @@ const ProjectDetailPage = () => {
 
       <div className="p-6 max-w-7xl mx-auto w-full">
         <div className="space-y-8">
-          
-          {/* Tab Navigation */}
           <div className="flex gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl w-fit border border-slate-200/50 dark:border-slate-800 shadow-inner">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -198,11 +186,10 @@ const ProjectDetailPage = () => {
             })}
           </div>
 
-          {/* Tab Content */}
           <div className="pb-20">
               {activeTab === 'general' && (
                 <GeneralSettings 
-                  project={project as any} 
+                  project={project} 
                   onUpdate={(data) => handleDataUpdate('general', data)} 
                 />
               )}

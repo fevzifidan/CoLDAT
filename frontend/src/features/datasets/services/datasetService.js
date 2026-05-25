@@ -1,11 +1,19 @@
 // src/features/datasets/services/datasetService.js
 import apiService from '@/shared/services/api/apiClient';
 
-// Backend bağlanana kadar simülasyon modunu aktif tutuyoruz (true)
-// Backend hazır olduğunda tek yapman gereken bunu false yapmak!
-const IS_MOCK = true;
+// 🎯 BACKEND BAĞLANTISI İÇİN MOCK MODUNU KAPATIYORUZ!
+const IS_MOCK = false;
 
-// --- LocalStorage Simülasyon Yardımcı Fonksiyonları ---
+// Tarayıcıda saklanan JWT token'ı dinamik olarak bulan yardımcı fonksiyon
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token') || 
+                localStorage.getItem('access_token') || 
+                sessionStorage.getItem('token') ||
+                JSON.parse(localStorage.getItem('auth_store') || '{}')?.token;
+                
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 const getLocalDatasets = (projectId) => {
   const allData = localStorage.getItem(`mock_datasets_${projectId}`);
   return allData ? JSON.parse(allData) : [];
@@ -18,20 +26,37 @@ const saveLocalDatasets = (projectId, datasets) => {
 export const datasetService = {
   // GET /projects/{projectId}/datasets/
   getAllDatasets: async (projectId) => {
-    // Eğer geçerli bir projectId yoksa backend'e hiç gitme, direkt boş liste dön
     if (!projectId || projectId === "null" || projectId === "default-project") {
       return [];
     }
 
-    // --- SİMÜLASYON MODU ---
     if (IS_MOCK) {
       return getLocalDatasets(projectId);
     }
 
-    // --- GERÇEK BACKEND MODU ---
     try {
-      const response = await apiService.get(`/projects/${projectId}/datasets/`);
-      return Array.isArray(response) ? response : (response?.data?.results || response?.data || response?.results || []);
+      const response = await apiService.get(`projects/${projectId}/datasets/`, {
+        headers: getAuthHeaders()
+      });
+      
+      // --- KORUMA KATMANI: Gelen verinin tipini inceleyip diziyi ayıkla ---
+      if (Array.isArray(response)) return response;
+      if (Array.isArray(response?.data)) return response.data;
+      if (Array.isArray(response?.data?.results)) return response.data.results;
+      if (Array.isArray(response?.results)) return response.results;
+      
+      // Eğer bir nesne geldiyse içindeki ilk dizi tipindeki key'i bulmaya çalış
+      if (response && typeof response === 'object') {
+        const potentialArray = Object.values(response).find(val => Array.isArray(val));
+        if (potentialArray) return potentialArray;
+        
+        if (response.data && typeof response.data === 'object') {
+          const potentialDataArray = Object.values(response.data).find(val => Array.isArray(val));
+          if (potentialDataArray) return potentialDataArray;
+        }
+      }
+
+      return [];
     } catch (error) {
       console.error(`getAllDatasets Hatası (${projectId}):`, error);
       return [];
@@ -44,10 +69,8 @@ export const datasetService = {
       throw new Error("Dataset oluşturmak için önce bir projenin içine girmelisiniz.");
     }
     
-    // --- SİMÜLASYON MODU ---
     if (IS_MOCK) {
       const currentDatasets = getLocalDatasets(projectId);
-      
       const newDataset = {
         id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11),
         name: datasetData.name,
@@ -58,20 +81,20 @@ export const datasetService = {
         role: "OWNER",
         isDeleted: false
       };
-
       const updated = [newDataset, ...currentDatasets];
       saveLocalDatasets(projectId, updated);
       return newDataset;
     }
 
-    // --- GERÇEK BACKEND MODU ---
-    const response = await apiService.post(`/projects/${projectId}/datasets/`, datasetData);
+    // 🎯 Gerçek backend çağrısına auth header eklendi
+    const response = await apiService.post(`projects/${projectId}/datasets/`, datasetData, {
+      headers: getAuthHeaders()
+    });
     return response?.data || response;
   },
 
   // DELETE /datasets/{datasetId}/
   deleteDataset: async (id) => {
-    // --- SİMÜLASYON MODU ---
     if (IS_MOCK) {
       for (let key in localStorage) {
         if (key.startsWith("mock_datasets_")) {
@@ -83,32 +106,32 @@ export const datasetService = {
       return { success: true };
     }
 
-    // --- GERÇEK BACKEND MODU ---
-    return await apiService.delete(`/datasets/${id}/`);
+    return await apiService.delete(`/datasets/${id}/`, {
+      headers: getAuthHeaders()
+    });
   },
 
   // ---- DATASET MEMBERS ENDPOINTS ----
   getDatasetMembers: async (datasetId) => {
     if (IS_MOCK) return [];
-    const response = await apiService.get(`/datasets/${datasetId}/members/`);
+    const response = await apiService.get(`/datasets/${datasetId}/members/`, { headers: getAuthHeaders() });
     return response?.data || response || [];
   },
 
-  // "Tarayıcı" olan kısım addDatasetMember olarak düzeltildi
   addDatasetMember: async (datasetId, memberData) => {
     if (IS_MOCK) return { success: true };
-    const response = await apiService.post(`/datasets/${datasetId}/members/`, memberData);
+    const response = await apiService.post(`/datasets/${datasetId}/members/`, memberData, { headers: getAuthHeaders() });
     return response?.data || response;
   },
 
   updateDatasetMember: async (datasetId, memberId, memberData) => {
     if (IS_MOCK) return { success: true };
-    const response = await apiService.patch(`/datasets/${datasetId}/members/${memberId}/`, memberData);
+    const response = await apiService.patch(`/datasets/${datasetId}/members/${memberId}/`, memberData, { headers: getAuthHeaders() });
     return response?.data || response;
   },
 
   removeDatasetMember: async (datasetId, memberId) => {
     if (IS_MOCK) return { success: true };
-    return await apiService.delete(`/datasets/${datasetId}/members/${memberId}/`);
+    return await apiService.delete(`/datasets/${datasetId}/members/${memberId}/`, { headers: getAuthHeaders() });
   }
 };

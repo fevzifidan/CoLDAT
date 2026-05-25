@@ -4,12 +4,13 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Trash2, RotateCcw, X, Plus, FolderPlus, Trash } from "lucide-react"; 
+import { Search, Trash2, RotateCcw, X, Plus, FolderPlus, Trash, ArrowLeft } from "lucide-react"; 
 import { DatasetCard } from './components/DatasetCard';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { datasetService } from './services/datasetService';
+import { projectService } from '../projects/services/projectService'; // 🎯 Doğrudan güvenli import
 
 interface Dataset {
   id: string;
@@ -27,17 +28,14 @@ const DatasetsPage = () => {
   const { t } = useTranslation(['pages', 'common']);
   const navigate = useNavigate();
   
-  // URL'den projectId parametresini yakalıyoruz
   const { projectId } = useParams<{ projectId: string }>();
 
-  // Gelen verinin geçerli bir UUID standartında olup olmadığını doğrulamak için regex
   const isUUID = (str?: string) => {
     if (!str) return false;
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidRegex.test(str);
   };
 
-  // Eğer geçerli bir UUID varsa onu kullanıyoruz, yoksa backend'e göndermemek için null kalıyor
   const activeProjectId = isUUID(projectId) ? projectId : null;
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,32 +46,50 @@ const DatasetsPage = () => {
   const [loading, setLoading] = useState(true);
   const [isTrashOpen, setIsTrashOpen] = useState(false);
 
-  // Yeni Dataset Modal Stateleri
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [datasetName, setDatasetName] = useState("");
   const [datasetDesc, setDatasetDesc] = useState("");
   const [datasetType, setDatasetType] = useState("text");
   const [submitting, setSubmitting] = useState(false);
 
-  // fetchDatasets fonksiyonu
-  const fetchDatasets = useCallback(() => {
+  const fetchDatasets = useCallback(async () => {
     setLoading(true);
+    try {
+      let rawData: any[] = [];
 
-    // activeProjectId yoksa servis doğrudan [] dönecektir
-    datasetService.getAllDatasets(activeProjectId)
-      .then((dataArray: any) => {
-        const enrichedDatasets = (dataArray || []).map((d: any) => ({
-          ...d,
-          isDeleted: d.isDeleted ?? false,
-          isPermanentlyDeleted: d.isPermanentlyDeleted ?? false
-        }));
-        setDatasetList(enrichedDatasets);
-      })
-      .catch((error: any) => {
-        console.error("Dataset yükleme hatası:", error);
-        setDatasetList([]); 
-      })
-      .finally(() => setLoading(false));
+      if (activeProjectId) {
+        rawData = await datasetService.getAllDatasets(activeProjectId);
+      } else {
+        // 🎯 Genel sayfada tüm projeleri çekip datasetleri topluyoruz
+        const response = await projectService.getAllProjects() as any;
+        const projectArray = response?.data || response?.results || (Array.isArray(response) ? response : []);
+        
+        if (Array.isArray(projectArray)) {
+          const uniqueDatasets = new Map();
+          projectArray.forEach((proj: any) => {
+            if (Array.isArray(proj.datasets)) {
+              proj.datasets.forEach((ds: any) => {
+                uniqueDatasets.set(ds.id, ds);
+              });
+            }
+          });
+          rawData = Array.from(uniqueDatasets.values());
+        }
+      }
+
+      const enrichedDatasets = (rawData || []).map((d: any) => ({
+        ...d,
+        isDeleted: d.isDeleted ?? false,
+        isPermanentlyDeleted: d.isPermanentlyDeleted ?? false
+      }));
+      
+      setDatasetList(enrichedDatasets);
+    } catch (error) {
+      console.error("Dataset yükleme hatası:", error);
+      setDatasetList([]); 
+    } finally {
+      setLoading(false);
+    }
   }, [activeProjectId]);
 
   useEffect(() => {
@@ -94,7 +110,7 @@ const DatasetsPage = () => {
     datasetService.createDataset(activeProjectId, { 
       name: datasetName, 
       description: datasetDesc, 
-      dataset_type: datasetType 
+      dataset_type: datasetType
     })
       .then(() => {
         toast.success(t("common:status.success", "Created successfully."));
@@ -111,13 +127,8 @@ const DatasetsPage = () => {
       .finally(() => setSubmitting(false));
   };
 
-  const activeDatasets = datasetList.filter(
-    (d) => !d.isDeleted && !d.isPermanentlyDeleted
-  );
-  
-  const archivedDatasets = datasetList.filter(
-    (d) => d.isDeleted && !d.isPermanentlyDeleted
-  );
+  const activeDatasets = datasetList.filter((d) => !d.isDeleted && !d.isPermanentlyDeleted);
+  const archivedDatasets = datasetList.filter((d) => d.isDeleted && !d.isPermanentlyDeleted);
 
   const filteredDatasets = activeDatasets.filter(dataset => {
     const matchesSearch = dataset.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false;
@@ -162,33 +173,48 @@ const DatasetsPage = () => {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto relative text-slate-900 dark:text-slate-100">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 dark:border-slate-800">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-          {t('pages:datasets.title', "Datasets")}
-        </h1>
+        <div className="flex items-center gap-3">
+          {activeProjectId && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate('/projects')}
+              className="rounded-xl border dark:border-slate-800 h-9 w-9"
+            >
+              <ArrowLeft size={16} />
+            </Button>
+          )}
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            {activeProjectId ? `${t('pages:datasets.title', "Datasets")} - Project Scope` : t('pages:datasets.title', "Datasets")}
+          </h1>
+        </div>
         
         <div className="flex flex-wrap items-center gap-3">
-          {/* Arama Input */}
           <div className="relative w-64">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
             <Input 
               placeholder={t("pages:datasets.search_placeholder", "Search datasets...")} 
-              className="pl-9 h-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600" 
+              className="pl-9 h-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 rounded-xl" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          {/* Create Dataset Butonu */}
           <Button 
-            onClick={() => setIsModalOpen(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 h-9 font-medium shadow-sm gap-1.5 text-white"
+            onClick={() => {
+              if (!activeProjectId) {
+                toast.error("Dataset oluşturabilmek için öncelikle 'Projects' sayfasından bir projenin içerisine girmelisiniz.");
+                return;
+              }
+              setIsModalOpen(true);
+            }}
+            className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 h-9 font-medium shadow-sm gap-1.5 text-white rounded-xl"
           >
             <Plus size={16} /> {t('pages:datasets.create_dataset', "Create Dataset")}
           </Button>
 
-          {/* Dialog Modal */}
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-900 border-2 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+            <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-900 border-2 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl">
               <DialogHeader>
                 <DialogTitle>
                   <span className="flex items-center gap-2 text-slate-900 dark:text-white">
@@ -211,7 +237,7 @@ const DatasetsPage = () => {
                     placeholder={t('pages:project_general.placeholder_name', 'E.g. Autonomous Driving Dataset')} 
                     required 
                     maxLength={100}
-                    className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+                    className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl"
                   />
                 </div>
                 <div className="space-y-1">
@@ -219,7 +245,7 @@ const DatasetsPage = () => {
                   <select
                     value={datasetType}
                     onChange={(e) => setDatasetType(e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer text-slate-700 dark:text-slate-300 font-medium focus-visible:outline-none"
+                    className="flex h-9 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer text-slate-700 dark:text-slate-300 font-medium focus-visible:outline-none"
                   >
                     <option value="text">📄 Text / Document Data</option>
                     <option value="image">🖼️ Image / Vision Data</option>
@@ -234,17 +260,16 @@ const DatasetsPage = () => {
                     placeholder={t('pages:project_general.placeholder_desc', 'Describe the purpose of this dataset...')} 
                     rows={3} 
                     maxLength={300}
-                    className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+                    className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl"
                   />
                 </div>
-                <Button type="submit" disabled={submitting} className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 mt-2 font-bold text-white">
+                <Button type="submit" disabled={submitting} className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 mt-2 font-bold text-white rounded-xl">
                   {submitting ? t("common:status.saving", "Saving...") : t("pages:datasets.create_dataset", "Create Dataset")}
                 </Button>
               </form>
             </DialogContent>
           </Dialog>
 
-          {/* Role Filtresi */}
           <div>
             <select
               value={roleFilter}
@@ -252,7 +277,7 @@ const DatasetsPage = () => {
                 setRoleFilter(e.target.value);
                 setDisplayLimit(4); 
               }}
-              className="flex h-9 w-40 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer focus-visible:outline-none text-slate-700 dark:text-slate-300 font-medium"
+              className="flex h-9 w-40 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer focus-visible:outline-none text-slate-700 dark:text-slate-300 font-medium"
             >
               <option value="ALL">✨ {t('pages:datasets.filter.all_roles', 'All Roles')}</option>
               <option value="OWNER">🔑 {t('pages:datasets.filter.owner', 'Owner')}</option>
@@ -260,10 +285,9 @@ const DatasetsPage = () => {
             </select>
           </div>
 
-          {/* Trash Butonu */}
           <Button 
             variant="outline" 
-            className="h-9 relative border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 gap-2 font-medium"
+            className="h-9 relative border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 gap-2 font-medium rounded-xl"
             onClick={() => setIsTrashOpen(true)}
           >
             <Trash className="h-4 w-4 text-slate-600 dark:text-slate-400" />
@@ -282,8 +306,7 @@ const DatasetsPage = () => {
           <p>{t('pages:datasets.empty_list', "No datasets found matching the criteria.")}</p>
         </div>
       ) : (
-        /* Grid Yapısı */
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 text-left">
           {visibleDatasets.map((dataset) => (
             <div 
               key={dataset.id} 
@@ -291,8 +314,6 @@ const DatasetsPage = () => {
               className="cursor-pointer transition-transform hover:scale-[1.02] relative group dark:[&_h3]:!text-white dark:[&_h4]:!text-white"
             >
               <DatasetCard dataset={dataset} />
-              
-              {/* Kart Hızlı Silme Butonu */}
               <button
                 onClick={(e) => handleDeleteDataset(dataset.id, e)}
                 className="absolute bottom-4 right-4 p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/50 shadow-sm"
@@ -307,26 +328,22 @@ const DatasetsPage = () => {
 
       {displayLimit < filteredDatasets.length && (
         <div className="flex justify-center mt-12">
-          <Button onClick={() => setDisplayLimit(prev => prev + 4)} variant="outline" className="px-8 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-900">
+          <Button onClick={() => setDisplayLimit(prev => prev + 4)} variant="outline" className="px-8 rounded-xl dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-900">
             {t('pages:datasets.more_load', "Load More")} 
           </Button>
         </div>
       )}
 
-      {/* ================= DATASETS TRASH MODAL ================= */}
+      {/* Trash Modal Arayüzü */}
       {isTrashOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl shadow-2xl border dark:border-slate-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-200">
-            
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl shadow-2xl border dark:border-slate-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
             <div className="p-4 border-b dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950">
               <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
                 <Trash2 size={18} className="text-rose-500" />
                 <h3 className="font-bold text-lg">{t('pages:trash.modal_title', "Trash Bin")}</h3>
               </div>
-              <button 
-                onClick={() => setIsTrashOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-              >
+              <button onClick={() => setIsTrashOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400">
                 <X size={18} />
               </button>
             </div>
@@ -339,35 +356,17 @@ const DatasetsPage = () => {
                 </div>
               ) : (
                 archivedDatasets.map((dataset) => (
-                  <div 
-                    key={dataset.id} 
-                    className="flex items-center justify-between p-3 border dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40 hover:bg-slate-50 dark:hover:bg-slate-950 transition-colors gap-4"
-                  >
-                    <div>
+                  <div key={dataset.id} className="flex items-center justify-between p-3 border dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40 gap-4">
+                    <div className="text-left">
                       <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{dataset.name}</h4>
                       <p className="text-xs text-slate-400 dark:text-slate-500 capitalize">Type: {dataset.dataset_type}</p>
                     </div>
-                    
                     <div className="flex items-center gap-2 shrink-0">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleRecoverDataset(dataset.id)}
-                        className="h-8 border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-xs font-bold gap-1.5"
-                      >
-                        <RotateCcw size={13} />
-                        {t('pages:trash.recover', "Recover")}
+                      <Button size="sm" variant="outline" onClick={() => handleRecoverDataset(dataset.id)} className="h-8 border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold gap-1.5 rounded-xl">
+                        <RotateCcw size={13} /> {t('pages:trash.recover', "Recover")}
                       </Button>
-
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handlePermanentDelete(dataset.id)}
-                        className="h-8 border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-xs font-bold gap-1.5"
-                        title={t('pages:trash.tooltips.delete_permanently', 'Delete Permanently')}
-                      >
-                        <Trash2 size={13} />
-                        {t('pages:trash.permanent_delete', "Delete")}
+                      <Button size="sm" variant="outline" onClick={() => handlePermanentDelete(dataset.id)} className="h-8 border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 text-xs font-bold gap-1.5 rounded-xl">
+                        <Trash2 size={13} /> {t('pages:trash.permanent_delete', "Delete")}
                       </Button>
                     </div>
                   </div>
@@ -376,11 +375,10 @@ const DatasetsPage = () => {
             </div>
 
             <div className="p-3 border-t dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-end">
-              <Button size="sm" onClick={() => setIsTrashOpen(false)} className="bg-slate-800 hover:bg-slate-900 dark:bg-slate-200 dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium">
+              <Button size="sm" onClick={() => setIsTrashOpen(false)} className="bg-slate-800 hover:bg-slate-900 dark:bg-slate-200 dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium rounded-xl">
                 {t('common:status.close', "Close")}
               </Button>
             </div>
-
           </div>
         </div>
       )}

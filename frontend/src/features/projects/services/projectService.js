@@ -1,18 +1,27 @@
 // src/features/projects/services/projectService.js
-import apiService from '@/shared/services/api/apiClient';
+import apiService from '../../../shared/services/api/apiClient';
 
-// Backend'de taxonomy endpoint'i hazır olana kadar burayı true tutuyoruz.
-// Django tarafında bu rotalar eklendiğinde tek yapman gereken burayı false yapmak!
 const IS_TAXONOMY_MOCK = true;
+
+// Tarayıcıda saklanan JWT token'ı dinamik olarak bulup getiren yardımcı fonksiyon
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token') || 
+                localStorage.getItem('access_token') || 
+                sessionStorage.getItem('token') ||
+                JSON.parse(localStorage.getItem('auth_store') || '{}')?.token;
+                
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 export const projectService = {
   /**
    * 1. Tüm projeleri listele (GET /projects/)
    */
   getAllProjects: async () => {
-    // apiClient interceptor zaten response.data'yı dönüyor.
-    // O yüzden doğrudan gelen yanıtı yukarı fırlatıyoruz!
-    const response = await apiService.get('projects/');
+    // 401 hatasını engellemek için mevcut token'ı header olarak güvenle geçiyoruz
+    const response = await apiService.get('projects/', {
+      headers: getAuthHeaders()
+    });
     return response; 
   },
 
@@ -20,7 +29,9 @@ export const projectService = {
    * 2. Yeni proje oluştur (POST /projects/)
    */
   createProject: async (projectData) => {
-    const response = await apiService.post('projects/', projectData);
+    const response = await apiService.post('projects/', projectData, {
+      headers: getAuthHeaders()
+    });
     return response;
   },
 
@@ -28,7 +39,9 @@ export const projectService = {
    * 3. Proje detayını getir (GET /projects/{id}/)
    */
   getProjectById: async (id) => {
-    const response = await apiService.get(`projects/${id}/`);
+    const response = await apiService.get(`projects/${id}/`, {
+      headers: getAuthHeaders()
+    });
     return response;
   },
 
@@ -36,7 +49,9 @@ export const projectService = {
    * 4. Projeyi güncelle (PATCH /projects/{id}/)
    */
   updateProject: async (id, projectData) => {
-    const response = await apiService.patch(`projects/${id}/`, projectData);
+    const response = await apiService.patch(`projects/${id}/`, projectData, {
+      headers: getAuthHeaders()
+    });
     return response;
   },
 
@@ -44,69 +59,68 @@ export const projectService = {
    * 5. Projeyi sil (DELETE /projects/{id}/)
    */
   deleteProject: async (id) => {
-    const response = await apiService.delete(`projects/${id}/`);
+    const response = await apiService.delete(`projects/${id}/`, {
+      headers: getAuthHeaders()
+    });
     return response;
   },
 
   /**
    * ================= MEMBERS ENDPOINTS =================
    */
-
   getProjectMembers: async (projectId) => {
-    const response = await apiService.get(`projects/${projectId}/members/`);
+    const response = await apiService.get(`projects/${projectId}/members/`, {
+      headers: getAuthHeaders()
+    });
     return response;
   },
 
   addProjectMember: async (projectId, memberData) => {
-    const response = await apiService.post(`projects/${projectId}/members/`, memberData);
+    const response = await apiService.post(`projects/${projectId}/members/`, memberData, {
+      headers: getAuthHeaders()
+    });
     return response;
   },
 
   updateProjectMember: async (projectId, membershipId, memberData) => {
-    const response = await apiService.patch(`projects/${projectId}/members/${membershipId}/`, memberData);
+    const response = await apiService.patch(`projects/${projectId}/members/${membershipId}/`, memberData, {
+      headers: getAuthHeaders()
+    });
     return response;
   },
 
   removeProjectMember: async (projectId, membershipId) => {
-    const response = await apiService.delete(`projects/${projectId}/members/${membershipId}/`);
+    const response = await apiService.delete(`projects/${projectId}/members/${membershipId}/`, {
+      headers: getAuthHeaders()
+    });
     return response;
   },
 
   /**
    * ================= TAXONOMY ENDPOINTS =================
    */
-
-  /**
-   * Projenin etiket şemasını/sınıflarını getirir (GET /projects/{projectId}/taxonomy/)
-   */
   getProjectTaxonomy: async (projectId) => {
     if (IS_TAXONOMY_MOCK) {
-      // Backend 404 hatası verdiği için veriyi geçici olarak localStorage'dan simüle ediyoruz
       const localData = localStorage.getItem(`mock_taxonomy_${projectId}`);
       if (localData) {
         return JSON.parse(localData);
       }
-      // Eğer proje için ilk defa taxonomy açılıyorsa varsayılan boş şema yapısını dönüyoruz
       return { classes: [], predicates: [], attributes: [] };
     }
-
-    // Gerçek backend endpoint'i aktif olduğunda çalışacak kısım:
-    const response = await apiService.get(`projects/${projectId}/taxonomy/`);
+    const response = await apiService.get(`projects/${projectId}/taxonomy/`, {
+      headers: getAuthHeaders()
+    });
     return response;
   },
 
-  /**
-   * Projenin etiket şemasını günceller/üzerine yazar (PUT /projects/{projectId}/taxonomy/)
-   */
   updateProjectTaxonomy: async (projectId, taxonomyData) => {
     if (IS_TAXONOMY_MOCK) {
-      // Backend'e giden isteği simüle edip verileri tarayıcı hafızasına yazıyoruz
       localStorage.setItem(`mock_taxonomy_${projectId}`, JSON.stringify(taxonomyData));
       return { success: true, message: "Taxonomy saved locally." };
     }
-
-    // Gerçek backend endpoint'i aktif olduğunda çalışacak kısım:
-    const response = await apiService.put(`projects/${projectId}/taxonomy/`, taxonomyData);
+    const response = await apiService.put(`projects/${projectId}/taxonomy/`, taxonomyData, {
+      headers: getAuthHeaders()
+    });
     return response;
   }
 };

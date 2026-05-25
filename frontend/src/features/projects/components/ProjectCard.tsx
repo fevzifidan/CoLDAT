@@ -3,19 +3,19 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, Settings, Eye } from "lucide-react";
+import { ArrowUpRight, Settings, Eye, Database } from "lucide-react";
 
-// API ve Sayfa yapısındaki ExtendedProject alanlarıyla tam uyum sağlamak için 
-// esnek bir yerel tip tanımı oluşturuyoruz.
 interface CardProject {
   id: string;
   name: string;
   description?: string;
-  project_type?: string; // API'deki karşılığı (task yerine)
+  project_type?: string; 
   status?: string;
   count?: number;
   role?: string;
   created_at?: string;
+  dataset_id?: string;
+  datasets?: any[];
 }
 
 interface ProjectCardProps {
@@ -30,13 +30,22 @@ export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardPr
   
   const rawRole = project.role?.toLowerCase() || 'viewer';
 
-  const handleNavigate = () => {
+  // MANAGE veya standart tıklamalar için asıl gitmesi gereken temiz adresler
+  const handleManageNavigate = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Kartın tıklama alanlarını izole ediyoruz
+
     const paths = {
       task: `/tasks/${project.id}`,
       dataset: `/datasets/${project.id}`,
-      project: `/projects/${project.id}`
+      project: `/projects/${project.id}` // 🎯 /projects/:id ana detay sayfasına gider
     };
     navigate(paths[cardType]);
+  };
+
+  // Doğrudan projenin Dataset sayfasına yönlendirme
+  const handleDatasetNavigate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/projects/${project.id}/datasets`);
   };
 
   const getButtonConfig = () => {
@@ -71,14 +80,12 @@ export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardPr
     return 'border-blue-100 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/40 hover:bg-blue-100/70 dark:hover:bg-blue-900/40';
   };
 
-  // Güvenli key dönüşümleri ve backend API haritalaması (project_type)
-const currentStatus = project.status ? String(project.status) : 'New';
-// project_type yoksa fallback olarak 'Object Detection' string'ini garantiye alıyoruz
-const currentType = project.project_type ? String(project.project_type) : 'Object Detection';
+  const currentStatus = project.status ? String(project.status) : 'New';
+  const currentType = project.project_type ? String(project.project_type) : 'Object Detection';
 
-const statusKey = currentStatus.toLowerCase().replace(/ /g, '_');
-const typeKey = currentType.toLowerCase().replace(/ /g, '_');
-const roleKey = rawRole.replace(/ /g, '_');
+  const statusKey = currentStatus.toLowerCase().replace(/ /g, '_');
+  const typeKey = currentType.toLowerCase().replace(/ /g, '_');
+  const roleKey = rawRole.replace(/ /g, '_');
 
   return (
     <Card className="group relative overflow-hidden rounded-[2rem] bg-white dark:bg-slate-900 shadow-sm hover:shadow-xl dark:hover:shadow-black/40 transition-all duration-300 border border-slate-100 dark:border-slate-800">
@@ -103,7 +110,7 @@ const roleKey = rawRole.replace(/ /g, '_');
           )}
         </div>
 
-        <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 leading-tight group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors">
+        <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 leading-tight transition-colors">
           {project.name}
         </CardTitle>
         
@@ -123,14 +130,36 @@ const roleKey = rawRole.replace(/ /g, '_');
         </div>
       </CardContent>
 
-      <CardFooter className="p-5 pt-2">
-        <Button 
-          className="w-full rounded-xl h-9 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:bg-[#e10613] dark:hover:bg-[#e10613] hover:text-white dark:hover:text-white border-none font-bold text-[10px] transition-all" 
-          onClick={handleNavigate}
-        >
-          {buttonConfig.text}
-          {buttonConfig.icon}
-        </Button>
+      <CardFooter className="p-5 pt-2 gap-2">
+        {cardType === 'project' && rawRole === 'admin' ? (
+          <>
+            {/* 🎯 MANAGE BUTONU: Kilit kaldırıldı, artık her zaman açık ve tıklanabilir */}
+            <Button 
+              className="flex-1 rounded-xl h-9 font-bold text-[10px] transition-all border-none bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:bg-[#e10613] dark:hover:bg-[#e10613] hover:text-white dark:hover:text-white cursor-pointer"
+              onClick={handleManageNavigate}
+            >
+              {buttonConfig.text}
+              {buttonConfig.icon}
+            </Button>
+
+            {/* DATASET BUTONU */}
+            <Button 
+              className="flex-1 rounded-xl h-9 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 dark:hover:bg-indigo-600 hover:text-white dark:hover:text-white border-none font-bold text-[10px] transition-all gap-1 cursor-pointer" 
+              onClick={handleDatasetNavigate}
+            >
+              <Database size={12} />
+              {t('pages:dashboard.buttons.dataset', 'DATASET')}
+            </Button>
+          </>
+        ) : (
+          <Button 
+            className="w-full rounded-xl h-9 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:bg-[#e10613] dark:hover:bg-[#e10613] hover:text-white dark:hover:text-white border-none font-bold text-[10px] transition-all cursor-pointer" 
+            onClick={handleManageNavigate}
+          >
+            {buttonConfig.text}
+            {buttonConfig.icon}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

@@ -1,11 +1,12 @@
+// src/features/projects/ProjectsPage.tsx
 import { useState, useEffect } from 'react';
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Trash2, RotateCcw, X, Trash, Plus } from "lucide-react";
+import { Search, Trash2, RotateCcw, X, Trash, Plus, LogIn } from "lucide-react";
 import { ProjectCard } from './components/ProjectCard';
 import { projectService } from './services/projectService';
-import { useNavigate } from 'react-router-dom'; // 1. Bunu ekledik
+import { useNavigate } from 'react-router-dom';
 
 interface ExtendedProject {
   id: string;
@@ -17,11 +18,12 @@ interface ExtendedProject {
   role?: string;
   created_at?: string;
   isDeleted?: boolean;
+  dataset_id?: string;
 }
 
 const ProjectsPage = () => {
   const { t } = useTranslation(['pages']);
-  const navigate = useNavigate(); // 2. Bunu tanımladık
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [displayLimit, setDisplayLimit] = useState<number>(4);
@@ -30,6 +32,7 @@ const ProjectsPage = () => {
   const [projectList, setProjectList] = useState<ExtendedProject[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [isUnauthorized, setIsUnauthorized] = useState<boolean>(false);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [newProjectName, setNewProjectName] = useState("");
@@ -38,11 +41,19 @@ const ProjectsPage = () => {
     try {
       setIsLoading(true);
       setApiError(null);
+      setIsUnauthorized(false);
       const response = await projectService.getAllProjects();
       
-      const projectDataArray = response && Array.isArray(response.data) 
-        ? response.data 
-        : (Array.isArray(response) ? response : []);
+      let projectDataArray: any[] = [];
+      if (response) {
+        if (Array.isArray(response)) {
+          projectDataArray = response;
+        } else if (response.data && Array.isArray(response.data)) {
+          projectDataArray = response.data;
+        } else if (typeof response === 'object') {
+          projectDataArray = Array.isArray((response as any).results) ? (response as any).results : [];
+        }
+      }
 
       const formatted = projectDataArray.map((p: any) => ({ 
         ...p, 
@@ -53,7 +64,13 @@ const ProjectsPage = () => {
       setProjectList(formatted);
     } catch (err: any) {
       console.error("API error fetching projects:", err);
-      setApiError(t('pages:errors.fetch_failed', 'Failed to load projects from backend server.'));
+      
+      if (err?.response?.status === 401 || err?.status === 401) {
+        setIsUnauthorized(true);
+        setApiError(t('pages:errors.unauthorized', 'Session expired or unauthorized. Please log in again.'));
+      } else {
+        setApiError(t('pages:errors.fetch_failed', 'Failed to load projects from backend server.'));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -136,6 +153,7 @@ const ProjectsPage = () => {
 
           <Button 
             onClick={() => setIsCreateModalOpen(true)}
+            disabled={isUnauthorized}
             className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 h-9 font-medium shadow-sm gap-1.5 text-white"
           >
             <Plus size={16} />
@@ -182,11 +200,19 @@ const ProjectsPage = () => {
       )}
 
       {apiError && (
-        <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-xl p-4 text-rose-700 dark:text-rose-400 text-sm text-center">
-          {apiError}
-          <Button variant="link" className="text-rose-700 dark:text-rose-400 underline ml-2" onClick={fetchProjects}>
-            {t('pages:assets.retry', 'Retry')}
-          </Button>
+        <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-xl p-6 text-rose-700 dark:text-rose-400 text-sm text-center max-w-md mx-auto space-y-3 shadow-sm">
+          <p className="font-medium">{apiError}</p>
+          <div className="flex justify-center gap-3">
+            {isUnauthorized ? (
+              <Button size="sm" className="bg-rose-600 hover:bg-rose-700 text-white gap-1.5" onClick={() => navigate('/login')}>
+                <LogIn size={15} /> {t('pages:assets.login', 'Go to Login')}
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" className="border-rose-300 text-rose-700 hover:bg-rose-100" onClick={fetchProjects}>
+                {t('pages:assets.retry', 'Retry')}
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -199,11 +225,10 @@ const ProjectsPage = () => {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {visibleProjects.map(item => (
-                /* 3. BURASI GÜNCELLENDİ: Tıklayınca projenin datasetlerine yönlendiriyor */
+                /* 🎯 DÜZELTME: Dış div üzerindeki onClick yönlendirmesi tamamen temizlendi */
                 <div 
                   key={item.id} 
-                  onClick={() => navigate(`/projects/${item.id}/datasets`)} 
-                  className="relative group transition-transform hover:scale-[1.01] cursor-pointer"
+                  className="relative group transition-transform hover:scale-[1.01]"
                 >
                   <ProjectCard project={item} cardType="project" />
                   
@@ -229,7 +254,6 @@ const ProjectsPage = () => {
         </div>
       )}
 
-      {/* MODAL & TRASH kısımları aynı kalıyor */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl shadow-2xl border dark:border-slate-800 w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">

@@ -1,3 +1,4 @@
+// src/shared/services/api.service.ts
 import axios, { type AxiosInstance, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
 import notificationService from '@/shared/services/notification';
 import i18n from "@/i18n";
@@ -12,23 +13,18 @@ declare module 'axios' {
 type NavigateFunction = (path: string) => void;
 let navigateFn: NavigateFunction | null = null;
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
-if (!apiBaseUrl) {
-  console.error("KRİTİK HATA: .env dosyasında VITE_API_BASE_URL tanımlanmamış!");
-}
-
+// 1. Axios Instance Oluşturma
 const apiClient: AxiosInstance = axios.create({
-  // apiBaseUrl varsa sonundaki slaş kontrolünü yap, yoksa boş string geç
-  baseURL: apiBaseUrl ? (apiBaseUrl.endsWith('/') ? apiBaseUrl.slice(0, -1) : apiBaseUrl) : '',
+  baseURL: import.meta.env.VITE_API_URL,
   timeout: 10000,
 });
 
+// 2. Request Interceptor
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('access_token');
     if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token.trim()}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -37,13 +33,14 @@ apiClient.interceptors.request.use(
   }
 );
 
+// 3. Response Interceptor
 apiClient.interceptors.response.use(
   (response) => {
     return response.data;
   },
   (error) => {
     const status = error.response?.status;
-    const backendMessage = error.response?.data?.message || error.response?.data?.detail;
+    const backendMessage = error.response?.data?.message;
     const errorMessage = backendMessage || i18n.t("apiService:error.unexpected_err");
     const isSilent = error.config?.silent === true;
 
@@ -80,6 +77,7 @@ apiClient.interceptors.response.use(
   }
 );
 
+// 4. Metotları Dışarı Açma
 export const apiService = {
   get: <T = any>(url: string, config: AxiosRequestConfig = {}): Promise<T> =>
     apiClient.get(url, config),
