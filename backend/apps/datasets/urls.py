@@ -1,18 +1,25 @@
 from django.urls import path
-from .views import (
-    DatasetDetailView,
-    DatasetMemberDetailView,
-    DatasetMemberListCreateView,
-)
+
 from apps.assets.views import (
     DatasetAssetListCreateView,
+    DatasetImageListView,
 )
 from apps.tasks.views import DatasetTaskListView
 
-
+from .views import (
+    DatasetDetailView,
+    DatasetListView,
+    DatasetMemberDetailView,
+    DatasetMemberListCreateView,
+)
 
 
 urlpatterns = [
+    path(
+        "",
+        DatasetListView.as_view(),
+        name="dataset-list",
+    ),
     path(
         "<uuid:dataset_id>/",
         DatasetDetailView.as_view(),
@@ -37,5 +44,10 @@ urlpatterns = [
         "<uuid:dataset_id>/assets/",
         DatasetAssetListCreateView.as_view(),
         name="dataset-asset-list-create",
-),
+    ),
+    path(
+        "<uuid:dataset_id>/images/",
+        DatasetImageListView.as_view(),
+        name="dataset-images",
+    ),
 ]

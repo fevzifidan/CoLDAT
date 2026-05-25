@@ -6,6 +6,7 @@ from .views import (
     AssetRetryUploadView,
     AssetUploadURLCreateView,
 )
+from apps.assets.views import DatasetImageListView
 
 
 urlpatterns = [
@@ -13,6 +14,11 @@ urlpatterns = [
         "upload-urls/<uuid:dataset_id>/",
         AssetUploadURLCreateView.as_view(),
         name="asset-upload-urls",
+    ),
+    path(
+        "<uuid:dataset_id>/images/",
+        DatasetImageListView.as_view(),
+        name="dataset-images",
     ),
     path(
         "bulk-update-status/",

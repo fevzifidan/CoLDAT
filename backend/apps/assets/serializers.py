@@ -1,5 +1,7 @@
 from rest_framework import serializers
+from django.conf import settings
 
+from .storage import create_presigned_download_url
 from .models import Asset
 
 
@@ -10,6 +12,9 @@ class AssetSerializer(serializers.ModelSerializer):
         source="uploaded_by.username",
         read_only=True,
     )
+
+    status = serializers.SerializerMethodField()
+    embedding_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Asset
@@ -48,6 +53,12 @@ class AssetSerializer(serializers.ModelSerializer):
             "is_deleted",
             "created_at",
             "updated_at",
+            "status",
+            "content_sha256",
+            "upload_url_valid_until",
+            "uploaded_at",
+            "verified_at",
+            "upload_error_message",
             "embedding_status",
             "embedding_sha256",
             "embedding_upload_url_valid_until",
@@ -55,6 +66,77 @@ class AssetSerializer(serializers.ModelSerializer):
             "embedding_verified_at",
             "embedding_error_message",
         ]
+
+    def get_status(self, obj):
+        return obj.status.upper()
+
+    def get_embedding_status(self, obj):
+        return obj.embedding_status.upper()
+    
+class ImageSerializer(serializers.ModelSerializer):
+    asset_id = serializers.UUIDField(source="id", read_only=True)
+    asset_url = serializers.SerializerMethodField()
+    asset_url_expiry_at = serializers.SerializerMethodField()
+    sam_embedding_url = serializers.SerializerMethodField()
+    sam_embedding_url_expiry_at = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    embedding_status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Asset
+        fields = [
+            "asset_id",
+            "filename",
+            "mime_type",
+            "asset_url",
+            "asset_url_expiry_at",
+            "sam_embedding_url",
+            "sam_embedding_url_expiry_at",
+            "status",
+            "embedding_status",
+        ]
+
+    def get_asset_url(self, obj):
+        if obj.status != Asset.UploadStatus.UPLOADED:
+            return None
+
+        return create_presigned_download_url(
+            storage_key=obj.storage_key,
+            expires_in=settings.ASSET_READ_URL_EXPIRES_IN_SECONDS,
+        )
+
+    def get_asset_url_expiry_at(self, obj):
+        if obj.status != Asset.UploadStatus.UPLOADED:
+            return None
+
+        return self.context["read_url_expiry_at"]
+
+    def get_sam_embedding_url(self, obj):
+        if obj.embedding_status != Asset.EmbeddingStatus.UPLOADED:
+            return None
+
+        if not obj.embedding_storage_key:
+            return None
+
+        return create_presigned_download_url(
+            storage_key=obj.embedding_storage_key,
+            expires_in=settings.ASSET_READ_URL_EXPIRES_IN_SECONDS,
+        )
+
+    def get_sam_embedding_url_expiry_at(self, obj):
+        if obj.embedding_status != Asset.EmbeddingStatus.UPLOADED:
+            return None
+
+        return self.context["read_url_expiry_at"]
+
+    def get_status(self, obj):
+        return obj.status.upper()
+
+    def get_embedding_status(self, obj):
+        if obj.embedding_status == Asset.EmbeddingStatus.NOT_REQUESTED:
+            return None
+
+        return obj.embedding_status.upper()
 
 
 class AssetCreateSerializer(serializers.Serializer):
@@ -75,7 +157,7 @@ class AssetCreateSerializer(serializers.Serializer):
     )
 
 class S3UploadURLRequestItemSerializer(serializers.Serializer):
-    upload_id = serializers.CharField(max_length=255)
+    upload_id = serializers.UUIDField()
 
     upload_type = serializers.ChoiceField(
         choices=[
@@ -140,13 +222,20 @@ class AssetUploadURLCreateSerializer(serializers.Serializer):
         if not value:
             raise serializers.ValidationError("At least one file is required.")
 
-        upload_ids = [item["upload_id"] for item in value]
+        upload_ids = [
+            str(item["upload_id"])
+            for item in value
+        ]
 
         if len(upload_ids) != len(set(upload_ids)):
-            raise serializers.ValidationError("Duplicate upload_id values are not allowed.")
+            raise serializers.ValidationError(
+                "Duplicate upload_id values are not allowed."
+            )
 
         if len(value) > 100:
-            raise serializers.ValidationError("Maximum 100 files can be requested at once.")
+            raise serializers.ValidationError(
+                "Maximum 100 files can be requested at once."
+            )
 
         return value
     
@@ -167,15 +256,6 @@ class AssetStatusUpdateItemSerializer(serializers.Serializer):
         allow_blank=True,
     )
 
-    def validate(self, attrs):
-        if attrs["upload_type"] == "embedding":
-            # This becomes real after we add embedding lifecycle fields.
-            raise serializers.ValidationError(
-                "Embedding status updates are not implemented yet."
-            )
-
-        return attrs
-
 class AssetBulkStatusUpdateSerializer(serializers.Serializer):
     updates = AssetStatusUpdateItemSerializer(many=True)
 
@@ -183,10 +263,15 @@ class AssetBulkStatusUpdateSerializer(serializers.Serializer):
         if not value:
             raise serializers.ValidationError("At least one update is required.")
 
-        asset_ids = [item["asset_id"] for item in value]
+        upload_targets = [
+            (str(item["asset_id"]), item["upload_type"])
+            for item in value
+        ]
 
-        if len(asset_ids) != len(set(asset_ids)):
-            raise serializers.ValidationError("Duplicate asset_id values are not allowed.")
+        if len(upload_targets) != len(set(upload_targets)):
+            raise serializers.ValidationError(
+                "Duplicate asset_id and upload_type combinations are not allowed."
+            )
 
         return value
     

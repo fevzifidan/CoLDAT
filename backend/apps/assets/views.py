@@ -1,8 +1,12 @@
-from django.shortcuts import render
 from django.conf import settings
+from django.db import transaction
+from rest_framework.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from datetime import timedelta
+
+from django.utils import timezone
 
 from .storage import (
     create_presigned_upload_url,
@@ -15,6 +19,7 @@ from .selectors import (
     get_asset_for_user,
     get_assets_for_status_update,
     get_dataset_assets_for_user,
+    get_dataset_images_for_user,
 )
 from .serializers import (
     AssetBulkStatusUpdateSerializer,
@@ -22,6 +27,7 @@ from .serializers import (
     AssetRetryUploadSerializer,
     AssetSerializer,
     AssetUploadURLCreateSerializer,
+    ImageSerializer,
 )
 
 from .services import (
@@ -85,8 +91,9 @@ class DatasetAssetListCreateView(APIView):
             return [CanManageDatasetAssets()]
 
         return super().get_permissions()
-
+    
 class AssetUploadURLCreateView(APIView):
+    @transaction.atomic
     def post(self, request, dataset_id):
         dataset, _ = get_dataset_assets_for_user(
             dataset_id=dataset_id,
@@ -123,10 +130,10 @@ class AssetUploadURLCreateView(APIView):
                     height=file_data.get("height"),
                 )
 
-                upload_url = create_presigned_upload_url(
+                presigned_upload = create_presigned_upload_url(
                     storage_key=storage_key,
                     mime_type=mime_type,
-                    content_sha256=file_sha256,
+                    file_sha256=file_sha256,
                     expires_in=settings.ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS,
                 )
 
@@ -135,13 +142,10 @@ class AssetUploadURLCreateView(APIView):
                         "upload_id": file_data["upload_id"],
                         "upload_type": upload_type,
                         "asset_id": str(asset.id),
-                        "upload_url": upload_url,
+                        "upload_url": presigned_upload["upload_url"],
                         "storage_key": storage_key,
                         "expiry_at": asset.upload_url_valid_until,
-                        "headers": {
-                            "Content-Type": mime_type,
-                            "x-amz-checksum-sha256": file_sha256,
-                        },
+                        "headers": presigned_upload["headers"],
                     }
                 )
 
@@ -152,9 +156,8 @@ class AssetUploadURLCreateView(APIView):
                 )
 
                 if asset.dataset_id != dataset.id:
-                    return Response(
-                        {"detail": "Embedding asset does not belong to this dataset."},
-                        status=status.HTTP_400_BAD_REQUEST,
+                    raise ValidationError(
+                        "Embedding asset does not belong to this dataset."
                     )
 
                 storage_key = generate_embedding_storage_key(
@@ -168,10 +171,10 @@ class AssetUploadURLCreateView(APIView):
                     embedding_sha256=file_sha256,
                 )
 
-                upload_url = create_presigned_upload_url(
+                presigned_upload = create_presigned_upload_url(
                     storage_key=storage_key,
                     mime_type=mime_type,
-                    content_sha256=file_sha256,
+                    file_sha256=file_sha256,
                     expires_in=settings.ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS,
                 )
 
@@ -180,13 +183,10 @@ class AssetUploadURLCreateView(APIView):
                         "upload_id": file_data["upload_id"],
                         "upload_type": upload_type,
                         "asset_id": str(asset.id),
-                        "upload_url": upload_url,
+                        "upload_url": presigned_upload["upload_url"],
                         "storage_key": storage_key,
                         "expiry_at": asset.embedding_upload_url_valid_until,
-                        "headers": {
-                            "Content-Type": mime_type,
-                            "x-amz-checksum-sha256": file_sha256,
-                        },
+                        "headers": presigned_upload["headers"],
                     }
                 )
 
@@ -260,8 +260,9 @@ class AssetBulkStatusUpdateView(APIView):
             },
             status=status.HTTP_200_OK,
         )
-    
+
 class AssetRetryUploadView(APIView):
+    @transaction.atomic
     def post(self, request, asset_id):
         asset = get_asset_for_user(
             asset_id=asset_id,
@@ -273,10 +274,10 @@ class AssetRetryUploadView(APIView):
         serializer = AssetRetryUploadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        content_sha256 = serializer.validated_data.get("file_sha256")
+        file_sha256 = serializer.validated_data.get("file_sha256")
 
-        if not content_sha256:
-            content_sha256 = asset.content_sha256
+        if not file_sha256:
+            file_sha256 = asset.content_sha256
 
         storage_key = generate_asset_storage_key(
             dataset_id=asset.dataset_id,
@@ -286,29 +287,54 @@ class AssetRetryUploadView(APIView):
         asset = retry_asset_upload(
             asset=asset,
             storage_key=storage_key,
-            content_sha256=content_sha256,
+            content_sha256=file_sha256,
         )
 
-        upload_url = create_presigned_upload_url(
+        presigned_upload = create_presigned_upload_url(
             storage_key=asset.storage_key,
             mime_type=asset.mime_type,
-            content_sha256=asset.content_sha256,
+            file_sha256=file_sha256,
             expires_in=settings.ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS,
         )
 
         return Response(
             {
                 "asset": AssetSerializer(asset).data,
-                "upload_url": upload_url,
-                "expires_in": settings.ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS,
+                "upload_url": presigned_upload["upload_url"],
+                "expiry_at": asset.upload_url_valid_until,
                 "method": "PUT",
-                "headers": {
-                    "Content-Type": asset.mime_type,
-                    "x-amz-checksum-sha256": asset.content_sha256,
-                },
+                "headers": presigned_upload["headers"],
             },
             status=status.HTTP_200_OK,
         )
 
     def get_permissions(self):
         return [CanManageDatasetAssets()]
+    
+class DatasetImageListView(APIView):
+    def get(self, request, dataset_id):
+        search = request.query_params.get("search")
+
+        dataset, images = get_dataset_images_for_user(
+            dataset_id=dataset_id,
+            user=request.user,
+            search=search,
+        )
+
+        read_url_expiry_at = timezone.now() + timedelta(
+            seconds=settings.ASSET_READ_URL_EXPIRES_IN_SECONDS
+        )
+
+        return Response(
+            {
+                "data": ImageSerializer(
+                    images,
+                    many=True,
+                    context={
+                        "read_url_expiry_at": read_url_expiry_at,
+                    },
+                ).data,
+                "next_cursor": None,
+            },
+            status=status.HTTP_200_OK,
+        )

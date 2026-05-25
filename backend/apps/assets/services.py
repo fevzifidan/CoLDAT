@@ -178,7 +178,7 @@ def retry_asset_upload(
 
     if asset.status not in allowed_statuses:
         raise ValidationError(
-            "Only failed or verification_failed assets can be retried."
+            "Only failed assets can be retried."
         )
 
     if not content_sha256:
