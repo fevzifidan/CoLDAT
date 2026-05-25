@@ -168,3 +168,58 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ---------------------------------------------------------------------------
+# Redis Cache Configuration
+# ---------------------------------------------------------------------------
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Mail / Email Backend Configuration
+# ---------------------------------------------------------------------------
+MAIL_MODE = os.getenv("MAIL_MODE", "dev").lower()
+
+# Anymail is required for both prod (live) and dev (sandbox/test) modes
+if MAIL_MODE in ("prod", "dev"):
+    INSTALLED_APPS += ["anymail"]
+    EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
+    ANYMAIL = {
+        "RESEND_API_KEY": os.getenv("RESEND_API_KEY"),
+    }
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL",
+    "Annotation Platform <noreply@example.com>",
+)
+
+# ---------------------------------------------------------------------------
+# Mail Rate Limiting Configuration
+# ---------------------------------------------------------------------------
+MAIL_RATE_LIMIT_SECONDS = int(os.getenv("MAIL_RATE_LIMIT_SECONDS", "600"))
+MAIL_VERIFICATION_TOKEN_TTL_HOURS = int(os.getenv("MAIL_VERIFICATION_TOKEN_TTL_HOURS", "24"))
+MAIL_PASSWORD_RESET_TOKEN_TTL_HOURS = int(os.getenv("MAIL_PASSWORD_RESET_TOKEN_TTL_HOURS", "1"))
+
+# ---------------------------------------------------------------------------
+# Resend Template Configuration
+# ---------------------------------------------------------------------------
+
+RESEND_TEMPLATE_EMAIL_VERIFY = os.getenv(
+    "RESEND_TEMPLATE_EMAIL_VERIFY",
+    "tmpl_placeholder_email_verify",
+)
+RESEND_TEMPLATE_PASSWORD_RESET = os.getenv(
+    "RESEND_TEMPLATE_PASSWORD_RESET",
+    "tmpl_placeholder_password_reset",
+)

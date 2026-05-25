@@ -1,0 +1,66 @@
+# Turkish translations for CoLDAT mail templates.
+# Copyright (C) 2026 CoLDAT
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: CoLDAT 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# ---------------------------------------------------------------------------
+# Global / shared mail keys
+# ---------------------------------------------------------------------------
+
+msgid "mail.app_name"
+msgstr "CoLDAT"
+
+msgid "mail.company_name"
+msgstr ""
+
+msgid "mail.support_email"
+msgstr "support@coldat.app"
+
+# ---------------------------------------------------------------------------
+# Email Verification
+# ---------------------------------------------------------------------------
+
+msgid "mail.verify_email.title"
+msgstr "E-posta Adresinizi Doğrulayın"
+
+msgid "mail.verify_email.heading"
+msgstr "Hesabınızı Doğrulayın"
+
+msgid "mail.verify_email.body_text"
+msgstr "Hesabınızı oluşturduğunuz için teşekkürler. E-posta adresinizi doğrulamak için aşağıdaki butona tıklayın."
+
+msgid "mail.verify_email.button_text"
+msgstr "E-postayı Doğrula"
+
+msgid "mail.verify_email.footer_note"
+msgstr "Bu bağlantı {hours} saat süreyle geçerlidir."
+
+# ---------------------------------------------------------------------------
+# Password Reset
+# ---------------------------------------------------------------------------
+
+msgid "mail.password_reset.title"
+msgstr "Şifre Sıfırlama"
+
+msgid "mail.password_reset.heading"
+msgstr "Şifrenizi Sıfırlayın"
+
+msgid "mail.password_reset.body_text"
+msgstr "Şifre sıfırlama talebinde bulundunuz. Yeni şifre belirlemek için aşağıdaki butona tıklayın."
+
+msgid "mail.password_reset.button_text"
+msgstr "Şifreyi Sıfırla"
+
+msgid "mail.password_reset.footer_note"
+msgstr "Bu bağlantı {hours} saat süreyle geçerlidir."
+
+msgid "mail.password_reset.ignore_warning"
+msgstr "Bu talebi siz yapmadıysanız, bu e-postayı dikkate almayın."

@@ -24,6 +24,24 @@ services:
     restart: unless-stopped
 
   # ========================
+  # Redis
+  # ========================
+  redis:
+    container_name: "coldat-redis"
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  # ========================
   # Django Backend
   # ========================
   backend:
@@ -43,9 +61,14 @@ services:
       DB_PORT: 5432
       SECRET_KEY: dev-secret-key-change-in-production
       DEBUG: "True"
+      MAIL_MODE: "dev"
+      REDIS_URL: "redis://redis:6379/0"
+      DEFAULT_FROM_EMAIL: "dev@coldat.local"
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     restart: "no"
 
   # ========================
@@ -67,4 +90,4 @@ services:
 
 volumes:
   pgdata:
-
+  redis_data:
