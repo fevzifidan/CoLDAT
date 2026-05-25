@@ -2,69 +2,141 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  UserPlus, 
-  Trash2, 
+import { Badge } from "@/components/ui/badge";
+
+import {
+  UserPlus,
+  Trash2,
   X,
   CheckCircle2,
   Loader2,
-  UserCheck
+  UserCheck,
+  Search,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 import { projectService } from '@/features/projects/services/projectService';
+
 import { toast } from 'sonner';
 
 interface TeamMember {
-  id: string; // Backend'den dönen membership_id (UUID)
+  id: string;
   name?: string;
   email?: string;
   username?: string;
-  role: string; // 'admin', 'manager', 'annotator', 'viewer'
+  role: string;
   status?: string;
+}
+
+interface LookupUser {
+  id: string;
+  username?: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 interface TeamManagerProps {
   projectId: string;
 }
 
-const TeamManager = ({ projectId }: TeamManagerProps) => {
-  const { t } = useTranslation(['pages', 'common']);
-  
-  const [team, setTeam] = useState<TeamMember[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAdding, setIsAdding] = useState(false);
-  
-  // 🎯 YAML COLDAT API UYUMLULUĞU: 
-  // Backend rolleri küçük harf olarak beklediği için varsayılan değeri "annotator" yapıyoruz.
-  const [userId, setUserId] = useState("");
-  const [role, setRole] = useState("annotator");
+const TeamManager = ({
+  projectId,
+}: TeamManagerProps) => {
+  const { t } = useTranslation([
+    'pages',
+    'common',
+  ]);
 
-  // Projedeki üyeleri listeleme fonksiyonu
+  const [team, setTeam] = useState<TeamMember[]>(
+    []
+  );
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+
+  const [isAdding, setIsAdding] =
+    useState(false);
+
+  /**
+   * USER LOOKUP STATES
+   */
+
+  const [searchQuery, setSearchQuery] =
+    useState('');
+
+  const [searchResults, setSearchResults] =
+    useState<LookupUser[]>([]);
+
+  const [selectedUserId, setSelectedUserId] =
+    useState('');
+
+  const [showDropdown, setShowDropdown] =
+    useState(false);
+
+  const [isSearching, setIsSearching] =
+    useState(false);
+
+  /**
+   * ROLE
+   */
+
+  const [role, setRole] =
+    useState('annotator');
+
+  /**
+   * MEMBERS FETCH
+   */
+
   const fetchMembers = async () => {
     try {
       setIsLoading(true);
-      const response = await projectService.getProjectMembers(projectId);
-      
+
+      const response =
+        await projectService.getProjectMembers(
+          projectId
+        );
+
       let membersData = [];
-      if (response && (response as any).data) {
-        membersData = (response as any).data;
+
+      if (response && response.data) {
+        membersData = response.data;
       } else if (Array.isArray(response)) {
         membersData = response;
       }
 
-      setTeam(Array.isArray(membersData) ? membersData : []);
+      setTeam(
+        Array.isArray(membersData)
+          ? membersData
+          : []
+      );
     } catch (error: any) {
-      console.error("Üyeler çekilirken hata oluştu:", error);
-      
-      // Token / Oturum zaman aşımı kontrolü
-      if (error.response?.status === 401 || error.response?.data?.detail?.includes("token")) {
-        toast.error("Oturum süreniz dolmuş. Lütfen sayfayı yenileyip tekrar giriş yapın.");
+      console.error(
+        'Üyeler çekilirken hata oluştu:',
+        error
+      );
+
+      if (
+        error.response?.status === 401 ||
+        error.response?.data?.detail?.includes(
+          'token'
+        )
+      ) {
+        toast.error(
+          'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.'
+        );
       } else {
-        toast.error(t('common:errors.fetch_failed', 'Üye listesi alınamadı.'));
+        toast.error(
+          t(
+            'common:errors.fetch_failed',
+            'Üye listesi alınamadı.'
+          )
+        );
       }
+
       setTeam([]);
     } finally {
       setIsLoading(false);
@@ -72,187 +144,559 @@ const TeamManager = ({ projectId }: TeamManagerProps) => {
   };
 
   useEffect(() => {
-    if (!projectId || projectId === "undefined") return;
+    if (
+      !projectId ||
+      projectId === 'undefined'
+    )
+      return;
+
     fetchMembers();
   }, [projectId]);
 
-  // Yeni üye ekleme fonksiyonu
-  const handleAddUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userId) return;
+  /**
+   * USER LOOKUP (DEBOUNCE)
+   */
 
-    // Backend UUID formatı zorunlu tuttuğundan hatalı girdileri önceden engelliyoruz
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(userId.trim())) {
-      toast.error("Lütfen geçerli bir kullanıcı UUID'si girin! (Örn: aca85218-c7ce-4353-bdf0-ded6f8f7a00b)");
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      try {
+        setIsSearching(true);
+
+        const results =
+          await projectService.lookupUsers(
+            searchQuery
+          );
+
+        setSearchResults(
+          Array.isArray(results)
+            ? results
+            : []
+        );
+
+        setShowDropdown(true);
+      } catch (error) {
+        console.error(
+          'User lookup error:',
+          error
+        );
+      } finally {
+        setIsSearching(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
+
+  /**
+   * USER SELECT
+   */
+
+  const handleSelectUser = (
+    user: LookupUser
+  ) => {
+    setSelectedUserId(user.id);
+
+    const displayName =
+      user.first_name || user.last_name
+        ? `${user.first_name || ''} ${
+            user.last_name || ''
+          }`.trim()
+        : user.username ||
+          user.email ||
+          'User';
+
+    setSearchQuery(displayName);
+
+    setShowDropdown(false);
+  };
+
+  /**
+   * ADD USER
+   */
+
+  const handleAddUser = async (
+    e: React.FormEvent
+  ) => {
+    e.preventDefault();
+
+    if (!selectedUserId) {
+      toast.error(
+        'Lütfen listeden bir kullanıcı seçin.'
+      );
+
       return;
     }
 
     try {
-      // projectService.addProjectMember metoduna tam uyumlu küçük harfli rol ve id gönderimi
-      await projectService.addProjectMember(projectId, { 
-        user_id: userId.trim(), 
-        role: role // 'admin', 'manager', 'annotator', 'viewer'
-      });
-      
-      toast.success(t("team.alert_added", "Üye başarıyla projeye eklendi."));
-      setUserId("");
+      await projectService.addProjectMember(
+        projectId,
+        {
+          user_id: selectedUserId,
+          role,
+        }
+      );
+
+      toast.success(
+        t(
+          'team.alert_added',
+          'Üye başarıyla projeye eklendi.'
+        )
+      );
+
+      setSearchQuery('');
+      setSelectedUserId('');
+      setSearchResults([]);
+      setRole('annotator');
+
       setIsAdding(false);
+
       fetchMembers();
     } catch (error: any) {
-      console.error("Ekleme hatası detayı:", error.response?.data);
-      
-      const backendErrors = error.response?.data;
-      
-      // Token geçersizlik uyarısı
-      if (error.response?.status === 401 || backendErrors?.detail?.includes("token")) {
-        toast.error("Oturumunuzun süresi dolmuş! Lütfen çıkış yapıp tekrar giriş yapın.");
+      console.error(
+        'Ekleme hatası:',
+        error.response?.data
+      );
+
+      const backendErrors =
+        error.response?.data;
+
+      if (
+        error.response?.status === 401 ||
+        backendErrors?.detail?.includes(
+          'token'
+        )
+      ) {
+        toast.error(
+          'Oturumunuzun süresi dolmuş.'
+        );
+
         return;
       }
 
-      // 🎯 GELİŞMİŞ HATA YÖNETİMİ: 
-      // Backend'den dizi veya obje halinde gelen tüm Django doğrulama mesajlarını yakalıyoruz
-      if (Array.isArray(backendErrors) && backendErrors.length > 0) {
+      if (
+        Array.isArray(backendErrors) &&
+        backendErrors.length > 0
+      ) {
         toast.error(backendErrors[0]);
-      } else if (backendErrors && typeof backendErrors === 'object') {
+      } else if (
+        backendErrors &&
+        typeof backendErrors === 'object'
+      ) {
         if (backendErrors.user_id) {
-          toast.error(`Kullanıcı Hatası: ${backendErrors.user_id.join(', ')}`);
+          toast.error(
+            `Kullanıcı Hatası: ${backendErrors.user_id.join(
+              ', '
+            )}`
+          );
         } else if (backendErrors.role) {
-          toast.error(`Rol Hatası: ${backendErrors.role.join(', ')}`);
-        } else if (backendErrors.non_field_errors) {
-          toast.error(backendErrors.non_field_errors.join(', '));
-        } else if (backendErrors.detail) {
-          toast.error(backendErrors.detail);
+          toast.error(
+            `Rol Hatası: ${backendErrors.role.join(
+              ', '
+            )}`
+          );
+        } else if (
+          backendErrors.non_field_errors
+        ) {
+          toast.error(
+            backendErrors.non_field_errors.join(
+              ', '
+            )
+          );
+        } else if (
+          backendErrors.detail
+        ) {
+          toast.error(
+            backendErrors.detail
+          );
         } else {
-          toast.error("Üye eklenemedi. Girilen UUID sistemde kayıtlı olmayabilir.");
+          toast.error(
+            'Üye eklenemedi.'
+          );
         }
       } else {
-        toast.error(t("common:errors.save_failed", "İşlem başarısız."));
+        toast.error(
+          t(
+            'common:errors.save_failed',
+            'İşlem başarısız.'
+          )
+        );
       }
     }
   };
 
-  // Üye silme fonksiyonu
-  const removeUser = async (membershipId: string) => {
+  /**
+   * REMOVE USER
+   */
+
+  const removeUser = async (
+    membershipId: string
+  ) => {
     try {
-      await projectService.removeProjectMember(projectId, membershipId);
-      toast.success(t("team.removed_successfully", "Üye başarıyla silindi."));
+      await projectService.removeProjectMember(
+        projectId,
+        membershipId
+      );
+
+      toast.success(
+        t(
+          'team.removed_successfully',
+          'Üye başarıyla silindi.'
+        )
+      );
+
       fetchMembers();
     } catch (error: any) {
-      console.error("Silme hatası detayı:", error.response?.data);
-      
-      const errorData = error.response?.data;
-      if (error.response?.status === 401) {
-        toast.error("Oturum süresi dolmuş. İşlem gerçekleştirilemedi.");
+      console.error(
+        'Silme hatası:',
+        error.response?.data
+      );
+
+      const errorData =
+        error.response?.data;
+
+      if (
+        error.response?.status === 401
+      ) {
+        toast.error(
+          'Oturum süresi dolmuş.'
+        );
+
         return;
       }
 
-      // Django'dan gelen ["The project owner cannot be removed..."] gibi dizi hatalarını basar
-      if (Array.isArray(errorData) && errorData.length > 0) {
-        toast.error(errorData[0]); 
-      } else if (errorData && errorData.detail) {
+      if (
+        Array.isArray(errorData) &&
+        errorData.length > 0
+      ) {
+        toast.error(errorData[0]);
+      } else if (
+        errorData &&
+        errorData.detail
+      ) {
         toast.error(errorData.detail);
       } else {
-        toast.error("Bu üye silinemez.");
+        toast.error(
+          'Bu üye silinemez.'
+        );
       }
     }
   };
 
-  // Backend'den gelen küçük/büyük harfli rollerin arayüzde şık görünmesini sağlar
-  const getRoleLabel = (rawRole: string) => {
-    const roles: Record<string, string> = {
-      'OWNER': 'Owner (Proje Sahibi)',
-      'ADMIN': 'Admin',
-      'MANAGER': 'Manager',
-      'ANNOTATOR': 'Labeler (Annotator)',
-      'VIEWER': 'Reviewer (Viewer)',
-      'REVIEWER': 'Reviewer (Viewer)'
-    };
-    return roles[rawRole.toUpperCase()] || rawRole;
+  /**
+   * ROLE LABEL
+   */
+
+  const getRoleLabel = (
+    rawRole: string
+  ) => {
+    const roles: Record<string, string> =
+      {
+        OWNER: 'Owner (Proje Sahibi)',
+        ADMIN: 'Admin',
+        MANAGER: 'Manager',
+        ANNOTATOR:
+          'Labeler (Annotator)',
+        VIEWER:
+          'Reviewer (Viewer)',
+        REVIEWER:
+          'Reviewer (Viewer)',
+      };
+
+    return (
+      roles[rawRole.toUpperCase()] ||
+      rawRole
+    );
   };
 
-  if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-indigo-600" /></div>;
+  if (isLoading) {
+    return (
+      <div className="flex justify-center p-8">
+        <Loader2 className="animate-spin text-indigo-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-xl font-bold">{t("team.title", "Team Management")}</h3>
-          <p className="text-sm text-muted-foreground">{t("team.description", "Manage users and roles who have access to this project.")}</p>
+          <h3 className="text-xl font-bold">
+            {t(
+              'team.title',
+              'Team Management'
+            )}
+          </h3>
+
+          <p className="text-sm text-muted-foreground">
+            {t(
+              'team.description',
+              'Manage users and roles.'
+            )}
+          </p>
         </div>
-        <Button onClick={() => setIsAdding(!isAdding)} variant={isAdding ? "outline" : "default"}>
-          {isAdding ? <><X className="mr-2 h-4 w-4" /> {t("common:status.cancel")}</> : <><UserPlus className="mr-2 h-4 w-4" /> {t("team.add_member", "Add Member")}</>}
+
+        <Button
+          onClick={() =>
+            setIsAdding(!isAdding)
+          }
+          variant={
+            isAdding
+              ? 'outline'
+              : 'default'
+          }
+        >
+          {isAdding ? (
+            <>
+              <X className="mr-2 h-4 w-4" />
+              {t(
+                'common:status.cancel'
+              )}
+            </>
+          ) : (
+            <>
+              <UserPlus className="mr-2 h-4 w-4" />
+              {t(
+                'team.add_member',
+                'Add Member'
+              )}
+            </>
+          )}
         </Button>
       </div>
 
       {isAdding && (
         <Card className="border-indigo-100 bg-indigo-50/20">
           <CardContent className="p-6">
-            <form onSubmit={handleAddUser} className="flex flex-col md:flex-row gap-4 items-end">
-              <div className="flex-1 space-y-2">
-                <label className="text-xs font-bold uppercase">{t("team.user_id_label", "User UUID")}</label>
+            <form
+              onSubmit={handleAddUser}
+              className="flex flex-col md:flex-row gap-4 items-end"
+            >
+              {/* USER SEARCH */}
+              <div className="flex-1 space-y-2 relative">
+                <label className="text-xs font-bold uppercase">
+                  Kullanıcı Ara
+                </label>
+
                 <div className="relative">
-                  <UserCheck className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                  <Input value={userId} onChange={(e) => setUserId(e.target.value)} type="text" placeholder="aca85218-c7ce-4353-bdf0-ded6f8f7a00b" className="pl-9" required />
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(
+                        e.target.value
+                      );
+
+                      setSelectedUserId('');
+                    }}
+                    type="text"
+                    placeholder="username veya email yazın..."
+                    className="pl-9"
+                    required
+                  />
+
+                  {isSearching && (
+                    <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-slate-400" />
+                  )}
                 </div>
+
+                {/* DROPDOWN */}
+                {showDropdown &&
+                  searchResults.length >
+                    0 && (
+                    <div className="absolute z-50 mt-1 w-full bg-white border rounded-xl shadow-lg overflow-hidden">
+                      {searchResults.map(
+                        (user) => {
+                          const displayName =
+                            user.first_name ||
+                            user.last_name
+                              ? `${user.first_name || ''} ${
+                                  user.last_name ||
+                                  ''
+                                }`.trim()
+                              : user.username;
+
+                          return (
+                            <button
+                              key={user.id}
+                              type="button"
+                              onClick={() =>
+                                handleSelectUser(
+                                  user
+                                )
+                              }
+                              className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b last:border-b-0 transition"
+                            >
+                              <div className="font-medium text-sm">
+                                {displayName}
+                              </div>
+
+                              <div className="text-xs text-slate-400">
+                                {user.email}
+                              </div>
+                            </button>
+                          );
+                        }
+                      )}
+                    </div>
+                  )}
               </div>
-              
+
+              {/* ROLE */}
               <div className="w-full md:w-56 space-y-2">
-                <label className="text-xs font-bold uppercase">{t("team.role_label", "Project Role")}</label>
-                {/* 🎯 YAML DÜZELTMESİ: option value değerleri tam olarak OpenAPI dökümanında 
-                    belirtildiği gibi küçük harflerle ("admin", "manager", "annotator", "viewer") gönderilir */}
-                <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full h-10 px-3 border rounded-md text-sm outline-none bg-white text-slate-900">
-                  <option value="admin">ADMIN</option>
-                  <option value="manager">MANAGER</option>
-                  <option value="annotator">ANNOTATOR (Labeler)</option>
-                  <option value="viewer">VIEWER (Reviewer)</option>
+                <label className="text-xs font-bold uppercase">
+                  {t(
+                    'team.role_label',
+                    'Project Role'
+                  )}
+                </label>
+
+                <select
+                  value={role}
+                  onChange={(e) =>
+                    setRole(
+                      e.target.value
+                    )
+                  }
+                  className="w-full h-10 px-3 border rounded-md text-sm outline-none bg-white text-slate-900"
+                >
+                  <option value="admin">
+                    ADMIN
+                  </option>
+
+                  <option value="manager">
+                    MANAGER
+                  </option>
+
+                  <option value="annotator">
+                    ANNOTATOR
+                  </option>
+
+                  <option value="viewer">
+                    VIEWER
+                  </option>
                 </select>
               </div>
-              <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700">{t("team.add", "Add Member")}</Button>
+
+              <Button
+                type="submit"
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                {t(
+                  'team.add',
+                  'Add Member'
+                )}
+              </Button>
             </form>
           </CardContent>
         </Card>
       )}
 
+      {/* TEAM LIST */}
       <div className="grid gap-3">
-        {(!team || team.length === 0) ? (
+        {!team || team.length === 0 ? (
           <div className="text-center py-8 text-sm text-slate-400 border border-dashed rounded-xl">
-            {t("team.no_members", "No members found in this project.")}
+            {t(
+              'team.no_members',
+              'No members found.'
+            )}
           </div>
         ) : (
           team.map((user) => {
-            const userName = user?.name || user?.username || user?.email?.split('@')[0] || "User";
-            const userEmail = user?.email || `ID: ${user?.id}`;
-            const userRole = user?.role || "annotator";
-            const isOwner = userRole.toUpperCase() === 'OWNER';
+            const userName =
+              user?.name ||
+              user?.username ||
+              user?.email?.split('@')[0] ||
+              'User';
+
+            const userEmail =
+              user?.email ||
+              `ID: ${user?.id}`;
+
+            const userRole =
+              user?.role ||
+              'annotator';
+
+            const isOwner =
+              userRole.toUpperCase() ===
+              'OWNER';
 
             return (
-              <Card key={user?.id || Math.random().toString()}>
+              <Card
+                key={
+                  user?.id ||
+                  Math.random().toString()
+                }
+              >
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-indigo-600">
-                      {userName.charAt(0).toUpperCase()}
+                      {userName
+                        .charAt(0)
+                        .toUpperCase()}
                     </div>
+
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-sm">{userName}</p>
-                        <Badge variant={isOwner ? "default" : "outline"} className={isOwner ? "bg-amber-500 hover:bg-amber-600" : ""}>
-                          {getRoleLabel(userRole)}
+                        <p className="font-semibold text-sm">
+                          {userName}
+                        </p>
+
+                        <Badge
+                          variant={
+                            isOwner
+                              ? 'default'
+                              : 'outline'
+                          }
+                          className={
+                            isOwner
+                              ? 'bg-amber-500 hover:bg-amber-600'
+                              : ''
+                          }
+                        >
+                          {getRoleLabel(
+                            userRole
+                          )}
                         </Badge>
                       </div>
-                      <p className="text-xs text-slate-400">{userEmail}</p>
+
+                      <p className="text-xs text-slate-400">
+                        {userEmail}
+                      </p>
                     </div>
                   </div>
+
                   <div className="flex items-center gap-3">
                     <div className="flex items-center text-green-600 text-[10px] font-bold gap-1">
-                      <CheckCircle2 size={12} /> {t("team.status.active", "Active")}
+                      <CheckCircle2 size={12} />
+                      {t(
+                        'team.status.active',
+                        'Active'
+                      )}
                     </div>
-                    {/* Proje sahibinin (OWNER) silinmesi backend kurallarınca yasak olduğundan arayüzde Trash butonu gizlenir */}
-                    {user?.id && !isOwner && (
-                      <Button variant="ghost" size="icon" onClick={() => removeUser(user.id)}>
-                        <Trash2 size={14} className="text-slate-400 hover:text-red-500" />
-                      </Button>
-                    )}
+
+                    {user?.id &&
+                      !isOwner && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            removeUser(
+                              user.id
+                            )
+                          }
+                        >
+                          <Trash2
+                            size={14}
+                            className="text-slate-400 hover:text-red-500"
+                          />
+                        </Button>
+                      )}
                   </div>
                 </CardContent>
               </Card>
