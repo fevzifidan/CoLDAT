@@ -40,7 +40,37 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = serializer.validated_data["user"]
+        email = serializer.validated_data["email"]
+        password = serializer.validated_data["password"]
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {
+                    "errorCode": "INVALID_CREDENTIALS",
+                    "message": "Wrong email or password.",
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if not user.check_password(password):
+            return Response(
+                {
+                    "errorCode": "INVALID_CREDENTIALS",
+                    "message": "Wrong email or password.",
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if not user.is_active:
+            return Response(
+                {
+                    "errorCode": "ACCOUNT_NOT_VERIFIED",
+                    "message": "You did not verify your account yet.",
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         refresh = RefreshToken.for_user(user)
 
