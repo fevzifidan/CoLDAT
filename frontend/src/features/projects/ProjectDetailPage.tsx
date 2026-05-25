@@ -1,3 +1,5 @@
+// frontend/src/features/projects/ProjectDetailPage.tsx
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +23,7 @@ interface Project {
   project_type: string;
   dataset_id: string;
   created_at: string;
-  status?: string; 
+  is_public: boolean;
   role?: string;
   task?: string | number;
 }
@@ -51,10 +53,16 @@ const ProjectDetailPage = () => {
     setLoading(true);
     projectService.getProjectById(id)
       .then((data: any) => {
+        const projectData = data?.project || data; 
+        
         setProject({
-          ...data,
-          task: data.task || data.project_type || 'OBJECT_DETECTION',
-          status: data.status || 'ACTIVE'
+          ...data, 
+          id: projectData.id || id,
+          name: projectData.name || '',
+          description: projectData.description || '',
+          project_type: projectData.project_type || 'object_detection',
+          task: projectData.project_type || 'object_detection',
+          is_public: projectData.is_public ?? false
         });
       })
       .catch((error: any) => {
@@ -68,13 +76,29 @@ const ProjectDetailPage = () => {
     loadProjectDetails();
   }, [id]);
 
-  // 🎯 CRITICAL FIX: useCallback ekleyerek alt bileşene giden fonksiyonun stabil kalmasını sağladık
   const handleDataUpdate = useCallback((tab: string, data: any) => {
     setPendingChanges(prev => ({
       ...prev,
       [tab]: data
     }));
   }, []);
+
+  const handleDeleteProject = async () => {
+    if (!id) return;
+    
+    const confirmDelete = window.confirm(t('project_general.delete_confirm', 'Are you sure you want to permanently delete this project?'));
+    if (!confirmDelete) return;
+
+    const deleteToastId = toast.loading(t('common:status.deleting', 'Deleting project...'));
+    try {
+      await projectService.deleteProject(id);
+      toast.success(t('pages:project_detail.delete_success', "Project deleted successfully!"), { id: deleteToastId });
+      navigate('/projects'); 
+    } catch (error: any) {
+      console.error("Proje silinirken hata oluştu:", error);
+      toast.error(t('pages:errors.delete_failed', "Failed to delete project from backend."), { id: deleteToastId });
+    }
+  };
 
   const handleGlobalSave = async () => {
     if (!id) return;
@@ -84,7 +108,14 @@ const ProjectDetailPage = () => {
 
     try {
       if (pendingChanges.general) {
-        await projectService.updateProject(id, pendingChanges.general);
+        // 🎯 DÜZELTME: Temiz enum değerleri doğrudan gönderiliyor
+        const updatedPayload = {
+          name: pendingChanges.general.name,
+          description: pendingChanges.general.description,
+          project_type: pendingChanges.general.project_type, 
+          is_public: Boolean(pendingChanges.general.is_public)
+        };
+        await projectService.updateProject(id, updatedPayload);
       }
 
       if (pendingChanges.taxonomy) {
@@ -94,7 +125,7 @@ const ProjectDetailPage = () => {
       toast.success(t('pages:project_detail.alert_success', "Changes saved successfully!"), { id: saveToastId });
       
       setPendingChanges({ general: null, taxonomy: null, team: null });
-      loadProjectDetails();
+      loadProjectDetails(); 
     } catch (error: any) {
       console.error("Kayıt esnasında hata meydana geldi:", error);
       toast.error(t('pages:errors.save_failed', "Failed to save some configurations to backend."), { id: saveToastId });
@@ -111,12 +142,12 @@ const ProjectDetailPage = () => {
     );
   }
 
-  if (!project) {
+  if (!project || !id) {
     return (
       <div className="p-8 text-center text-slate-500 bg-white dark:bg-slate-950 min-h-screen flex flex-col items-center justify-center gap-4">
         <p>{t('pages:project_detail.not_found', 'Project not found.')}</p>
-        <Button onClick={() => navigate(-1)} variant="outline" size="sm">
-          <ArrowLeft className="mr-2 h-4 w-4" /> {t('common:status.back', 'Go Back')}
+        <Button onClick={() => navigate('/projects')} variant="outline" size="sm">
+          <ArrowLeft className="mr-2 h-4 w-4" /> {t('common:status.back', 'Go to Projects')}
         </Button>
       </div>
     );
@@ -136,7 +167,7 @@ const ProjectDetailPage = () => {
     <div className="flex flex-col min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <div className="flex items-center justify-between px-6 py-4 border-b bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 shadow-sm">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+          <button onClick={() => navigate('/projects')} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2" />
@@ -144,8 +175,15 @@ const ProjectDetailPage = () => {
             <h2 className="text-xl font-bold tracking-tight">{project.name}</h2>
             <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{project.task}</p>
           </div>
-          <Badge variant="secondary" className="ml-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-100 dark:border-indigo-800 uppercase text-[9px]">
-            {project.status}
+          <Badge 
+            variant="secondary" 
+            className={`ml-2 border uppercase text-[9px] ${
+              project.is_public 
+                ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-100 dark:border-green-800' 
+                : 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-100 dark:border-amber-800'
+            }`}
+          >
+            {project.is_public ? 'PUBLIC' : 'PRIVATE'}
           </Badge>
         </div>
         <div className="flex gap-2">
@@ -190,7 +228,8 @@ const ProjectDetailPage = () => {
               {activeTab === 'general' && (
                 <GeneralSettings 
                   project={project} 
-                  onUpdate={(data) => handleDataUpdate('general', data)} 
+                  onUpdate={(data) => handleDataUpdate('general', data)}
+                  onDelete={handleDeleteProject}
                 />
               )}
 
@@ -202,7 +241,7 @@ const ProjectDetailPage = () => {
               )}
 
               {activeTab === 'assets' && <AssetManager />}
-              {activeTab === 'team' && <TeamManager />}
+              {activeTab === 'team' && <TeamManager projectId={id} />}
               {activeTab === 'export' && <ExportManager />}
           </div>
         </div>

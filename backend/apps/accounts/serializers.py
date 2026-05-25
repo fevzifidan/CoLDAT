@@ -1,11 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from django.contrib.auth import authenticate, get_user_model
 from .services import create_user
 
-
 User = get_user_model()
-
 
 class RegisterSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
@@ -75,17 +72,18 @@ class AccountUpdateSerializer(serializers.Serializer):
     last_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
 
     def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
+        # Kendi kullanıcı adımızı güncellerken hata almamak için kendimizi dışlıyoruz
+        user = self.context['request'].user
+        if User.objects.filter(username=value).exclude(pk=user.pk).exists():
             raise serializers.ValidationError("A user with this username already exists.")
         return value
 
     def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
+        # Kendi e-postamızı güncellerken hata almamak için kendimizi dışlıyoruz
+        user = self.context['request'].user
+        if User.objects.filter(email=value).exclude(pk=user.pk).exists():
             raise serializers.ValidationError("A user with this email already exists.")
         return value
-    
-    def create(self, validated_data):
-        return create_user(**validated_data)
     
 class UserLookupSerializer(serializers.ModelSerializer):
     display_name = serializers.SerializerMethodField()
@@ -103,9 +101,6 @@ class UserLookupSerializer(serializers.ModelSerializer):
 
     def get_display_name(self, obj):
         full_name = f"{obj.first_name} {obj.last_name}".strip()
-
         if full_name:
             return full_name
-
         return obj.username
-    

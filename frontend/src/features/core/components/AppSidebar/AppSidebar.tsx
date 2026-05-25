@@ -1,5 +1,5 @@
 // src/features/core/components/AppSidebar/AppSidebar.tsx
-import { LogOut, Languages, Monitor, Moon, Sun, PanelLeftClose } from "lucide-react";
+import { LogOut, Languages, Monitor, Moon, Sun, PanelLeftClose, User } from "lucide-react";
 import {
   Sidebar,
   SidebarHeader,
@@ -31,7 +31,6 @@ import { cn } from "@/lib/utils";
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  // sidebar ve common namespace'lerini yüklüyoruz
   const { t, i18n } = useTranslation(["sidebar", "common"]);
   const { toggleSidebar } = useSidebar();
   const { theme, setTheme } = useTheme();
@@ -40,6 +39,9 @@ export function AppSidebar() {
     const nextLang = i18n.language.startsWith('tr') ? 'en' : 'tr';
     i18n.changeLanguage(nextLang);
   };
+
+  // 🎯 DÜZELTME: Profil sayfasının aktiflik kontrolü
+  const isProfileActive = location.pathname === "/profile";
 
   return (
     <Sidebar 
@@ -70,7 +72,6 @@ export function AppSidebar() {
               const isActive = location.pathname === item.url || 
                                (item.url !== "/" && location.pathname.startsWith(item.url));
               
-              // Yeni atomik sidebar.json dosyasından karşılıkları eşliyoruz
               const translatedTitle = t(`sidebar:${item.title}`, item.title);
 
               return (
@@ -103,6 +104,23 @@ export function AppSidebar() {
       {/* Footer Bölümü */}
       <SidebarFooter className="border-t p-2 bg-background/50 backdrop-blur-sm">
         <SidebarMenu className="gap-2">
+          
+          {/* 🎯 YENİ EKLEME: Hesap Ayarları Butonu */}
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              tooltip={t("sidebar:account_settings", "Hesap Ayarları")}
+              onClick={() => navigate('/profile')}
+              isActive={isProfileActive}
+              className={cn(
+                "transition-all duration-500 hover:bg-accent hover:text-accent-foreground",
+                "data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-semibold"
+              )}
+            >
+              <User size={20} className={cn("shrink-0", isProfileActive ? "text-primary" : "text-muted-foreground")} />
+              <span className="ml-2 font-medium">{t("sidebar:account_settings", "Hesap Ayarları")}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

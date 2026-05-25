@@ -17,6 +17,9 @@ import { GlobalKeyboardListener } from './shared/components/GlobalKeyboardListen
 // Upload Manager
 import { UploadManager } from '@/features/upload_manager';
 
+// 🎯 DÜZELTME: Named export olduğu için süslü parantez { ProfilePage } ile import ettik
+import ProfilePage from '@/features/accounts/ProfilePage';
+
 import DashboardLayout from '@/features/core/layouts/DashboardLayout';
 import DashboardHome from '@/features/dashboard/DashboardHome';
 import ProjectDetailPage from '@/features/projects/ProjectDetailPage';
@@ -26,7 +29,7 @@ import Register from "@/features/auth/Register/Register";
 
 import TasksPage from '@/features/tasks/TasksPage';
 import DatasetsPage from '@/features/datasets/DatasetsPage';
-import { ProjectDatasetsPage } from '@/features/projects/ProjectDatasetsPage'; // 🎯 DOĞRU İMPORT
+import { ProjectDatasetsPage } from '@/features/projects/ProjectDatasetsPage'; 
 import ProjectsPage from '@/features/projects/ProjectsPage';
 import ViewerPage from '@/features/viewer/ViewerPage';
 import { VerificationPage } from '@/features/auth/EmailVerification/EmailVerification';
@@ -64,7 +67,6 @@ function App() {
                         {/* Ana Sayfa */}
                         <Route path="/projects" element={<ProjectsPage />} />
                         
-                        {/* 🎯 DEĞİŞEN KISIM: Proje scope altındayken senin hazırladığın detay paneli açılacak */}
                         <Route path="/projects/:projectId/datasets" element={<ProjectDatasetsPage />} />
                         
                         {/* Sol menü veya doğrudan erişim için genel Datasets rotası */}
@@ -75,6 +77,9 @@ function App() {
                         
                         {/* Sol tarafta tıklandığında yüklenecek alan */}
                         <Route path="/synthetic" element={<SyntheticPage />} />
+
+                        {/* 🎯 HESAP AYARLARI: DashboardLayout altında çalışacak profil rotamız */}
+                        <Route path="/profile" element={<ProfilePage />} />
 
                         {/* Detay sayfası */}
                         <Route path="/projects/:id" element={<ProjectDetailPage />} />

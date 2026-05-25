@@ -1,3 +1,5 @@
+// frontend/src/features/projects/tabs/GeneralSettings.tsx
+
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,53 +15,60 @@ interface GeneralSettingsProps {
     description?: string;
     project_type: string;
     dataset_id: string;
-    status?: string;
+    is_public?: boolean;
   };
   onUpdate: (data: any) => void;
+  onDelete?: () => void;
 }
 
-const GeneralSettings = ({ project, onUpdate }: GeneralSettingsProps) => {
+const GeneralSettings = ({ project, onUpdate, onDelete }: GeneralSettingsProps) => {
   const { t } = useTranslation();
   
-  // Tamamen yalıtılmış yerel form state'i
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     project_type: "object_detection",
-    status: "ACTIVE"
+    is_public: false
   });
 
-  // Sadece project nesnesinin benzersiz kimliği (id) değiştiğinde veya ilk yüklemede senkronize et
   useEffect(() => {
     if (project) {
       setFormData({
         name: project.name || "",
         description: project.description || "",
-        project_type: project.project_type || "object_detection",
-        status: project.status || "ACTIVE"
+        // 🎯 DÜZELTME: toLowerCase() kaldırıldı, backend enum değerine sadık kalındı
+        project_type: project.project_type || "object_detection", 
+        is_public: project.is_public ?? false
       });
     }
-  }, [project?.id]);
+  }, [project]);
 
-  // Kullanıcı klavyeden yazarken SADECE yerel state güncellenir (Donma/Focus kaybı yaşanmaz)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Kullanıcı input alanından çıktığı an (onBlur) veya seçim değiştirdiğinde üst bileşene bildirir
   const pushChanges = (currentData: typeof formData) => {
-    // Gerçekten bir değişiklik var mı kontrolü (gereksiz render önlemek için)
+    const origName = project?.name || "";
+    const origDesc = project?.description || "";
+    const origType = project?.project_type || "object_detection";
+    const origIsPublic = project?.is_public ?? false;
+
     const hasChanged = 
-      currentData.name !== (project?.name || "") ||
-      currentData.description !== (project?.description || "") ||
-      currentData.project_type !== (project?.project_type || "object_detection") ||
-      currentData.status !== (project?.status || "ACTIVE");
+      currentData.name.trim() !== origName.trim() ||
+      currentData.description.trim() !== origDesc.trim() ||
+      currentData.project_type !== origType ||
+      currentData.is_public !== origIsPublic;
 
     if (hasChanged) {
-      onUpdate(currentData);
+      onUpdate({
+        name: currentData.name,
+        description: currentData.description,
+        project_type: currentData.project_type,
+        is_public: currentData.is_public
+      });
     } else {
-      onUpdate(null); // Değişiklik yoksa boşalt
+      onUpdate(null);
     }
   };
 
@@ -73,8 +82,8 @@ const GeneralSettings = ({ project, onUpdate }: GeneralSettingsProps) => {
     pushChanges(updated);
   };
 
-  const handleStatusChange = (newStatus: string) => {
-    const updated = { ...formData, status: newStatus };
+  const handlePrivacyChange = (isPublic: boolean) => {
+    const updated = { ...formData, is_public: isPublic };
     setFormData(updated);
     pushChanges(updated);
   };
@@ -95,7 +104,6 @@ const GeneralSettings = ({ project, onUpdate }: GeneralSettingsProps) => {
                 value={formData.name}
                 onChange={handleInputChange}
                 onBlur={handleBlur}
-                placeholder={t('project_general.placeholder_name', 'Project Name')}
               />
             </div>
 
@@ -106,7 +114,6 @@ const GeneralSettings = ({ project, onUpdate }: GeneralSettingsProps) => {
                 value={formData.description}
                 onChange={handleInputChange}
                 onBlur={handleBlur}
-                placeholder={t('project_general.placeholder_desc', 'Description')}
                 className="min-h-[100px]"
               />
             </div>
@@ -120,9 +127,9 @@ const GeneralSettings = ({ project, onUpdate }: GeneralSettingsProps) => {
                   value={formData.project_type}
                   onChange={handleSelectChange}
                 >
-                  <option value="object_detection">{t('project_general.tasks.object_detection', 'Object Detection')}</option>
-                  <option value="entity_recognition">{t('project_general.tasks.entity_recognition', 'Entity Recognition')}</option>
-                  <option value="semantic_relation">{t('project_general.tasks.semantic_relation', 'Semantic Relation')}</option>
+                  <option value="object_detection">Object Detection</option>
+                  <option value="entity_recognition">Entity Recognition</option>
+                  <option value="semantic_relation">Semantic Relation</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -130,19 +137,19 @@ const GeneralSettings = ({ project, onUpdate }: GeneralSettingsProps) => {
                 <div className="flex gap-2">
                   <Button 
                     type="button"
-                    variant={formData.status === 'ACTIVE' ? 'default' : 'outline'} 
+                    variant={formData.is_public ? 'default' : 'outline'} 
                     size="sm" 
                     className="flex-1 font-bold"
-                    onClick={() => handleStatusChange('ACTIVE')}
+                    onClick={() => handlePrivacyChange(true)}
                   >
                     <Globe className="mr-2 h-4 w-4" /> {t('project_general.public', 'Public')}
                   </Button>
                   <Button 
                     type="button"
-                    variant={formData.status === 'ARCHIVED' ? 'default' : 'outline'} 
+                    variant={!formData.is_public ? 'default' : 'outline'} 
                     size="sm" 
                     className="flex-1 font-bold"
-                    onClick={() => handleStatusChange('ARCHIVED')}
+                    onClick={() => handlePrivacyChange(false)}
                   >
                     <Lock className="mr-2 h-4 w-4" /> {t('project_general.private', 'Private')}
                   </Button>
@@ -165,7 +172,12 @@ const GeneralSettings = ({ project, onUpdate }: GeneralSettingsProps) => {
               <p className="text-xs text-red-600 dark:text-red-400">{t('project_general.delete_warning', 'Once deleted, projects cannot be recovered.')}</p>
             </div>
           </div>
-          <Button variant="destructive" size="sm" className="font-bold">
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            className="font-bold cursor-pointer"
+            onClick={onDelete}
+          >
             <Trash2 className="mr-2 h-4 w-4" /> {t('project_general.delete_project', 'Delete Project')}
           </Button>
         </CardContent>

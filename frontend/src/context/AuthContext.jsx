@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect } from "react";
-// FEVZİ'NİN UYARISI & KLASÖR DÜZELTMESİ: Doğru merkezi servise bağlandık
 import apiService from "@/shared/services/api/api.service";
 
 const AuthContext = createContext();
@@ -15,7 +14,6 @@ export const AuthProvider = ({ children }) => {
       
       if (token) {
         try {
-          // FEVZİ'NİN UYARISI: Hardcoded localhost kaldırıldı. apiService zaten baseUrl'e sahip.
           const response = await apiService.get("/account/me/"); 
           const responseData = response?.data || response;
           setUser(responseData);
@@ -31,7 +29,6 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-// 2. Login Fonksiyonu
 // 2. Login Fonksiyonu
   const login = async (credentials, config = {}) => {
     try {
