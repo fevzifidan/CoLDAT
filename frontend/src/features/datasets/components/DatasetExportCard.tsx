@@ -4,7 +4,7 @@ import { Download, Loader2, CheckCircle2, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Hata Çözümü: src/assets/services/ içindeki dosyaya giden doğru göreceli yol
-import { mockExportService } from '../../../assets/services/mockExportService';
+import { mockExportService } from '../services/mockExportService';
 
 interface DataSetExportCardProps {
   datasetId?: string;

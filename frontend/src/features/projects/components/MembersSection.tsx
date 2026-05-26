@@ -1,6 +1,6 @@
 // src/features/datasets/components/MembersSection.tsx
 import { useState, useEffect } from 'react';
-import { memberService } from '../services/memberService';
+import { memberService } from '../../datasets/services/memberService';
 import { Button } from "@/components/ui/button";
 import { toast } from 'sonner';
 import { UserPlus, Trash2 } from 'lucide-react';

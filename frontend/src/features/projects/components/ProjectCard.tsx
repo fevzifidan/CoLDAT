@@ -1,15 +1,25 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, Settings, Eye, Database } from "lucide-react";
+import {
+  ArrowUpRight,
+  Settings,
+  Eye,
+  Database
+} from "lucide-react";
 
 interface CardProject {
   id: string;
   name: string;
   description?: string;
-  project_type?: string; 
   status?: string;
   count?: number;
   role?: string;
@@ -24,25 +34,28 @@ interface ProjectCardProps {
   onStatusChange?: () => void;
 }
 
-export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardProps) => {
+export const ProjectCard = ({
+  project,
+  cardType,
+  onStatusChange
+}: ProjectCardProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation(['pages']);
-  
+
   const rawRole = project.role?.toLowerCase() || 'viewer';
 
-  // MANAGE veya standart tıklamalar için asıl gitmesi gereken temiz adresler
   const handleManageNavigate = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Kartın tıklama alanlarını izole ediyoruz
+    e.stopPropagation();
 
     const paths = {
       task: `/tasks/${project.id}`,
       dataset: `/datasets/${project.id}`,
-      project: `/projects/${project.id}` // 🎯 /projects/:id ana detay sayfasına gider
+      project: `/projects/${project.id}`
     };
+
     navigate(paths[cardType]);
   };
 
-  // Doğrudan projenin Dataset sayfasına yönlendirme
   const handleDatasetNavigate = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigate(`/projects/${project.id}/datasets`);
@@ -50,20 +63,22 @@ export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardPr
 
   const getButtonConfig = () => {
     if (rawRole === 'admin') {
-      return { 
-        text: t('pages:dashboard.buttons.manage', 'MANAGE'), 
-        icon: <Settings className="ml-1 w-3 h-3" /> 
+      return {
+        text: t('pages:dashboard.buttons.manage', 'MANAGE'),
+        icon: <Settings className="ml-1 w-3 h-3" />
       };
     }
+
     if (cardType === 'task') {
-      return { 
-        text: t('pages:dashboard.buttons.start_labeling', 'START LABELING'), 
-        icon: <ArrowUpRight className="ml-1 w-3 h-3" /> 
+      return {
+        text: t('pages:dashboard.buttons.start_labeling', 'START LABELING'),
+        icon: <ArrowUpRight className="ml-1 w-3 h-3" />
       };
     }
-    return { 
-      text: t('pages:dashboard.buttons.open', 'OPEN PROJECT'), 
-      icon: <Eye className="ml-1 w-3 h-3" /> 
+
+    return {
+      text: t('pages:dashboard.buttons.open', 'OPEN PROJECT'),
+      icon: <Eye className="ml-1 w-3 h-3" />
     };
   };
 
@@ -71,20 +86,29 @@ export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardPr
 
   const getStatusStyles = (status: string | undefined) => {
     const normalized = status?.toLowerCase() || 'new';
-    if (normalized === 'in progress' || normalized === 'in_progress') {
+
+    if (
+      normalized === 'in progress' ||
+      normalized === 'in_progress'
+    ) {
       return 'border-amber-100 dark:border-amber-900/50 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100/70 dark:hover:bg-amber-900/40';
     }
+
     if (normalized === 'completed') {
       return 'border-emerald-100 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100/70 dark:hover:bg-amber-900/40';
     }
+
     return 'border-blue-100 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/40 hover:bg-blue-100/70 dark:hover:bg-blue-900/40';
   };
 
-  const currentStatus = project.status ? String(project.status) : 'New';
-  const currentType = project.project_type ? String(project.project_type) : 'Object Detection';
+  const currentStatus = project.status
+    ? String(project.status)
+    : 'New';
 
-  const statusKey = currentStatus.toLowerCase().replace(/ /g, '_');
-  const typeKey = currentType.toLowerCase().replace(/ /g, '_');
+  const statusKey = currentStatus
+    .toLowerCase()
+    .replace(/ /g, '_');
+
   const roleKey = rawRole.replace(/ /g, '_');
 
   return (
@@ -96,7 +120,10 @@ export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardPr
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                if (onStatusChange) onStatusChange();
+
+                if (onStatusChange) {
+                  onStatusChange();
+                }
               }}
               className={`text-[9px] font-bold uppercase rounded-lg border px-2 py-0.5 transition-colors cursor-pointer select-none ${getStatusStyles(project.status)}`}
               title="Click to cycle status"
@@ -104,8 +131,14 @@ export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardPr
               ⚡ {t(`pages:dashboard.status.${statusKey}`, currentStatus)}
             </button>
           ) : (
-            <Badge variant="secondary" className="text-[8px] opacity-70 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 uppercase px-2 py-0">
-              {t(`pages:dashboard.roles.${roleKey}`, project.role || 'Viewer')}
+            <Badge
+              variant="secondary"
+              className="text-[8px] opacity-70 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 uppercase px-2 py-0"
+            >
+              {t(
+                `pages:dashboard.roles.${roleKey}`,
+                project.role || 'Viewer'
+              )}
             </Badge>
           )}
         </div>
@@ -113,10 +146,6 @@ export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardPr
         <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 leading-tight transition-colors">
           {project.name}
         </CardTitle>
-        
-        <CardDescription className="text-[11px] font-medium leading-none mt-1 uppercase tracking-tight text-slate-400 dark:text-slate-500">
-          {t(`pages:dashboard.tasks.${typeKey}`, currentType)}
-        </CardDescription>
       </CardHeader>
 
       <CardContent className="text-left px-5 py-2">
@@ -124,6 +153,7 @@ export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardPr
           <span className="text-3xl font-black tracking-tighter text-slate-900 dark:text-white">
             {project.count ?? 0}
           </span>
+
           <span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-widest italic">
             {t('pages:dashboard.files', 'PROCESSED FILES')}
           </span>
@@ -133,8 +163,7 @@ export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardPr
       <CardFooter className="p-5 pt-2 gap-2">
         {cardType === 'project' && rawRole === 'admin' ? (
           <>
-            {/* 🎯 MANAGE BUTONU: Kilit kaldırıldı, artık her zaman açık ve tıklanabilir */}
-            <Button 
+            <Button
               className="flex-1 rounded-xl h-9 font-bold text-[10px] transition-all border-none bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:bg-[#e10613] dark:hover:bg-[#e10613] hover:text-white dark:hover:text-white cursor-pointer"
               onClick={handleManageNavigate}
             >
@@ -142,9 +171,8 @@ export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardPr
               {buttonConfig.icon}
             </Button>
 
-            {/* DATASET BUTONU */}
-            <Button 
-              className="flex-1 rounded-xl h-9 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 dark:hover:bg-indigo-600 hover:text-white dark:hover:text-white border-none font-bold text-[10px] transition-all gap-1 cursor-pointer" 
+            <Button
+              className="flex-1 rounded-xl h-9 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 dark:hover:bg-indigo-600 hover:text-white dark:hover:text-white border-none font-bold text-[10px] transition-all gap-1 cursor-pointer"
               onClick={handleDatasetNavigate}
             >
               <Database size={12} />
@@ -152,8 +180,8 @@ export const ProjectCard = ({ project, cardType, onStatusChange }: ProjectCardPr
             </Button>
           </>
         ) : (
-          <Button 
-            className="w-full rounded-xl h-9 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:bg-[#e10613] dark:hover:bg-[#e10613] hover:text-white dark:hover:text-white border-none font-bold text-[10px] transition-all cursor-pointer" 
+          <Button
+            className="w-full rounded-xl h-9 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:bg-[#e10613] dark:hover:bg-[#e10613] hover:text-white dark:hover:text-white border-none font-bold text-[10px] transition-all cursor-pointer"
             onClick={handleManageNavigate}
           >
             {buttonConfig.text}

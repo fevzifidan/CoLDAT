@@ -3,7 +3,7 @@ import './App.css';
 import { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext.jsx';
 import { Toaster } from "@/components/ui/sonner";
 import ApiKeysPage from "./features/api-keys/ApiKeysPage";
 import SyntheticPage from "./features/synthetic/SyntheticPage";

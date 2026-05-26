@@ -10,15 +10,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { datasetService } from './services/datasetService';
-import { projectService } from '../projects/services/projectService'; // 🎯 Doğrudan güvenli import
 
 interface Dataset {
   id: string;
+  project_id: string;
   name: string;
   description?: string;
-  dataset_type: string;
-  created_at: string;
-  status?: string;
+  dataset_type: string; // backend şemasına göre gerekirse 'text' | 'image' vb. veya default-string
+  current_version?: string;
+  total_images?: number;
+  annotated_images?: number;
   role?: string;
   isDeleted?: boolean;
   isPermanentlyDeleted?: boolean;
@@ -27,7 +28,6 @@ interface Dataset {
 const DatasetsPage = () => {
   const { t } = useTranslation(['pages', 'common']);
   const navigate = useNavigate();
-  
   const { projectId } = useParams<{ projectId: string }>();
 
   const isUUID = (str?: string) => {
@@ -40,57 +40,66 @@ const DatasetsPage = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
-  const [displayLimit, setDisplayLimit] = useState(4);
+  const [displayLimit, setDisplayLimit] = useState(8); // Varsayılan limiti biraz artırdık grid uyumu için
   
   const [datasetList, setDatasetList] = useState<Dataset[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isTrashOpen, setIsTrashOpen] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [datasetName, setDatasetName] = useState("");
   const [datasetDesc, setDatasetDesc] = useState("");
-  const [datasetType, setDatasetType] = useState("text");
+  const [datasetType, setDatasetType] = useState("image"); // Backend imaj tabanlı şemaya sahip olduğundan varsayılanı 'image' yapabiliriz
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchDatasets = useCallback(async () => {
-    setLoading(true);
-    try {
-      let rawData: any[] = [];
+const fetchDatasets = useCallback(async () => {
+  setLoading(true);
+  try {
+    let rawData: any = null;
 
-      if (activeProjectId) {
-        rawData = await datasetService.getAllDatasets(activeProjectId);
-      } else {
-        // 🎯 Genel sayfada tüm projeleri çekip datasetleri topluyoruz
-        const response = await projectService.getAllProjects() as any;
-        const projectArray = response?.data || response?.results || (Array.isArray(response) ? response : []);
-        
-        if (Array.isArray(projectArray)) {
-          const uniqueDatasets = new Map();
-          projectArray.forEach((proj: any) => {
-            if (Array.isArray(proj.datasets)) {
-              proj.datasets.forEach((ds: any) => {
-                uniqueDatasets.set(ds.id, ds);
-              });
-            }
-          });
-          rawData = Array.from(uniqueDatasets.values());
-        }
-      }
-
-      const enrichedDatasets = (rawData || []).map((d: any) => ({
-        ...d,
-        isDeleted: d.isDeleted ?? false,
-        isPermanentlyDeleted: d.isPermanentlyDeleted ?? false
-      }));
-      
-      setDatasetList(enrichedDatasets);
-    } catch (error) {
-      console.error("Dataset yükleme hatası:", error);
-      setDatasetList([]); 
-    } finally {
-      setLoading(false);
+    if (activeProjectId) {
+      rawData = await datasetService.getAllDatasets(activeProjectId);
+    } else {
+      rawData = await datasetService.getAllDatasets(); 
     }
-  }, [activeProjectId]);
+
+    // 🚀 Hata Ayıklama Logu: Konsolda ham nesneyi net görebilmek için
+    console.log("Backend'den Gelen Ham Nesne:", rawData);
+
+    let extractedData: any[] = [];
+    
+    // Her türlü API yanıt mimarisini kapsayan güvenli kontrol:
+    if (rawData) {
+      if (Array.isArray(rawData)) {
+        extractedData = rawData;
+      } else if (rawData.data && Array.isArray(rawData.data)) {
+        extractedData = rawData.data;
+        if (rawData.next_cursor) setNextCursor(rawData.next_cursor);
+      } else if (rawData.results && Array.isArray(rawData.results)) {
+        extractedData = rawData.results;
+      } else if (rawData.datasets && Array.isArray(rawData.datasets)) {
+        extractedData = rawData.datasets;
+      }
+    }
+    
+    const enrichedDatasets = extractedData.map((d: any) => ({
+      ...d,
+      // Backend'den isim farklı gelebiliyorsa tolerans gösterelim:
+      name: d.name || d.title || d.dataset_name || "Untitled Dataset",
+      isDeleted: d.isDeleted ?? d.is_deleted ?? false,
+      isPermanentlyDeleted: d.isPermanentlyDeleted ?? false
+    }));
+    
+    setDatasetList(enrichedDatasets);
+  } catch (error) {
+    console.error("Dataset yükleme hatası:", error);
+    toast.error(t("common:status.error", "Veri setleri yüklenirken bir hata oluştu."));
+    setDatasetList([]); 
+  } finally {
+    setLoading(false);
+  }
+}, [activeProjectId, t]);
 
   useEffect(() => {
     fetchDatasets();
@@ -117,7 +126,7 @@ const DatasetsPage = () => {
         setIsModalOpen(false);
         setDatasetName("");
         setDatasetDesc("");
-        setDatasetType("text");
+        setDatasetType("image");
         fetchDatasets(); 
       })
       .catch((err: any) => {
@@ -129,18 +138,28 @@ const DatasetsPage = () => {
 
   const activeDatasets = datasetList.filter((d) => !d.isDeleted && !d.isPermanentlyDeleted);
   const archivedDatasets = datasetList.filter((d) => d.isDeleted && !d.isPermanentlyDeleted);
+  console.log("Tüm Datasetler:", datasetList);
+  console.log("Aktif Datasetler:", activeDatasets);
+  console.log("Arşivlenen Datasetler:", archivedDatasets);
+  console.log("Aktif Datasetler:", activeDatasets.map(d => ({ id: d.id, name: d.name, role: d.role, created_at: (d as any).created_at, isDeleted: d.isDeleted })));
+  console.log("Arşivlenen Datasetler:", archivedDatasets.map(d => ({ id: d.id, name: d.name, role: d.role, created_at: (d as any).created_at, isDeleted: d.isDeleted })));
 
-  const filteredDatasets = activeDatasets.filter(dataset => {
-    const matchesSearch = dataset.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false;
-    const datasetRole = dataset.role?.toUpperCase() || dataset.status?.toUpperCase() || "OWNER";
-    const matchesRole = roleFilter === "ALL" || datasetRole === roleFilter;
-    return matchesSearch && matchesRole;
-  });
+const filteredDatasets = activeDatasets.filter(dataset => {
+  // dataset.name parametresinin güvenli kontrolü
+  const currentName = dataset.name || "";
+  const matchesSearch = currentName.toLowerCase().includes(searchQuery.toLowerCase());
+  
+  const datasetRole = dataset.role?.toUpperCase() || "MEMBER"; 
+  const matchesRole = roleFilter === "ALL" || datasetRole === roleFilter;
+  
+  return matchesSearch && matchesRole;
+});
 
   const visibleDatasets = filteredDatasets.slice(0, displayLimit);
 
   const handleDeleteDataset = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    // Local soft delete simülasyonu (Gerçek senaryoda backend endpoint'ine bağlanabilir)
     setDatasetList(prev => prev.map(d => d.id === id ? { ...d, isDeleted: true } : d));
     toast.info(t("common:status.moved_to_trash", "Moved to trash."));
   };
@@ -165,7 +184,10 @@ const DatasetsPage = () => {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center font-mono text-muted-foreground dark:text-slate-400 min-h-screen">
-        {t("common:status.loading", "Loading datasets...")}
+        <div className="flex flex-col items-center gap-2">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600" />
+          <p className="text-sm">{t("common:status.loading", "Loading datasets...")}</p>
+        </div>
       </div>
     );
   }
@@ -203,7 +225,7 @@ const DatasetsPage = () => {
           <Button 
             onClick={() => {
               if (!activeProjectId) {
-                toast.error("Dataset oluşturabilmek için öncelikle 'Projects' sayfasından bir projenin içerisine girmelisiniz.");
+                toast.error("Dataset oluşturabilmek için öncelikle 'Projects' sayfasından bir projenin içerisine girmelinesiniz.");
                 return;
               }
               setIsModalOpen(true);
@@ -247,8 +269,8 @@ const DatasetsPage = () => {
                     onChange={(e) => setDatasetType(e.target.value)}
                     className="flex h-9 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer text-slate-700 dark:text-slate-300 font-medium focus-visible:outline-none"
                   >
-                    <option value="text">📄 Text / Document Data</option>
                     <option value="image">🖼️ Image / Vision Data</option>
+                    <option value="text">📄 Text / Document Data</option>
                     <option value="tabular">📊 Tabular / Structured Data</option>
                   </select>
                 </div>
@@ -275,13 +297,13 @@ const DatasetsPage = () => {
               value={roleFilter}
               onChange={(e) => {
                 setRoleFilter(e.target.value);
-                setDisplayLimit(4); 
+                setDisplayLimit(8); 
               }}
               className="flex h-9 w-40 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer focus-visible:outline-none text-slate-700 dark:text-slate-300 font-medium"
             >
               <option value="ALL">✨ {t('pages:datasets.filter.all_roles', 'All Roles')}</option>
-              <option value="OWNER">🔑 {t('pages:datasets.filter.owner', 'Owner')}</option>
-              <option value="MEMBER">👥 {t('pages:datasets.filter.member', 'Member')}</option>
+              <option value="ADMIN">🔑 Admin</option>
+              <option value="MEMBER">👥 Member</option>
             </select>
           </div>
 
@@ -313,7 +335,11 @@ const DatasetsPage = () => {
               onClick={() => navigate(`/datasets/${dataset.id}`)}
               className="cursor-pointer transition-transform hover:scale-[1.02] relative group dark:[&_h3]:!text-white dark:[&_h4]:!text-white"
             >
-              <DatasetCard dataset={dataset} />
+              {/* DatasetCard içerisine backend verileri (total_images, role vb.) otomatik sızacaktır */}
+              <DatasetCard dataset={{
+                ...dataset,
+                created_at: (dataset as any).created_at ?? (dataset as any).createdAt ?? new Date().toISOString(),
+              }} />
               <button
                 onClick={(e) => handleDeleteDataset(dataset.id, e)}
                 className="absolute bottom-4 right-4 p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/50 shadow-sm"
@@ -359,7 +385,7 @@ const DatasetsPage = () => {
                   <div key={dataset.id} className="flex items-center justify-between p-3 border dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40 gap-4">
                     <div className="text-left">
                       <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{dataset.name}</h4>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 capitalize">Type: {dataset.dataset_type}</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 capitalize">Version: {dataset.current_version || 'v1.0'}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Button size="sm" variant="outline" onClick={() => handleRecoverDataset(dataset.id)} className="h-8 border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold gap-1.5 rounded-xl">

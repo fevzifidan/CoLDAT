@@ -1,18 +1,8 @@
 // src/features/datasets/services/datasetService.js
-import apiService from '@/shared/services/api/apiClient';
+import apiService from "@/shared/services/api/api.service";
 
 // 🎯 BACKEND BAĞLANTISI İÇİN MOCK MODUNU KAPATIYORUZ!
 const IS_MOCK = false;
-
-// Tarayıcıda saklanan JWT token'ı dinamik olarak bulan yardımcı fonksiyon
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('token') || 
-                localStorage.getItem('access_token') || 
-                sessionStorage.getItem('token') ||
-                JSON.parse(localStorage.getItem('auth_store') || '{}')?.token;
-                
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 const getLocalDatasets = (projectId) => {
   const allData = localStorage.getItem(`mock_datasets_${projectId}`);
@@ -36,20 +26,26 @@ export const datasetService = {
 
     try {
       const response = await apiService.get(`projects/${projectId}/datasets/`, {
-        headers: getAuthHeaders()
+        headers: (() => {
+          const token =
+            localStorage.getItem('token') ||
+            localStorage.getItem('access_token') ||
+            sessionStorage.getItem('token') ||
+            JSON.parse(localStorage.getItem('auth_store') || '{}')?.token;
+
+          return token ? { Authorization: `Bearer ${token}` } : {};
+        })()
       });
-      
-      // --- KORUMA KATMANI: Gelen verinin tipini inceleyip diziyi ayıkla ---
+
       if (Array.isArray(response)) return response;
       if (Array.isArray(response?.data)) return response.data;
       if (Array.isArray(response?.data?.results)) return response.data.results;
       if (Array.isArray(response?.results)) return response.results;
-      
-      // Eğer bir nesne geldiyse içindeki ilk dizi tipindeki key'i bulmaya çalış
+
       if (response && typeof response === 'object') {
         const potentialArray = Object.values(response).find(val => Array.isArray(val));
         if (potentialArray) return potentialArray;
-        
+
         if (response.data && typeof response.data === 'object') {
           const potentialDataArray = Object.values(response.data).find(val => Array.isArray(val));
           if (potentialDataArray) return potentialDataArray;
@@ -68,7 +64,7 @@ export const datasetService = {
     if (!projectId || projectId === "null" || projectId === "default-project") {
       throw new Error("Dataset oluşturmak için önce bir projenin içine girmelisiniz.");
     }
-    
+
     if (IS_MOCK) {
       const currentDatasets = getLocalDatasets(projectId);
       const newDataset = {
@@ -86,15 +82,27 @@ export const datasetService = {
       return newDataset;
     }
 
-    // 🎯 Gerçek backend çağrısına auth header eklendi
-    const response = await apiService.post(`projects/${projectId}/datasets/`, datasetData, {
-      headers: getAuthHeaders()
-    });
+    const response = await apiService.post(
+      `projects/${projectId}/datasets/`,
+      datasetData,
+      {
+        headers: (() => {
+          const token =
+            localStorage.getItem('token') ||
+            localStorage.getItem('access_token') ||
+            sessionStorage.getItem('token') ||
+            JSON.parse(localStorage.getItem('auth_store') || '{}')?.token;
+
+          return token ? { Authorization: `Bearer ${token}` } : {};
+        })()
+      }
+    );
+
     return response?.data || response;
   },
 
   // DELETE /datasets/{datasetId}/
-  deleteDataset: async (id) => {
+deleteDataset: async (id) => {
     if (IS_MOCK) {
       for (let key in localStorage) {
         if (key.startsWith("mock_datasets_")) {
@@ -106,32 +114,117 @@ export const datasetService = {
       return { success: true };
     }
 
-    return await apiService.delete(`/datasets/${id}/`, {
-      headers: getAuthHeaders()
+return await apiService.delete(`/datasets/${id}/`, {
+      headers: (() => {
+        const token =
+          localStorage.getItem('token') ||
+          localStorage.getItem('access_token') ||
+          sessionStorage.getItem('token') ||
+          JSON.parse(localStorage.getItem('auth_store') || '{}')?.token;
+
+        return token ? { Authorization: `Bearer ${token}` } : {};
+      })()
     });
+  },
+
+  optionsDataset: async (id) => {
+    if (IS_MOCK) return { allows: ["DELETE", "OPTIONS"] };
+
+    try {
+      const response = await apiService.options(`/datasets/${id}/`, {
+        headers: (() => {
+          const token =
+            localStorage.getItem('token') ||
+            localStorage.getItem('access_token') ||
+            sessionStorage.getItem('token') ||
+            JSON.parse(localStorage.getItem('auth_store') || '{}')?.token;
+
+          return token ? { Authorization: `Bearer ${token}` } : {};
+        })()
+      });
+      return response?.data || response;
+    } catch (error) {
+      console.error(`optionsDataset Hatası (${id}):`, error);
+      return null;
+    }
   },
 
   // ---- DATASET MEMBERS ENDPOINTS ----
   getDatasetMembers: async (datasetId) => {
     if (IS_MOCK) return [];
-    const response = await apiService.get(`/datasets/${datasetId}/members/`, { headers: getAuthHeaders() });
+
+    const response = await apiService.get(`/datasets/${datasetId}/members/`, {
+      headers: (() => {
+        const token =
+          localStorage.getItem('token') ||
+          localStorage.getItem('access_token') ||
+          sessionStorage.getItem('token') ||
+          JSON.parse(localStorage.getItem('auth_store') || '{}')?.token;
+
+        return token ? { Authorization: `Bearer ${token}` } : {};
+      })()
+    });
+
     return response?.data || response || [];
   },
 
   addDatasetMember: async (datasetId, memberData) => {
     if (IS_MOCK) return { success: true };
-    const response = await apiService.post(`/datasets/${datasetId}/members/`, memberData, { headers: getAuthHeaders() });
+
+    const response = await apiService.post(
+      `/datasets/${datasetId}/members/`,
+      memberData,
+      {
+        headers: (() => {
+          const token =
+            localStorage.getItem('token') ||
+            localStorage.getItem('access_token') ||
+            sessionStorage.getItem('token') ||
+            JSON.parse(localStorage.getItem('auth_store') || '{}')?.token;
+
+          return token ? { Authorization: `Bearer ${token}` } : {};
+        })()
+      }
+    );
+
     return response?.data || response;
   },
 
   updateDatasetMember: async (datasetId, memberId, memberData) => {
     if (IS_MOCK) return { success: true };
-    const response = await apiService.patch(`/datasets/${datasetId}/members/${memberId}/`, memberData, { headers: getAuthHeaders() });
+
+    const response = await apiService.patch(
+      `/datasets/${datasetId}/members/${memberId}/`,
+      memberData,
+      {
+        headers: (() => {
+          const token =
+            localStorage.getItem('token') ||
+            localStorage.getItem('access_token') ||
+            sessionStorage.getItem('token') ||
+            JSON.parse(localStorage.getItem('auth_store') || '{}')?.token;
+
+          return token ? { Authorization: `Bearer ${token}` } : {};
+        })()
+      }
+    );
+
     return response?.data || response;
   },
 
   removeDatasetMember: async (datasetId, memberId) => {
     if (IS_MOCK) return { success: true };
-    return await apiService.delete(`/datasets/${datasetId}/members/${memberId}/`, { headers: getAuthHeaders() });
+
+    return await apiService.delete(`/datasets/${datasetId}/members/${memberId}/`, {
+      headers: (() => {
+        const token =
+          localStorage.getItem('token') ||
+          localStorage.getItem('access_token') ||
+          sessionStorage.getItem('token') ||
+          JSON.parse(localStorage.getItem('auth_store') || '{}')?.token;
+
+        return token ? { Authorization: `Bearer ${token}` } : {};
+      })()
+    });
   }
 };

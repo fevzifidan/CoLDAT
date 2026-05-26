@@ -1,3 +1,4 @@
+// src/features/projects/ProjectDatasetsPage.tsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"; 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Database, Plus, RefreshCw, Layers, FileSpreadsheet, FolderPlus } from "lucide-react"; 
+import { ArrowLeft, Database, Plus, RefreshCw, Layers, FileSpreadsheet, FolderPlus, Image, CheckCircle } from "lucide-react"; 
 import { projectService } from './services/projectService';
 import { datasetService } from '../datasets/services/datasetService'; 
 import { toast } from 'sonner';
@@ -18,7 +19,7 @@ export const ProjectDatasetsPage = () => {
   
   const [loading, setLoading] = useState(true);
   const [projectDetails, setProjectDetails] = useState<any>(null);
-  const [projectDatasets, setProjectDatasets] = useState<any[]>([]); // 🎯 Doğrudan datasetleri tutacak yeni bağımsız state
+  const [projectDatasets, setProjectDatasets] = useState<any[]>([]); 
   
   const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); 
@@ -28,10 +29,10 @@ export const ProjectDatasetsPage = () => {
 
   const [datasetName, setDatasetName] = useState("");
   const [datasetDesc, setDatasetDesc] = useState("");
-  const [datasetType, setDatasetType] = useState("text");
+  const [datasetType, setDatasetType] = useState("image");
   const [submitting, setSubmitting] = useState(false);
 
-  // 🎯 Hem projeyi hem de o projeye ait gerçek datasetleri çekip eşitleyen ana fonksiyon
+  // Hem projeyi hem de o projeye ait gerçek datasetleri çekip eşitleyen ana fonksiyon
   const loadProjectData = async () => {
     if (!projectId) return;
     try {
@@ -43,9 +44,10 @@ export const ProjectDatasetsPage = () => {
       setProjectDetails(projData);
 
       // 2. O Projeye Bağlı Gerçek Dataset Listesini Çek
-      const datasetList = await datasetService.getAllDatasets(projectId);
+      const res = await datasetService.getAllDatasets(projectId);
+      // Backend pagination objesiyse ({ data: [...] }) içini aç, değilse array kontrolü yap
+      const datasetList = res && res.data && Array.isArray(res.data) ? res.data : res;
       
-      // 🎯 ARRAY GARANTİSİ: Gelen veri dizi değilse projData.datasets dizisine bak, o da yoksa boş dizi ata.
       if (Array.isArray(datasetList)) {
         setProjectDatasets(datasetList);
       } else if (projData && Array.isArray(projData.datasets)) {
@@ -57,25 +59,22 @@ export const ProjectDatasetsPage = () => {
     } catch (err) {
       console.error("Error loading project datasets:", err);
       toast.error("Veriler yüklenirken bir sorun oluştu.");
-      setProjectDatasets([]); // Çökmemesi için hata anında da boş diziye çekiyoruz
+      setProjectDatasets([]); 
     } finally {
       setLoading(false);
     }
   };
 
-  // Havuzdaki Diğer Tüm Datasetleri Yükle (Attach Modalı için)
+  // 🎯 REAL BACKEND ENTEGRASYONU: Havuzdaki Diğer Tüm Datasetleri Yükle (Attach Modalı için)
   const loadAvailableDatasets = async () => {
     try {
-      const response = await projectService.getAllProjects(); 
-      const projectArray = response?.data || (Array.isArray(response) ? response : []);
+      // Tüm projeleri gezmek yerine, kullanıcının erişebildiği ana havuzu tek istek ile çekiyoruz
+      const response = await datasetService.getAllDatasets();
+      const extractedList = response && response.data && Array.isArray(response.data) ? response.data : response;
       
-      const uniqueDatasets = new Map();
-      projectArray.forEach((proj: any) => {
-        if (Array.isArray(proj.datasets)) {
-          proj.datasets.forEach((ds: any) => uniqueDatasets.set(ds.id, ds));
-        }
-      });
-      setAllAvailableDatasets(Array.from(uniqueDatasets.values()));
+      if (Array.isArray(extractedList)) {
+        setAllAvailableDatasets(extractedList);
+      }
     } catch (err) {
       console.error("Error loading available datasets:", err);
     }
@@ -95,7 +94,6 @@ export const ProjectDatasetsPage = () => {
       toast.success("Dataset başarıyla projeye bağlandı.");
       setIsAttachModalOpen(false);
       
-      // 🎯 Listeleri tam senkronize etmek için bekletip yeniden çekiyoruz
       setTimeout(() => {
         loadProjectData();
       }, 300);
@@ -125,9 +123,8 @@ export const ProjectDatasetsPage = () => {
       
       setDatasetName("");
       setDatasetDesc("");
-      setDatasetType("text");
+      setDatasetType("image");
       
-      // 🎯 Backend'e yazılması için ufak bir mola verip listeyi tazeleyelim
       setTimeout(() => {
         loadProjectData();
       }, 400);
@@ -180,7 +177,7 @@ export const ProjectDatasetsPage = () => {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-3">
-          {/* Sol Taraf: 🎯 projectDatasets state'i üzerinden listeleme */}
+          {/* Sol Taraf: Projeye Bağlı Datasetlerin Listesi */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -251,13 +248,27 @@ export const ProjectDatasetsPage = () => {
                       <Layers size={16} />
                     </div>
                   </CardHeader>
-                  <CardContent className="px-5 pb-5 pt-0 flex flex-wrap gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  <CardContent className="px-5 pb-5 pt-0 flex flex-wrap gap-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
                     <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 rounded-lg">
                       <FileSpreadsheet size={13} />
                       <span>ID: <span className="font-mono text-slate-700 dark:text-slate-300">{ds.id ? (ds.id.toString().slice(0,8) + '...') : 'N/A'}</span></span>
                     </div>
-                    <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 rounded-lg global-badge">
-                      <span>⚡ Status: <span className="text-emerald-600 dark:text-emerald-400">Ready</span></span>
+
+                    {/* 🎯 REAl BACKEND VERİSİ: İmaj Sayıları */}
+                    <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 rounded-lg">
+                      <Image size={13} className="text-sky-500" />
+                      <span>Images: <span className="text-slate-700 dark:text-slate-300">{ds.total_images ?? 0}</span></span>
+                    </div>
+
+                    {/* 🎯 REAL BACKEND VERİSİ: Anotasyon İlerlemesi */}
+                    <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 rounded-lg">
+                      <CheckCircle size={13} className="text-emerald-500" />
+                      <span>Annotated: <span className="text-slate-700 dark:text-slate-300">{ds.annotated_images ?? 0}</span></span>
+                    </div>
+
+                    {/* 🎯 REAL BACKEND VERİSİ: Kullanıcı Rolü */}
+                    <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 rounded-lg capitalize">
+                      <span>👤 Role: <span className="text-indigo-600 dark:text-indigo-400">{ds.role || 'Member'}</span></span>
                     </div>
                   </CardContent>
                 </Card>
@@ -371,8 +382,8 @@ export const ProjectDatasetsPage = () => {
                 onChange={(e) => setDatasetType(e.target.value)}
                 className="flex h-9 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer text-slate-700 dark:text-slate-300 font-medium focus-visible:outline-none"
               >
-                <option value="text">📄 Metin / Doküman Verisi</option>
                 <option value="image">🖼️ Görsel / Resim Verisi</option>
+                <option value="text">📄 Metin / Doküman Verisi</option>
                 <option value="tabular">📊 Tablo / Yapılandırılmış Veri</option>
               </select>
             </div>

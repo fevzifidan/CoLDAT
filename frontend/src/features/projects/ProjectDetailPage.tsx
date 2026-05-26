@@ -11,9 +11,9 @@ import { toast } from 'sonner';
 import { projectService } from './services/projectService';
 
 import TaxonomyManager from '@/features/datasets/taxonomy/TaxonomyManager';
-import AssetManager from '@/assets/AssetManager';
-import TeamManager from '@/assets/TeamManager';
-import ExportManager from '@/assets/ExportManager';
+import AssetManager from '@/features/datasets/components/AssetManager';
+import TeamManager from '@/features/accounts/TeamManager';
+import ExportManager from '@/features/datasets/components/ExportManager';
 import GeneralSettings from './tabs/GeneralSettings'; 
 
 interface Project {
@@ -233,12 +233,12 @@ const ProjectDetailPage = () => {
                 />
               )}
 
-              {activeTab === 'taxonomy' && (
-                <TaxonomyManager 
-                  projectId={id} 
-                  onUpdate={(data) => handleDataUpdate('taxonomy', data)} 
-                />
-              )}
+{activeTab === 'taxonomy' && (
+  <TaxonomyManager 
+    projectId={id} 
+    onUpdate={(data) => handleDataUpdate('taxonomy', data)} 
+  />
+)}
 
               {activeTab === 'assets' && <AssetManager />}
               {activeTab === 'team' && <TeamManager projectId={id} />}

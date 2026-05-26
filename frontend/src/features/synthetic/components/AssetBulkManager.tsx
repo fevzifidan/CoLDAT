@@ -4,7 +4,7 @@ import { Upload, Check, X, Loader2, ImagePlus, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Hata Çözümü: src/assets/services/ içindeki dosyaya giden doğru göreceli yol
-import { mockAssetService } from '../../../assets/services/mockAssetService';
+import { mockAssetService } from '../../datasets/services/mockAssetService';
 
 interface AssetBulkManagerProps {
   datasetId?: string;
