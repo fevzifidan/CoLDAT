@@ -18,7 +18,7 @@ import { GlobalKeyboardListener } from './shared/components/GlobalKeyboardListen
 import { UploadManager } from '@/features/upload_manager';
 
 // 🎯 DÜZELTME: Named export olduğu için süslü parantez { ProfilePage } ile import ettik
-import ProfilePage from '@/features/accounts/ProfilePage';
+import ProfilePage from '@/features/accounts/ProfilePagers.js';
 
 import DashboardLayout from '@/features/core/layouts/DashboardLayout';
 import DashboardHome from '@/features/dashboard/DashboardHome';
