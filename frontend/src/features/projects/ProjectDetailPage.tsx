@@ -108,7 +108,6 @@ const ProjectDetailPage = () => {
 
     try {
       if (pendingChanges.general) {
-        // 🎯 DÜZELTME: Temiz enum değerleri doğrudan gönderiliyor
         const updatedPayload = {
           name: pendingChanges.general.name,
           description: pendingChanges.general.description,
@@ -233,12 +232,18 @@ const ProjectDetailPage = () => {
                 />
               )}
 
-{activeTab === 'taxonomy' && (
-  <TaxonomyManager 
-    projectId={id} 
-    onUpdate={(data) => handleDataUpdate('taxonomy', data)} 
-  />
-)}
+              {activeTab === 'taxonomy' && (
+                <TaxonomyManager 
+                  projectId={id} 
+                  onUpdate={(data) => handleDataUpdate('taxonomy', data)} 
+                  // 👑 Üst bileşenden (Project) gelen yetki kontrolü paslanıyor:
+                  isAdmin={
+                    project?.role?.toUpperCase() === 'ADMIN' || 
+                    project?.role?.toUpperCase() === 'OWNER' || 
+                    project?.role === undefined
+                  } 
+                />
+              )}
 
               {activeTab === 'assets' && <AssetManager />}
               {activeTab === 'team' && <TeamManager projectId={id} />}

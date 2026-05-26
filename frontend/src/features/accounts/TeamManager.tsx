@@ -398,7 +398,6 @@ const TeamManager = ({
       {
         OWNER: 'Owner (Proje Sahibi)',
         ADMIN: 'Admin',
-        MANAGER: 'Manager',
         ANNOTATOR:
           'Labeler (Annotator)',
         VIEWER:
@@ -567,10 +566,6 @@ const TeamManager = ({
                 >
                   <option value="admin">
                     ADMIN
-                  </option>
-
-                  <option value="manager">
-                    MANAGER
                   </option>
 
                   <option value="annotator">
