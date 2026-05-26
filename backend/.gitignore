@@ -81,13 +81,9 @@ local.db
 # Static / Media (runtime generated)
 staticfiles/
 static_root/
-media/
 media_root/
 collected_static/
 static_collected/
-upload/
-uploads/
-static/
 
 # Migrations (optional — uncomment if you prefer not to commit migration files)
 # apps/**/migrations/*.py
@@ -147,7 +143,6 @@ dmypy.json
 # ========================
 # Profiling / Debug
 # ========================
-profile*
 *.prof
 *.pstats
 
