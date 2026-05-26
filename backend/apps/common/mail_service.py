@@ -44,43 +44,32 @@ def _send_template_email(
 ) -> bool:
     """
     Resend template kullanarak email gonderir.
-    MAIL_MODE=prod ya da dev iken Anymail + Resend API uzerinden template ile gonderir.
-    Dev modunda Resend sandbox ortami kullanilir (RESEND_API_KEY .env'de ayarlanmali).
-    Bunun disindaki modlarda (console) Django console backend ile konsola yazdirir.
+    Resend Python SDK uzerinden dogrudan API'ye istek yapar.
     """
+    import logging
+
+    logger = logging.getLogger(__name__)
+
     try:
-        if settings.MAIL_MODE in ("prod", "dev"):
-            from anymail.message import AnymailMessage
+        import resend
 
-            message = AnymailMessage(
-                subject=subject,
-                body=" ",
-                to=[to],
-                from_email=settings.DEFAULT_FROM_EMAIL,
-            )
-            message.template_id = template_id
-            message.merge_data = {to: template_variables}
-            message.send()
-        else:
-            from django.core.mail import send_mail
+        resend.api_key = settings.RESEND_API_KEY
 
-            # Fallback modda template degiskenlerini debug olarak goster
-            debug_body = (
-                f"[TEMPLATE: {template_id}]\n"
-                f"TO: {to}\n"
-                f"VARIABLES:\n"
-            )
-            for key, val in template_variables.items():
-                debug_body += f"  {key} = {val}\n"
+        params = {
+            "from": settings.DEFAULT_FROM_EMAIL,
+            "to": [to],
+            "subject": subject,
+            "template": {
+                "id": template_id,
+                "variables": template_variables,
+            },
+        }
 
-            send_mail(
-                subject=subject or f"[DEV] Template: {template_id}",
-                message=debug_body,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[to],
-            )
+        resend.Emails.send(params)
         return True
-    except Exception:
+
+    except Exception as exc:
+        logger.error(f"Failed to send email via Resend: {exc}", exc_info=True)
         return False
 
 
@@ -130,6 +119,7 @@ def _send_purpose_email(
 
     # Prepare localized template variables
     extra_vars = {
+        "first_name": user.first_name or getattr(user, "username", ""),
         url_param_name: action_url,
         "ttl_hours": ttl_hours,
     }
@@ -144,7 +134,7 @@ def _send_purpose_email(
         to=user.email,
         template_id=template_id,
         template_variables=template_vars,
-        subject=template_vars.get("title", ""),
+        subject=template_vars.get("subject", ""),
     )
 
     if success:
@@ -165,7 +155,7 @@ def send_verification_email(user, user_locale: str = "en") -> bool:
         template_id=settings.RESEND_TEMPLATE_EMAIL_VERIFY,
         ttl_hours=settings.MAIL_VERIFICATION_TOKEN_TTL_HOURS,
         url_path="verify-email",
-        url_param_name="verify_url",
+        url_param_name="verification_url",
     )
 
 

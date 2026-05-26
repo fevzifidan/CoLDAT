@@ -63,7 +63,9 @@ services:
       DEBUG: "True"
       MAIL_MODE: "dev"
       REDIS_URL: "redis://redis:6379/0"
-      DEFAULT_FROM_EMAIL: "dev@coldat.local"
+      DEFAULT_FROM_EMAIL: "noreply@mail.coldat.org.tr"
+    env_file:
+      - ./backend/.env
     depends_on:
       db:
         condition: service_healthy

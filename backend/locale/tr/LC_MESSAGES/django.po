@@ -1,5 +1,4 @@
 # Turkish translations for CoLDAT mail templates.
-# Copyright (C) 2026 CoLDAT
 #
 msgid ""
 msgstr ""
@@ -15,11 +14,11 @@ msgstr ""
 # Global / shared mail keys
 # ---------------------------------------------------------------------------
 
-msgid "mail.app_name"
+msgid "mail.brand_name"
 msgstr "CoLDAT"
 
-msgid "mail.company_name"
-msgstr ""
+msgid "mail.footer_text"
+msgstr "© 2026 CoLDAT. Tüm hakları saklıdır."
 
 msgid "mail.support_email"
 msgstr "support@coldat.app"
@@ -28,39 +27,56 @@ msgstr "support@coldat.app"
 # Email Verification
 # ---------------------------------------------------------------------------
 
-msgid "mail.verify_email.title"
-msgstr "E-posta Adresinizi Doğrulayın"
-
+msgid "mail.verify_email.subject"
+msgstr "Hesabınıza erişmek için doğrulama işlemini tamamlayın."
 msgid "mail.verify_email.heading"
 msgstr "Hesabınızı Doğrulayın"
+msgid "mail.verify_email.greeting"
+msgstr "Merhaba"
 
-msgid "mail.verify_email.body_text"
-msgstr "Hesabınızı oluşturduğunuz için teşekkürler. E-posta adresinizi doğrulamak için aşağıdaki butona tıklayın."
+msgid "mail.verify_email.intro_text"
+msgstr "CoLDAT platformuna kayıt olduğunuz için teşekkür ederiz. Kayıt işleminiz başarıyla tamamlandı. Hesabınıza erişmek için doğrulama işlemini tamamlamanız gerekmektedir."
+msgid "mail.verify_email.cta_instruction_text"
+msgstr "Aşağıdaki butona tıklayarak hesabınızı doğrulayabilirsiniz."
+msgid "mail.verify_email.cta_label_text"
+msgstr "Hesabı Doğrula"
+msgid "mail.verify_email.expiry_notice_text"
+msgstr "Bu doğrulama bağlantısı {hours} saat boyunca geçerlidir."
 
-msgid "mail.verify_email.button_text"
-msgstr "E-postayı Doğrula"
+msgid "mail.verify_email.fallback_instruction_text"
+msgstr "Buton çalışmıyorsa, aşağıdaki bağlantıyı tarayıcınıza kopyalayıp yapıştırabilirsiniz:"
 
-msgid "mail.verify_email.footer_note"
-msgstr "Bu bağlantı {hours} saat süreyle geçerlidir."
+msgid "mail.verify_email.security_notice_text"
+msgstr "Bu hesabı siz oluşturmadıysanız, bu e-postayı güvenle yok sayabilirsiniz."
 
 # ---------------------------------------------------------------------------
 # Password Reset
 # ---------------------------------------------------------------------------
 
-msgid "mail.password_reset.title"
-msgstr "Şifre Sıfırlama"
+msgid "mail.password_reset.subject"
+msgstr "Hesabınıza tekrar erişmek için şifrenizi sıfırlayabilirsiniz."
 
 msgid "mail.password_reset.heading"
 msgstr "Şifrenizi Sıfırlayın"
 
-msgid "mail.password_reset.body_text"
-msgstr "Şifre sıfırlama talebinde bulundunuz. Yeni şifre belirlemek için aşağıdaki butona tıklayın."
+msgid "mail.password_reset.greeting"
+msgstr "Merhaba"
 
-msgid "mail.password_reset.button_text"
+msgid "mail.password_reset.intro_text"
+msgstr "CoLDAT hesabınız için bir şifre sıfırlama talebi aldık. Hesabınıza erişiminizi yeniden sağlamak için size ulaşıyoruz."
+
+msgid "mail.password_reset.cta_instruction_text"
+msgstr "Yeni bir şifre oluşturmak için aşağıdaki butona tıklayın."
+
+msgid "mail.password_reset.cta_label_text"
 msgstr "Şifreyi Sıfırla"
 
-msgid "mail.password_reset.footer_note"
-msgstr "Bu bağlantı {hours} saat süreyle geçerlidir."
+msgid "mail.password_reset.expiry_notice_text"
+msgstr "Bu bağlantı güvenliğiniz için {hours} saat boyunca geçerlidir."
 
-msgid "mail.password_reset.ignore_warning"
-msgstr "Bu talebi siz yapmadıysanız, bu e-postayı dikkate almayın."
+msgid "mail.password_reset.fallback_instruction_text"
+msgstr "Buton çalışmıyorsa, aşağıdaki bağlantıyı tarayıcınıza kopyalayıp yapıştırabilirsiniz:"
+
+msgid "mail.password_reset.security_notice_text"
+msgstr "Eğer bu şifre sıfırlama talebini siz yapmadıysanız, bu e-postayı görmezden gelebilirsiniz. Hesabınız güvende kalacaktır ve şifreniz değişmeyecektir."
+

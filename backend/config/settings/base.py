@@ -158,6 +158,10 @@ USE_I18N = True
 
 USE_TZ = True
 
+LOCALE_PATHS = [
+    BASE_DIR / "locale",
+]
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
@@ -189,19 +193,18 @@ CACHES = {
 # ---------------------------------------------------------------------------
 MAIL_MODE = os.getenv("MAIL_MODE", "dev").lower()
 
-# Anymail is required for both prod (live) and dev (sandbox/test) modes
 if MAIL_MODE in ("prod", "dev"):
-    INSTALLED_APPS += ["anymail"]
-    EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
-    ANYMAIL = {
-        "RESEND_API_KEY": os.getenv("RESEND_API_KEY"),
-    }
+    # Resend SDK kullaniliyor, Anymail'e gerek yok
+    pass
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
+# Resend API key (kullanilmadigi durumda bos string)
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+
 DEFAULT_FROM_EMAIL = os.getenv(
     "DEFAULT_FROM_EMAIL",
-    "Annotation Platform <noreply@example.com>",
+    "CoLDAT Data Annotation Platform <noreply@mail.coldat.org.tr>",
 )
 
 # ---------------------------------------------------------------------------
