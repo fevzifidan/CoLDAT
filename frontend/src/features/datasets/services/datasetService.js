@@ -127,28 +127,6 @@ return await apiService.delete(`/datasets/${id}/`, {
     });
   },
 
-  optionsDataset: async (id) => {
-    if (IS_MOCK) return { allows: ["DELETE", "OPTIONS"] };
-
-    try {
-      const response = await apiService.options(`/datasets/${id}/`, {
-        headers: (() => {
-          const token =
-            localStorage.getItem('token') ||
-            localStorage.getItem('access_token') ||
-            sessionStorage.getItem('token') ||
-            JSON.parse(localStorage.getItem('auth_store') || '{}')?.token;
-
-          return token ? { Authorization: `Bearer ${token}` } : {};
-        })()
-      });
-      return response?.data || response;
-    } catch (error) {
-      console.error(`optionsDataset Hatası (${id}):`, error);
-      return null;
-    }
-  },
-
   // ---- DATASET MEMBERS ENDPOINTS ----
   getDatasetMembers: async (datasetId) => {
     if (IS_MOCK) return [];
