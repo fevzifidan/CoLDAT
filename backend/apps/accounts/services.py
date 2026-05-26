@@ -11,6 +11,8 @@ def create_user(
     password: str,
     first_name: str,
     last_name: str,
+    auth_provider: str = User.AuthProvider.EMAIL,
+    is_active: bool = False,
 ) -> User:
     user = User.objects.create_user(
         username=username,
@@ -18,8 +20,8 @@ def create_user(
         password=password,
         first_name=first_name,
         last_name=last_name,
-        auth_provider=User.AuthProvider.EMAIL,
-        is_active=False,
+        auth_provider=auth_provider,
+        is_active=is_active,
     )
 
     return user

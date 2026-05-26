@@ -24,6 +24,24 @@ services:
     restart: unless-stopped
 
   # ========================
+  # Redis
+  # ========================
+  redis:
+    container_name: "coldat-redis"
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  # ========================
   # MinIO Object Storage
   # ========================
   minio:
@@ -83,7 +101,9 @@ services:
 
       SECRET_KEY: dev-secret-key-change-in-production
       DEBUG: "True"
-
+      MAIL_MODE: "dev"
+      REDIS_URL: "redis://redis:6379/0"
+      DEFAULT_FROM_EMAIL: "noreply@mail.coldat.org.tr"
       MINIO_ENDPOINT: http://localhost:9000
       MINIO_INTERNAL_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: coldat_minio_user
@@ -93,9 +113,13 @@ services:
       MINIO_USE_SSL: "False"
       ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS: "900"
       ASSET_READ_URL_EXPIRES_IN_SECONDS: "900"
+    env_file:
+      - ./backend/.env
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
       minio-setup:
         condition: service_completed_successfully
     restart: "no"
@@ -120,4 +144,5 @@ services:
 
 volumes:
   pgdata:
+  redis_data:
   miniodata:

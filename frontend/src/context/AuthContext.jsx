@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
       
       if (token) {
         try {
-            const userData = await apiService.get("/account/me"); 
+            const userData = await apiService.get("/account/me/"); 
             setUser(userData);
         } catch (error) {
             // Token is not valid
@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
   // 2. Login Fonksiyonu
   const login = async (credentials, config = {}) => {
     // credentials = { email, password }
-    const response = await apiService.post("/auth/login", credentials, config);
+    const response = await apiService.post("/auth/login/", credentials, config);
     // response.token ve response.user geldiğini varsayalım
     localStorage.setItem("token", response.token);
     setUser(response.user);
