@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiKeyService } from '../api-keys/services/apiKeyService';
+import { projectService } from '@/features/projects/services/projectService';
+import { datasetService } from '@/features/datasets/services/datasetService';
+import { Button } from "@/components/ui/button";
 import { 
   Sparkles, 
   Check, 
@@ -18,7 +21,10 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCw,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Folder,
+  Database,
+  CloudLightning
 } from 'lucide-react';
 
 interface Message {
@@ -36,52 +42,72 @@ interface ImageItem {
 }
 
 const AI_GENERATION_POOL = [
-  {
-    url: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop&q=60',
-    prompt: 'Cinematic night street with neon lights and heavy rain, high detail autonomous vehicle view'
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?w=800&auto=format&fit=crop&q=60',
-    prompt: 'Heavy snowy forest highway morning scene, clear road markings under fog'
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1504608524841-42fe6f032b4b?w=800&auto=format&fit=crop&q=60',
-    prompt: 'Sunny landscape with severe lens flare and reflections on asphalt'
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=800&auto=format&fit=crop&q=60',
-    prompt: 'Cyberpunk Tokyo alleyway, puddles reflecting neon pink billboard lights, twilight'
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=800&auto=format&fit=crop&q=60',
-    prompt: 'Dusty desert highway during sunset, sandstorm blowing across road segments'
-  }
+  { url: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop&q=60', prompt: 'Cinematic night street with neon lights and heavy rain, high detail autonomous vehicle view' },
+  { url: 'https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?w=800&auto=format&fit=crop&q=60', prompt: 'Heavy snowy forest highway morning scene, clear road markings under fog' },
+  { url: 'https://images.unsplash.com/photo-1504608524841-42fe6f032b4b?w=800&auto=format&fit=crop&q=60', prompt: 'Sunny landscape with severe lens flare and reflections on asphalt' },
+  { url: 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=800&auto=format&fit=crop&q=60', prompt: 'Cyberpunk Tokyo alleyway, puddles reflecting neon pink billboard lights, twilight' },
+  { url: 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=800&auto=format&fit=crop&q=60', prompt: 'Dusty desert highway during sunset, sandstorm blowing across road segments' }
 ];
 
 export default function SyntheticPage() {
   const { t } = useTranslation('synthetic');
   
+  // --- GÖRSEL VE EDİTÖR STATE'LERİ ---
   const [images, setImages] = useState<ImageItem[]>([
     { id: 'img_1', url: AI_GENERATION_POOL[0].url, prompt: AI_GENERATION_POOL[0].prompt, status: 'pending' },
     { id: 'img_2', url: AI_GENERATION_POOL[1].url, prompt: AI_GENERATION_POOL[1].prompt, status: 'pending' },
     { id: 'img_3', url: AI_GENERATION_POOL[2].url, prompt: AI_GENERATION_POOL[2].prompt, status: 'pending' }
   ]);
-
   const [currentIndex, setCurrentIndex] = useState(0);
   const [chatInput, setChatInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-
   const [zoom, setZoom] = useState<number>(1);
   const [rotation, setRotation] = useState<number>(0);
-  const [filters, setFilters] = useState({
-    invert: false,
-    grayscale: false,
-    sepia: false,
-    blur: 0,
-    brightness: 100
-  });
-
+  const [filters, setFilters] = useState({ invert: false, grayscale: false, sepia: false, blur: 0, brightness: 100 });
   const [messages, setMessages] = useState<Message[]>([]);
+
+  // --- PROJE / DATASET / S3 ENTEGRASYON STATE'LERİ ---
+  const [projectsList, setProjectsList] = useState<any[]>([]);
+  const [datasetsList, setDatasetsList] = useState<any[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [selectedDatasetId, setSelectedDatasetId] = useState<string>('');
+  const [isUploadingToS3, setIsUploadingToS3] = useState<boolean>(false);
+  const [showDestinationSelector, setShowDestinationSelector] = useState<boolean>(false);
+
+  // --- PROJELERİ ILK ACILISTA FETCH ETME ---
+  useEffect(() => {
+    const loadInitialProjects = async () => {
+      try {
+        const projectsData = await projectService.getAllProjects();
+        const activeProjects = projectsData?.results || projectsData?.data || projectsData || [];
+        setProjectsList(activeProjects);
+      } catch (err) {
+        console.error("Synthetic target fetching failed:", err);
+        toast.error("Failed to load targets for synthetic export.");
+      }
+    };
+    loadInitialProjects();
+  }, []);
+
+  // --- PROJE SECILINCE DATASETLERI GETIRME ---
+  useEffect(() => {
+    const loadLinkedDatasets = async () => {
+      if (!selectedProjectId) {
+        setDatasetsList([]);
+        return;
+      }
+      try {
+        const datasetsData = await datasetService.getAllDatasets(selectedProjectId);
+        const activeDatasets = datasetsData?.results || datasetsData?.data || datasetsData || [];
+        setDatasetsList(activeDatasets);
+        setSelectedDatasetId(''); // Önceki seçimi sıfırla
+      } catch (err) {
+        console.error("Failed to sync datasets:", err);
+        toast.error("Could not fetch target database segments.");
+      }
+    };
+    loadLinkedDatasets();
+  }, [selectedProjectId]);
 
   useEffect(() => {
     setMessages([
@@ -102,7 +128,6 @@ export default function SyntheticPage() {
     setFilters({ invert: false, grayscale: false, sepia: false, blur: 0, brightness: 100 });
   };
 
-  // API Anahtarının geçerliliğini kontrol eden ortak yardımcı fonksiyon (10 Karakter Sınırı)
   const checkHasValidKey = (): boolean => {
     const activeKey = apiKeyService.getExternalKey()?.trim();
     if (!activeKey || !activeKey.startsWith("sk-") || activeKey.length < 10) {
@@ -113,9 +138,7 @@ export default function SyntheticPage() {
   };
 
   const triggerImageGeneration = (customPrompt?: string) => {
-    // 1. KONTROL: Kaydedilmiş API Anahtarı geçerli mi?
     if (!checkHasValidKey()) return;
-
     if (isGenerating) return;
     setIsGenerating(true);
     resetEditorSettings();
@@ -140,8 +163,20 @@ export default function SyntheticPage() {
     }, 1500);
   };
 
+  // --- SEÇİM VE S3 UPLOAD AKIŞI ---
   const handleDecision = (status: 'accepted' | 'rejected') => {
     if (images.length === 0 || isGenerating) return;
+    
+    if (status === 'accepted') {
+      // Eğer kabul edildiyse önce lokasyon seçim panelini açıyoruz
+      setShowDestinationSelector(true);
+    } else {
+      // Reddedildiyse direk bir sonraki görsele geç
+      applyStatusAndAdvance('rejected');
+    }
+  };
+
+  const applyStatusAndAdvance = (status: 'accepted' | 'rejected') => {
     const updatedImages = [...images];
     updatedImages[currentIndex].status = status;
     setImages(updatedImages);
@@ -149,6 +184,31 @@ export default function SyntheticPage() {
     if (currentIndex < images.length - 1) {
       setCurrentIndex(currentIndex + 1);
       resetEditorSettings();
+    }
+    setShowDestinationSelector(false);
+  };
+
+  // Onaylama işlemi bitip S3 yüklemesi başladığında tetiklenecek fonksiyon
+  const handleFinalS3Upload = async () => {
+    if (!selectedProjectId || !selectedDatasetId) {
+      toast.warning("Please choose a valid destination workspace and database partition.");
+      return;
+    }
+
+    setIsUploadingToS3(true);
+    const toastId = toast.loading("Initializing secure S3 binary payload streaming...");
+
+    try {
+      // S3 ve Backend veritabanı yazma simülasyonu
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      
+      toast.success("Asset pushed to AWS S3 & linked with taxonomy catalog!", { id: toastId });
+      applyStatusAndAdvance('accepted');
+    } catch (err) {
+      console.error(err);
+      toast.error("S3 ingestion pipeline timeout error.", { id: toastId });
+    } finally {
+      setIsUploadingToS3(false);
     }
   };
 
@@ -176,21 +236,19 @@ export default function SyntheticPage() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, images, isGenerating]);
+  }, [currentIndex, images, isGenerating, selectedProjectId, selectedDatasetId]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedInput = chatInput.trim();
     if (!trimmedInput || isGenerating) return;
 
-    // 2. KONTROL: Kullanıcı chat kutusuna doğrudan API key yapıştırırsa engelle ve uyar
     if (trimmedInput.startsWith("sk-")) {
       toast.warning("Güvenlik Uyarısı: API Anahtarınızı sohbet kutusuna yazamazsınız. Lütfen sol menüdeki 'API Anahtarları' sayfasından tanımlayın.");
       setChatInput('');
       return;
     }
 
-    // 3. KONTROL: Sayfada işlem yapabilmek için tanımlanmış anahtarın kontrolü
     if (!checkHasValidKey()) return;
 
     const userText = trimmedInput.toLowerCase();
@@ -215,7 +273,6 @@ export default function SyntheticPage() {
 
     if (userText.includes('döndür') || userText.includes('çevir') || userText.includes('derece') || userText.includes('rotate') || userText.includes('degree')) {
       const degreeMatch = userText.match(/(-?\d+)/); 
-      
       if (degreeMatch) {
         const customDegree = parseInt(degreeMatch[1], 10);
         setRotation(prev => prev + customDegree);
@@ -363,7 +420,93 @@ export default function SyntheticPage() {
         </div>
 
         {/* SAĞ TARAF: GÖRSEL SEKMESİ VE EDİTÖRÜ */}
-        <div className="w-full md:w-7/12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col min-h-0 overflow-hidden">
+        <div className="w-full md:w-7/12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col min-h-0 overflow-hidden relative">
+          
+          {/* 👑 ADIM ADIM SEÇİM VE S3 UPLOAD KATMANI (MODAL/PANEL) */}
+          {showDestinationSelector && (
+            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md z-30 flex items-center justify-center p-6">
+              <div className="bg-white dark:bg-slate-900 w-full max-w-md p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5 text-left">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <CloudLightning className="text-indigo-600 w-5 h-5 animate-pulse" /> S3 Target Pipeline Deployment
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Route synthetic asset matrix into ecosystem cluster partitions.</p>
+                  </div>
+                  <button 
+                    onClick={() => setShowDestinationSelector(false)}
+                    className="text-slate-400 hover:text-slate-600 p-1 bg-slate-100 dark:bg-slate-800 rounded-full"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+
+                <div className="space-y-3.5">
+                  {/* Adım 1: Proje Seçimi */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase flex items-center gap-1">
+                      <Folder size={12} /> 1. Select Target Project Workspace
+                    </label>
+                    <select
+                      value={selectedProjectId}
+                      onChange={(e) => setSelectedProjectId(e.target.value)}
+                      className="w-full text-xs h-9 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 focus:outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-200"
+                    >
+                      <option value="">-- Choose a Workspace --</option>
+                      {projectsList.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name || 'Unnamed Cluster'}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Adım 2: Dataset Seçimi */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase flex items-center gap-1">
+                      <Database size={12} /> 2. Select Database Repository Partition
+                    </label>
+                    <select
+                      value={selectedDatasetId}
+                      onChange={(e) => setSelectedDatasetId(e.target.value)}
+                      disabled={!selectedProjectId}
+                      className="w-full text-xs h-9 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 focus:outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-200 disabled:opacity-40"
+                    >
+                      <option value="">-- Choose Repository --</option>
+                      {datasetsList.map((d) => (
+                        <option key={d.id} value={d.id}>{d.name || 'Unnamed Repository'}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Adım 3: S3 Gönderme Butonları */}
+                <div className="pt-2 flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowDestinationSelector(false)}
+                    className="w-1/3 rounded-xl text-xs h-9 dark:border-slate-800"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleFinalS3Upload}
+                    disabled={isUploadingToS3 || !selectedProjectId || !selectedDatasetId}
+                    className="w-2/3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs h-9 font-bold"
+                  >
+                    {isUploadingToS3 ? (
+                      <>
+                        <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> Uploading S3...
+                      </>
+                    ) : (
+                      "Confirm & Sync Storage"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="p-3 bg-slate-900 dark:bg-slate-950 text-slate-200 text-xs font-mono flex items-center justify-between shrink-0 min-w-0 border-b dark:border-slate-800">
             <div className="flex items-center gap-2 truncate flex-1 mr-2">
               <ImageIcon size={14} className="text-violet-400 shrink-0" />

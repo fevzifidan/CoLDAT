@@ -1,98 +1,367 @@
-// frontend/src/assets/ExportManager.tsx
-
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next'; // i18n hook'u eklendi
-import { Card, CardContent } from "@/components/ui/card";
+// frontend/src/features/datasets/components/ExportManager.tsx
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription 
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, FileJson, FileCode, Archive, CheckCircle2, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Download, 
+  FileJson, 
+  FileCode, 
+  Archive, 
+  CheckCircle2, 
+  Loader2, 
+  Key, 
+  Trash2, 
+  Eye, 
+  AlertOctagon,
+  Copy,
+  Check
+} from "lucide-react";
+import { exportService } from '../services/exportService';
 
-const ExportManager = () => {
-  const { t } = useTranslation(); // t fonksiyonu tanımlandı
+interface ApiKeyItem {
+  id: string;
+  name: string;
+  api_key: string;
+  created_at: string;
+  expires_at: string;
+  is_active: boolean;
+}
 
+interface ExportManagerProps {
+  datasetId?: string;
+}
+
+const ExportManager = ({ datasetId }: ExportManagerProps) => {
+  const { t } = useTranslation(['pages', 'common']);
+  
+  // Format Seçim State'leri
   const [isExporting, setIsExporting] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState('coco');
 
+  // API Keys State'leri
+  const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
+  const [isLoadingKeys, setIsLoadingKeys] = useState(false);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [revealedKeys, setRevealedKeys] = useState<{ [keyId: string]: string }>({});
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+
   const formats = [
-    { id: 'coco', name: 'COCO JSON', icon: FileJson, desc: t("export.formats.coco_desc") },
-    { id: 'yolo', name: 'YOLO v8', icon: FileCode, desc: t("export.formats.yolo_desc") },
-    { id: 'pascal', name: 'Pascal VOC', icon: Archive, desc: t("export.formats.pascal_desc") },
+    { id: 'coco', name: 'COCO JSON', icon: FileJson, desc: t("export.formats.coco_desc", "Standard object detection annotation mapping structure.") },
+    { id: 'yolo', name: 'YOLO v8', icon: FileCode, desc: t("export.formats.yolo_desc", "TXT boundary box files optimal for darknet pipeline training.") },
+    { id: 'pascal', name: 'Pascal VOC', icon: Archive, desc: t("export.formats.pascal_desc", "XML hierarchical meta descriptors for model inference structures.") },
   ];
 
+  // API Anahtarlarını Listele
+  const loadApiKeys = async () => {
+    if (!datasetId) return;
+    setIsLoadingKeys(true);
+    try {
+      const res = await exportService.getApiKeys(datasetId);
+      setApiKeys(res.data || res || []);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to retrieve integration keys.");
+    } finally {
+      setIsLoadingKeys(false);
+    }
+  };
+
+  useEffect(() => {
+    loadApiKeys();
+  }, [datasetId]);
+
+  // Yeni Anahtar Üret (POST)
+  const handleCreateKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!datasetId || !newKeyName.trim()) return;
+
+    const toastId = toast.loading("Generating secure access credentials...");
+    try {
+      const payload = {
+        name: newKeyName,
+        ttl_days: 30, // Varsayılan 30 gün geçerlilik
+        target_version: "v1.0"
+      };
+      const res = await exportService.createApiKey(datasetId, payload);
+      toast.success("API Key generated successfully!", { id: toastId });
+      setNewKeyName('');
+      
+      // Eğer backend yeni üretilen açık anahtarı (res.key) dönüyorsa, doğrudan kullanıcı görsün diye inject edelim:
+      if (res.key) {
+        setRevealedKeys(prev => ({ ...prev, [res.id]: res.key }));
+      }
+      
+      loadApiKeys();
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not generate API access credentials.", { id: toastId });
+    }
+  };
+
+  // Anahtarı Maskesiz Göster (Reveal)
+  const handleRevealKey = async (keyId: string) => {
+    if (!datasetId) return;
+    try {
+      const res = await exportService.revealApiKey(datasetId, keyId);
+      setRevealedKeys(prev => ({ ...prev, [keyId]: res.api_key }));
+      toast.success("Security signature revealed.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Unauthorized: Failed to decrypt secret string.");
+    }
+  };
+
+  // Anahtarı Sil / İptal Et (DELETE)
+  const handleDeleteKey = async (keyId: string) => {
+    if (!datasetId) return;
+    const confirmDelete = window.confirm("Are you sure you want to permanently delete this integration token?");
+    if (!confirmDelete) return;
+
+    try {
+      await exportService.deleteApiKey(datasetId, keyId);
+      toast.success("API Key revoked permanently.");
+      loadApiKeys();
+    } catch (err) {
+      console.error(err);
+      toast.error("Pipeline failure during key deletion.");
+    }
+  };
+
+  // PANIC BUTTON: Tümünü Topluca Kapat (Revoke All)
+  const handlePanicRevokeAll = async () => {
+    if (!datasetId) return;
+    const confirmPanic = window.confirm("⚠️ WARNING: This will immediately revoke ALL active API keys for this dataset. External pipelines will break instantly. Proceed?");
+    if (!confirmPanic) return;
+
+    const toastId = toast.loading("Executing global override revocation...");
+    try {
+      await exportService.revokeAllKeys(datasetId);
+      toast.success("Security lockdown successful. All tokens invalidated.", { id: toastId });
+      loadApiKeys();
+    } catch (err) {
+      console.error(err);
+      toast.error("Override pipeline execution failed.", { id: toastId });
+    }
+  };
+
+  // Panoya Kopyalama Fonksiyonu
+  const handleCopyToClipboard = (keyId: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKeyId(keyId);
+    toast.success("Copied credentials to clipboard!");
+    setTimeout(() => setCopiedKeyId(null), 2000);
+  };
+
+  // Mock İndirme / Export Tetikleyicisi
   const handleExport = () => {
     setIsExporting(true);
-    // Simüle edilmiş export süreci
-    setTimeout(() => setIsExporting(false), 2000);
+    setTimeout(() => {
+      setIsExporting(false);
+      toast.success(`${selectedFormat.toUpperCase()} package generated! Ready to feed internal SDK frameworks.`);
+    }, 2000);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-bold">{t("export.title")}</h3>
-          <p className="text-sm text-muted-foreground">{t("export.description")}</p>
+    <div className="space-y-8">
+      {/* 📁 FORMAT SEÇİM ALANI */}
+      <div className="space-y-4">
+        <div className="text-left">
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">{t("export.title", "Matrix Format Export Target")}</h3>
+          <p className="text-xs text-muted-foreground">{t("export.description", "Transform native annotation polygons into specialized pipeline layers.")}</p>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {formats.map((format) => {
-          const Icon = format.icon;
-          return (
-            <Card 
-              key={format.id}
-              className={`cursor-pointer transition-all border-2 ${
-                selectedFormat === format.id ? 'border-indigo-600 bg-indigo-50/30' : 'hover:border-slate-300'
-              }`}
-              onClick={() => setSelectedFormat(format.id)}
-            >
-              <CardContent className="p-6 flex flex-col items-center text-center">
-                <div className={`p-3 rounded-xl mb-4 ${selectedFormat === format.id ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                  <Icon size={24} />
-                </div>
-                <h4 className="font-bold text-sm">{format.name}</h4>
-                <p className="text-xs text-muted-foreground mt-1">{format.desc}</p>
-                {selectedFormat === format.id && (
-                  <CheckCircle2 size={16} className="text-indigo-600 mt-2" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {formats.map((format) => {
+            const Icon = format.icon;
+            const isSelected = selectedFormat === format.id;
+            return (
+              <Card 
+                key={format.id}
+                className={`cursor-pointer transition-all border rounded-2xl overflow-hidden shadow-xs ${
+                  isSelected ? 'border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/20 dark:border-indigo-500' : 'hover:border-slate-300 dark:border-slate-800'
+                }`}
+                onClick={() => setSelectedFormat(format.id)}
+              >
+                <CardContent className="p-5 flex flex-col items-center text-center justify-between h-full space-y-3">
+                  <div className={`p-2.5 rounded-xl ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
+                    <Icon size={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xs text-slate-800 dark:text-slate-100">{format.name}</h4>
+                    <p className="text-[10px] text-muted-foreground mt-1 px-2 leading-relaxed">{format.desc}</p>
+                  </div>
+                  {isSelected && (
+                    <CheckCircle2 size={14} className="text-indigo-600 dark:text-indigo-400" />
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        <Card className="rounded-2xl border dark:border-slate-800 shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-0.5 text-left">
+                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{t("export.ready_title", "Static Snapshot Export Bundle")}</h4>
+                <p className="text-[11px] text-muted-foreground">
+                  {t("export.ready_desc", "Package current version matrix coordinates as: ")} 
+                  <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold ml-1">{selectedFormat === 'pascal' ? 'Pascal VOC' : selectedFormat.toUpperCase()}</span>
+                </p>
+              </div>
+              <Button 
+                onClick={handleExport} 
+                disabled={isExporting}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 rounded-xl min-w-[140px] font-bold w-full sm:w-auto"
+              >
+                {isExporting ? (
+                  <>
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Compiling...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-3.5 w-3.5" /> Pack & Download
+                  </>
                 )}
-              </CardContent>
-            </Card>
-          );
-        })}
+              </Button>
+            </div>
+            {isExporting && (
+              <div className="mt-4 h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className="h-full bg-indigo-600 animate-pulse" style={{ width: '70%' }}></div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      <Card className="border-slate-200">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h4 className="text-sm font-semibold">{t("export.ready_title")}</h4>
-              <p className="text-xs text-muted-foreground">
-                {t("export.ready_desc", { format: selectedFormat === 'pascal' ? 'Pascal VOC' : selectedFormat.toUpperCase() })}
-              </p>
-            </div>
-            <Button 
-              onClick={handleExport} 
-              disabled={isExporting}
-              className="bg-indigo-600 hover:bg-indigo-700 min-w-[140px]"
-            >
-              {isExporting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("export.btn_generating")}
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" /> {t("export.btn_export_now")}
-                </>
-              )}
-            </Button>
+      <hr className="dark:border-slate-800" />
+
+      {/* 🔑 API KEYS & AUTOMATION MANAGEMENT */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="text-left">
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">External API Integrations</h3>
+            <p className="text-xs text-muted-foreground">Automate cloud fetch processes using long-lived security signatures.</p>
           </div>
-          
-          {/* Progress Bar (Simüle) */}
-          {isExporting && (
-            <div className="mt-4 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full bg-indigo-600 animate-progress-stripes transition-all" style={{ width: '60%' }}></div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          <Button 
+            variant="destructive" 
+            size="sm"
+            onClick={handlePanicRevokeAll}
+            disabled={apiKeys.length === 0}
+            className="text-xs font-bold h-8 bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs"
+          >
+            <AlertOctagon size={14} className="mr-1.5" /> Emergency Revoke All
+          </Button>
+        </div>
+
+        {/* Yeni Key Ekleme Formu */}
+        <form onSubmit={handleCreateKey} className="flex gap-2 max-w-md">
+          <Input 
+            placeholder="e.g., Jenkins_CI_Pipeline, Production_Sync"
+            value={newKeyName}
+            onChange={(e) => setNewKeyName(e.target.value)}
+            className="h-8 text-xs rounded-xl dark:border-slate-800"
+          />
+          <Button type="submit" size="sm" className="bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:opacity-90 h-8 font-bold text-xs rounded-xl whitespace-nowrap">
+            <Key size={12} className="mr-1" /> Mint API Token
+          </Button>
+        </form>
+
+        {/* Anahtarlar Listesi Tablosu */}
+        <Card className="rounded-2xl border dark:border-slate-800 overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            {isLoadingKeys ? (
+              <div className="flex justify-center items-center py-8 font-mono text-[11px] text-slate-400 gap-2">
+                <Loader2 size={13} className="animate-spin" /> Decoding Signature Records...
+              </div>
+            ) : apiKeys.length === 0 ? (
+              <div className="text-center py-8 font-mono text-[11px] text-slate-400">
+                No pipeline access integrations configured yet.
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-900/60 border-b dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                    <th className="p-3 pl-4">Token Identifier</th>
+                    <th className="p-3">Secret Key Hash</th>
+                    <th className="p-3">Expiry Date</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-right pr-4">Scope Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y dark:divide-slate-800 font-medium text-slate-600 dark:text-slate-300">
+                  {apiKeys.map((key) => {
+                    const isRevealed = !!revealedKeys[key.id];
+                    const displayedKey = isRevealed ? revealedKeys[key.id] : key.api_key;
+                    
+                    return (
+                      <tr key={key.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                        <td className="p-3 pl-4 font-bold text-slate-800 dark:text-slate-200">{key.name}</td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-1.5 font-mono text-[11px] tracking-tight">
+                            <span className={isRevealed ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-400'}>
+                              {displayedKey}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyToClipboard(key.id, displayedKey)}
+                              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-slate-600"
+                            >
+                              {copiedKeyId === key.id ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+                            </button>
+                          </div>
+                        </td>
+                        <td className="p-3 font-mono text-[11px] text-slate-400">
+                          {new Date(key.expires_at).toLocaleDateString()}
+                        </td>
+                        <td className="p-3">
+                          <Badge className={`text-[9px] uppercase font-bold border ${
+                            key.is_active 
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40'
+                              : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                          }`}>
+                            {key.is_active ? 'Active' : 'Revoked'}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-right pr-4 space-x-1">
+                          {!isRevealed && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleRevealKey(key.id)}
+                              className="h-7 w-7 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg"
+                            >
+                              <Eye size={13} />
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleDeleteKey(key.id)}
+                            className="h-7 w-7 text-slate-400 hover:text-rose-600 rounded-lg"
+                          >
+                            <Trash2 size={13} />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };

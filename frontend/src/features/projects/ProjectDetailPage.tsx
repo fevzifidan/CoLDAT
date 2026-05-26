@@ -247,8 +247,8 @@ const ProjectDetailPage = () => {
 
               {activeTab === 'assets' && <AssetManager />}
               {activeTab === 'team' && <TeamManager projectId={id} />}
-              {activeTab === 'export' && <ExportManager />}
-          </div>
+              {activeTab === 'export' && <ExportManager datasetId={project?.dataset_id || id} />}
+</div>
         </div>
       </div>
     </div>
