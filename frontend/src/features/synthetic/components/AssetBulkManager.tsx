@@ -3,8 +3,11 @@ import { useState } from 'react';
 import { Upload, Check, X, Loader2, ImagePlus, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Hata Çözümü: src/assets/services/ içindeki dosyaya giden doğru göreceli yol
-import { mockAssetService } from '../../datasets/services/mockAssetService';
+// Basit mock - production'da asset servisi kullanılacak
+const mockAssetService = {
+  getUploadUrls: async (_datasetId: string, _files: string[]) => ['https://mock.s3.upload.url/test'],
+  bulkUpdateStatus: async (_assetIds: string[], _status: string) => ({ success: true, message: 'Mock update successful' }),
+};
 
 interface AssetBulkManagerProps {
   datasetId?: string;
