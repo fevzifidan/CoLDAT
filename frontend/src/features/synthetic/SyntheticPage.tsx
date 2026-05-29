@@ -1,5 +1,6 @@
 // frontend/src/features/synthetic/SyntheticPage.tsx
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSyntheticStore } from './store/syntheticSlice';
 import ModelSelector from './components/ModelSelector';
 import GenerationChat from './components/GenerationChat';
@@ -15,6 +16,7 @@ import {
 import { Sparkles } from 'lucide-react';
 
 export default function SyntheticPage() {
+  const { t } = useTranslation(['synthetic']);
 
   // Keyboard shortcuts (multi-select aware)
   useEffect(() => {
@@ -92,10 +94,10 @@ export default function SyntheticPage() {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-primary" />
-                <h1 className="text-base font-bold text-foreground">Synthetic Generation Studio</h1>
+                                <h1 className="text-base font-bold text-foreground">{t('page.title')}</h1>
               </div>
               <span className="hidden sm:inline text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border">
-                Bring Your Own Key
+                {t('page.byokBadge')}
               </span>
             </div>
             <ModelSelector />

@@ -1,6 +1,7 @@
 // frontend/src/features/synthetic/components/SaveToProjectDialog.tsx
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSyntheticStore } from '../store/syntheticSlice';
 import { useCursorPagination } from '@/shared/hooks/useCursorPagination';
 import { projectService } from '@/features/projects/services/projectService';
@@ -27,7 +28,7 @@ import {
   RefreshCw,
   FileUp,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import notificationService from '@/shared/services/notification';
 import { useAppStore } from '@/store/hooks/useAppStore';
 
 type WizardStep = 'project-selection' | 'dataset-selection' | 'uploading' | 'complete';
@@ -43,6 +44,7 @@ interface Dataset {
 }
 
 export default function SaveToProjectDialog() {
+  const { t } = useTranslation(['synthetic']);
   const { showSaveDialog, imagesToSave, closeSaveDialog } = useSyntheticStore();
   const expandPanel = useAppStore((s) => s.expandPanel);
 
@@ -129,9 +131,9 @@ export default function SaveToProjectDialog() {
     else setError(null);
   }, [projectsError, datasetsError]);
 
-  const handleNextToDataset = () => {
+        const handleNextToDataset = () => {
     if (!selectedProjectId) {
-      toast.warning('Lütfen bir proje seçin.');
+      notificationService.warning(t('saveDialog.selectProjectFirst'));
       return;
     }
     setStep('dataset-selection');
@@ -139,7 +141,7 @@ export default function SaveToProjectDialog() {
 
   const handleUpload = async () => {
     if (!imagesToSave.length || !selectedDatasetId) {
-      toast.warning('Lütfen bir dataset seçin.');
+      notificationService.warning(t('saveDialog.selectDatasetFirst'));
       return;
     }
 
@@ -148,9 +150,6 @@ export default function SaveToProjectDialog() {
     setStep('uploading');
 
     const count = imagesToSave.length;
-    const toastId = toast.loading(
-      `${count} görsel yükleme kuyruğuna ekleniyor...`
-    );
 
     try {
       // Her görsel için upload'ı başlat (fire-and-forget)
@@ -168,15 +167,12 @@ export default function SaveToProjectDialog() {
 
       if (!isMountedRef.current) return;
 
-      toast.success(
-        count === 1
-          ? 'Görsel yükleme kuyruğuna eklendi!'
-          : `${count} görsel yükleme kuyruğuna eklendi!`,
+      notificationService.success(
+        count === 1 ? t('saveDialog.successSingle') : t('saveDialog.successMulti', { count }),
         {
-          id: toastId,
           duration: 6000,
           action: {
-            label: 'Yüklemeleri Takip Et',
+            label: t('saveDialog.successAction'),
             onClick: () => {
               expandPanel();
             },
@@ -187,9 +183,9 @@ export default function SaveToProjectDialog() {
       setStep('complete');
     } catch (err) {
       if (!isMountedRef.current) return;
-      const errMsg = err instanceof Error ? err.message : 'Yükleme başlatılamadı';
+      const errMsg = err instanceof Error ? err.message : t('saveDialog.errorUpload');
       setError(errMsg);
-      toast.error(`Hata: ${errMsg}`, { id: toastId });
+      notificationService.error(`Hata: ${errMsg}`);
     } finally {
       if (isMountedRef.current) {
         setIsUploading(false);
@@ -264,13 +260,13 @@ export default function SaveToProjectDialog() {
             {step === 'dataset-selection' && <Database className="w-5 h-5 text-primary" />}
             {step === 'uploading' && <UploadCloud className="w-5 h-5 text-primary" />}
             {step === 'complete' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
-            {imagesToSave.length > 1 ? `${imagesToSave.length} Görseli Kaydet` : 'Görseli Kaydet'}
+                        {imagesToSave.length > 1 ? t('saveDialog.title_multi', { count: imagesToSave.length }) : t('saveDialog.title_single')}
           </DialogTitle>
           <DialogDescription>
-            {step === 'project-selection' && 'Görsellerin kaydedileceği projeyi seçin.'}
-            {step === 'dataset-selection' && 'Proje içindeki dataseti seçin.'}
-            {step === 'uploading' && 'Görseller S3 yükleme kuyruğuna ekleniyor...'}
-            {step === 'complete' && 'Görseller yükleme kuyruğuna eklendi.'}
+            {step === 'project-selection' && t('saveDialog.step_project')}
+            {step === 'dataset-selection' && t('saveDialog.step_dataset')}
+            {step === 'uploading' && t('saveDialog.step_uploading')}
+            {step === 'complete' && t('saveDialog.step_complete')}
           </DialogDescription>
         </DialogHeader>
 
@@ -312,7 +308,7 @@ export default function SaveToProjectDialog() {
         {imagesToSave.length > 1 && (step === 'project-selection' || step === 'dataset-selection') && (
           <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/10 rounded-lg text-xs text-primary mb-2">
             <FileUp size={14} />
-            <span className="font-medium">{imagesToSave.length} görsel kaydedilecek</span>
+            <span className="font-medium">{t('saveDialog.multiCountBanner', { count: imagesToSave.length })}</span>
           </div>
         )}
 
@@ -325,8 +321,8 @@ export default function SaveToProjectDialog() {
               onClick={handleRetry}
               className="flex items-center gap-1 px-2 py-1 rounded-md bg-destructive/20 hover:bg-destructive/30 text-destructive text-[10px] font-medium transition"
             >
-              <RefreshCw size={10} />
-              Tekrar Dene
+                            <RefreshCw size={10} />
+              {t('saveDialog.retry')}
             </button>
           </div>
         )}
@@ -339,8 +335,8 @@ export default function SaveToProjectDialog() {
                 <Loader2 className="w-5 h-5 animate-spin text-primary" />
               </div>
             ) : projects.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4">
-                Henüz hiç projeniz yok. Önce bir proje oluşturun.
+                            <p className="text-xs text-muted-foreground text-center py-4">
+                {t('saveDialog.noProjects')}
               </p>
             ) : (
               <div
@@ -377,8 +373,8 @@ export default function SaveToProjectDialog() {
                 )}
 
                 {!hasMoreProjects && projects.length > 0 && (
-                  <p className="text-[10px] text-center text-muted-foreground py-1">
-                    Tüm projeler yüklendi ({projects.length})
+                                    <p className="text-[10px] text-center text-muted-foreground py-1">
+                    {t('saveDialog.allProjectsLoaded', { count: projects.length })}
                   </p>
                 )}
               </div>
@@ -394,8 +390,8 @@ export default function SaveToProjectDialog() {
                 <Loader2 className="w-5 h-5 animate-spin text-primary" />
               </div>
             ) : datasets.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4">
-                Bu projede henüz dataset yok.
+                            <p className="text-xs text-muted-foreground text-center py-4">
+                {t('saveDialog.noDatasets')}
               </p>
             ) : (
               <div
@@ -432,8 +428,8 @@ export default function SaveToProjectDialog() {
                 )}
 
                 {!hasMoreDatasets && datasets.length > 0 && (
-                  <p className="text-[10px] text-center text-muted-foreground py-1">
-                    Tüm datasetler yüklendi ({datasets.length})
+                                    <p className="text-[10px] text-center text-muted-foreground py-1">
+                    {t('saveDialog.allDatasetsLoaded', { count: datasets.length })}
                   </p>
                 )}
               </div>
@@ -448,25 +444,25 @@ export default function SaveToProjectDialog() {
               {isUploading ? (
                 <div className="flex flex-col items-center gap-3">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                  <p className="text-xs text-muted-foreground">
+                                    <p className="text-xs text-muted-foreground">
                     {imagesToSave.length > 1
-                      ? `${imagesToSave.length} görsel yükleme kuyruğuna ekleniyor...`
-                      : 'Görsel yükleme kuyruğuna ekleniyor...'}
+                      ? t('saveDialog.uploadingMulti', { count: imagesToSave.length })
+                      : t('saveDialog.uploadingSingle')}
                   </p>
                 </div>
               ) : (
                 <CheckCircle2 className="w-8 h-8 text-emerald-500" />
               )}
             </div>
-            <p className="text-[10px] text-center text-muted-foreground">
-              Yükleme arka planda devam edecek. İlerleme durumunu
+                        <p className="text-[10px] text-center text-muted-foreground">
+              {t('saveDialog.backgroundNote')}
               <button
                 onClick={() => expandPanel()}
                 className="text-primary hover:underline mx-1"
               >
-                Upload Manager
+                {t('saveDialog.uploadManagerLinkText')}
               </button>
-              'dan takip edebilirsiniz.
+              .
             </p>
           </div>
         )}
@@ -475,14 +471,13 @@ export default function SaveToProjectDialog() {
         {step === 'complete' && (
           <div className="py-6 text-center space-y-3">
             <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
-            <p className="text-sm font-medium text-foreground">
+                        <p className="text-sm font-medium text-foreground">
               {imagesToSave.length > 1
-                ? `${imagesToSave.length} görsel yükleme kuyruğuna eklendi!`
-                : 'Görsel yükleme kuyruğuna eklendi!'}
+                ? t('saveDialog.completeTitle_multi', { count: imagesToSave.length })
+                : t('saveDialog.completeTitle_single')}
             </p>
             <p className="text-xs text-muted-foreground">
-              Görselleriniz S3 depolamaya yükleniyor. Yükleme durumunu
-              sağ alt köşedeki Upload Manager'dan takip edebilirsiniz.
+              {t('saveDialog.completeDesc')}
             </p>
           </div>
         )}
@@ -492,24 +487,24 @@ export default function SaveToProjectDialog() {
           <div>
             {step === 'dataset-selection' && (
               <Button variant="ghost" size="sm" onClick={() => setStep('project-selection')} className="text-xs">
-                <ArrowLeft className="w-3 h-3 mr-1" />
-                Geri
+                                <ArrowLeft className="w-3 h-3 mr-1" />
+                {t('saveDialog.back')}
               </Button>
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleClose} className="text-xs">
-              {step === 'complete' ? 'Kapat' : 'İptal'}
+                        <Button variant="outline" size="sm" onClick={handleClose} className="text-xs">
+              {step === 'complete' ? t('saveDialog.close') : t('saveDialog.cancel')}
             </Button>
 
             {step === 'project-selection' && (
-              <Button
+                            <Button
                 size="sm"
                 onClick={handleNextToDataset}
                 disabled={!selectedProjectId}
                 className="text-xs"
               >
-                İleri
+                {t('saveDialog.next')}
                 <ArrowRight className="w-3 h-3 ml-1" />
               </Button>
             )}
@@ -521,10 +516,8 @@ export default function SaveToProjectDialog() {
                 disabled={!selectedDatasetId || isLoadingDatasets}
                 className="text-xs"
               >
-                <UploadCloud className="w-3 h-3 mr-1" />
-                {imagesToSave.length > 1
-                  ? `${imagesToSave.length} Görseli S3'e Yükle`
-                  : "S3'e Yükle"}
+                                <UploadCloud className="w-3 h-3 mr-1" />
+                {imagesToSave.length > 1 ? t('saveDialog.uploadMulti', { count: imagesToSave.length }) : t('saveDialog.upload')}
               </Button>
             )}
 
@@ -536,11 +529,11 @@ export default function SaveToProjectDialog() {
                   onClick={() => expandPanel()}
                   className="text-xs"
                 >
-                  <UploadCloud className="w-3 h-3 mr-1" />
-                  Yüklemeleri Takip Et
+                                    <UploadCloud className="w-3 h-3 mr-1" />
+                  {t('saveDialog.trackUploads')}
                 </Button>
                 <Button size="sm" onClick={handleClose} className="text-xs">
-                  Kapat
+                  {t('saveDialog.close')}
                 </Button>
               </div>
             )}

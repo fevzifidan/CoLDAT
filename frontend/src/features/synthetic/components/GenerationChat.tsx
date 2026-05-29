@@ -1,13 +1,23 @@
-// frontend/src/features/synthetic/components/GenerationChat.tsx
-
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSyntheticStore } from '../store/syntheticSlice';
 import { imageGenerationService } from '../services/imageGenerationService';
 import { generateThumbnail } from '@/shared/utils/imageUtils';
 import { Bot, User, Send, Loader2 } from 'lucide-react';
 // Using plain overflow div instead of Radix ScrollArea to avoid layout thrash during resize
 
+/**
+ * Renders a chat message using either raw text, or i18n key + params.
+ */
+function renderMessageText(msg: { text?: string; i18nKey?: string; i18nParams?: Record<string, string | number | boolean> }, t: (key: string, params?: object) => string): string {
+  if (msg.i18nKey && t) {
+    return t(msg.i18nKey, msg.i18nParams as Record<string, string | number | boolean>);
+  }
+  return msg.text || '';
+}
+
 function ChatInputArea() {
+  const { t } = useTranslation(['synthetic', 'common']);
   const {
     addMessage,
     selectedModel,
@@ -42,7 +52,7 @@ function ChatInputArea() {
       addMessage({
         id: `cmd_${Date.now()}`,
         sender: 'ai',
-        text: '✅ Görüntüleyici sıfırlandı: zoom, rotasyon ve filtreler varsayılana döndü.',
+        i18nKey: 'synthetic:chat.commands.reset',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       });
       return true;
@@ -55,40 +65,46 @@ function ChatInputArea() {
       addMessage({
         id: `cmd_${Date.now()}`,
         sender: 'ai',
-        text: `🔄 Görsel ${deg}° döndürüldü.`,
+        i18nKey: 'synthetic:chat.commands.rotate',
+        i18nParams: { degree: deg },
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       });
       return true;
     }
 
     if (/zoom in|yakınlaş|büyüt|enlarge/.test(lower)) {
-      setZoom(zoom + 0.3);
+      const newZoom = zoom + 0.3;
+      setZoom(newZoom);
       addMessage({
         id: `cmd_${Date.now()}`,
         sender: 'ai',
-        text: `🔍 Yakınlaştırıldı (${(zoom + 0.3).toFixed(1)}x)`,
+        i18nKey: 'synthetic:chat.commands.zoomIn',
+        i18nParams: { zoom: parseFloat(newZoom.toFixed(1)) },
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       });
       return true;
     }
 
     if (/zoom out|uzaklaş|küçült|shrink/.test(lower)) {
-      setZoom(zoom - 0.3);
+      const newZoom = zoom - 0.3;
+      setZoom(newZoom);
       addMessage({
         id: `cmd_${Date.now()}`,
         sender: 'ai',
-        text: `🔍 Uzaklaştırıldı (${(zoom - 0.3).toFixed(1)}x)`,
+        i18nKey: 'synthetic:chat.commands.zoomOut',
+        i18nParams: { zoom: parseFloat(newZoom.toFixed(1)) },
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       });
       return true;
     }
 
     if (/invert|ters/.test(lower)) {
-      updateFilters({ invert: !filters.invert });
+      const wasInverted = filters.invert;
+      updateFilters({ invert: !wasInverted });
       addMessage({
         id: `cmd_${Date.now()}`,
         sender: 'ai',
-        text: `🎨 ${filters.invert ? 'Kaldırıldı' : 'Uygulandı'} - Invert filtresi`,
+        i18nKey: wasInverted ? 'synthetic:chat.commands.invert_off' : 'synthetic:chat.commands.invert_on',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       });
       return true;
@@ -99,7 +115,7 @@ function ChatInputArea() {
       addMessage({
         id: `cmd_${Date.now()}`,
         sender: 'ai',
-        text: '🎨 Gri tonlama filtresi uygulandı.',
+        i18nKey: 'synthetic:chat.commands.grayscale',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       });
       return true;
@@ -110,7 +126,7 @@ function ChatInputArea() {
       addMessage({
         id: `cmd_${Date.now()}`,
         sender: 'ai',
-        text: '🎨 Sepya filtresi uygulandı.',
+        i18nKey: 'synthetic:chat.commands.sepia',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       });
       return true;
@@ -122,7 +138,7 @@ function ChatInputArea() {
       addMessage({
         id: `cmd_${Date.now()}`,
         sender: 'ai',
-        text: `🎨 ${newBlur > 0 ? 'Bulanıklık filtresi uygulandı (4px)' : 'Bulanıklık kaldırıldı'}.`,
+        i18nKey: newBlur > 0 ? 'synthetic:chat.commands.blur_on' : 'synthetic:chat.commands.blur_off',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       });
       return true;
@@ -144,7 +160,7 @@ function ChatInputArea() {
       addMessage({
         id: `err_${Date.now()}`,
         sender: 'ai',
-        text: '⚠️ Lütfen önce bir AI modeli seçin.',
+        i18nKey: 'synthetic:chat.errors.noModel',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       });
       return;
@@ -154,7 +170,7 @@ function ChatInputArea() {
       addMessage({
         id: `err_${Date.now()}`,
         sender: 'ai',
-        text: '🔑 Lütfen geçerli bir API anahtarı girin. Anahtarınız "sk-" ile başlamalı ve en az 10 karakter olmalıdır.',
+        i18nKey: 'synthetic:chat.errors.noApiKey',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       });
       return;
@@ -176,7 +192,8 @@ function ChatInputArea() {
     addMessage({
       id: generatingMsgId,
       sender: 'ai',
-      text: `🖼️ "${prompt}" için görsel oluşturuluyor... (${selectedModel.name})`,
+      i18nKey: 'synthetic:chat.generatingFor',
+      i18nParams: { prompt, model: selectedModel.name },
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     });
 
@@ -201,7 +218,7 @@ function ChatInputArea() {
         addMessage({
           id: `done_${Date.now()}`,
           sender: 'ai',
-          text: `✅ Görsel başarıyla oluşturuldu! Dilerseniz aşağıdaki Keep ile projenize kaydedebilir veya Discard ile silebilirsiniz.`,
+          i18nKey: 'synthetic:chat.generationSuccess',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         });
 
@@ -215,7 +232,8 @@ function ChatInputArea() {
           addMessage({
             id: `retry_${Date.now()}_${attempt}`,
             sender: 'ai',
-            text: `🔄 ${attempt}. tekrar deneniyor (${waitMs / 1000}s)...`,
+            i18nKey: 'synthetic:chat.retrying',
+            i18nParams: { attempt, wait: waitMs / 1000 },
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           });
           await new Promise((resolve) => setTimeout(resolve, waitMs));
@@ -224,12 +242,13 @@ function ChatInputArea() {
     }
 
     if (lastError) {
-      const errMsg = lastError instanceof Error ? lastError.message : 'Bilinmeyen hata oluştu.';
+      const errMsg = lastError instanceof Error ? lastError.message : t('chat.errors.unknownError');
       setGenerationError(errMsg);
       addMessage({
         id: `err_${Date.now()}`,
         sender: 'ai',
-        text: `❌ Hata (${MAX_RETRIES} deneme): ${errMsg}\n\nLütfen API anahtarınızı kontrol edin veya farklı bir prompt ile tekrar deneyin.`,
+        i18nKey: 'synthetic:chat.errors.generationFailed',
+        i18nParams: { retries: MAX_RETRIES, message: errMsg },
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       });
     }
@@ -244,6 +263,12 @@ function ChatInputArea() {
     }
   };
 
+  const placeholder = isGenerating
+    ? t('chat.inputPlaceholder_generating')
+    : selectedModel
+      ? t('chat.inputPlaceholder_ready')
+      : t('chat.inputPlaceholder_noModel');
+
   return (
     <div className="shrink-0 p-3 border-t border-border bg-muted/20">
       <div className="flex gap-2">
@@ -254,13 +279,7 @@ function ChatInputArea() {
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={isGenerating}
-          placeholder={
-            isGenerating
-              ? 'Görsel oluşturuluyor...'
-              : selectedModel
-                ? 'Bir prompt yazın veya komut girin (zoom, rotate, reset...)'
-                : 'Önce bir AI modeli seçin...'
-          }
+          placeholder={placeholder}
           className="flex-1 h-9 rounded-lg border border-border bg-background px-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
         />
         <button
@@ -273,7 +292,7 @@ function ChatInputArea() {
           ) : (
             <Send className="w-3.5 h-3.5" />
           )}
-          Gönder
+          {t('chat.sendButton')}
         </button>
       </div>
     </div>
@@ -281,6 +300,7 @@ function ChatInputArea() {
 }
 
 export default function GenerationChat() {
+  const { t } = useTranslation(['synthetic', 'common']);
   const { messages, isGenerating } = useSyntheticStore();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -296,7 +316,7 @@ export default function GenerationChat() {
       {/* Header */}
       <div className="shrink-0 p-3 border-b border-border flex items-center gap-2 bg-muted/30">
         <Bot className="w-4 h-4 text-primary" />
-        <h3 className="font-semibold text-sm text-foreground">AI Co-Pilot</h3>
+        <h3 className="font-semibold text-sm text-foreground">{t('chat.header')}</h3>
       </div>
 
       {/* Messages */}
@@ -319,7 +339,7 @@ export default function GenerationChat() {
                     : 'bg-muted text-foreground rounded-tl-none'
                 }`}
               >
-                <p>{msg.text}</p>
+                <p>{renderMessageText(msg, t)}</p>
                 <span
                   className={`block text-[10px] mt-1 ${
                     msg.sender === 'user' ? 'text-primary-foreground/60' : 'text-muted-foreground'
@@ -339,7 +359,7 @@ export default function GenerationChat() {
           {isGenerating && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
               <Loader2 className="w-3 h-3 animate-spin" />
-              <span>Görsel oluşturuluyor...</span>
+              <span>{t('chat.generatingStatus')}</span>
             </div>
           )}
         </div>

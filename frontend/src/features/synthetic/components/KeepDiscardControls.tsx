@@ -1,9 +1,11 @@
 // frontend/src/features/synthetic/components/KeepDiscardControls.tsx
 
+import { useTranslation } from 'react-i18next';
 import { useSyntheticStore } from '../store/syntheticSlice';
 import { Check, ArrowLeft, ArrowRight, Trash2, Layers } from 'lucide-react';
 
 export default function KeepDiscardControls() {
+  const { t } = useTranslation(['synthetic']);
   const {
     images,
     activeImageId,
@@ -69,25 +71,25 @@ export default function KeepDiscardControls() {
           <span className="px-1.5 py-0.5 rounded border border-border bg-muted text-foreground text-[10px] font-mono">
             ←
           </span>
-          Önceki
+          {t('controls.shortcut_prev')}
         </div>
         <div className="flex items-center gap-1">
           <span className="px-1.5 py-0.5 rounded border border-border bg-muted text-foreground text-[10px] font-mono">
             →
           </span>
-          Sonraki
+          {t('controls.shortcut_next')}
         </div>
         <div className="flex items-center gap-1">
           <span className="px-1.5 py-0.5 rounded border border-border bg-muted text-foreground text-[10px] font-mono">
             K
           </span>
-          {hasMultiSelection ? 'Seçilenleri Kaydet' : 'Keep (Kaydet)'}
+          {hasMultiSelection ? t('controls.keep_multi') : t('controls.keep_single')}
         </div>
         <div className="flex items-center gap-1">
           <span className="px-1.5 py-0.5 rounded border border-border bg-muted text-foreground text-[10px] font-mono">
             D
           </span>
-          {hasMultiSelection ? 'Seçilenleri Sil' : 'Discard (Sil)'}
+          {hasMultiSelection ? t('controls.discard_multi') : t('controls.discard_single')}
         </div>
       </div>
 
@@ -96,13 +98,13 @@ export default function KeepDiscardControls() {
         <div className="flex items-center gap-2">
           <Layers size={14} className="text-emerald-500" />
           <span className="text-xs font-medium text-emerald-500">
-            {selectedImageIds.length} görsel seçili
+            {t('controls.multiSelected', { count: selectedImageIds.length })}
           </span>
           <button
             onClick={() => deselectAllImages()}
             className="text-[10px] text-muted-foreground hover:text-foreground underline"
           >
-            Temizle
+            {t('controls.clearMulti')}
           </button>
         </div>
       )}
@@ -115,7 +117,7 @@ export default function KeepDiscardControls() {
           className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 text-xs font-semibold transition active:scale-95"
         >
           <Trash2 size={15} />
-          {hasMultiSelection ? `Discard (${selectedImageIds.length})` : 'Discard (D)'}
+          {hasMultiSelection ? `${t('controls.discard_button')} (${selectedImageIds.length})` : t('controls.discard_button')}
         </button>
 
         {/* Keep Button */}
@@ -124,7 +126,7 @@ export default function KeepDiscardControls() {
           className="flex items-center gap-1.5 px-5 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold transition shadow-sm active:scale-95"
         >
           <Check size={15} />
-          {hasMultiSelection ? `Keep (${selectedImageIds.length})` : 'Keep (K)'}
+          {hasMultiSelection ? `${t('controls.keep_button')} (${selectedImageIds.length})` : t('controls.keep_button')}
         </button>
       </div>
 

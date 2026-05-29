@@ -1,5 +1,3 @@
-// frontend/src/features/synthetic/types/synthetic.types.ts
-
 export type AIProvider = 'openai' | 'stability' | 'replicate';
 
 export interface AIModel {
@@ -43,6 +41,10 @@ export type WizardStep = 'project-selection' | 'dataset-selection' | 'uploading'
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'ai';
-  text: string;
+  /** @deprecated Use i18nKey + i18nParams instead for dynamic translation */
+  text?: string;
+  i18nKey?: string;
+  i18nParams?: Record<string, string | number | boolean>;
   timestamp: string;
 }
+

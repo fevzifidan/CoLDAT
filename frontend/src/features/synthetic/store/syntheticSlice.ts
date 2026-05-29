@@ -16,7 +16,7 @@ const DEFAULT_FILTERS: ImageFilters = {
 const WELCOME_MESSAGE: ChatMessage = {
   id: 'welcome',
   sender: 'ai',
-  text: 'Synthetic Görsel Stüdyosu\'na hoş geldiniz! Lütfen önce üst taraftan bir AI modeli seçin ve API anahtarınızı girin. Ardından bir prompt yazarak görsel oluşturabilirsiniz.',
+  i18nKey: 'synthetic:chat.welcome',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
 };
 

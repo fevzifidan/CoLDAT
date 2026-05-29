@@ -1,12 +1,14 @@
 // frontend/src/features/synthetic/components/ModelSelector.tsx
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSyntheticStore } from '../store/syntheticSlice';
 import { imageGenerationService, PREDEFINED_MODELS } from '../services/imageGenerationService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sparkles, ExternalLink, CheckCircle2, XCircle, Loader2, Eye, EyeOff, Trash2 } from 'lucide-react';
 
 export default function ModelSelector() {
+  const { t } = useTranslation(['synthetic']);
   const { selectedModel, setSelectedModel, apiKey, setApiKey, apiKeyVisible, toggleApiKeyVisibility, clearApiKey } = useSyntheticStore();
 
   const [validationStatus, setValidationStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
@@ -53,14 +55,14 @@ export default function ModelSelector() {
         const result = await imageGenerationService.validateApiKey(value);
         if (result.valid) {
           setValidationStatus('valid');
-          setValidationMessage('API anahtarı geçerli ✓');
+          setValidationMessage(t('modelSelector.validation.valid'));
         } else {
           setValidationStatus('invalid');
-          setValidationMessage(result.message || 'API anahtarı geçersiz');
+          setValidationMessage(result.message || t('modelSelector.validation.invalid'));
         }
       } catch {
         setValidationStatus('invalid');
-        setValidationMessage('Validasyon sırasında hata oluştu');
+        setValidationMessage(t('modelSelector.validation.error'));
       }
     }, 800);
   };
@@ -90,15 +92,15 @@ export default function ModelSelector() {
         <Sparkles className="w-4 h-4 text-primary shrink-0" />
         <Select value={selectedModel?.id ?? ''} onValueChange={handleModelChange}>
           <SelectTrigger className="w-[220px] h-9 text-xs bg-background border-border">
-            <SelectValue placeholder="AI Model Seçin..." />
+            <SelectValue placeholder={t('modelSelector.placeholder')} />
           </SelectTrigger>
           <SelectContent>
             {PREDEFINED_MODELS.map((model) => (
               <SelectItem key={model.id} value={model.id} className="text-xs">
                 <div className="flex flex-col">
-                  <span className="font-medium">{model.name}</span>
+                  <span className="font-medium">{t(`modelSelector.models.${model.id}.name`)}</span>
                   <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">
-                    {model.description}
+                    {t(`modelSelector.models.${model.id}.description`)}
                   </span>
                 </div>
               </SelectItem>
@@ -115,7 +117,7 @@ export default function ModelSelector() {
               type={apiKeyVisible ? 'text' : 'password'}
               value={apiKey}
               onChange={(e) => handleApiKeyChange(e.target.value)}
-              placeholder={`${selectedModel.name} API Anahtarı (${detectedProvider || 'sk-...'})`}
+              placeholder={t('modelSelector.apiKeyPlaceholder', { modelName: selectedModel.name, provider: detectedProvider || 'sk-...' })}
               className={`h-9 w-[320px] rounded-lg border bg-background px-3 pr-24 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 transition-all ${
                 validationStatus === 'valid'
                   ? 'border-emerald-500 focus:ring-emerald-500'
@@ -128,7 +130,7 @@ export default function ModelSelector() {
             {/* Persisted badge */}
             {isPersisted && (
               <div className="absolute -top-2.5 right-2 px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 text-[8px] font-medium text-amber-700 dark:text-amber-400">
-                Kayıtlı
+                {t('modelSelector.persistedBadge')}
               </div>
             )}
 
@@ -149,7 +151,7 @@ export default function ModelSelector() {
             <button
               onClick={toggleApiKeyVisibility}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition p-0.5"
-              title={apiKeyVisible ? 'Gizle' : 'Göster'}
+              title={apiKeyVisible ? t('modelSelector.hideKey') : t('modelSelector.showKey')}
             >
               {apiKeyVisible ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
@@ -159,7 +161,7 @@ export default function ModelSelector() {
               <button
                 onClick={handleClearApiKey}
                 className="absolute right-[22px] top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive transition p-0.5"
-                title="API anahtarını sil (localStorage'dan da kaldırır)"
+                title={t('modelSelector.clearKey')}
               >
                 <Trash2 size={12} />
               </button>
@@ -184,7 +186,7 @@ export default function ModelSelector() {
               className="flex items-center gap-1 text-[10px] text-primary hover:underline shrink-0"
             >
               <ExternalLink className="w-3 h-3" />
-              Anahtar Al
+              {t('modelSelector.getKey')}
             </a>
           )}
         </div>

@@ -1,34 +1,162 @@
 {
-  "title": "AI Sentetik Etiketleme Editör Stüdyosu",
-  "subtitle": "Yapay zekaya doğrudan derece belirterek döndürme komutu verebilirsiniz (Örn: 45 derece döndür).",
-  "copilotTitle": "Generative Pipeline Co-Pilot",
-  "reject": "Reddet",
-  "accept": "Kabul Et",
-  "regenerate": "Yeniden Üret",
-  "status": "Durum",
-  "image": "Görsel",
-  "pending": "BEKLİYOR",
-  "accepted": "ONAYLANDI",
-  "rejected": "REDDEDİLDİ",
-  "reset": "Reset",
-  "inputPlaceholder": "Komut girin (Örn: 45 derece döndür) veya yeni kurallar yazın...",
-  "inputPlaceholderGenerating": "Yeni görsel işleniyor...",
-  "generatingText": "Yapay Zeka Yeni Varyasyon Üretiyor...",
-  "noImage": "Görsel bulunamadı",
-  "guidePrev": "Önceki",
-  "guideNext": "Sonraki",
-  "activeFilters": "Aktif Açısı: {{rotation}}° | Zoom: {{zoom}}x",
-  "aiResponses": {
-    "welcome": "Merhaba! Ben COLDAT Generative Asistanı. Kuralları yazıp yeni sentetik görsel üretebilir veya doğrudan dinamik komutlar verebilirsiniz. Örn: \"45 derece döndür\", \"resmi invert yap\" ya da \"temizle\".",
-    "reset": "Görsel üzerindeki tüm efektler ve döndürme açıları sıfırlandı.",
-    "rotate": "Görsel tam olarak {{degree}}° döndürüldü. ",
-    "rotateDefault": "Görsel saat yönünde 90° döndürüldü. ",
-    "zoomIn": "Görsel yakınlaştırıldı. ",
-    "zoomOut": "Görsel uzaklaştırıldı. ",
-    "invert": "Renk matrisi tersine çevrildi (Invert). ",
-    "grayscale": "Görsel monokrom moda alındı. ",
-    "sepia": "Sepya efekti uygulandı. ",
-    "blur": "Bulanıklık katmanı güncellendi. ",
-    "generationStarted": "İstediğiniz yeni senaryo kuralı algılandı: \"{{text}}\". Model kuralları işleniyor ve yeni veri seti varyasyonu aktarılıyor..."
+  "page": {
+    "title": "Synthetic Generation Studio",
+    "byokBadge": "Kendi Anahtarını Getir"
+  },
+  "chat": {
+    "header": "AI Co-Pilot",
+    "inputPlaceholder_noModel": "Önce bir AI modeli seçin...",
+    "inputPlaceholder_ready": "Bir prompt yazın veya komut girin (zoom, rotate, reset...)",
+    "inputPlaceholder_generating": "Görsel oluşturuluyor...",
+    "sendButton": "Gönder",
+    "generatingStatus": "Görsel oluşturuluyor...",
+    "welcome": "Synthetic Görsel Stüdyosu'na hoş geldiniz! Lütfen önce üst taraftan bir AI modeli seçin ve API anahtarınızı girin. Ardından bir prompt yazarak görsel oluşturabilirsiniz.",
+    "errors": {
+      "noModel": "⚠️ Lütfen önce bir AI modeli seçin.",
+      "noApiKey": "🔑 Lütfen geçerli bir API anahtarı girin. Anahtarınız \"sk-\" ile başlamalı ve en az 10 karakter olmalıdır.",
+      "generationFailed": "❌ Hata ({{retries}} deneme): {{message}}\n\nLütfen API anahtarınızı kontrol edin veya farklı bir prompt ile tekrar deneyin.",
+      "unknownError": "Bilinmeyen hata oluştu."
+    },
+    "generatingFor": "🖼️ \"{{prompt}}\" için görsel oluşturuluyor... ({{model}})",
+    "generationSuccess": "✅ Görsel başarıyla oluşturuldu! Dilerseniz aşağıdaki Keep ile projenize kaydedebilir veya Discard ile silebilirsiniz.",
+    "retrying": "🔄 {{attempt}}. tekrar deneniyor ({{wait}}s)...",
+    "commands": {
+      "reset": "✅ Görüntüleyici sıfırlandı: zoom, rotasyon ve filtreler varsayılana döndü.",
+      "rotate": "🔄 Görsel {{degree}}° döndürüldü.",
+      "zoomIn": "🔍 Yakınlaştırıldı ({{zoom}}x)",
+      "zoomOut": "🔍 Uzaklaştırıldı ({{zoom}}x)",
+      "invert_on": "🎨 Invert filtresi uygulandı.",
+      "invert_off": "🎨 Invert filtresi kaldırıldı.",
+      "grayscale": "🎨 Gri tonlama filtresi uygulandı.",
+      "sepia": "🎨 Sepya filtresi uygulandı.",
+      "blur_on": "🎨 Bulanıklık filtresi uygulandı (4px).",
+      "blur_off": "🎨 Bulanıklık kaldırıldı."
+    }
+  },
+  "viewer": {
+    "noImageTitle": "Henüz görsel yok",
+    "noImageSubtitle": "Bir prompt yazın ve Gönder'e tıklayın",
+    "generatingStatus": "Görsel oluşturuluyor...",
+    "imageLoadFailed": "Görsel yüklenemedi",
+    "toolbar": {
+      "zoomIn": "Yakınlaştır (Ctrl+Scroll Up)",
+      "zoomOut": "Uzaklaştır (Ctrl+Scroll Down)",
+      "rotate": "90° Döndür",
+      "reset": "Sıfırla"
+    },
+    "filtersIndicator": "Rot: {{rotation}}° | Zoom: {{zoom}}x{{invert}}{{grayscale}}{{sepia}}{{blur}}"
+  },
+  "preview": {
+    "header": "Görseller ({{count}})",
+    "selectedCount": "{{count}} seçili",
+    "clearSelection": "Seçimi temizle",
+    "empty": "Henüz görsel yok",
+    "dragHandle": "Sürükle",
+    "selectTooltip": "Seç",
+    "deselectTooltip": "Seçimi kaldır",
+    "discardTooltip": "Discard (Sil)"
+  },
+  "controls": {
+    "shortcut_prev": "Önceki",
+    "shortcut_next": "Sonraki",
+    "keep_single": "Keep (Kaydet)",
+    "keep_multi": "Seçilenleri Kaydet",
+    "discard_single": "Discard (Sil)",
+    "discard_multi": "Seçilenleri Sil",
+    "keep_button": "Keep (K)",
+    "discard_button": "Discard (D)",
+    "multiSelected": "{{count}} görsel seçili",
+    "clearMulti": "Temizle"
+  },
+  "modelSelector": {
+    "placeholder": "AI Model Seçin...",
+    "apiKeyPlaceholder": "{{modelName}} API Anahtarı ({{provider}})",
+    "persistedBadge": "Kayıtlı",
+    "getKey": "Anahtar Al",
+    "hideKey": "Gizle",
+    "showKey": "Göster",
+    "clearKey": "API anahtarını sil (localStorage'dan da kaldırır)",
+    "validation": {
+      "checking": "Validasyon yapılıyor...",
+      "valid": "API anahtarı geçerli ✓",
+      "invalid": "API anahtarı geçersiz",
+      "error": "Validasyon sırasında hata oluştu"
+    },
+    "models": {
+      "dall-e-3": {
+        "name": "DALL-E 3",
+        "description": "En yüksek kalite, detaylı ve yaratıcı görseller. 1024x1024, 1792x1024, 1024x1792"
+      },
+      "dall-e-2": {
+        "name": "DALL-E 2",
+        "description": "Hızlı ve ekonomik görsel üretimi. 256x256, 512x512, 1024x1024"
+      },
+      "stable-diffusion-xl": {
+        "name": "Stable Diffusion XL",
+        "description": "Yüksek kaliteli, açık kaynak AI modeli. 1024x1024"
+      },
+      "stable-diffusion-3": {
+        "name": "Stable Diffusion 3.5",
+        "description": "En yeni Stability modeli, üstün kalite. 1024x1024"
+      },
+      "flux-schnell": {
+        "name": "Flux Schnell",
+        "description": "Black Forest Labs - Hızlı ve kaliteli, açık model"
+      },
+      "flux-pro": {
+        "name": "Flux Pro",
+        "description": "Black Forest Labs - Premium kalite görsel üretimi"
+      }
+    }
+  },
+  "saveDialog": {
+    "title_single": "Görseli Kaydet",
+    "title_multi": "{{count}} Görseli Kaydet",
+    "step_project": "Görsellerin kaydedileceği projeyi seçin.",
+    "step_dataset": "Proje içindeki dataseti seçin.",
+    "step_uploading": "Görseller S3 yükleme kuyruğuna ekleniyor...",
+    "step_complete": "Görseller yükleme kuyruğuna eklendi.",
+    "multiCountBanner": "{{count}} görsel kaydedilecek",
+    "noProjects": "Henüz hiç projeniz yok. Önce bir proje oluşturun.",
+    "noDatasets": "Bu projede henüz dataset yok.",
+    "allProjectsLoaded": "Tüm projeler yüklendi ({{count}})",
+    "allDatasetsLoaded": "Tüm datasetler yüklendi ({{count}})",
+    "selectProjectFirst": "Lütfen bir proje seçin.",
+    "selectDatasetFirst": "Lütfen bir dataset seçin.",
+    "back": "Geri",
+    "cancel": "İptal",
+    "next": "İleri",
+    "upload": "S3'e Yükle",
+    "uploadMulti": "{{count}} Görseli S3'e Yükle",
+    "close": "Kapat",
+    "trackUploads": "Yüklemeleri Takip Et",
+    "uploadingSingle": "Görsel yükleme kuyruğuna ekleniyor...",
+    "uploadingMulti": "{{count}} görsel yükleme kuyruğuna ekleniyor...",
+    "backgroundNote": "Yükleme arka planda devam edecek. İlerleme durumunu",
+    "uploadManagerLinkText": "Upload Manager",
+    "successSingle": "Görsel yükleme kuyruğuna eklendi!",
+    "successMulti": "{{count}} görsel yükleme kuyruğuna eklendi!",
+    "successAction": "Yüklemeleri Takip Et",
+    "errorUpload": "Yükleme başlatılamadı",
+    "completeTitle_single": "Görsel yükleme kuyruğuna eklendi!",
+    "completeTitle_multi": "{{count}} görsel yükleme kuyruğuna eklendi!",
+    "completeDesc": "Görselleriniz S3 depolamaya yükleniyor. Yükleme durumunu sağ alt köşedeki Upload Manager'dan takip edebilirsiniz.",
+    "retry": "Tekrar Dene"
+  },
+  "bulkManager": {
+    "title": "Toplu Görsel Yükleme Simülatörü",
+    "filesList": "Sıradaki dosyalar: {{files}}",
+    "uploadButton": "Güvenli URL Üzerinden Toplu Yükle (upload-urls)",
+    "actionsTitle": "Toplu Aksiyon İstekleri",
+    "actionsDesc": "Seçili olan tüm resimleri tek seferde onayla veya reddet endpoint test alanı.",
+    "rejectAll": "Tümünü Reddet",
+    "acceptAll": "Tümünü Onayla",
+    "toast": {
+      "step1": "1/2: Güvenli S3 yükleme adresleri alınıyor...",
+      "step2": "2/2: Dosyalar buluta aktarılıyor...",
+      "success": "{{count}} adet yeni görsel başarıyla sentetik havuzunuza yüklendi!",
+      "uploadError": "Yükleme simülasyonunda hata oluştu.",
+      "updateError": "Toplu durum güncelleme işlemi başarısız."
+    }
   }
 }

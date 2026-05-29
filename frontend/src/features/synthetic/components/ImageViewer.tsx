@@ -1,9 +1,11 @@
 // frontend/src/features/synthetic/components/ImageViewer.tsx
 
+import { useTranslation } from 'react-i18next';
 import { useSyntheticStore } from '../store/syntheticSlice';
 import { ImageIcon, Loader2, ZoomIn, ZoomOut, RotateCw, SlidersHorizontal } from 'lucide-react';
 
 export default function ImageViewer() {
+  const { t } = useTranslation(['synthetic']);
   const {
     getActiveImage,
     zoom,
@@ -51,7 +53,7 @@ export default function ImageViewer() {
           <span className="truncate">
             {activeImage
               ? `"${activeImage.prompt.substring(0, 60)}${activeImage.prompt.length > 60 ? '...' : ''}"`
-              : 'Henüz görsel yok'}
+              : t('viewer.noImageTitle')}
           </span>
         </div>
 
@@ -59,30 +61,30 @@ export default function ImageViewer() {
           <button
             onClick={() => setZoom(zoom + 0.2)}
             className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition"
-            title="Yakınlaştır (Ctrl+Scroll Up)"
+            title={t('viewer.toolbar.zoomIn')}
           >
             <ZoomIn size={14} />
           </button>
           <button
             onClick={() => setZoom(zoom - 0.2)}
             className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition"
-            title="Uzaklaştır (Ctrl+Scroll Down)"
+            title={t('viewer.toolbar.zoomOut')}
           >
             <ZoomOut size={14} />
           </button>
           <button
             onClick={() => setRotation(90)}
             className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition"
-            title="90° Döndür"
+            title={t('viewer.toolbar.rotate')}
           >
             <RotateCw size={14} />
           </button>
           <button
             onClick={resetViewer}
             className="px-1.5 py-0.5 text-[10px] bg-muted hover:bg-muted/80 text-muted-foreground rounded transition font-medium"
-            title="Sıfırla"
+            title={t('viewer.toolbar.reset')}
           >
-            Reset
+            {t('viewer.toolbar.reset')}
           </button>
 
           <span className="w-px h-4 bg-border mx-1" />
@@ -101,16 +103,16 @@ export default function ImageViewer() {
         {isGenerating && !activeImage && (
           <div className="flex flex-col items-center gap-3 text-muted-foreground animate-pulse">
             <Loader2 size={36} className="animate-spin text-primary" />
-            <span className="text-sm font-mono">Görsel oluşturuluyor...</span>
+            <span className="text-sm font-mono">{t('viewer.generatingStatus')}</span>
           </div>
         )}
 
         {!isGenerating && !activeImage && (
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <ImageIcon size={40} className="opacity-30" />
-            <span className="text-xs font-mono">Henüz görsel üretilmedi</span>
+            <span className="text-xs font-mono">{t('viewer.noImageTitle')}</span>
             <span className="text-[10px] text-muted-foreground/60">
-              Bir prompt yazın ve Gönder'e tıklayın
+              {t('viewer.noImageSubtitle')}
             </span>
           </div>
         )}
@@ -131,7 +133,7 @@ export default function ImageViewer() {
             )}
             {activeImage.status === 'failed' && (
               <div className="text-center text-destructive">
-                <p className="text-sm font-medium">Görsel yüklenemedi</p>
+                <p className="text-sm font-medium">{t('viewer.imageLoadFailed')}</p>
                 <p className="text-xs mt-1">{activeImage.error}</p>
               </div>
             )}
@@ -143,11 +145,14 @@ export default function ImageViewer() {
           <div className="absolute bottom-3 left-3 bg-background/80 backdrop-blur-sm text-[10px] text-muted-foreground font-mono px-2 py-1 rounded border border-border flex items-center gap-1.5 pointer-events-none">
             <SlidersHorizontal size={10} />
             <span>
-              Rot: {rotation}° | Zoom: {zoom.toFixed(1)}x
-              {filters.invert ? ' | Invert' : ''}
-              {filters.grayscale ? ' | Grayscale' : ''}
-              {filters.sepia ? ' | Sepia' : ''}
-              {filters.blur > 0 ? ` | Blur(${filters.blur}px)` : ''}
+              {t('viewer.filtersIndicator', {
+                rotation,
+                zoom: zoom.toFixed(1),
+                invert: filters.invert ? ' | Invert' : '',
+                grayscale: filters.grayscale ? ' | Grayscale' : '',
+                sepia: filters.sepia ? ' | Sepia' : '',
+                blur: filters.blur > 0 ? ` | Blur(${filters.blur}px)` : '',
+              })}
             </span>
           </div>
         )}

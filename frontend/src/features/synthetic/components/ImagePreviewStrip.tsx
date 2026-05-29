@@ -1,6 +1,7 @@
 // frontend/src/features/synthetic/components/ImagePreviewStrip.tsx
 
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSyntheticStore } from '../store/syntheticSlice';
 // Using plain overflow div instead of Radix ScrollArea to avoid layout thrash during resize
 import { ImageIcon, Loader2, XCircle, CheckSquare, Square } from 'lucide-react';
@@ -29,6 +30,7 @@ function SortablePreviewItem({
   onSelect,
   onActivate,
   onRemove,
+  t,
 }: {
   image: { id: string; thumbnailUrl?: string; prompt: string };
   isActive: boolean;
@@ -36,6 +38,7 @@ function SortablePreviewItem({
   onSelect: (e: React.MouseEvent) => void;
   onActivate: () => void;
   onRemove: () => void;
+  t: (key: string, params?: object) => string;
 }) {
   const {
     attributes,
@@ -91,7 +94,7 @@ function SortablePreviewItem({
               ? 'bg-emerald-500 text-white opacity-100'
               : 'bg-background/80 text-muted-foreground opacity-0 group-hover:opacity-100'
           } shadow-sm`}
-          title={isSelected ? 'Seçimi kaldır' : 'Seç'}
+          title={isSelected ? t('preview.deselectTooltip') : t('preview.selectTooltip')}
         >
           {isSelected ? <CheckSquare size={12} /> : <Square size={12} />}
         </button>
@@ -103,7 +106,7 @@ function SortablePreviewItem({
           className="absolute top-1 right-1 w-5 h-5 rounded bg-background/80 text-muted-foreground 
                      flex items-center justify-center opacity-0 group-hover:opacity-100 
                      transition-opacity shadow-sm cursor-grab active:cursor-grabbing"
-          title="Sürükle"
+          title={t('preview.dragHandle')}
         >
           <span className="text-[10px] font-bold">⋮⋮</span>
         </button>
@@ -116,7 +119,7 @@ function SortablePreviewItem({
           }}
           className="absolute -bottom-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground rounded-full 
                      flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-          title="Discard (Sil)"
+          title={t('preview.discardTooltip')}
         >
           <XCircle size={12} />
         </button>
@@ -136,6 +139,7 @@ function SortablePreviewItem({
 }
 
 export default function ImagePreviewStrip() {
+  const { t } = useTranslation(['synthetic']);
   const {
     images,
     activeImageId,
@@ -215,11 +219,11 @@ export default function ImagePreviewStrip() {
       <div className="shrink-0 px-2.5 py-2 border-b border-border bg-muted/20">
         <div className="flex items-center justify-between">
           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-            Görseller ({images.length})
+            {t('preview.header', { count: images.length })}
           </p>
           {selectedImageIds.length > 0 && (
             <span className="text-[10px] font-medium text-emerald-500">
-              {selectedImageIds.length} seçili
+              {t('preview.selectedCount', { count: selectedImageIds.length })}
             </span>
           )}
         </div>
@@ -228,7 +232,7 @@ export default function ImagePreviewStrip() {
             onClick={() => deselectAllImages()}
             className="text-[9px] text-muted-foreground hover:text-foreground mt-1 transition"
           >
-            Seçimi temizle
+            {t('preview.clearSelection')}
           </button>
         )}
       </div>
@@ -248,7 +252,7 @@ export default function ImagePreviewStrip() {
               {images.length === 0 && !isGenerating && (
                 <div className="flex flex-col items-center gap-1.5 py-8 text-muted-foreground">
                   <ImageIcon size={20} className="opacity-30" />
-                  <span className="text-[10px]">Henüz görsel yok</span>
+                  <span className="text-[10px]">{t('preview.empty')}</span>
                 </div>
               )}
 
@@ -271,6 +275,7 @@ export default function ImagePreviewStrip() {
                     lastClickedRef.current = image.id;
                   }}
                   onRemove={() => removeImage(image.id)}
+                  t={t}
                 />
               ))}
             </div>
