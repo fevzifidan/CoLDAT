@@ -1,27 +1,46 @@
 // frontend/src/features/synthetic/components/KeepDiscardControls.tsx
 
 import { useSyntheticStore } from '../store/syntheticSlice';
-import { Check, ArrowLeft, ArrowRight, Trash2 } from 'lucide-react';
+import { Check, ArrowLeft, ArrowRight, Trash2, Layers } from 'lucide-react';
 
 export default function KeepDiscardControls() {
   const {
     images,
     activeImageId,
+    selectedImageIds,
     getActiveImage,
     removeImage,
+    bulkRemoveImages,
     openSaveDialog,
+    openBulkSaveDialog,
+    deselectAllImages,
   } = useSyntheticStore();
+
   const currentIndex = images.findIndex((img) => img.id === activeImageId);
   const canGoPrev = currentIndex > 0;
   const canGoNext = currentIndex < images.length - 1;
+  const hasMultiSelection = selectedImageIds.length > 1;
 
   const handleKeep = () => {
+    if (hasMultiSelection) {
+      // Bulk save: seçili tüm görselleri kaydet
+      const selectedImages = images.filter((img) => selectedImageIds.includes(img.id));
+      openBulkSaveDialog(selectedImages);
+      return;
+    }
+
     const image = getActiveImage();
     if (!image) return;
     openSaveDialog(image);
   };
 
   const handleDiscard = () => {
+    if (hasMultiSelection) {
+      // Bulk discard: seçili tüm görselleri sil
+      bulkRemoveImages(selectedImageIds);
+      return;
+    }
+
     if (!activeImageId) return;
     removeImage(activeImageId);
   };
@@ -62,15 +81,31 @@ export default function KeepDiscardControls() {
           <span className="px-1.5 py-0.5 rounded border border-border bg-muted text-foreground text-[10px] font-mono">
             K
           </span>
-          Keep (Kaydet)
+          {hasMultiSelection ? 'Seçilenleri Kaydet' : 'Keep (Kaydet)'}
         </div>
         <div className="flex items-center gap-1">
           <span className="px-1.5 py-0.5 rounded border border-border bg-muted text-foreground text-[10px] font-mono">
             D
           </span>
-          Discard (Sil)
+          {hasMultiSelection ? 'Seçilenleri Sil' : 'Discard (Sil)'}
         </div>
       </div>
+
+      {/* Multi-selection info & clear */}
+      {hasMultiSelection && (
+        <div className="flex items-center gap-2">
+          <Layers size={14} className="text-emerald-500" />
+          <span className="text-xs font-medium text-emerald-500">
+            {selectedImageIds.length} görsel seçili
+          </span>
+          <button
+            onClick={() => deselectAllImages()}
+            className="text-[10px] text-muted-foreground hover:text-foreground underline"
+          >
+            Temizle
+          </button>
+        </div>
+      )}
 
       {/* Main Actions */}
       <div className="flex items-center gap-2">
@@ -80,7 +115,7 @@ export default function KeepDiscardControls() {
           className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 text-xs font-semibold transition active:scale-95"
         >
           <Trash2 size={15} />
-          Discard (D)
+          {hasMultiSelection ? `Discard (${selectedImageIds.length})` : 'Discard (D)'}
         </button>
 
         {/* Keep Button */}
@@ -89,7 +124,7 @@ export default function KeepDiscardControls() {
           className="flex items-center gap-1.5 px-5 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold transition shadow-sm active:scale-95"
         >
           <Check size={15} />
-          Keep (K)
+          {hasMultiSelection ? `Keep (${selectedImageIds.length})` : 'Keep (K)'}
         </button>
       </div>
 

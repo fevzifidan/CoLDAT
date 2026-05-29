@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSyntheticStore } from '../store/syntheticSlice';
+import { useCursorPagination } from '@/shared/hooks/useCursorPagination';
 import { projectService } from '@/features/projects/services/projectService';
 import { datasetService } from '@/features/datasets/services/datasetService';
 import { uploadService } from '@/shared/services/s3upload/s3upload.service';
@@ -23,10 +24,11 @@ import {
   ArrowLeft,
   ArrowRight,
   AlertCircle,
-  X,
   RefreshCw,
+  FileUp,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAppStore } from '@/store/hooks/useAppStore';
 
 type WizardStep = 'project-selection' | 'dataset-selection' | 'uploading' | 'complete';
 
@@ -41,21 +43,60 @@ interface Dataset {
 }
 
 export default function SaveToProjectDialog() {
-  const { showSaveDialog, imageToSave, closeSaveDialog } = useSyntheticStore();
+  const { showSaveDialog, imagesToSave, closeSaveDialog } = useSyntheticStore();
+  const expandPanel = useAppStore((s) => s.expandPanel);
 
   const [step, setStep] = useState<WizardStep>('project-selection');
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>('');
-  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
-  const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  // For real progress tracking from uploadService
-  const unsubscribeRef = useRef<(() => void) | null>(null);
+  // isMounted guard for memory leak prevention
+  const isMountedRef = useRef(true);
+
+  // ---- Paginated Projects ----
+  const {
+    items: projects,
+    loading: isLoadingProjects,
+    hasNext: hasMoreProjects,
+    loadMore: loadMoreProjects,
+    error: projectsError,
+    initialLoading: projectsInitialLoading,
+  } = useCursorPagination<Project>({
+    fetchFn: async (cursor, limit) => {
+      const response = await projectService.getAllProjects({ limit, after: cursor });
+      const data: Project[] = response?.data || response?.results || response || [];
+      return {
+        data: Array.isArray(data) ? data : [],
+        next_cursor: response?.next_cursor ?? null,
+      };
+    },
+    limit: 10,
+    enabled: showSaveDialog,
+  });
+
+  // ---- Paginated Datasets ----
+  const {
+    items: datasets,
+    loading: isLoadingDatasets,
+    hasNext: hasMoreDatasets,
+    loadMore: loadMoreDatasets,
+    error: datasetsError,
+    reset: resetDatasets,
+    initialLoading: datasetsInitialLoading,
+  } = useCursorPagination<Dataset>({
+    fetchFn: async (cursor, limit) => {
+      const response = await datasetService.getAllDatasets(selectedProjectId, { limit, after: cursor });
+      const data: Dataset[] = response?.data || response?.results || response || [];
+      return {
+        data: Array.isArray(data) ? data : [],
+        next_cursor: response?.next_cursor ?? null,
+      };
+    },
+    limit: 10,
+    enabled: showSaveDialog && !!selectedProjectId,
+  });
 
   // Reset state when dialog opens
   const resetDialog = useCallback(() => {
@@ -63,73 +104,30 @@ export default function SaveToProjectDialog() {
     setSelectedProjectId('');
     setSelectedDatasetId('');
     setIsUploading(false);
-    setUploadProgress(0);
     setError(null);
   }, []);
 
-  // Load projects when dialog opens
+  // Reset datasets when project changes (useCursorPagination handles this via enabled)
   useEffect(() => {
-    if (!showSaveDialog) {
-      resetDialog();
-      return;
+    if (selectedProjectId) {
+      resetDatasets();
     }
+  }, [selectedProjectId, resetDatasets]);
 
-    const loadProjects = async () => {
-      setIsLoadingProjects(true);
-      setError(null);
-      try {
-        const response = await projectService.getAllProjects();
-        const projectList: Project[] = response?.results || response?.data || response || [];
-        setProjects(Array.isArray(projectList) ? projectList : []);
-      } catch (err) {
-        console.error('Failed to load projects:', err);
-        setError('Projeler yüklenirken hata oluştu.');
-        setProjects([]);
-      } finally {
-        setIsLoadingProjects(false);
-      }
-    };
-
-    loadProjects();
-  }, [showSaveDialog, resetDialog]);
-
-  // Load datasets when project is selected
+  // isMounted ref
   useEffect(() => {
-    if (!selectedProjectId) {
-      setDatasets([]);
-      setSelectedDatasetId('');
-      return;
-    }
-
-    const loadDatasets = async () => {
-      setIsLoadingDatasets(true);
-      setError(null);
-      try {
-        const response = await datasetService.getAllDatasets(selectedProjectId);
-        const datasetList: Dataset[] = response?.results || response?.data || response || [];
-        setDatasets(Array.isArray(datasetList) ? datasetList : []);
-        setSelectedDatasetId('');
-      } catch (err) {
-        console.error('Failed to load datasets:', err);
-        setError('Datasetler yüklenirken hata oluştu.');
-        setDatasets([]);
-      } finally {
-        setIsLoadingDatasets(false);
-      }
-    };
-
-    loadDatasets();
-  }, [selectedProjectId]);
-
-  // Cleanup subscription on unmount
-  useEffect(() => {
+    isMountedRef.current = true;
     return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-        unsubscribeRef.current = null;
-      }
+      isMountedRef.current = false;
     };
   }, []);
+
+  // Monitor errors from pagination hooks
+  useEffect(() => {
+    if (projectsError) setError(projectsError);
+    else if (datasetsError) setError(datasetsError);
+    else setError(null);
+  }, [projectsError, datasetsError]);
 
   const handleNextToDataset = () => {
     if (!selectedProjectId) {
@@ -140,60 +138,62 @@ export default function SaveToProjectDialog() {
   };
 
   const handleUpload = async () => {
-    if (!imageToSave || !selectedDatasetId) {
+    if (!imagesToSave.length || !selectedDatasetId) {
       toast.warning('Lütfen bir dataset seçin.');
       return;
     }
 
     setIsUploading(true);
-    setUploadProgress(0);
     setError(null);
     setStep('uploading');
 
-    const toastId = toast.loading('Görsel S3\'e yükleniyor...');
+    const count = imagesToSave.length;
+    const toastId = toast.loading(
+      `${count} görsel yükleme kuyruğuna ekleniyor...`
+    );
 
     try {
-      // Convert base64 to File
-      const file = dataURLtoFile(imageToSave.dataUrl, `synthetic_${imageToSave.id}.png`);
+      // Her görsel için upload'ı başlat (fire-and-forget)
+      for (const [index, image] of imagesToSave.entries()) {
+        if (!isMountedRef.current) break;
 
-      // Subscribe to real upload progress
-      unsubscribeRef.current = uploadService.subscribe((tasks) => {
-        tasks.forEach((task) => {
-          if (task.status === 'UPLOADING' && task.progress) {
-            setUploadProgress(task.progress);
-          } else if (task.status === 'SUCCESS') {
-            setUploadProgress(100);
-          }
+        const file = dataURLtoFile(image.dataUrl, `synthetic_${image.id}.png`);
+
+        // Upload'ı kuyruğa ekle — bekleme, Upload Manager takip edecek
+        await uploadService.addUpload(file, selectedDatasetId, {
+          priority: 'HIGH',
+          upload_type: 'asset',
         });
-      });
-
-      // Use the existing uploadService
-      await uploadService.addUpload(file, selectedDatasetId, {
-        priority: 'HIGH',
-        upload_type: 'asset',
-      });
-
-      // Unsubscribe from progress tracking
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-        unsubscribeRef.current = null;
       }
 
-      setUploadProgress(100);
-      toast.success('Görsel başarıyla kaydedildi!', { id: toastId });
+      if (!isMountedRef.current) return;
+
+      toast.success(
+        count === 1
+          ? 'Görsel yükleme kuyruğuna eklendi!'
+          : `${count} görsel yükleme kuyruğuna eklendi!`,
+        {
+          id: toastId,
+          duration: 6000,
+          action: {
+            label: 'Yüklemeleri Takip Et',
+            onClick: () => {
+              expandPanel();
+            },
+          },
+        }
+      );
+
       setStep('complete');
     } catch (err) {
-      // Unsubscribe on error too
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-        unsubscribeRef.current = null;
-      }
-
-      const errMsg = err instanceof Error ? err.message : 'Yükleme hatası';
+      if (!isMountedRef.current) return;
+      const errMsg = err instanceof Error ? err.message : 'Yükleme başlatılamadı';
       setError(errMsg);
-      toast.error(`Yükleme başarısız: ${errMsg}`, { id: toastId });
+      toast.error(`Hata: ${errMsg}`, { id: toastId });
     } finally {
-      setIsUploading(false);
+      if (isMountedRef.current) {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -207,6 +207,54 @@ export default function SaveToProjectDialog() {
     resetDialog();
   };
 
+  // IntersectionObserver instances for infinite scroll
+  const projectsObserverRef = useRef<IntersectionObserver | null>(null);
+  const datasetsObserverRef = useRef<IntersectionObserver | null>(null);
+
+  // Cleanup observers on unmount
+  useEffect(() => {
+    return () => {
+      if (projectsObserverRef.current) projectsObserverRef.current.disconnect();
+      if (datasetsObserverRef.current) datasetsObserverRef.current.disconnect();
+    };
+  }, []);
+
+  const projectsSentinelRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (projectsObserverRef.current) projectsObserverRef.current.disconnect();
+      if (!node || !hasMoreProjects || isLoadingProjects) return;
+
+      projectsObserverRef.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && hasMoreProjects && !isLoadingProjects) {
+            loadMoreProjects();
+          }
+        },
+        { threshold: 0.1 }
+      );
+      projectsObserverRef.current.observe(node);
+    },
+    [hasMoreProjects, isLoadingProjects, loadMoreProjects]
+  );
+
+  const datasetsSentinelRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (datasetsObserverRef.current) datasetsObserverRef.current.disconnect();
+      if (!node || !hasMoreDatasets || isLoadingDatasets) return;
+
+      datasetsObserverRef.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && hasMoreDatasets && !isLoadingDatasets) {
+            loadMoreDatasets();
+          }
+        },
+        { threshold: 0.1 }
+      );
+      datasetsObserverRef.current.observe(node);
+    },
+    [hasMoreDatasets, isLoadingDatasets, loadMoreDatasets]
+  );
+
   return (
     <Dialog open={showSaveDialog} onOpenChange={(open) => { if (!open) handleClose(); }}>
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
@@ -216,13 +264,13 @@ export default function SaveToProjectDialog() {
             {step === 'dataset-selection' && <Database className="w-5 h-5 text-primary" />}
             {step === 'uploading' && <UploadCloud className="w-5 h-5 text-primary" />}
             {step === 'complete' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
-            Görseli Kaydet
+            {imagesToSave.length > 1 ? `${imagesToSave.length} Görseli Kaydet` : 'Görseli Kaydet'}
           </DialogTitle>
           <DialogDescription>
-            {step === 'project-selection' && 'Görselin kaydedileceği projeyi seçin.'}
+            {step === 'project-selection' && 'Görsellerin kaydedileceği projeyi seçin.'}
             {step === 'dataset-selection' && 'Proje içindeki dataseti seçin.'}
-            {step === 'uploading' && 'Görsel S3\'e yükleniyor...'}
-            {step === 'complete' && 'Görsel başarıyla kaydedildi.'}
+            {step === 'uploading' && 'Görseller S3 yükleme kuyruğuna ekleniyor...'}
+            {step === 'complete' && 'Görseller yükleme kuyruğuna eklendi.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -260,6 +308,14 @@ export default function SaveToProjectDialog() {
           )}
         </div>
 
+        {/* Toplam seçili görsel bilgisi */}
+        {imagesToSave.length > 1 && (step === 'project-selection' || step === 'dataset-selection') && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/10 rounded-lg text-xs text-primary mb-2">
+            <FileUp size={14} />
+            <span className="font-medium">{imagesToSave.length} görsel kaydedilecek</span>
+          </div>
+        )}
+
         {/* Error State with Retry Button */}
         {error && (
           <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-xs mb-3">
@@ -275,10 +331,10 @@ export default function SaveToProjectDialog() {
           </div>
         )}
 
-        {/* Step 1: Project Selection */}
+        {/* Step 1: Project Selection - Paginated */}
         {step === 'project-selection' && (
           <div className="space-y-3">
-            {isLoadingProjects ? (
+            {projectsInitialLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-5 h-5 animate-spin text-primary" />
               </div>
@@ -287,7 +343,9 @@ export default function SaveToProjectDialog() {
                 Henüz hiç projeniz yok. Önce bir proje oluşturun.
               </p>
             ) : (
-              <div className="grid gap-2 max-h-[300px] overflow-y-auto">
+              <div
+                className="grid gap-2 max-h-[300px] overflow-y-auto"
+              >
                 {projects.map((project) => (
                   <button
                     key={project.id}
@@ -310,15 +368,28 @@ export default function SaveToProjectDialog() {
                     )}
                   </button>
                 ))}
+
+                {/* Infinite scroll sentinel */}
+                {hasMoreProjects && (
+                  <div ref={projectsSentinelRef} className="flex justify-center py-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+
+                {!hasMoreProjects && projects.length > 0 && (
+                  <p className="text-[10px] text-center text-muted-foreground py-1">
+                    Tüm projeler yüklendi ({projects.length})
+                  </p>
+                )}
               </div>
             )}
           </div>
         )}
 
-        {/* Step 2: Dataset Selection */}
+        {/* Step 2: Dataset Selection - Paginated */}
         {step === 'dataset-selection' && (
           <div className="space-y-3">
-            {isLoadingDatasets ? (
+            {datasetsInitialLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-5 h-5 animate-spin text-primary" />
               </div>
@@ -327,7 +398,9 @@ export default function SaveToProjectDialog() {
                 Bu projede henüz dataset yok.
               </p>
             ) : (
-              <div className="grid gap-2 max-h-[300px] overflow-y-auto">
+              <div
+                className="grid gap-2 max-h-[300px] overflow-y-auto"
+              >
                 {datasets.map((dataset) => (
                   <button
                     key={dataset.id}
@@ -350,46 +423,66 @@ export default function SaveToProjectDialog() {
                     )}
                   </button>
                 ))}
+
+                {/* Infinite scroll sentinel */}
+                {hasMoreDatasets && (
+                  <div ref={datasetsSentinelRef} className="flex justify-center py-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+
+                {!hasMoreDatasets && datasets.length > 0 && (
+                  <p className="text-[10px] text-center text-muted-foreground py-1">
+                    Tüm datasetler yüklendi ({datasets.length})
+                  </p>
+                )}
               </div>
             )}
           </div>
         )}
 
-        {/* Step 3: Uploading - Real Progress */}
+        {/* Step 3: Upload confirmation (queueing, no waiting) */}
         {step === 'uploading' && (
           <div className="space-y-4 py-4">
             <div className="flex items-center justify-center">
               {isUploading ? (
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <p className="text-xs text-muted-foreground">
+                    {imagesToSave.length > 1
+                      ? `${imagesToSave.length} görsel yükleme kuyruğuna ekleniyor...`
+                      : 'Görsel yükleme kuyruğuna ekleniyor...'}
+                  </p>
+                </div>
               ) : (
                 <CheckCircle2 className="w-8 h-8 text-emerald-500" />
               )}
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Yükleniyor...</span>
-                <span>{uploadProgress}%</span>
-              </div>
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all duration-300"
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
-            </div>
             <p className="text-[10px] text-center text-muted-foreground">
-              S3 depolamaya doğrudan yükleniyor...
+              Yükleme arka planda devam edecek. İlerleme durumunu
+              <button
+                onClick={() => expandPanel()}
+                className="text-primary hover:underline mx-1"
+              >
+                Upload Manager
+              </button>
+              'dan takip edebilirsiniz.
             </p>
           </div>
         )}
 
         {/* Step 4: Complete */}
         {step === 'complete' && (
-          <div className="py-6 text-center space-y-2">
+          <div className="py-6 text-center space-y-3">
             <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
-            <p className="text-sm font-medium text-foreground">Görsel başarıyla kaydedildi!</p>
+            <p className="text-sm font-medium text-foreground">
+              {imagesToSave.length > 1
+                ? `${imagesToSave.length} görsel yükleme kuyruğuna eklendi!`
+                : 'Görsel yükleme kuyruğuna eklendi!'}
+            </p>
             <p className="text-xs text-muted-foreground">
-              Görseliniz S3 depolamaya yüklendi ve dataset'e eklendi.
+              Görselleriniz S3 depolamaya yükleniyor. Yükleme durumunu
+              sağ alt köşedeki Upload Manager'dan takip edebilirsiniz.
             </p>
           </div>
         )}
@@ -406,7 +499,7 @@ export default function SaveToProjectDialog() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleClose} className="text-xs">
-              İptal
+              {step === 'complete' ? 'Kapat' : 'İptal'}
             </Button>
 
             {step === 'project-selection' && (
@@ -429,14 +522,27 @@ export default function SaveToProjectDialog() {
                 className="text-xs"
               >
                 <UploadCloud className="w-3 h-3 mr-1" />
-                S3'e Yükle
+                {imagesToSave.length > 1
+                  ? `${imagesToSave.length} Görseli S3'e Yükle`
+                  : "S3'e Yükle"}
               </Button>
             )}
 
             {step === 'complete' && (
-              <Button size="sm" onClick={handleClose} className="text-xs">
-                Kapat
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => expandPanel()}
+                  className="text-xs"
+                >
+                  <UploadCloud className="w-3 h-3 mr-1" />
+                  Yüklemeleri Takip Et
+                </Button>
+                <Button size="sm" onClick={handleClose} className="text-xs">
+                  Kapat
+                </Button>
+              </div>
             )}
           </div>
         </div>

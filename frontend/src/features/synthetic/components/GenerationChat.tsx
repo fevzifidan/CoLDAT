@@ -5,11 +5,10 @@ import { useSyntheticStore } from '../store/syntheticSlice';
 import { imageGenerationService } from '../services/imageGenerationService';
 import { generateThumbnail } from '@/shared/utils/imageUtils';
 import { Bot, User, Send, Loader2 } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// Using plain overflow div instead of Radix ScrollArea to avoid layout thrash during resize
 
-export default function GenerationChat() {
+function ChatInputArea() {
   const {
-    messages,
     addMessage,
     selectedModel,
     apiKey,
@@ -26,15 +25,7 @@ export default function GenerationChat() {
   } = useSyntheticStore();
 
   const [inputValue, setInputValue] = useState('');
-  const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
 
   // Focus input after generation completes
   useEffect(() => {
@@ -254,6 +245,53 @@ export default function GenerationChat() {
   };
 
   return (
+    <div className="shrink-0 p-3 border-t border-border bg-muted/20">
+      <div className="flex gap-2">
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={isGenerating}
+          placeholder={
+            isGenerating
+              ? 'Görsel oluşturuluyor...'
+              : selectedModel
+                ? 'Bir prompt yazın veya komut girin (zoom, rotate, reset...)'
+                : 'Önce bir AI modeli seçin...'
+          }
+          className="flex-1 h-9 rounded-lg border border-border bg-background px-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+        />
+        <button
+          onClick={handleGenerate}
+          disabled={isGenerating || !inputValue.trim() || !selectedModel}
+          className="h-9 px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50 flex items-center gap-1.5 text-xs font-medium"
+        >
+          {isGenerating ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Send className="w-3.5 h-3.5" />
+          )}
+          Gönder
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function GenerationChat() {
+  const { messages, isGenerating } = useSyntheticStore();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="shrink-0 p-3 border-b border-border flex items-center gap-2 bg-muted/30">
@@ -262,7 +300,7 @@ export default function GenerationChat() {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1" ref={scrollRef}>
+      <div className="flex-1 overflow-y-auto" ref={scrollRef}>
         <div className="p-3 space-y-3">
           {messages.map((msg) => (
             <div
@@ -305,41 +343,10 @@ export default function GenerationChat() {
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Input */}
-      <div className="shrink-0 p-3 border-t border-border bg-muted/20">
-        <div className="flex gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isGenerating}
-            placeholder={
-              isGenerating
-                ? 'Görsel oluşturuluyor...'
-                : selectedModel
-                  ? 'Bir prompt yazın veya komut girin (zoom, rotate, reset...)'
-                  : 'Önce bir AI modeli seçin...'
-            }
-            className="flex-1 h-9 rounded-lg border border-border bg-background px-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
-          />
-          <button
-            onClick={handleGenerate}
-            disabled={isGenerating || !inputValue.trim() || !selectedModel}
-            className="h-9 px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50 flex items-center gap-1.5 text-xs font-medium"
-          >
-            {isGenerating ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Send className="w-3.5 h-3.5" />
-            )}
-            Gönder
-          </button>
-        </div>
-      </div>
+      <ChatInputArea />
     </div>
   );
 }

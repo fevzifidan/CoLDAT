@@ -4,14 +4,23 @@ import { useState, useEffect, useRef } from 'react';
 import { useSyntheticStore } from '../store/syntheticSlice';
 import { imageGenerationService, PREDEFINED_MODELS } from '../services/imageGenerationService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, ExternalLink, CheckCircle2, XCircle, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Sparkles, ExternalLink, CheckCircle2, XCircle, Loader2, Eye, EyeOff, Trash2 } from 'lucide-react';
 
 export default function ModelSelector() {
-  const { selectedModel, setSelectedModel, apiKey, setApiKey, apiKeyVisible, toggleApiKeyVisibility } = useSyntheticStore();
+  const { selectedModel, setSelectedModel, apiKey, setApiKey, apiKeyVisible, toggleApiKeyVisibility, clearApiKey } = useSyntheticStore();
 
   const [validationStatus, setValidationStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const validationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Check if apiKey was restored from localStorage
+  const [isPersisted, setIsPersisted] = useState(false);
+  useEffect(() => {
+    // If key exists on mount without user typing, it's from localStorage
+    if (apiKey && apiKey.trim().length >= 10) {
+      setIsPersisted(true);
+    }
+  }, []); // only on mount
 
   const handleModelChange = (modelId: string) => {
     const model = imageGenerationService.getModelById(modelId);
@@ -23,6 +32,7 @@ export default function ModelSelector() {
 
   const handleApiKeyChange = (value: string) => {
     setApiKey(value);
+    setIsPersisted(false);
 
     // Debounce validation (800ms after user stops typing)
     if (validationTimerRef.current) {
@@ -53,6 +63,13 @@ export default function ModelSelector() {
         setValidationMessage('Validasyon sırasında hata oluştu');
       }
     }, 800);
+  };
+
+  const handleClearApiKey = () => {
+    clearApiKey();
+    setValidationStatus('idle');
+    setValidationMessage(null);
+    setIsPersisted(false);
   };
 
   // Cleanup timer on unmount
@@ -99,7 +116,7 @@ export default function ModelSelector() {
               value={apiKey}
               onChange={(e) => handleApiKeyChange(e.target.value)}
               placeholder={`${selectedModel.name} API Anahtarı (${detectedProvider || 'sk-...'})`}
-              className={`h-9 w-[300px] rounded-lg border bg-background px-3 pr-20 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 transition-all ${
+              className={`h-9 w-[320px] rounded-lg border bg-background px-3 pr-24 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 transition-all ${
                 validationStatus === 'valid'
                   ? 'border-emerald-500 focus:ring-emerald-500'
                   : validationStatus === 'invalid'
@@ -107,6 +124,14 @@ export default function ModelSelector() {
                     : 'border-border focus:ring-primary'
               }`}
             />
+
+            {/* Persisted badge */}
+            {isPersisted && (
+              <div className="absolute -top-2.5 right-2 px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 text-[8px] font-medium text-amber-700 dark:text-amber-400">
+                Kayıtlı
+              </div>
+            )}
+
             {/* Validation indicator */}
             <div className="absolute right-8 top-1/2 -translate-y-1/2 flex items-center gap-1">
               {validationStatus === 'validating' && (
@@ -129,21 +154,21 @@ export default function ModelSelector() {
               {apiKeyVisible ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
 
-            {/* Clear button */}
+            {/* Clear/Trash button */}
             {apiKey && (
               <button
-                onClick={() => { setApiKey(''); setValidationStatus('idle'); setValidationMessage(null); }}
-                className="absolute right-20 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-[10px] p-0.5"
-                title="Temizle"
+                onClick={handleClearApiKey}
+                className="absolute right-[22px] top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive transition p-0.5"
+                title="API anahtarını sil (localStorage'dan da kaldırır)"
               >
-                ✕
+                <Trash2 size={12} />
               </button>
             )}
 
             {/* Validation message tooltip */}
             {validationMessage && (
               <div
-                className={`absolute -bottom-5 left-0 text-[9px] font-medium ${
+                className={`absolute -bottom-5 left-0 text-[9px] font-medium whitespace-nowrap ${
                   validationStatus === 'valid' ? 'text-emerald-500' : 'text-destructive'
                 }`}
               >

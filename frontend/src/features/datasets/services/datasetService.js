@@ -15,17 +15,25 @@ const saveLocalDatasets = (projectId, datasets) => {
 
 export const datasetService = {
   // GET /projects/{projectId}/datasets/
-  getAllDatasets: async (projectId) => {
+  // Cursor-based pagination destekler.
+  // @param {Object} [params] - { limit?: number, after?: string | null }
+  getAllDatasets: async (projectId, params = {}) => {
     if (!projectId || projectId === "null" || projectId === "default-project") {
-      return [];
+      return { data: [], next_cursor: null };
     }
 
     if (IS_MOCK) {
-      return getLocalDatasets(projectId);
+      const data = getLocalDatasets(projectId);
+      return { data, next_cursor: null };
     }
 
     try {
-      const response = await apiService.get(`projects/${projectId}/datasets/`, {
+      const queryParams = new URLSearchParams();
+      if (params.limit) queryParams.set('limit', String(params.limit));
+      if (params.after) queryParams.set('after', params.after);
+      const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+
+      const response = await apiService.get(`projects/${projectId}/datasets/${query}`, {
         headers: (() => {
           const token =
             localStorage.getItem('token') ||
@@ -37,25 +45,31 @@ export const datasetService = {
         })()
       });
 
-      if (Array.isArray(response)) return response;
-      if (Array.isArray(response?.data)) return response.data;
-      if (Array.isArray(response?.data?.results)) return response.data.results;
-      if (Array.isArray(response?.results)) return response.results;
+      // Backend format: { data: [...], next_cursor: "..." }
+      if (response?.data && typeof response.next_cursor !== 'undefined') {
+        return response;
+      }
+
+      // Fallback: eski format desteği
+      if (Array.isArray(response)) return { data: response, next_cursor: null };
+      if (Array.isArray(response?.data)) return { data: response.data, next_cursor: response.next_cursor ?? null };
+      if (Array.isArray(response?.results)) return { data: response.results, next_cursor: null };
+      if (Array.isArray(response?.data?.results)) return { data: response.data.results, next_cursor: null };
 
       if (response && typeof response === 'object') {
         const potentialArray = Object.values(response).find(val => Array.isArray(val));
-        if (potentialArray) return potentialArray;
+        if (potentialArray) return { data: potentialArray, next_cursor: null };
 
         if (response.data && typeof response.data === 'object') {
           const potentialDataArray = Object.values(response.data).find(val => Array.isArray(val));
-          if (potentialDataArray) return potentialDataArray;
+          if (potentialDataArray) return { data: potentialDataArray, next_cursor: null };
         }
       }
 
-      return [];
+      return { data: [], next_cursor: null };
     } catch (error) {
       console.error(`getAllDatasets Hatası (${projectId}):`, error);
-      return [];
+      return { data: [], next_cursor: null };
     }
   },
 

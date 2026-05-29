@@ -16,7 +16,7 @@ import { Sparkles } from 'lucide-react';
 
 export default function SyntheticPage() {
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts (multi-select aware)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't intercept if typing in an input
@@ -29,11 +29,13 @@ export default function SyntheticPage() {
 
       const store = useSyntheticStore.getState();
       const currentIndex = store.images.findIndex((img) => img.id === store.activeImageId);
+      const hasMultiSelection = store.selectedImageIds.length > 1;
 
       // Arrow Left: Previous image
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
         if (currentIndex > 0) {
+          store.deselectAllImages();
           store.setActiveImage(store.images[currentIndex - 1].id);
         }
       }
@@ -42,23 +44,35 @@ export default function SyntheticPage() {
       if (e.key === 'ArrowRight') {
         e.preventDefault();
         if (currentIndex < store.images.length - 1) {
+          store.deselectAllImages();
           store.setActiveImage(store.images[currentIndex + 1].id);
         }
       }
 
-      // K: Keep (open save dialog)
+      // K: Keep (multi-select aware)
       if (e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        const activeImage = store.getActiveImage();
-        if (activeImage) {
-          store.openSaveDialog(activeImage);
+        if (hasMultiSelection) {
+          const selectedImages = store.images.filter((img) =>
+            store.selectedImageIds.includes(img.id)
+          );
+          if (selectedImages.length > 0) {
+            store.openBulkSaveDialog(selectedImages);
+          }
+        } else {
+          const activeImage = store.getActiveImage();
+          if (activeImage) {
+            store.openSaveDialog(activeImage);
+          }
         }
       }
 
-      // D: Discard (remove image)
+      // D: Discard (multi-select aware)
       if (e.key.toLowerCase() === 'd') {
         e.preventDefault();
-        if (store.activeImageId) {
+        if (hasMultiSelection) {
+          store.bulkRemoveImages(store.selectedImageIds);
+        } else if (store.activeImageId) {
           store.removeImage(store.activeImageId);
         }
       }
@@ -76,41 +90,47 @@ export default function SyntheticPage() {
         <div className="shrink-0 bg-card border border-border rounded-xl p-3 shadow-sm">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-primary" />
                 <h1 className="text-base font-bold text-foreground">Synthetic Generation Studio</h1>
-        </div>
+              </div>
               <span className="hidden sm:inline text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border">
                 Bring Your Own Key
               </span>
-      </div>
+            </div>
             <ModelSelector />
-    </div>
+          </div>
         </div>
 
         {/* Main Workspace - Resizable Panels */}
         <div className="flex-1 min-h-0">
-          <ResizablePanelGroup direction="horizontal" className="h-full rounded-xl border border-border overflow-hidden bg-card shadow-sm">
+          <ResizablePanelGroup id="synthetic-main-group" direction="horizontal" className="h-full w-full rounded-xl border border-border bg-card shadow-sm">
             {/* Left Panel: Chat */}
-            <ResizablePanel defaultSize={30} minSize={20} maxSize={45}>
-              <GenerationChat />
+            <ResizablePanel id="synthetic-chat-panel" defaultSize="35%" minSize="22%" maxSize="50%">
+              <div className="h-full w-full">
+                <GenerationChat />
+              </div>
             </ResizablePanel>
 
             <ResizableHandle withHandle />
 
             {/* Right Panel: Image Viewer + Preview Strip */}
-            <ResizablePanel defaultSize={70} minSize={55}>
-              <ResizablePanelGroup direction="horizontal" className="h-full">
+            <ResizablePanel id="synthetic-right-panel" defaultSize="65%" minSize="50%">
+              <ResizablePanelGroup id="synthetic-viewer-group" direction="horizontal" className="h-full w-full">
                 {/* Main Image Viewer */}
-                <ResizablePanel defaultSize={85} minSize={60}>
-                  <ImageViewer />
+                <ResizablePanel id="synthetic-image-viewer" defaultSize="82%" minSize="10%">
+                  <div className="h-full w-full">
+                    <ImageViewer />
+                  </div>
                 </ResizablePanel>
 
                 <ResizableHandle withHandle />
 
                 {/* Vertical Preview Strip */}
-                <ResizablePanel defaultSize={15} minSize={10} maxSize={25}>
-                  <ImagePreviewStrip />
+                <ResizablePanel id="synthetic-preview-strip" defaultSize="18%" minSize="12%" maxSize="30%">
+                  <div className="h-full w-full">
+                    <ImagePreviewStrip />
+                  </div>
                 </ResizablePanel>
               </ResizablePanelGroup>
             </ResizablePanel>

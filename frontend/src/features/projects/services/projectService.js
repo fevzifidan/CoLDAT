@@ -4,9 +4,15 @@ const IS_TAXONOMY_MOCK = true;
 export const projectService = {
   /**
    * 1. Tüm projeleri listele (GET /projects/)
+   * Cursor-based pagination destekler.
+   * @param {Object} [params] - { limit?: number, after?: string | null }
    */
-  getAllProjects: async () => {
-    const response = await apiService.get('projects/');
+  getAllProjects: async (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.set('limit', String(params.limit));
+    if (params.after) queryParams.set('after', params.after);
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    const response = await apiService.get(`projects/${query}`);
     return response;
   },
 
