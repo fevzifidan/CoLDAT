@@ -12,7 +12,7 @@ import { datasetService } from '@/features/datasets/services/datasetService';
 
 const DashboardHome = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation(['pages']);
+  const { t } = useTranslation(['dashboard', 'common']);
 
   // --- API STATE YÖNETİMİ ---
   const [projectsList, setProjectsList] = useState<any[]>([]);
@@ -56,7 +56,7 @@ setDatasetsList(activeDatasets);
 
     } catch (err: any) {
       console.error("Dashboard loading error:", err);
-      setError(err?.response?.data?.message || "Failed to sync ecosystem metrics with backend.");
+      setError(err?.response?.data?.message || t('dashboard:fetch_error'));
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +95,7 @@ setDatasetsList(activeDatasets);
     return (
       <div className="h-[60vh] w-full flex flex-col items-center justify-center gap-3 text-muted-foreground">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm font-medium tracking-wide">Synchronizing dashboard metrics...</p>
+        <p className="text-sm font-medium tracking-wide">{t('dashboard:loading_text')}</p>
       </div>
     );
   }
@@ -107,7 +107,7 @@ setDatasetsList(activeDatasets);
           <AlertCircle size={28} className="mx-auto text-destructive animate-pulse" />
           <p className="text-xs text-destructive font-medium leading-relaxed">{error}</p>
           <Button size="sm" variant="outline" onClick={fetchDashboardData} className="text-xs h-8">
-            Retry Connection
+            {t('dashboard:retry_button')}
           </Button>
         </div>
       </div>
@@ -119,10 +119,10 @@ setDatasetsList(activeDatasets);
       {/* Header */}
       <div className="text-left space-y-1 ml-1">
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-          {t('pages:dashboard.title', 'Overview')}
+          {t('dashboard:title')}
         </h1>
         <p className="text-sm text-muted-foreground font-medium italic opacity-70">
-          {t('pages:dashboard.description', 'Welcome back! Here is a quick summary of your ecosystem.')}
+          {t('dashboard:description')}
         </p>
       </div>
 
@@ -131,10 +131,10 @@ setDatasetsList(activeDatasets);
         <div className="flex justify-between items-end px-1">
           <div className="text-left">
             <h2 className="text-xl font-bold text-foreground">
-              {t('pages:dashboard.sections.recent_tasks', 'Recent Tasks')}
+              {t('dashboard:sections.recent_tasks')}
             </h2>
             <p className="text-xs text-muted-foreground italic">
-              {t('pages:dashboard.sections.tasks_description', 'Active annotation jobs assigned to you.')}
+              {t('dashboard:sections.tasks_description')}
             </p>
           </div>
           {recentTasks.length > 0 && (
@@ -143,7 +143,7 @@ setDatasetsList(activeDatasets);
               onClick={() => navigate('/tasks')} 
               className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
             >
-              {t('pages:dashboard.show_more', 'Show More')}
+              {t('dashboard:show_more')}
             </Button>
           )}
         </div>
@@ -160,7 +160,7 @@ setDatasetsList(activeDatasets);
                <span className="text-xl text-muted-foreground font-serif font-bold">!</span>
             </div>
             <p className="text-xs text-muted-foreground font-semibold text-center px-4 max-w-xs">
-              {t('pages:dashboard.no_assigned_tasks', 'No tasks assigned to you at the moment.')}
+              {t('dashboard:no_assigned_tasks')}
             </p>
           </div>
         )}
@@ -171,9 +171,9 @@ setDatasetsList(activeDatasets);
         <div className="flex justify-between items-end px-1">
           <div>
             <h2 className="text-xl font-bold text-foreground">
-              {t('pages:dashboard.sections.recent_datasets', 'Recent Datasets')}
+              {t('dashboard:sections.recent_datasets')}
             </h2>
-            <p className="text-xs text-muted-foreground italic">Datasets linked with your primary active workspace.</p>
+            <p className="text-xs text-muted-foreground italic">{t('dashboard:sections.datasets_description')}</p>
           </div>
           {recentDatasets.length > 0 && (
             <Button 
@@ -181,7 +181,7 @@ setDatasetsList(activeDatasets);
               onClick={() => navigate('/datasets')} 
               className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
             >
-              {t('pages:dashboard.show_more', 'Show More')}
+              {t('dashboard:show_more')}
             </Button>
           )}
         </div>
@@ -194,7 +194,7 @@ setDatasetsList(activeDatasets);
           </div>
         ) : (
           <div className="text-center py-10 border border-dashed border-border rounded-2xl text-muted-foreground text-xs">
-            No datasets found for the primary project directory.
+            {t('dashboard:sections.datasets_empty')}
           </div>
         )}
       </section>
@@ -204,9 +204,9 @@ setDatasetsList(activeDatasets);
         <div className="flex justify-between items-end px-1">
           <div>
             <h2 className="text-xl font-bold text-foreground">
-              {t('pages:dashboard.sections.recent_projects', 'Recent Projects')}
+              {t('dashboard:sections.recent_projects')}
             </h2>
-            <p className="text-xs text-muted-foreground italic">Enterprise project structures you have validation clearances for.</p>
+            <p className="text-xs text-muted-foreground italic">{t('dashboard:sections.projects_description')}</p>
           </div>
           {recentProjects.length > 0 && (
             <Button 
@@ -214,7 +214,7 @@ setDatasetsList(activeDatasets);
               onClick={() => navigate('/projects')} 
               className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
             >
-              {t('pages:dashboard.show_more', 'Show More')}
+              {t('dashboard:show_more')}
             </Button>
           )}
         </div>
@@ -227,7 +227,7 @@ setDatasetsList(activeDatasets);
           </div>
         ) : (
           <div className="text-center py-10 border border-dashed border-border rounded-2xl text-muted-foreground text-xs">
-            No projects registers found in this workspace context.
+            {t('dashboard:sections.projects_empty')}
           </div>
         )}
       </section>

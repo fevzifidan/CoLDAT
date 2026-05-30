@@ -1,39 +1,5 @@
 {
-  "dashboard": {
-    "title": "Overview",
-    "description": "Welcome back! Here is a quick summary of your ecosystem.",
-    "no_assigned_tasks": "There are no tasks assigned to you at the moment.",
-    "show_more": "Show More",
-    "files": "PROCESSED FILE",
-    "sections": {
-      "recent_tasks": "Recent Tasks",
-      "tasks_description": "Active labeling jobs assigned to you.",
-      "recent_datasets": "Recent Datasets",
-      "recent_projects": "Recent Projects"
-    },
-    "buttons": {
-      "manage": "MANAGE",
-      "start_labeling": "START LABELING",
-      "open": "OPEN PROJECT",
-      "create_project": "Create New Project"
-    },
-    "status": {
-      "new": "NEW",
-      "in_progress": "IN PROGRESS",
-      "completed": "COMPLETED"
-    },
-    "tasks": {
-      "object_detection": "Object Detection",
-      "entity_recognition": "Entity Recognition",
-      "semantic_relation": "Semantic Relation"
-    },
-    "roles": {
-      "all_roles": "All Roles",
-      "annotator": "Annotator",
-      "viewer": "Viewer",
-      "admin": "Admin"
-    }
-  },
+  
   "datasets": {
     "title": "Datasets",
     "create_dataset": "Create Dataset",

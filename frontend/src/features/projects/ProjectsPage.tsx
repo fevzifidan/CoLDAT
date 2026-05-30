@@ -22,7 +22,7 @@ interface ExtendedProject {
 }
 
 const ProjectsPage = () => {
-  const { t } = useTranslation(['pages']);
+  const { t } = useTranslation(['projects', 'pages']);
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
@@ -137,7 +137,7 @@ const ProjectsPage = () => {
         <div className="p-6 space-y-6 max-w-7xl mx-auto relative">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 border-border">
         <h1 className="text-2xl font-extrabold text-foreground">
-          {t('pages:dashboard.sections.recent_projects', 'Recent Projects')}
+          {t('projects:title')}
         </h1>
         
         <div className="flex flex-wrap items-center gap-3">
@@ -157,7 +157,7 @@ const ProjectsPage = () => {
             className="bg-primary hover:bg-primary/90 h-9 font-medium shadow-sm gap-1.5 text-primary-foreground"
           >
             <Plus size={16} />
-            {t('pages:dashboard.buttons.create_project', 'Create New Project')}
+            {t('projects:buttons.create_project', 'Create New Project')}
           </Button>
 
           <div>
@@ -169,10 +169,10 @@ const ProjectsPage = () => {
               }}
               className="flex h-9 w-44 rounded-md border border-border bg-card px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer focus-visible:outline-none text-muted-foreground font-medium"
             >
-              <option value="ALL">✨ {t('pages:dashboard.roles.all_roles', 'All Roles')}</option>
-              <option value="ADMIN">🛡️ {t('pages:dashboard.roles.admin', 'Admin')}</option>
-              <option value="ANNOTATOR">✏️ {t('pages:dashboard.roles.annotator', 'Annotator')}</option>
-              <option value="VIEWER">👁️ {t('pages:dashboard.roles.viewer', 'Viewer')}</option>
+                            <option value="ALL">✨ {t('projects:roles.all_roles', 'All Roles')}</option>
+              <option value="ADMIN">🛡️ {t('projects:roles.admin', 'Admin')}</option>
+              <option value="ANNOTATOR">✏️ {t('projects:roles.annotator', 'Annotator')}</option>
+              <option value="VIEWER">👁️ {t('projects:roles.viewer', 'Viewer')}</option>
             </select>
           </div>
 
@@ -220,7 +220,7 @@ const ProjectsPage = () => {
         <>
                     {visibleProjects.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground text-sm">
-              {t('pages:dashboard.no_projects', 'No active projects found matching criteria.')}
+              {t('projects:no_projects', 'No active projects found matching criteria.')}
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -249,7 +249,7 @@ const ProjectsPage = () => {
       {!isLoading && displayLimit < filteredProjects.length && (
                 <div className="flex justify-center mt-8">
           <Button onClick={() => setDisplayLimit(prev => prev + 4)} variant="outline">
-            {t('pages:dashboard.show_more', 'Show More')} 
+            {t('projects:show_more', 'Show More')} 
           </Button>
         </div>
       )}
@@ -258,7 +258,7 @@ const ProjectsPage = () => {
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-card text-card-foreground rounded-xl shadow-2xl border border-border w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
             <div className="p-4 border-b border-border flex items-center justify-between bg-muted">
-              <h3 className="font-bold text-lg text-foreground">{t('pages:dashboard.buttons.create_project', 'Create New Project')}</h3>
+              <h3 className="font-bold text-lg text-foreground">{t('projects:buttons.create_project', 'Create New Project')}</h3>
               <button onClick={() => setIsCreateModalOpen(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground">
                 <X size={18} />
               </button>

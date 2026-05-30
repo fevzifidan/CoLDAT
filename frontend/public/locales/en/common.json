@@ -1,5 +1,6 @@
 {
   "brand": "CoLDAT",
+  "workspace_title": "CoLDAT Workspace",
   "actions": {
     "save": "Save",
     "cancel": "Cancel",
@@ -21,6 +22,11 @@
     "deleting": "Deleting...",
     "updating": "Updating...",
     "saving": "Saving...",
+    "creating": "Creating...",
+    "moved_to_trash": "Moved to trash.",
+    "back": "Go to Projects",
+    "cancel": "Cancel",
+    "close": "Close",
     "load_more": "Load More"
   },
   "error": {

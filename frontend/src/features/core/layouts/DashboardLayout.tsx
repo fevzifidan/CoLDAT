@@ -3,8 +3,11 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { Separator } from "@/components/ui/separator"
 import { AppSidebar } from "@/features/core/components/AppSidebar/AppSidebar"
 import { Outlet } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 
 export default function DashboardLayout({ children }: { children?: React.ReactNode }) {
+  const { t } = useTranslation(['common']);
+
   return (
     // Ekranı sabitleyen dış iskelet
     <div className="fixed inset-0 h-screen w-screen overflow-hidden bg-background antialiased">
@@ -29,7 +32,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             <SidebarTrigger className="h-8 w-8 text-muted-foreground hover:text-foreground" />
             <Separator orientation="vertical" className="h-4" />
             <h1 className="text-sm font-semibold tracking-tight text-foreground select-none">
-              CoLDAT Workspace
+              {t('common:workspace_title')}
             </h1>
           </header>
           

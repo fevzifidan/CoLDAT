@@ -1,0 +1,17 @@
+{
+  "title": "Tasks",
+  "create_new": "Create New Task",
+  "search_placeholder": "Search by ID, Dataset or Assignee...",
+  "show_more": "Show More",
+  "empty_list": "No tasks match your filter criteria.",
+  "filter": {
+    "all_progress": "All Statuses",
+    "status": {
+      "open": "OPEN",
+      "in_progress": "IN PROGRESS",
+      "pending": "PENDING",
+      "approved": "APPROVED",
+      "rejected": "REJECTED"
+    }
+  }
+}

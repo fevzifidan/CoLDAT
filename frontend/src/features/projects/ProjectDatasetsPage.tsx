@@ -161,7 +161,7 @@ export const ProjectDatasetsPage = () => {
           </Button>
           <div>
             <h1 className="text-xl font-extrabold tracking-tight">
-              {projectDetails?.name || t('pages:dashboard.sections.loading', 'Loading Project...')}
+              {projectDetails?.name || t('projects:loading', 'Loading Project...')}
             </h1>
             <p className="text-xs text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">
               {t('pages:datasets.manage_linked', 'Linked Datasets Management')}

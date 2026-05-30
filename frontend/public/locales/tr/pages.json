@@ -1,39 +1,5 @@
 {
-  "dashboard": {
-    "title": "Genel Bakış",
-    "description": "Tekrar hoş geldiniz! İşte ekosisteminizin hızlı bir özeti.",
-    "no_assigned_tasks": "Şu anda size atanmış bir g​​örev bulunmuyor.",
-    "show_more": "Daha Fazla Göster",
-    "files": "İŞLENMİŞ DOSYA",
-    "sections": {
-      "recent_tasks": "Son Görevler",
-      "tasks_description": "Size atanmış aktif etiketleme işleri.",
-      "recent_datasets": "Son Veri Setleri",
-      "recent_projects": "Son Projeler"
-    },
-    "buttons": {
-      "manage": "YÖNET",
-      "start_labeling": "ETİKETLEMEYE BAŞLA",
-      "open": "PROJEYİ AÇ",
-      "create_project": "Yeni Proje Oluştur"
-    },
-    "status": {
-      "new": "YENİ",
-      "in_progress": "DEVAM EDİYOR",
-      "completed": "TAMAMLANDI"
-    },
-    "tasks": {
-      "object_detection": "Nesne Algılama",
-      "entity_recognition": "Varlık Tanıma",
-      "semantic_relation": "Anlamsal İlişki"
-    },
-    "roles": {
-      "all_roles": "Tüm Roller",
-      "annotator": "Etiketleyici",
-      "viewer": "İzleyici",
-      "admin": "Yönetici"
-    }
-  },
+  
   "datasets": {
     "title": "Veri Setleri",
     "create_dataset": "Veri Seti Oluştur",

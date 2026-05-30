@@ -1,5 +1,6 @@
 {
   "brand": "CoLDAT",
+  "workspace_title": "CoLDAT Çalışma Alanı",
   "actions": {
     "save": "Kaydet",
     "cancel": "İptal",
@@ -21,6 +22,11 @@
     "deleting": "Siliniyor...",
     "updating": "Güncelleniyor...",
     "saving": "Kaydediliyor...",
+    "creating": "Oluşturuluyor...",
+    "moved_to_trash": "Çöp kutusuna taşındı.",
+    "back": "Projelere Dön",
+    "cancel": "İptal",
+    "close": "Kapat",
     "load_more": "Daha Fazla Yükle"
   },
   "error": {

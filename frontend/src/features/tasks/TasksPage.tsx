@@ -26,7 +26,7 @@ interface TaskItem {
 }
 
 const TasksPage = () => {
-  const { t } = useTranslation(['pages', 'common']);
+  const { t } = useTranslation(['tasks', 'pages', 'common']);
   
   // --- API STATE YÖNETİMİ ---
   const [tasks, setTasks] = useState<TaskItem[]>([]);
@@ -265,7 +265,7 @@ const fetchTasks = async () => {
       {!isLoading && displayLimit < filteredTasks.length && (
         <div className="flex justify-center mt-8">
                     <Button onClick={() => setDisplayLimit(prev => prev + 4)} variant="outline">
-            {t('pages:dashboard.show_more', 'Load More')} 
+            {t('tasks:show_more', 'Load More')} 
           </Button>
         </div>
       )}

@@ -1,0 +1,17 @@
+{
+  "title": "Görevler",
+  "create_new": "Yeni Görev Oluştur",
+  "search_placeholder": "ID, Veri Seti veya Görevliye göre ara...",
+  "show_more": "Daha Fazla Göster",
+  "empty_list": "Filtre kriterlerine uygun görev bulunamadı.",
+  "filter": {
+    "all_progress": "Tüm Durumlar",
+    "status": {
+      "open": "AÇIK",
+      "in_progress": "DEVAM EDİYOR",
+      "pending": "BEKLEMEDE",
+      "approved": "ONAYLANDI",
+      "rejected": "REDDEDİLDİ"
+    }
+  }
+}

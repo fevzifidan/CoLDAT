@@ -40,7 +40,7 @@ export const ProjectCard = ({
   onStatusChange
 }: ProjectCardProps) => {
   const navigate = useNavigate();
-  const { t } = useTranslation(['pages']);
+  const { t } = useTranslation(['projects']);
 
   const rawRole = project.role?.toLowerCase() || 'viewer';
 
@@ -64,20 +64,20 @@ export const ProjectCard = ({
   const getButtonConfig = () => {
     if (rawRole === 'admin') {
       return {
-        text: t('pages:dashboard.buttons.manage', 'MANAGE'),
+        text: t('projects:buttons.manage', 'MANAGE'),
         icon: <Settings className="ml-1 w-3 h-3" />
       };
     }
 
     if (cardType === 'task') {
       return {
-        text: t('pages:dashboard.buttons.start_labeling', 'START LABELING'),
+        text: t('projects:buttons.start_labeling', 'START LABELING'),
         icon: <ArrowUpRight className="ml-1 w-3 h-3" />
       };
     }
 
     return {
-      text: t('pages:dashboard.buttons.open', 'OPEN PROJECT'),
+      text: t('projects:buttons.open', 'OPEN PROJECT'),
       icon: <Eye className="ml-1 w-3 h-3" />
     };
   };
@@ -128,7 +128,7 @@ export const ProjectCard = ({
               className={`text-[9px] font-bold uppercase rounded-lg border px-2 py-0.5 transition-colors cursor-pointer select-none ${getStatusStyles(project.status)}`}
               title="Click to cycle status"
             >
-              ⚡ {t(`pages:dashboard.status.${statusKey}`, currentStatus)}
+              ⚡ {t(`projects:status.${statusKey}`, currentStatus)}
             </button>
           ) : (
             <Badge
@@ -136,7 +136,7 @@ export const ProjectCard = ({
               className="text-[8px] opacity-70 uppercase px-2 py-0"
             >
               {t(
-                `pages:dashboard.roles.${roleKey}`,
+                `projects:roles.${roleKey}`,
                 project.role || 'Viewer'
               )}
             </Badge>
@@ -155,7 +155,7 @@ export const ProjectCard = ({
           </span>
 
           <span className="text-[9px] text-muted-foreground uppercase font-black tracking-widest italic">
-            {t('pages:dashboard.files', 'PROCESSED FILES')}
+            {t('projects:files', 'PROCESSED FILES')}
           </span>
         </div>
       </CardContent>
@@ -176,7 +176,7 @@ export const ProjectCard = ({
               onClick={handleDatasetNavigate}
             >
               <Database size={12} />
-              {t('pages:dashboard.buttons.dataset', 'DATASET')}
+              {t('projects:buttons.dataset', 'DATASET')}
             </Button>
           </>
         ) : (
