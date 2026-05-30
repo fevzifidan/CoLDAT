@@ -9,7 +9,7 @@ import notificationService from '@/shared/services/notification/notification.ser
 import { apiKeyService, type ApiKey } from './services/apiKeyService';
 
 const ApiKeysPage = () => {
-  const { t } = useTranslation(['pages', 'common']);
+  const { t } = useTranslation(['api-keys', 'common']);
   const datasetId = "default-dataset-id"; 
 
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -39,7 +39,7 @@ const ApiKeysPage = () => {
       .then((data) => setApiKeys(data || []))
       .catch((error) => {
         console.error("API Key yükleme hatası:", error);
-        notificationService.error(t("pages:apikeys_detail.messages.load_failed", "Failed to load API keys."));
+        notificationService.error(t("api-keys:messages.load_failed"));
       })
       .finally(() => setLoading(false));
   };
@@ -48,7 +48,7 @@ const ApiKeysPage = () => {
     e.preventDefault();
     const trimmedName = newKeyName.trim();
     if (!trimmedName) {
-      notificationService.error(t("pages:apikeys_detail.messages.name_required", "Name cannot be empty!"));
+      notificationService.error(t("api-keys:messages.name_required"));
       return;
     }
 
@@ -57,7 +57,7 @@ const ApiKeysPage = () => {
         // Yeni eklenen anahtarı en başa koyuyoruz
         setApiKeys(prev => [createdKey, ...prev]);
         setNewKeyName("");
-        notificationService.success(t("pages:apikeys_detail.messages.created_success", "New API key generated successfully."));
+        notificationService.success(t("api-keys:messages.created_success"));
         
         // Şemaya göre yeni oluşturulduğu an api_key string'i geliyorsa onu hemen görünür yapıyoruz
         if (createdKey.api_key) {
@@ -66,7 +66,7 @@ const ApiKeysPage = () => {
       })
       .catch((error) => {
         console.error("Key oluşturma hatası:", error);
-        notificationService.error(t("pages:apikeys_detail.messages.create_failed", "An error occurred while generating the key."));
+        notificationService.error(t("api-keys:messages.create_failed"));
       });
   };
 
@@ -78,7 +78,7 @@ const handleSaveExternalKey = (e: React.FormEvent) => {
   const trimmedKey = externalKey.trim();
 
   if (!trimmedKey) {
-    notificationService.error(t("pages:apikeys_detail.messages.name_required", "Name cannot be empty!"));
+    notificationService.error(t("api-keys:messages.name_required"));
     return;
   }
 
@@ -86,21 +86,21 @@ const handleSaveExternalKey = (e: React.FormEvent) => {
   const isValidOpenAI = trimmedKey.startsWith("sk-") && trimmedKey.length >= 10;
 
   if (!isValidOpenAI) {
-    notificationService.error(t("pages:apikeys_detail.messages.invalid_key", "Lütfen 'sk-' ile başlayan en az 10 karakterli geçerli bir OpenAI anahtarı giriniz."));
+    notificationService.error(t("api-keys:messages.invalid_key"));
     return;
   }
 
   // Tüm şartlar sağlandıysa tarayıcı hafızasına kaydet
   apiKeyService.saveExternalKey(trimmedKey);
   setExternalSaved(true);
-  notificationService.success(t("pages:apikeys_detail.messages.external_success_toast", "External API key connected successfully!"));
+  notificationService.success(t("api-keys:messages.external_success_toast"));
 };
 
   const handleClearExternalKey = () => {
     apiKeyService.clearExternalKey();
     setExternalKey("");
     setExternalSaved(false);
-    notificationService.info(t("pages:apikeys_detail.messages.key_cleared", "External key cleared from browser storage."));
+    notificationService.info(t("api-keys:messages.key_cleared"));
   };
 
   const handleToggleReveal = (keyId: string) => {
@@ -120,26 +120,26 @@ const handleSaveExternalKey = (e: React.FormEvent) => {
         if (data && data.api_key) { 
           setRevealedKeys(prev => ({ ...prev, [keyId]: data.api_key! }));
         } else {
-          notificationService.error(t("pages:apikeys_detail.messages.reveal_failed", "Key authentication failed."));
+          notificationService.error(t("api-keys:messages.reveal_failed"));
         }
       })
       .catch(() => {
-        notificationService.error(t("pages:apikeys_detail.messages.reveal_failed", "Key authentication failed."));
+        notificationService.error(t("api-keys:messages.reveal_failed"));
       });
   };
 
   const handleRevokeKey = (keyId: string) => {
-    if (!confirm(t("pages:apikeys_detail.messages.confirm_revoke", "Are you sure you want to revoke this API key?"))) {
+    if (!confirm(t("api-keys:messages.confirm_revoke"))) {
       return;
     }
 
     apiKeyService.deleteApiKey(datasetId, keyId)
       .then(() => {
         setApiKeys(prev => prev.filter(k => k.id !== keyId));
-        notificationService.success(t("pages:apikeys_detail.messages.revoked_success", "API key has been permanently revoked."));
+        notificationService.success(t("api-keys:messages.revoked_success"));
       })
       .catch(() => {
-        notificationService.error(t("pages:apikeys_detail.messages.revoke_failed", "An error occurred."));
+        notificationService.error(t("api-keys:messages.revoke_failed"));
       });
   };
 
@@ -147,7 +147,7 @@ const handleSaveExternalKey = (e: React.FormEvent) => {
     if (!text) return;
     navigator.clipboard.writeText(text);
     setCopiedId(id);
-    notificationService.success(t("common:status.success_copied", "Copied to clipboard!"));
+    notificationService.success(t("common:status.success_copied"));
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -155,7 +155,7 @@ const handleSaveExternalKey = (e: React.FormEvent) => {
     return (
       <div className="flex h-64 items-center justify-center font-mono text-muted-foreground min-h-screen">
         <Loader2 className="animate-spin text-indigo-600 mr-2 h-5 w-5" />
-        {t("common:status.loading", "Loading...")}
+        {t("common:status.loading")}
       </div>
     );
   }
@@ -164,10 +164,10 @@ const handleSaveExternalKey = (e: React.FormEvent) => {
         <div className="p-8 space-y-8 max-w-5xl mx-auto min-h-screen">
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-          <Key className="text-primary h-8 w-8" /> {t('pages:apikeys_detail.title', 'Integration API Keys')}
+          <Key className="text-primary h-8 w-8" /> {t('api-keys:page.title')}
         </h1>
         <p className="text-muted-foreground mt-1">
-          {t('pages:apikeys_detail.description', 'Manage secret keys to access your datasets securely from external applications or SDKs.')}
+          {t('api-keys:page.description')}
         </p>
       </div>
 
@@ -175,17 +175,17 @@ const handleSaveExternalKey = (e: React.FormEvent) => {
       <Card className="bg-card border-2 border-dashed border-primary/40 shadow-md">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
-            <Cpu className="text-violet-500 h-5 w-5" /> {t('pages:apikeys_detail.external_provider_title', 'Harici Model Sağlayıcı Yapılandırması (Sunum Modu)')}
+            <Cpu className="text-violet-500 h-5 w-5" /> {t('api-keys:external_provider.title')}
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            {t('pages:apikeys_detail.external_provider_desc', 'Sentetik veri stüdyosunda model çalıştırmak ve komut göndermek için kendi OpenAI API anahtarınızı bağlayın.')}
+            {t('api-keys:external_provider.description')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-violet-500/10 border border-violet-500/20 rounded-lg p-3 flex gap-2.5 text-violet-700 dark:text-violet-300 text-xs">
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-violet-600 dark:text-violet-400" />
             <div>
-              {t('pages:apikeys_detail.external_privacy_notice', 'Gizlilik Garantisi: Girdiğiniz anahtar kesinlikle uzak veritabanına (backend) kaydedilmez. Sadece bu tarayıcının yerel hafızasında saklanır ve doğrudan yapay zeka motoruna yönlendirilir.')}
+              {t('api-keys:external_provider.privacy_notice')}
             </div>
           </div>
 
@@ -193,7 +193,7 @@ const handleSaveExternalKey = (e: React.FormEvent) => {
             <div className="relative flex-1">
               <Input 
                 type={showExternalKey ? "text" : "password"}
-                placeholder="sk-proj-..."
+                placeholder={t('api-keys:external_provider.input_placeholder')}
                 value={externalKey}
                 onChange={(e) => setExternalKey(e.target.value)}
                 className="w-full bg-background border-border text-foreground pr-10"
@@ -208,18 +208,18 @@ const handleSaveExternalKey = (e: React.FormEvent) => {
             </div>
             <Button type="submit" className="bg-violet-600 hover:bg-violet-700 text-white font-medium">
               {externalSaved 
-                ? t('pages:apikeys_detail.external_btn_update', 'Anahtarı Güncelle') 
-                : t('pages:apikeys_detail.external_btn_connect', 'Anahtarı Bağla')}
+                ? t('api-keys:external_provider.btn_update') 
+                : t('api-keys:external_provider.btn_connect')}
             </Button>
             {externalSaved && (
               <Button type="button" variant="outline" onClick={handleClearExternalKey} className="text-destructive border-destructive/30 hover:bg-destructive/10">
-                {t('pages:apikeys_detail.external_btn_clear', 'Temizle')}
+                {t('api-keys:external_provider.btn_clear')}
               </Button>
             )}
           </form>
           {externalSaved && (
             <div className="flex items-center gap-1.5 text-xs text-emerald-500 font-medium animate-fadeIn">
-              <Check size={14} /> {t('pages:apikeys_detail.external_success_msg', 'Anahtar başarıyla doğrulandı og tarayıcı oturumuna bağlandı. Sentetik Veri Stüdyosu aktif!')}
+              <Check size={14} /> {t('api-keys:external_provider.success_message')}
             </div>
           )}
         </CardContent>
@@ -228,20 +228,20 @@ const handleSaveExternalKey = (e: React.FormEvent) => {
       {/* --- KART 2: SİSTEM API GENERATE ALANI --- */}
       <Card className="bg-card border border-border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">{t('pages:apikeys_detail.generate_title', 'Create New Token')}</CardTitle>
-          <CardDescription className="text-muted-foreground">{t('pages:apikeys_detail.generate_desc', 'Give your key a descriptive name to remember where it is used.')}</CardDescription>
+          <CardTitle className="text-lg">{t('api-keys:generate.title')}</CardTitle>
+          <CardDescription className="text-muted-foreground">{t('api-keys:generate.description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleCreateKey} className="flex gap-4">
             <Input 
-              placeholder={t('pages:apikeys_detail.placeholder', 'e.g., Python SDK Production, Jenkins CI')}
+              placeholder={t('api-keys:generate.name_placeholder')}
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
               className="flex-1 bg-background border-border text-foreground"
               maxLength={50}
             />
             <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium whitespace-nowrap">
-              <Plus className="mr-1.5 h-4 w-4" /> {t('pages:apikeys_detail.generate_btn', 'Generate Key')}
+              <Plus className="mr-1.5 h-4 w-4" /> {t('api-keys:generate.button')}
             </Button>
           </form>
         </CardContent>
@@ -250,8 +250,8 @@ const handleSaveExternalKey = (e: React.FormEvent) => {
       <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 flex gap-3 text-amber-700 dark:text-amber-400 text-sm">
         <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-500" />
         <div>
-          <span className="font-bold">{t('pages:apikeys_detail.warning_title', 'Security Warning:')}</span>{' '}
-          {t('pages:apikeys_detail.security_notice', 'Do not share your API keys in public repositories or client-side code.')}
+          <span className="font-bold">{t('api-keys:security_warning.title')}</span>{' '}
+          {t('api-keys:security_warning.message')}
         </div>
       </div>
 
@@ -259,8 +259,8 @@ const handleSaveExternalKey = (e: React.FormEvent) => {
       <Card className="bg-card border border-border shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between border-b border-border pb-4">
           <div>
-            <CardTitle className="text-lg">{t('pages:apikeys_detail.list_title', 'Active API Keys')}</CardTitle>
-            <CardDescription className="text-muted-foreground">{t('pages:apikeys_detail.list_desc', 'Tokens currently authorized to make requests under this account.')}</CardDescription>
+            <CardTitle className="text-lg">{t('api-keys:key_list.title')}</CardTitle>
+            <CardDescription className="text-muted-foreground">{t('api-keys:key_list.description')}</CardDescription>
           </div>
           <Button variant="ghost" size="icon" onClick={fetchApiKeys} className="text-muted-foreground hover:bg-accent h-8 w-8">
             <RefreshCw className="h-4 w-4" />
@@ -269,7 +269,7 @@ const handleSaveExternalKey = (e: React.FormEvent) => {
         <CardContent className="space-y-4 pt-4">
           {apiKeys.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm italic">
-              {t('pages:apikeys_detail.empty_list', 'No API keys generated yet.')}
+              {t('api-keys:key_list.empty')}
             </div>
           ) : (
             apiKeys.map((key) => {
@@ -293,7 +293,7 @@ const handleSaveExternalKey = (e: React.FormEvent) => {
                     </div>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => handleRevokeKey(key.id)} className="text-destructive border-destructive/20 hover:bg-destructive/10 shrink-0">
-                    <Trash2 size={14} className="mr-2" /> {t('pages:apikeys_detail.revoke_btn', 'Revoke')}
+                    <Trash2 size={14} className="mr-2" /> {t('api-keys:key_list.revoke_button')}
                   </Button>
                 </div>
               );

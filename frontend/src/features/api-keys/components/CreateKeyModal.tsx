@@ -1,5 +1,6 @@
 // src/features/api-keys/components/CreateKeyModal.tsx
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { 
   Dialog, 
   DialogContent, 
@@ -7,7 +8,7 @@ import {
   DialogTitle, 
   DialogFooter, 
   DialogDescription 
-} from "../../../components/ui/dialog"; 
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,14 +22,13 @@ interface CreateKeyModalProps {
 }
 
 export function CreateKeyModal({ isOpen, onClose, onKeyCreated }: CreateKeyModalProps) {
+  const { t } = useTranslation('api-keys');
   const [keyName, setKeyName] = useState("");
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
 
   const handleCreate = () => {
-    // Gerçek anahtar (kullanıcının kopyalaması için)
     const rawKey = `sk-coldat-${Math.random().toString(36).substring(2, 12)}${Math.random().toString(36).substring(2, 12)}`;
     
-    // Tabloya gönderilecek maskelenmiş obje
     const newKeyObj = {
       id: Date.now(),
       name: keyName,
@@ -37,8 +37,8 @@ export function CreateKeyModal({ isOpen, onClose, onKeyCreated }: CreateKeyModal
       status: "Active"
     };
     
-    setGeneratedKey(rawKey); // Modalda tam halini göster
-    onKeyCreated(newKeyObj);  // Tabloya (parent) gönder
+    setGeneratedKey(rawKey);
+    onKeyCreated(newKeyObj);
   };
 
   const copyToClipboard = () => {
@@ -59,25 +59,25 @@ export function CreateKeyModal({ isOpen, onClose, onKeyCreated }: CreateKeyModal
         {!generatedKey ? (
           <>
             <DialogHeader>
-              <DialogTitle>Create New API Key</DialogTitle>
+              <DialogTitle>{t('create_modal.title')}</DialogTitle>
               <DialogDescription>
-                Give your key a name to identify it later.
+                {t('create_modal.description')}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Key Name</Label>
+                <Label htmlFor="name">{t('create_modal.key_name_label')}</Label>
                 <Input 
                   id="name" 
-                  placeholder="e.g. Production-Server" 
+                  placeholder={t('create_modal.key_name_placeholder')}
                   value={keyName}
                   onChange={(e) => setKeyName(e.target.value)}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button onClick={handleCreate} disabled={!keyName}>Generate Key</Button>
+              <Button variant="outline" onClick={onClose}>{t('create_modal.cancel_button')}</Button>
+              <Button onClick={handleCreate} disabled={!keyName}>{t('create_modal.generate_button')}</Button>
             </DialogFooter>
           </>
         ) : (
@@ -85,14 +85,14 @@ export function CreateKeyModal({ isOpen, onClose, onKeyCreated }: CreateKeyModal
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-green-600 font-bold italic">
                 <CheckCircle2 size={20} />
-                Key Generated Successfully
+                {t('create_modal.success_title')}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <Alert variant="destructive" className="bg-amber-500/10 text-amber-900 border-amber-500/20">
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-xs font-medium">
-                  Güvenlik gereği bunu size tekrar göstermeyeceğiz. Lütfen şimdi kopyalayın.
+                  {t('create_modal.security_alert')}
                 </AlertDescription>
               </Alert>
               <div className="flex items-center gap-2">
@@ -104,7 +104,7 @@ export function CreateKeyModal({ isOpen, onClose, onKeyCreated }: CreateKeyModal
             </div>
             <DialogFooter>
               <Button className="w-full font-semibold bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleFinalClose}>
-                I have saved my key
+                {t('create_modal.done_button')}
               </Button>
             </DialogFooter>
           </>

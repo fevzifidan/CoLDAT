@@ -1,0 +1,72 @@
+{
+  "page": {
+    "title": "Integration API Keys",
+    "description": "Manage secret keys to access your datasets securely from external applications or SDKs."
+  },
+  "external_provider": {
+    "title": "External Model Provider Configuration (Presentation Mode)",
+    "description": "Connect your own OpenAI API key to run models and send commands within the synthetic data studio.",
+    "privacy_notice": "Privacy Guarantee: Your key is strictly never saved to the remote database (backend). It is stored only in this browser's local storage and routed directly to the AI engine.",
+    "input_placeholder": "sk-proj-...",
+    "btn_update": "Update Key",
+    "btn_connect": "Connect Key",
+    "btn_clear": "Clear",
+    "success_message": "Key verified successfully and connected to the browser session. Synthetic Data Studio is active!"
+  },
+  "generate": {
+    "title": "Create New Token",
+    "description": "Give your key a descriptive name to remember where it is used.",
+    "name_placeholder": "e.g., Python SDK Production, Jenkins CI",
+    "button": "Generate Key"
+  },
+  "security_warning": {
+    "title": "Security Warning:",
+    "message": "Do not share your API keys in public repositories or client-side code. Anyone with this key can modify your dataset configurations."
+  },
+  "key_list": {
+    "title": "Active API Keys",
+    "description": "Tokens currently authorized to make requests under this account.",
+    "empty": "No API keys generated yet.",
+    "revoke_button": "Revoke Key",
+    "status_inactive": "Inactive",
+    "created_on": "Created on:"
+  },
+  "tooltips": {
+    "refresh": "Refresh List",
+    "hide": "Hide Key",
+    "reveal": "Reveal Key",
+    "copy": "Copy to Clipboard"
+  },
+  "messages": {
+    "load_failed": "Failed to load API keys.",
+    "created_success": "New API key generated successfully.",
+    "create_failed": "An error occurred while generating the key.",
+    "reveal_failed": "Key authentication failed.",
+    "confirm_revoke": "Are you sure you want to revoke this API key? This action cannot be undone.",
+    "revoked_success": "API key has been permanently revoked.",
+    "revoke_failed": "An API error occurred while revoking the key.",
+    "name_required": "Name cannot be empty!",
+    "invalid_key": "Please enter a valid key starting with 'sk-' and at least 10 characters long.",
+    "external_success_toast": "External API key securely connected to your browser session!",
+    "key_cleared": "External key cleared from browser storage."
+  },
+  "settings_page": {
+    "title": "API Settings",
+    "label": "OpenAI / Service API Key",
+    "input_placeholder": "sk-...",
+    "test_button": "Test & Save Key",
+    "success_message": "Key verified and saved to browser storage!",
+    "error_message": "Invalid key, please check (must start with sk-)."
+  },
+  "create_modal": {
+    "title": "Create New API Key",
+    "description": "Give your key a name to identify it later.",
+    "key_name_label": "Key Name",
+    "key_name_placeholder": "e.g. Production-Server",
+    "cancel_button": "Cancel",
+    "generate_button": "Generate Key",
+    "success_title": "Key Generated Successfully",
+    "security_alert": "For security reasons, we will not show this key again. Please copy it now.",
+    "done_button": "I have saved my key"
+  }
+}
