@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import apiService from '@/shared/services/api/api.service';
 import { Button } from "@/components/ui/button";
-import { toast } from 'sonner';
+import notificationService from '@/shared/services/notification/notification.service';
 import {
   User,
   Mail,
@@ -24,6 +25,7 @@ interface ProfileForm {
 }
 
 const ProfilePage: React.FC = () => {
+  const { t } = useTranslation(['accounts', 'common']);
   const { user } = useAuth();
 
   // MSAL kontrolü
@@ -76,14 +78,10 @@ const ProfilePage: React.FC = () => {
   /* PROFILE UPDATE */
   /* ------------------------------------------------ */
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     setLoading(true);
-
-    const toastId = toast.loading(
-      'Profil ayarları güncelleniyor...'
-    );
 
     try {
       const payload: Partial<ProfileForm> = {
@@ -96,13 +94,19 @@ const ProfilePage: React.FC = () => {
         payload.last_name = formData.last_name;
       }
 
-      const response = await apiService.patch(
-        'account/me/',
-        payload
+            const response = await notificationService.promise(
+        apiService.patch('account/me/', payload),
+        {
+          loading: t('accounts:profile.notifications.updateLoading'),
+          success: t('accounts:profile.notifications.updateSuccess'),
+          error: (error: any) =>
+            error?.response?.data?.message ||
+            t('accounts:profile.notifications.updateError'),
+        }
       );
 
       console.log(
-        'Profil güncelleme yanıtı:',
+        'Profile update response:',
         response
       );
 
@@ -123,24 +127,11 @@ const ProfilePage: React.FC = () => {
             formData.last_name;
         }
       }
-
-      toast.success(
-        'Profil bilgileri başarıyla güncellendi!!!!!!!!!!!!!!!!!!',
-        { id: toastId }
-      );
     } catch (error: any) {
-      console.error(
-        'Profil güncelleme hatası:',
+            console.error(
+        'Profile update error:',
         error
       );
-
-      const errorMsg =
-        error.response?.data?.message ||
-        'Profil güncellenirken bir hata oluştu.';
-
-      toast.error(errorMsg, {
-        id: toastId,
-      });
     } finally {
       setLoading(false);
     }
@@ -150,10 +141,10 @@ const ProfilePage: React.FC = () => {
   /* NORMAL USER DELETE REQUEST */
   /* ------------------------------------------------ */
 
-  const handleUrlDeleteRequest = async () => {
-    if (!passwordOrIdentifier.trim()) {
-      toast.error(
-        'Lütfen şifrenizi veya kimlik doğrulayıcınızı girin.'
+    const handleUrlDeleteRequest = async () => {
+        if (!passwordOrIdentifier.trim()) {
+      notificationService.error(
+        t('accounts:profile.deleteModal.errors.emptyPassword')
       );
 
       return;
@@ -171,31 +162,32 @@ const ProfilePage: React.FC = () => {
 
       const resData = response.data || response;
 
-      toast.success('Silme isteği oluşturuldu.');
+      notificationService.success(t('accounts:profile.deleteModal.success.requestCreated'));
+
 
       const tokenFromServer =
         resData.token || 'test_delete_token_bypass';
 
       setReceivedToken(tokenFromServer);
 
-      try {
+            try {
         await apiService.get(
           `/account/delete-confirm/validate?token=${tokenFromServer}`
         );
       } catch (vErr) {
         console.log(
-          'Token doğrulama adımı (Bypass edildi):',
+          'Token validation step (Bypassed):',
           vErr
         );
       }
 
       setDeleteStep('confirm');
     } catch (error: any) {
-      const errorMsg =
+            const errorMsg =
         error.response?.data?.message ||
-        'Silme isteği başarısız oldu (Şifre hatalı olabilir).';
+        t('accounts:profile.deleteModal.errors.requestFailed');
 
-      toast.error(errorMsg);
+      notificationService.error(errorMsg);
     } finally {
       setDeleteLoading(false);
     }
@@ -205,7 +197,7 @@ const ProfilePage: React.FC = () => {
   /* NORMAL USER DELETE CONFIRM */
   /* ------------------------------------------------ */
 
-  const handleConfirmDelete = async () => {
+    const handleConfirmDelete = async () => {
     setDeleteLoading(true);
 
     try {
@@ -216,8 +208,8 @@ const ProfilePage: React.FC = () => {
         }
       );
 
-      toast.success(
-        'Hesabınız başarıyla silindi. Yönlendiriliyorsunuz...'
+            notificationService.success(
+        t('accounts:profile.deleteModal.success.accountDeleted')
       );
 
       localStorage.clear();
@@ -226,11 +218,11 @@ const ProfilePage: React.FC = () => {
         window.location.href = '/login';
       }, 2000);
     } catch (error: any) {
-      const errorMsg =
+            const errorMsg =
         error.response?.data?.message ||
-        'Hesap silme onaylanamadı veya token süresi doldu.';
+        t('accounts:profile.deleteModal.errors.confirmFailed');
 
-      toast.error(errorMsg);
+      notificationService.error(errorMsg);
     } finally {
       setDeleteLoading(false);
     }
@@ -240,7 +232,7 @@ const ProfilePage: React.FC = () => {
   /* MSAL DELETE FLOW */
   /* ------------------------------------------------ */
 
-  const handleMsalDeleteRedirect = async () => {
+    const handleMsalDeleteRedirect = async () => {
     try {
       /**
        * Backend endpoint varsa bunu kullan:
@@ -251,9 +243,9 @@ const ProfilePage: React.FC = () => {
 
       window.location.href =
         'https://login.microsoftonline.com/common/oauth2/v2.0/logout';
-    } catch (error) {
-      toast.error(
-        'Microsoft oturumu sonlandırılırken bir hata oluştu.'
+        } catch (error) {
+      notificationService.error(
+        t('accounts:profile.deleteModal.errors.msalLogoutFailed')
       );
     }
   };
@@ -261,19 +253,18 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="p-6 max-w-4xl mx-auto w-full space-y-6 text-slate-900 dark:text-slate-100 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
-      {/* HEADER */}
+            {/* HEADER */}
       <div>
         <h2 className="text-2xl font-black tracking-tight uppercase flex items-center gap-2">
           <User
             className="text-indigo-600"
             size={24}
           />
-          Hesap Ayarları
+          {t('accounts:profile.title')}
         </h2>
 
         <p className="text-xs text-slate-400 uppercase tracking-wider mt-1 font-semibold">
-          Kişisel profil verilerinizi ve hesap
-          detaylarınızı buradan yönetebilirsiniz
+          {t('accounts:profile.description')}
         </p>
       </div>
 
@@ -284,30 +275,28 @@ const ProfilePage: React.FC = () => {
       >
         <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
 
-          <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+                    <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
             <h3 className="text-base font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
               <UserCheck
                 size={18}
                 className="text-slate-400"
               />
-              Kişisel Kimlik Bilgileri
+              {t('accounts:profile.personalInfo.title')}
             </h3>
 
             <p className="text-xs text-slate-500 mt-1">
-              Bu bilgiler atandığınız projelerde
-              ve takımlarda diğer kullanıcılara
-              gösterilecektir.
+              {t('accounts:profile.personalInfo.description')}
             </p>
           </div>
 
           <div className="p-6 space-y-4">
 
-            {/* FIRST NAME / LAST NAME */}
+                        {/* FIRST NAME / LAST NAME */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase text-slate-500">
-                  Ad
+                  {t('accounts:profile.fields.firstName')}
                 </label>
 
                 <input
@@ -317,14 +306,14 @@ const ProfilePage: React.FC = () => {
                   onChange={handleChange}
                   disabled={isMsalUser}
                   className="w-full h-10 px-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                  placeholder="Adınız"
+                  placeholder={t('accounts:profile.fields.firstNamePlaceholder')}
                   required={!isMsalUser}
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase text-slate-500">
-                  Soyad
+                  {t('accounts:profile.fields.lastName')}
                 </label>
 
                 <input
@@ -334,16 +323,16 @@ const ProfilePage: React.FC = () => {
                   onChange={handleChange}
                   disabled={isMsalUser}
                   className="w-full h-10 px-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                  placeholder="Soyadınız"
+                  placeholder={t('accounts:profile.fields.lastNamePlaceholder')}
                   required={!isMsalUser}
                 />
               </div>
             </div>
 
-            {/* USERNAME */}
+                        {/* USERNAME */}
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase text-slate-500">
-                Kullanıcı Adı
+                {t('accounts:profile.fields.username')}
               </label>
 
               <div className="relative">
@@ -353,7 +342,7 @@ const ProfilePage: React.FC = () => {
                   value={formData.username}
                   onChange={handleChange}
                   className="w-full h-10 pl-9 pr-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                  placeholder="Kullanıcı adınız"
+                  placeholder={t('accounts:profile.fields.usernamePlaceholder')}
                   required
                 />
 
@@ -367,7 +356,7 @@ const ProfilePage: React.FC = () => {
             {/* EMAIL */}
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase text-slate-500">
-                E-posta Adresi (Değiştirilemez)
+                {t('accounts:profile.fields.email')}
               </label>
 
               <div className="relative">
@@ -389,20 +378,18 @@ const ProfilePage: React.FC = () => {
                 />
               </div>
 
-              {isMsalUser && (
+                            {isMsalUser && (
                 <p className="text-[11px] text-amber-500 font-medium mt-1">
-                  Microsoft ile giriş yapan kullanıcılar
-                  yalnızca kullanıcı adlarını
-                  güncelleyebilir.
+                  {t('accounts:profile.fields.msalWarning')}
                 </p>
               )}
             </div>
           </div>
         </div>
 
-        {/* SAVE BUTTON */}
+                {/* SAVE BUTTON */}
         <div className="flex justify-end">
-          <button
+          <Button
             type="submit"
             disabled={loading}
             className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-sm rounded-xl transition-all shadow-sm cursor-pointer"
@@ -410,9 +397,9 @@ const ProfilePage: React.FC = () => {
             <Save size={16} />
 
             {loading
-              ? 'Kaydediliyor...'
-              : 'Değişiklikleri Kaydet'}
-          </button>
+              ? t('accounts:profile.buttons.saving')
+              : t('accounts:profile.buttons.save')}
+          </Button>
         </div>
       </form>
 
@@ -424,14 +411,13 @@ const ProfilePage: React.FC = () => {
               <Key size={18} />
             </div>
 
-            <div>
+                        <div>
               <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                Sistem Rolü
+                {t('accounts:profile.role.title')}
               </p>
 
               <p className="text-xs text-slate-400 font-semibold">
-                Hesabınıza atanmış mevcut yetki
-                seviyesi.
+                {t('accounts:profile.role.description')}
               </p>
             </div>
           </div>
@@ -442,7 +428,7 @@ const ProfilePage: React.FC = () => {
         </div>
       )}
 
-      {/* DANGER ZONE */}
+            {/* DANGER ZONE */}
       <div className="bg-red-50/50 dark:bg-red-950/10 border border-red-200 dark:border-red-900/50 rounded-3xl p-6 space-y-4">
 
         <div className="flex items-start gap-3">
@@ -452,18 +438,17 @@ const ProfilePage: React.FC = () => {
 
           <div>
             <h3 className="text-base font-black text-red-800 dark:text-red-400 uppercase tracking-tight">
-              Tehlikeli Bölge
+              {t('accounts:profile.dangerZone.title')}
             </h3>
 
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-              Hesabınızı silmek geri dönüşü olmayan
-              bir işlemdir.
+              {t('accounts:profile.dangerZone.description')}
             </p>
           </div>
         </div>
 
-        <div className="flex justify-end pt-2 border-t border-red-200/50 dark:border-red-900/20">
-          <button
+                <div className="flex justify-end pt-2 border-t border-red-200/50 dark:border-red-900/20">
+          <Button
             type="button"
             onClick={() => {
               setShowDeleteModal(true);
@@ -479,8 +464,8 @@ const ProfilePage: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition-all uppercase tracking-wider shadow-sm cursor-pointer"
           >
             <Trash2 size={14} />
-            Hesabı Kalıcı Olarak Sil
-          </button>
+            {t('accounts:profile.dangerZone.deleteButton')}
+          </Button>
         </div>
       </div>
 
@@ -490,13 +475,13 @@ const ProfilePage: React.FC = () => {
 
           <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4 animate-in zoom-in-95 duration-200">
 
-            <div className="flex justify-between items-center pb-2 border-b dark:border-slate-800">
+                        <div className="flex justify-between items-center pb-2 border-b dark:border-slate-800">
               <h4 className="font-black text-sm text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
                 <Trash2
                   size={16}
                   className="text-red-500"
                 />
-                Hesap Silme Akışı
+                {t('accounts:profile.deleteModal.title')}
               </h4>
 
               <button
@@ -509,18 +494,17 @@ const ProfilePage: React.FC = () => {
               </button>
             </div>
 
-            {/* NORMAL USER FLOW */}
+                        {/* NORMAL USER FLOW */}
             {deleteStep === 'request' &&
             !isMsalUser ? (
               <div className="space-y-4">
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  İşlemi başlatmak için lütfen
-                  şifrenizi girin.
+                  {t('accounts:profile.deleteModal.requestDescription')}
                 </p>
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase text-slate-400">
-                    Şifre
+                    {t('accounts:profile.deleteModal.passwordLabel')}
                   </label>
 
                   <div className="relative">
@@ -532,7 +516,7 @@ const ProfilePage: React.FC = () => {
                           e.target.value
                         )
                       }
-                      placeholder="••••••••"
+                      placeholder={t('accounts:profile.deleteModal.passwordPlaceholder')}
                       className="w-full h-10 pl-9 pr-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
                     />
 
@@ -552,10 +536,10 @@ const ProfilePage: React.FC = () => {
                     }
                     disabled={deleteLoading}
                   >
-                    Vazgeç
+                    {t('accounts:profile.deleteModal.cancel')}
                   </Button>
 
-                  <button
+                                    <Button
                     onClick={handleUrlDeleteRequest}
                     disabled={deleteLoading}
                     className="h-9 px-4 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
@@ -567,8 +551,8 @@ const ProfilePage: React.FC = () => {
                       />
                     ) : null}
 
-                    Silme İsteği Gönder
-                  </button>
+                    {t('accounts:profile.deleteModal.sendRequest')}
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -578,13 +562,13 @@ const ProfilePage: React.FC = () => {
                 <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs text-amber-800 dark:text-amber-400 flex flex-col gap-1">
 
                   <span className="font-bold">
-                    ✓ Silme İsteği Doğrulandı!
+                    {t('accounts:profile.deleteModal.confirmTitle')}
                   </span>
 
                   <span>
                     {isMsalUser
-                      ? 'Microsoft hesabınızın oturumu kapatılacak ve işlem Microsoft doğrulama ekranı üzerinden devam edecektir.'
-                      : 'Aşağıdaki butona tıklayarak hesabınızı kalıcı olarak silebilirsiniz.'}
+                      ? t('accounts:profile.deleteModal.confirmMsalMessage')
+                      : t('accounts:profile.deleteModal.confirmNormalMessage')}
                   </span>
                 </div>
 
@@ -599,11 +583,11 @@ const ProfilePage: React.FC = () => {
                       }
                       disabled={deleteLoading}
                     >
-                      Geri Git
+                      {t('accounts:profile.deleteModal.goBack')}
                     </Button>
                   )}
 
-                  <button
+                                    <Button
                     onClick={
                       isMsalUser
                         ? handleMsalDeleteRedirect
@@ -620,9 +604,9 @@ const ProfilePage: React.FC = () => {
                     ) : null}
 
                     {isMsalUser
-                      ? 'Microsoft ile Devam Et'
-                      : 'Hesabı Tamamen Sil'}
-                  </button>
+                      ? t('accounts:profile.deleteModal.continueWithMsal')
+                      : t('accounts:profile.deleteModal.deleteAccount')}
+                  </Button>
                 </div>
               </div>
             )}

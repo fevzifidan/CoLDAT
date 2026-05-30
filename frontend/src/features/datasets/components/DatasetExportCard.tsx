@@ -1,7 +1,7 @@
 // src/features/datasets/components/DataSetExportCard.tsx
 import { useState } from 'react';
 import { Download, Loader2, CheckCircle2, Layers } from 'lucide-react';
-import { toast } from 'sonner';
+import notificationService from '@/shared/services/notification/notification.service';
 
 // Hata Çözümü: src/assets/services/ içindeki dosyaya giden doğru göreceli yol
 import { mockExportService } from '../services/mockExportService';
@@ -22,10 +22,10 @@ export default function DataSetExportCard({ datasetId = "default-dataset-123" }:
       const response = await mockExportService.exportDataset(datasetId, format);
       if (response.success && response.downloadUrl) {
         setDownloadUrl(response.downloadUrl);
-        toast.success(response.message);
+        notificationService.success(response.message);
       }
     } catch (error: any) {
-      toast.error(error.message || "Dışa aktarma başarısız.");
+      notificationService.error(error.message || "Dışa aktarma başarısız.");
     } finally {
       setIsExporting(false);
     }
@@ -80,7 +80,7 @@ export default function DataSetExportCard({ datasetId = "default-dataset-123" }:
             </div>
             <a 
               href="#" 
-              onClick={(e) => { e.preventDefault(); toast.info(`Simüle edilen indirme tetiklendi: ${downloadUrl}`); }}
+              onClick={(e) => { e.preventDefault(); notificationService.info(`Simüle edilen indirme tetiklendi: ${downloadUrl}`); }}
               className="text-xs font-mono text-violet-600 dark:text-violet-400 underline truncate max-w-full"
             >
               export_file.zip

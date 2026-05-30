@@ -89,7 +89,7 @@ export function CreateKeyModal({ isOpen, onClose, onKeyCreated }: CreateKeyModal
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <Alert variant="destructive" className="bg-amber-50 text-amber-900 border-amber-200">
+              <Alert variant="destructive" className="bg-amber-500/10 text-amber-900 border-amber-500/20">
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-xs font-medium">
                   Güvenlik gereği bunu size tekrar göstermeyeceğiz. Lütfen şimdi kopyalayın.
@@ -103,7 +103,7 @@ export function CreateKeyModal({ isOpen, onClose, onKeyCreated }: CreateKeyModal
               </div>
             </div>
             <DialogFooter>
-              <Button className="w-full font-semibold" onClick={handleFinalClose}>
+              <Button className="w-full font-semibold bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleFinalClose}>
                 I have saved my key
               </Button>
             </DialogFooter>

@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Edit2, Check, X, Link as LinkIcon, Tag, Loader2, Trash2, ShieldCheck, Lock } from "lucide-react";
 import { projectService } from '../../projects/services/projectService';
-import { toast } from 'sonner';
-import { apiService } from '@/shared/services/api/api.service'; // 🎯 Düzenlenen Import Yolu
+import notificationService from '@/shared/services/notification/notification.service';
+import { apiService } from '@/shared/services/api/api.service';
 
 interface TaxonomyManagerProps {
   projectId: string | undefined;
@@ -86,9 +86,9 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
     });
   };
 
-  const saveEdit = (type: 'class' | 'pred', id: string | number) => {
+    const saveEdit = (type: 'class' | 'pred', id: string | number) => {
     if (!isAdmin) {
-      toast.error(t("common:errors.unauthorized", "Sadece admin rolü düzenleme yapabilir."));
+      notificationService.error(t("common:errors.unauthorized", "Sadece admin rolü düzenleme yapabilir."));
       return;
     }
 
@@ -118,9 +118,9 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
     updateParent(nextClasses, nextPredicates);
   };
 
-  const deleteItem = async (type: 'class' | 'pred', id: string | number) => {
+    const deleteItem = async (type: 'class' | 'pred', id: string | number) => {
     if (!isAdmin) {
-      toast.error(t("common:errors.unauthorized", "Sadece yetkili admin bu öğeyi silebilir."));
+      notificationService.error(t("common:errors.unauthorized", "Sadece yetkili admin bu öğeyi silebilir."));
       return;
     }
 
@@ -132,13 +132,20 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
     
     if (!confirmDelete) return;
 
-    try {
-      await apiService.delete(`projects/${projectId}/taxonomy/`, {
-        data: { 
-          type: type,      
-          itemId: id       
+        try {
+      await notificationService.promise(
+        apiService.delete(`projects/${projectId}/taxonomy/`, {
+          data: { 
+            type: type,      
+            itemId: id       
+          }
+        }),
+        {
+          loading: t("taxonomy.deleting", "Silme işlemi gerçekleştiriliyor..."),
+          success: t("taxonomy.delete_success", "Öğe ve ilişkili tüm geçmiş etiketler başarıyla silindi."),
+          error: t("taxonomy.delete_error", "Silme işlemi sırasında bir hata oluştu."),
         }
-      });
+      );
 
       let nextClasses = [...classes];
       let nextPredicates = [...predicates];
@@ -152,10 +159,8 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
       }
 
       updateParent(nextClasses, nextPredicates);
-      toast.success(t("taxonomy.delete_success", "Öğe ve ilişkili tüm geçmiş etiketler başarıyla silindi."));
     } catch (error) {
       console.error("Taxonomy kalıcı silme hatası:", error);
-      toast.error(t("taxonomy.delete_error", "Silme işlemi sırasında bir hata oluştu."));
     }
   };
 

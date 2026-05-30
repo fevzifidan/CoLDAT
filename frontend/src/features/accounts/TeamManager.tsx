@@ -20,7 +20,7 @@ import {
 
 import { projectService } from '@/features/projects/services/projectService';
 
-import { toast } from 'sonner';
+import notificationService from '@/shared/services/notification/notification.service';
 
 interface TeamMember {
   id: string;
@@ -46,7 +46,8 @@ interface TeamManagerProps {
 const TeamManager = ({
   projectId,
 }: TeamManagerProps) => {
-  const { t } = useTranslation([
+    const { t } = useTranslation([
+    'accounts',
     'pages',
     'common',
   ]);
@@ -114,8 +115,8 @@ const TeamManager = ({
           : []
       );
     } catch (error: any) {
-      console.error(
-        'Üyeler çekilirken hata oluştu:',
+            console.error(
+        'Failed to fetch members:',
         error
       );
 
@@ -125,15 +126,12 @@ const TeamManager = ({
           'token'
         )
       ) {
-        toast.error(
-          'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.'
+        notificationService.error(
+          t('accounts:team.errors.sessionExpired')
         );
       } else {
-        toast.error(
-          t(
-            'common:errors.fetch_failed',
-            'Üye listesi alınamadı.'
-          )
+        notificationService.error(
+          t('pages:errors.fetch_failed')
         );
       }
 
@@ -206,9 +204,9 @@ const TeamManager = ({
         ? `${user.first_name || ''} ${
             user.last_name || ''
           }`.trim()
-        : user.username ||
+                : user.username ||
           user.email ||
-          'User';
+          t('accounts:team.fallbackName');
 
     setSearchQuery(displayName);
 
@@ -225,8 +223,8 @@ const TeamManager = ({
     e.preventDefault();
 
     if (!selectedUserId) {
-      toast.error(
-        'Lütfen listeden bir kullanıcı seçin.'
+            notificationService.error(
+        t('accounts:team.selectUserWarning')
       );
 
       return;
@@ -241,11 +239,8 @@ const TeamManager = ({
         }
       );
 
-      toast.success(
-        t(
-          'team.alert_added',
-          'Üye başarıyla projeye eklendi.'
-        )
+            notificationService.success(
+        t('pages:team.alert_invited', { email: searchQuery })
       );
 
       setSearchQuery('');
@@ -257,8 +252,8 @@ const TeamManager = ({
 
       fetchMembers();
     } catch (error: any) {
-      console.error(
-        'Ekleme hatası:',
+            console.error(
+        'Add member error:',
         error.response?.data
       );
 
@@ -271,8 +266,8 @@ const TeamManager = ({
           'token'
         )
       ) {
-        toast.error(
-          'Oturumunuzun süresi dolmuş.'
+        notificationService.error(
+          t('accounts:team.errors.sessionExpiredShort')
         );
 
         return;
@@ -282,27 +277,27 @@ const TeamManager = ({
         Array.isArray(backendErrors) &&
         backendErrors.length > 0
       ) {
-        toast.error(backendErrors[0]);
+        notificationService.error(backendErrors[0]);
       } else if (
         backendErrors &&
         typeof backendErrors === 'object'
       ) {
         if (backendErrors.user_id) {
-          toast.error(
-            `Kullanıcı Hatası: ${backendErrors.user_id.join(
+          notificationService.error(
+            `${t('accounts:team.errors.userErrorPrefix')}: ${backendErrors.user_id.join(
               ', '
             )}`
           );
         } else if (backendErrors.role) {
-          toast.error(
-            `Rol Hatası: ${backendErrors.role.join(
+          notificationService.error(
+            `${t('accounts:team.errors.roleErrorPrefix')}: ${backendErrors.role.join(
               ', '
             )}`
           );
         } else if (
           backendErrors.non_field_errors
         ) {
-          toast.error(
+          notificationService.error(
             backendErrors.non_field_errors.join(
               ', '
             )
@@ -310,20 +305,17 @@ const TeamManager = ({
         } else if (
           backendErrors.detail
         ) {
-          toast.error(
+          notificationService.error(
             backendErrors.detail
           );
         } else {
-          toast.error(
-            'Üye eklenemedi.'
+          notificationService.error(
+            t('accounts:team.errors.addFailed')
           );
         }
       } else {
-        toast.error(
-          t(
-            'common:errors.save_failed',
-            'İşlem başarısız.'
-          )
+        notificationService.error(
+          t('accounts:team.errors.addFailed')
         );
       }
     }
@@ -342,17 +334,14 @@ const TeamManager = ({
         membershipId
       );
 
-      toast.success(
-        t(
-          'team.removed_successfully',
-          'Üye başarıyla silindi.'
-        )
+            notificationService.success(
+        t('accounts:team.roles.removedMessage', 'Member removed successfully.')
       );
 
       fetchMembers();
     } catch (error: any) {
-      console.error(
-        'Silme hatası:',
+            console.error(
+        'Remove member error:',
         error.response?.data
       );
 
@@ -362,8 +351,8 @@ const TeamManager = ({
       if (
         error.response?.status === 401
       ) {
-        toast.error(
-          'Oturum süresi dolmuş.'
+        notificationService.error(
+          t('accounts:team.errors.sessionExpiredToken')
         );
 
         return;
@@ -373,15 +362,15 @@ const TeamManager = ({
         Array.isArray(errorData) &&
         errorData.length > 0
       ) {
-        toast.error(errorData[0]);
+        notificationService.error(errorData[0]);
       } else if (
         errorData &&
         errorData.detail
       ) {
-        toast.error(errorData.detail);
+        notificationService.error(errorData.detail);
       } else {
-        toast.error(
-          'Bu üye silinemez.'
+        notificationService.error(
+          t('accounts:team.errors.removeFailed')
         );
       }
     }
@@ -391,19 +380,16 @@ const TeamManager = ({
    * ROLE LABEL
    */
 
-  const getRoleLabel = (
+    const getRoleLabel = (
     rawRole: string
   ) => {
     const roles: Record<string, string> =
       {
-        OWNER: 'Owner (Proje Sahibi)',
-        ADMIN: 'Admin',
-        ANNOTATOR:
-          'Labeler (Annotator)',
-        VIEWER:
-          'Reviewer (Viewer)',
-        REVIEWER:
-          'Reviewer (Viewer)',
+        OWNER: t('accounts:team.roles.OWNER'),
+        ADMIN: t('accounts:team.roles.ADMIN'),
+        ANNOTATOR: t('accounts:team.roles.ANNOTATOR'),
+        VIEWER: t('accounts:team.roles.VIEWER'),
+        REVIEWER: t('accounts:team.roles.REVIEWER'),
       };
 
     return (
@@ -477,8 +463,8 @@ const TeamManager = ({
             >
               {/* USER SEARCH */}
               <div className="flex-1 space-y-2 relative">
-                <label className="text-xs font-bold uppercase">
-                  Kullanıcı Ara
+                                <label className="text-xs font-bold uppercase">
+                  {t('accounts:team.searchLabel')}
                 </label>
 
                 <div className="relative">
@@ -494,7 +480,7 @@ const TeamManager = ({
                       setSelectedUserId('');
                     }}
                     type="text"
-                    placeholder="username veya email yazın..."
+                    placeholder={t('accounts:team.searchPlaceholder')}
                     className="pl-9"
                     required
                   />
@@ -603,11 +589,11 @@ const TeamManager = ({
           </div>
         ) : (
           team.map((user) => {
-            const userName =
+                        const userName =
               user?.name ||
               user?.username ||
               user?.email?.split('@')[0] ||
-              'User';
+              t('accounts:team.fallbackName');
 
             const userEmail =
               user?.email ||

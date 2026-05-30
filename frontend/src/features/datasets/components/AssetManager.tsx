@@ -1,7 +1,7 @@
 // frontend/src/features/datasets/components/AssetManager.tsx
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import notificationService from '@/shared/services/notification/notification.service';
 import { 
   CloudUpload, 
   RefreshCw, 
@@ -69,13 +69,12 @@ const loadAssets = async () => {
    * HANDLER 1: Toplu Durum Güncelleme (Bulk Status Update)
    * Seçili veya işlemdeki PENDING asset'lerin sonucunu havuz halinde gönderir.
    */
-  const handleBulkUpdate = async () => {
+    const handleBulkUpdate = async () => {
     setIsProcessing(true);
-    const toastId = toast.loading('Sending batch upload status to backend...');
     
     const pendingAssets = assets.filter(a => a.status === 'PENDING');
     if (pendingAssets.length === 0) {
-      toast.error('No pending assets found to update status.', { id: toastId });
+      notificationService.error('No pending assets found to update status.');
       setIsProcessing(false);
       return;
     }
@@ -87,13 +86,19 @@ const loadAssets = async () => {
     }));
 
     try {
-      await assetService.bulkUpdateStatus(updates);
-      toast.success('Batch status synchronization completed!', { id: toastId });
+      await notificationService.promise(
+        assetService.bulkUpdateStatus(updates),
+        {
+          loading: 'Sending batch upload status to backend...',
+          success: 'Batch status synchronization completed!',
+          error: (err: any) =>
+            err?.response?.data?.message || 'Failed to process bulk status update.',
+        }
+      );
       
       setAssets(prev => prev.map(a => a.status === 'PENDING' ? { ...a, status: 'UPLOADED' } : a));
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.response?.data?.message || 'Failed to process bulk status update.', { id: toastId });
     } finally {
       setIsProcessing(false);
     }
@@ -103,24 +108,28 @@ const loadAssets = async () => {
    * HANDLER 2: Toplu URL Yenileme (Bulk Refresh Presigned URLs)
    * Süresi dolmak üzere olan PENDING kayıtların sürelerini uzatır.
    */
-  const handleBulkRefreshUrls = async () => {
+    const handleBulkRefreshUrls = async () => {
     setIsProcessing(true);
-    const toastId = toast.loading('Refreshing presigned URLs context...');
     
     const pendingIds = assets.filter(a => a.status === 'PENDING').map(a => a.id);
     if (pendingIds.length === 0) {
-      toast.error('No pending status assets require URL refresh.', { id: toastId });
+      notificationService.error('No pending status assets require URL refresh.');
       setIsProcessing(false);
       return;
     }
 
     try {
-      const data = await assetService.bulkRefreshUrls(pendingIds);
-      toast.success(`Successfully refreshed ${data.refreshed_assets?.length || pendingIds.length} assets!`, { id: toastId });
+      const data = await notificationService.promise(
+        assetService.bulkRefreshUrls(pendingIds),
+        {
+          loading: 'Refreshing presigned URLs context...',
+          success: `Successfully refreshed ${pendingIds.length} assets!`,
+          error: 'Access denied or validation failed during URL refresh.',
+        }
+      );
       loadAssets(); // Yenilenen expiry_at verilerini tekrar çekmek için listeyi tazele
     } catch (err: any) {
       console.error(err);
-      toast.error('Access denied or validation failed during URL refresh.', { id: toastId });
     } finally {
       setIsProcessing(false);
     }
@@ -130,17 +139,22 @@ const loadAssets = async () => {
    * HANDLER 3: Askıda Kalanları Tarama (Check Dangling Status)
    * VERIFICATION_FAILED olanları S3'te var mı diye arkada zorla kontrol ettirir.
    */
-  const handleCheckDangling = async () => {
+    const handleCheckDangling = async () => {
     setIsProcessing(true);
-    const toastId = toast.loading('Scanning S3 repositories for dangling assets...');
 
-    try {
-      const res = await assetService.checkDangling();
-      toast.success(`Scan completed. Synced to Uploaded: ${res.updated_to_uploaded || 0}`, { id: toastId });
+        try {
+      const res = await notificationService.promise(
+        assetService.checkDangling(),
+        {
+          loading: 'Scanning S3 repositories for dangling assets...',
+          success: (data: any) =>
+            `Scan completed. Synced to Uploaded: ${data?.updated_to_uploaded || 0}`,
+          error: 'Dangling pointer sync pipeline failed.',
+        }
+      );
       loadAssets(); // Durumlar güncellendiği için listeyi yeniden çek
     } catch (err) {
       console.error(err);
-      toast.error('Dangling pointer sync pipeline failed.', { id: toastId });
     } finally {
       setIsProcessing(false);
     }
@@ -149,9 +163,8 @@ const loadAssets = async () => {
   /**
    * HANDLER 4: Başarısız Öğeyi Yeniden Canlandırma (Retry Single Failed Upload)
    */
-  const handleRetrySingleUpload = async (assetId: string, filename: string) => {
+    const handleRetrySingleUpload = async (assetId: string, filename: string) => {
     setIsProcessing(true);
-    const toastId = toast.loading(`Re-initializing setup for ${filename}...`);
 
     const retryPayload = {
       upload_id: assetId,
@@ -165,13 +178,18 @@ const loadAssets = async () => {
     };
 
     try {
-      const res = await assetService.retryUpload(assetId, retryPayload);
-      toast.success('New Presigned URL generated! Ready for S3 pipeline.', { id: toastId });
+      const res = await notificationService.promise(
+        assetService.retryUpload(assetId, retryPayload),
+        {
+          loading: `Re-initializing setup for ${filename}...`,
+          success: 'New Presigned URL generated! Ready for S3 pipeline.',
+          error: 'Asset context is not eligible for a retry workflow.',
+        }
+      );
       
       setAssets(prev => prev.map(a => a.id === assetId ? { ...a, status: 'PENDING', upload_url: res.url?.upload_url } : a));
     } catch (err) {
       console.error(err);
-      toast.error('Asset context is not eligible for a retry workflow.', { id: toastId });
     } finally {
       setIsProcessing(false);
     }

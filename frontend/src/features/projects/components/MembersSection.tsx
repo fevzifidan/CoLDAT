@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { memberService } from '../../datasets/services/memberService';
 import { Button } from "@/components/ui/button";
-import { toast } from 'sonner';
+import notificationService from '@/shared/services/notification/notification.service';
 import { UserPlus, Trash2 } from 'lucide-react';
 
 interface Member {
@@ -25,8 +25,8 @@ export const MembersSection = ({ datasetId }: { datasetId: string }) => {
       const data = await memberService.getMembers(datasetId);
       // Servis katmanında array temizlendiği için doğrudan set edilebilir
       setMembers(Array.isArray(data) ? data : []); 
-    } catch {
-      toast.error("Üyeler yüklenemedi.");
+        } catch {
+      notificationService.error("Üyeler yüklenemedi.");
     }
   };
 
@@ -34,9 +34,9 @@ export const MembersSection = ({ datasetId }: { datasetId: string }) => {
     try {
       await memberService.updateMember(datasetId, memberId, newRole);
       fetchMembers();
-      toast.success("Rol güncellendi.");
+      notificationService.success("Rol güncellendi.");
     } catch {
-      toast.error("Rol güncellenirken hata oluştu.");
+      notificationService.error("Rol güncellenirken hata oluştu.");
     }
   };
 
@@ -44,9 +44,9 @@ export const MembersSection = ({ datasetId }: { datasetId: string }) => {
     try {
       await memberService.removeMember(datasetId, memberId);
       fetchMembers();
-      toast.success("Üye silindi.");
+      notificationService.success("Üye silindi.");
     } catch {
-      toast.error("Üye silinirken hata oluştu.");
+      notificationService.error("Üye silinirken hata oluştu.");
     }
   };
 

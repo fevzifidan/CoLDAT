@@ -210,9 +210,15 @@
     "completed": "COMPLETED",
     "load_more": "Show More"
   },
-  "actions": {
+    "actions": {
     "cancel": "Cancel",
     "create": "Create",
     "close": "Close"
+  },
+  "errors": {
+    "fetch_failed": "An error occurred while loading the list.",
+    "save_failed": "An error occurred while saving changes.",
+    "delete_failed": "Delete operation failed.",
+    "unauthorized": "Your session has expired. Please log in again."
   }
 }

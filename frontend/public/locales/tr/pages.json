@@ -210,9 +210,15 @@
     "completed": "TAMAMLANDI",
     "load_more": "Daha Fazla Göster"
   },
-  "actions": {
+    "actions": {
     "cancel": "İptal",
     "create": "Oluştur",
     "close": "Kapat"
+  },
+  "errors": {
+    "fetch_failed": "Liste yüklenirken bir hata oluştu.",
+    "save_failed": "Değişiklikler kaydedilirken bir hata oluştu.",
+    "delete_failed": "Silme işlemi başarısız oldu.",
+    "unauthorized": "Oturum süreniz dolmuş. Lütfen tekrar giriş yapın."
   }
 }

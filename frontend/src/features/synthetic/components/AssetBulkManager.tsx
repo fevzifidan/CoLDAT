@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Upload, Check, X, Loader2, ImagePlus, RefreshCw } from 'lucide-react';
-import notificationService from '@/shared/services/notification';
+import notificationService from '@/shared/services/notification/notification.service';
 
 // Basit mock - production'da asset servisi kullanılacak
 const mockAssetService = {

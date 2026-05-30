@@ -166,21 +166,21 @@ const fetchTasks = async () => {
   const visibleTasks = filteredTasks.slice(0, displayLimit);
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto relative text-slate-900 dark:text-slate-100">
+        <div className="p-6 space-y-6 max-w-7xl mx-auto relative">
       
       {/* Üst Yönetim Alanı */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 dark:border-slate-800">
-        <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 border-border">
+        <h1 className="text-2xl font-extrabold text-foreground">
           {t('pages:tasks.title', 'Tasks Workspace')}
         </h1>
         
-        <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
           {/* Arama Kutusu */}
           <div className="relative w-64">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
               placeholder={t("pages:tasks.search_placeholder", "Search by ID, Dataset or Assignee...")} 
-              className="pl-9 h-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800" 
+              className="pl-9 h-9 bg-card border-border" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -189,7 +189,7 @@ const fetchTasks = async () => {
           {/* Yeni Görev Oluştur Butonu */}
           <Button 
             onClick={() => setIsCreateModalOpen(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 h-9 font-medium shadow-sm gap-1.5 text-white"
+            className="bg-primary hover:bg-primary/90 h-9 font-medium shadow-sm gap-1.5 text-primary-foreground"
           >
             <Plus size={16} />
             {t('pages:tasks.create_new', 'Create New Task')}
@@ -203,7 +203,7 @@ const fetchTasks = async () => {
                 setProgressFilter(e.target.value);
                 setDisplayLimit(4);
               }}
-              className="flex h-9 w-44 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
+              className="flex h-9 w-44 rounded-md border border-border bg-card px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer text-muted-foreground font-medium focus:outline-none"
             >
               <option value="ALL">✨ {t('pages:tasks.filter.all_progress', 'All Progress')}</option>
               <option value="OPEN">🆕 {t('pages:tasks.filter.status.open', 'OPEN')}</option>
@@ -218,18 +218,18 @@ const fetchTasks = async () => {
 
       {/* --- ASENKRON DURUM KONTROLLERİ --- */}
       {isLoading ? (
-        <div className="h-48 w-full flex flex-col items-center justify-center gap-2 text-slate-400">
-          <Loader2 className="h-7 w-7 animate-spin text-indigo-500" />
+        <div className="h-48 w-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
+          <Loader2 className="h-7 w-7 animate-spin text-primary" />
           <p className="text-xs font-medium">Fetching active workspace tasks...</p>
         </div>
       ) : error ? (
-        <div className="p-4 rounded-xl border border-rose-100 bg-rose-50/50 dark:bg-rose-950/10 dark:border-rose-900/40 text-center space-y-2 max-w-md mx-auto">
-          <AlertCircle size={24} className="mx-auto text-rose-500" />
-          <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">{error}</p>
+        <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 text-center space-y-2 max-w-md mx-auto">
+          <AlertCircle size={24} className="mx-auto text-destructive" />
+          <p className="text-xs text-destructive font-medium">{error}</p>
           <Button size="sm" variant="outline" onClick={fetchTasks} className="text-xs h-8">Try Again</Button>
         </div>
       ) : filteredTasks.length === 0 ? (
-        <div className="text-center py-16 border border-dashed dark:border-slate-800 rounded-xl text-slate-400 text-xs">
+        <div className="text-center py-16 border border-dashed border-border rounded-xl text-muted-foreground text-xs">
           No tasks match your filter criteria or data repository is empty.
         </div>
       ) : (
@@ -248,10 +248,10 @@ const fetchTasks = async () => {
                 onViewDetail={(id) => setSelectedTaskId(id)} 
               />
               
-              {/* Kart Üstü Hızlı Silme / Revoke Aksiyonu */}
+                            {/* Kart Üstü Hızlı Silme / Revoke Aksiyonu */}
               <button
                 onClick={(e) => handleDeleteTask(item.id, e)}
-                className="absolute top-4 right-4 p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/50 shadow-sm z-10"
+                className="absolute top-4 right-4 p-1.5 rounded-lg bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 border border-destructive/20 shadow-sm z-10"
                 title={t('pages:trash.permanent_delete', 'Delete')}
               >
                 <Trash2 size={13} />
@@ -264,7 +264,7 @@ const fetchTasks = async () => {
       {/* Daha Fazla Yükle Butonu */}
       {!isLoading && displayLimit < filteredTasks.length && (
         <div className="flex justify-center mt-8">
-          <Button onClick={() => setDisplayLimit(prev => prev + 4)} variant="outline" className="dark:border-slate-800 dark:bg-slate-950">
+                    <Button onClick={() => setDisplayLimit(prev => prev + 4)} variant="outline">
             {t('pages:dashboard.show_more', 'Load More')} 
           </Button>
         </div>
@@ -273,10 +273,10 @@ const fetchTasks = async () => {
       {/* ================= CREATE TASK MODAL (TaskCreateSerializer Uyumlu) ================= */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl shadow-2xl border dark:border-slate-800 w-full max-w-md overflow-hidden flex flex-col">
-            <div className="p-4 border-b dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950">
-              <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">{t('pages:tasks.create_new', 'Create New Task')}</h3>
-              <button onClick={() => setIsCreateModalOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400">
+                    <div className="bg-card text-card-foreground rounded-xl shadow-2xl border border-border w-full max-w-md overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-border flex items-center justify-between bg-muted">
+              <h3 className="font-bold text-lg text-foreground">{t('pages:tasks.create_new', 'Create New Task')}</h3>
+              <button onClick={() => setIsCreateModalOpen(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground">
                 <X size={18} />
               </button>
             </div>
@@ -286,7 +286,7 @@ const fetchTasks = async () => {
                 
                 {/* Dataset ID Field */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     Dataset UUID *
                   </label>
                   <Input
@@ -295,13 +295,13 @@ const fetchTasks = async () => {
                     value={formData.dataset_id}
                     onChange={(e) => setFormData(prev => ({ ...prev, dataset_id: e.target.value }))}
                     placeholder="e.g. 123e4567-e88b-12d3-a456-426614174000"
-                    className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+                    className="bg-background border-border text-foreground"
                   />
                 </div>
 
                 {/* Assignee ID Field */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     Assignee User UUID *
                   </label>
                   <Input
@@ -310,13 +310,13 @@ const fetchTasks = async () => {
                     value={formData.assignee_id}
                     onChange={(e) => setFormData(prev => ({ ...prev, assignee_id: e.target.value }))}
                     placeholder="e.g. 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
-                    className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+                    className="bg-background border-border text-foreground"
                   />
                 </div>
 
                 {/* Image IDs Dizi Giriş Alanı */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     Image UUIDs (Comma separated) *
                   </label>
                   <Input
@@ -325,13 +325,13 @@ const fetchTasks = async () => {
                     value={formData.image_ids_raw}
                     onChange={(e) => setFormData(prev => ({ ...prev, image_ids_raw: e.target.value }))}
                     placeholder="id1, id2, id3..."
-                    className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+                    className="bg-background border-border text-foreground"
                   />
                 </div>
 
                 {/* Opsiyonel Not Alanı */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     Task Note (Optional)
                   </label>
                   <Input
@@ -339,17 +339,17 @@ const fetchTasks = async () => {
                     value={formData.note}
                     onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
                     placeholder="Add batch context instructions..."
-                    className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+                    className="bg-background border-border text-foreground"
                   />
                 </div>
 
               </div>
 
-              <div className="p-3 border-t dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-end gap-2">
+              <div className="p-3 border-t border-border bg-muted flex justify-end gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateModalOpen(false)}>
                   {t('pages:actions.cancel', 'Cancel')}
                 </Button>
-                <Button type="submit" size="sm" disabled={isSubmitting} className="bg-indigo-600 text-white hover:bg-indigo-700">
+                <Button type="submit" size="sm" disabled={isSubmitting} className="bg-primary text-primary-foreground hover:bg-primary/90">
                   {isSubmitting ? "Creating..." : t('pages:actions.create', 'Create')}
                 </Button>
               </div>

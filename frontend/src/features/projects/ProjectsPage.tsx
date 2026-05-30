@@ -134,18 +134,18 @@ const ProjectsPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto relative text-slate-900 dark:text-slate-100">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 dark:border-slate-800">
-        <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+        <div className="p-6 space-y-6 max-w-7xl mx-auto relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 border-border">
+        <h1 className="text-2xl font-extrabold text-foreground">
           {t('pages:dashboard.sections.recent_projects', 'Recent Projects')}
         </h1>
         
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative w-64">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
               placeholder={t("pages:assets.search_placeholder", "Search...")} 
-              className="pl-9 h-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600" 
+              className="pl-9 h-9 bg-card border-border text-foreground placeholder:text-muted-foreground" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -154,7 +154,7 @@ const ProjectsPage = () => {
           <Button 
             onClick={() => setIsCreateModalOpen(true)}
             disabled={isUnauthorized}
-            className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 h-9 font-medium shadow-sm gap-1.5 text-white"
+            className="bg-primary hover:bg-primary/90 h-9 font-medium shadow-sm gap-1.5 text-primary-foreground"
           >
             <Plus size={16} />
             {t('pages:dashboard.buttons.create_project', 'Create New Project')}
@@ -167,7 +167,7 @@ const ProjectsPage = () => {
                 setRoleFilter(e.target.value);
                 setDisplayLimit(4);
               }}
-              className="flex h-9 w-44 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer focus-visible:outline-none text-slate-700 dark:text-slate-300 font-medium"
+              className="flex h-9 w-44 rounded-md border border-border bg-card px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer focus-visible:outline-none text-muted-foreground font-medium"
             >
               <option value="ALL">✨ {t('pages:dashboard.roles.all_roles', 'All Roles')}</option>
               <option value="ADMIN">🛡️ {t('pages:dashboard.roles.admin', 'Admin')}</option>
@@ -178,12 +178,12 @@ const ProjectsPage = () => {
 
           <Button 
             variant="outline" 
-            className="h-9 relative border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 gap-2 font-medium"
+            className="h-9 relative gap-2 font-medium"
             onClick={() => setIsTrashOpen(true)}
           >
-            <Trash className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+            <Trash className="h-4 w-4 text-muted-foreground" />
             {archivedProjects.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center animate-pulse">
+              <span className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center animate-pulse">
                 {archivedProjects.length}
               </span>
             )}
@@ -192,23 +192,23 @@ const ProjectsPage = () => {
         </div>
       </div>
 
-      {isLoading && (
-        <div className="flex justify-center items-center py-24 text-indigo-600 dark:text-indigo-400 font-medium">
+            {isLoading && (
+        <div className="flex justify-center items-center py-24 text-primary font-medium">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current mr-3" />
           {t('pages:assets.loading', 'Loading data from backend...')}
         </div>
       )}
 
       {apiError && (
-        <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-xl p-6 text-rose-700 dark:text-rose-400 text-sm text-center max-w-md mx-auto space-y-3 shadow-sm">
+        <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-6 text-destructive text-sm text-center max-w-md mx-auto space-y-3 shadow-sm">
           <p className="font-medium">{apiError}</p>
           <div className="flex justify-center gap-3">
             {isUnauthorized ? (
-              <Button size="sm" className="bg-rose-600 hover:bg-rose-700 text-white gap-1.5" onClick={() => navigate('/login')}>
+              <Button size="sm" className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1.5" onClick={() => navigate('/login')}>
                 <LogIn size={15} /> {t('pages:assets.login', 'Go to Login')}
               </Button>
             ) : (
-              <Button variant="outline" size="sm" className="border-rose-300 text-rose-700 hover:bg-rose-100" onClick={fetchProjects}>
+              <Button variant="outline" size="sm" onClick={fetchProjects}>
                 {t('pages:assets.retry', 'Retry')}
               </Button>
             )}
@@ -218,8 +218,8 @@ const ProjectsPage = () => {
 
       {!isLoading && !apiError && (
         <>
-          {visibleProjects.length === 0 ? (
-            <div className="text-center py-16 text-slate-400 text-sm">
+                    {visibleProjects.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground text-sm">
               {t('pages:dashboard.no_projects', 'No active projects found matching criteria.')}
             </div>
           ) : (
@@ -234,7 +234,7 @@ const ProjectsPage = () => {
                   
                   <button
                     onClick={(e) => handleDeleteProject(item.id, e)}
-                    className="absolute bottom-4 right-4 p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/50 shadow-sm z-10"
+                    className="absolute bottom-4 right-4 p-2 rounded-lg bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 border border-destructive/20 shadow-sm z-10"
                     title={t('pages:trash.permanent_delete', 'Delete')}
                   >
                     <Trash2 size={14} />
@@ -247,26 +247,26 @@ const ProjectsPage = () => {
       )}
 
       {!isLoading && displayLimit < filteredProjects.length && (
-        <div className="flex justify-center mt-8">
-          <Button onClick={() => setDisplayLimit(prev => prev + 4)} variant="outline" className="dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-900">
+                <div className="flex justify-center mt-8">
+          <Button onClick={() => setDisplayLimit(prev => prev + 4)} variant="outline">
             {t('pages:dashboard.show_more', 'Show More')} 
           </Button>
         </div>
       )}
 
-      {isCreateModalOpen && (
+            {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl shadow-2xl border dark:border-slate-800 w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="p-4 border-b dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950">
-              <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">{t('pages:dashboard.buttons.create_project', 'Create New Project')}</h3>
-              <button onClick={() => setIsCreateModalOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+          <div className="bg-card text-card-foreground rounded-xl shadow-2xl border border-border w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-border flex items-center justify-between bg-muted">
+              <h3 className="font-bold text-lg text-foreground">{t('pages:dashboard.buttons.create_project', 'Create New Project')}</h3>
+              <button onClick={() => setIsCreateModalOpen(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground">
                 <X size={18} />
               </button>
             </div>
             <form onSubmit={handleCreateProject}>
               <div className="p-4 space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     {t('pages:project_general.project_name', 'Project Name')}
                   </label>
                   <Input
@@ -274,15 +274,15 @@ const ProjectsPage = () => {
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
                     placeholder={t('pages:project_general.placeholder_name', 'E.g. Autonomous Driving Dataset...')}
-                    className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+                    className="bg-background border-border text-foreground"
                   />
                 </div>
               </div>
-              <div className="p-3 border-t dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-end gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateModalOpen(false)} className="dark:border-slate-800 dark:hover:bg-slate-800">
+              <div className="p-3 border-t border-border bg-muted flex justify-end gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateModalOpen(false)}>
                   {t('pages:assets.cancel', 'Cancel')}
                 </Button>
-                <Button type="submit" size="sm" className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white">
+                <Button type="submit" size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
                   {t('pages:dashboard.buttons.create_project', 'Create')}
                 </Button>
               </div>
@@ -291,41 +291,41 @@ const ProjectsPage = () => {
         </div>
       )}
 
-      {isTrashOpen && (
+            {isTrashOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl shadow-2xl border dark:border-slate-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-200">
-            <div className="p-4 border-b dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950">
-              <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                <Trash2 size={18} className="text-rose-500" />
+          <div className="bg-card text-card-foreground rounded-xl shadow-2xl border border-border w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-border flex items-center justify-between bg-muted">
+              <div className="flex items-center gap-2">
+                <Trash2 size={18} className="text-destructive" />
                 <h3 className="font-bold text-lg">{t('pages:trash.modal_title', 'Trash Bin')}</h3>
               </div>
-              <button onClick={() => setIsTrashOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+              <button onClick={() => setIsTrashOpen(false)} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground">
                 <X size={18} />
               </button>
             </div>
             <div className="p-4 overflow-y-auto space-y-3 flex-1 min-h-[200px]">
               {archivedProjects.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 space-y-2">
-                  <Trash2 size={40} className="mx-auto text-slate-200 dark:text-slate-800" />
+                <div className="text-center py-12 text-muted-foreground space-y-2">
+                  <Trash2 size={40} className="mx-auto text-muted-foreground/30" />
                   <p className="text-sm">{t('pages:trash.empty', 'Your trash is currently empty.')}</p>
                 </div>
               ) : (
                 archivedProjects.map((project) => (
-                  <div key={project.id} className="flex items-center justify-between p-3 border dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40 hover:bg-slate-50 dark:hover:bg-slate-950 transition-colors gap-4">
+                  <div key={project.id} className="flex items-center justify-between p-3 border border-border rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors gap-4">
                     <div>
-                      <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{project.name}</h4>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 uppercase">Role: {project.role || 'N/A'} | Type: {project.project_type || 'N/A'}</p>
+                      <h4 className="font-semibold text-card-foreground text-sm">{project.name}</h4>
+                      <p className="text-xs text-muted-foreground uppercase">Role: {project.role || 'N/A'} | Type: {project.project_type || 'N/A'}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Button 
                         size="sm" variant="outline" onClick={() => handleRecoverProject(project.id)}
-                        className="h-8 border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-xs font-bold gap-1.5"
+                        className="h-8 border-emerald-500/20 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 text-xs font-bold gap-1.5"
                       >
                         <RotateCcw size={13} /> {t('pages:trash.recover', 'Recover')}
                       </Button>
                       <Button 
                         size="sm" variant="outline" onClick={() => handlePermanentDelete(project.id)}
-                        className="h-8 border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-xs font-bold gap-1.5"
+                        className="h-8 border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/20 text-xs font-bold gap-1.5"
                       >
                         <Trash2 size={13} /> {t('pages:trash.permanent_delete', 'Delete')}
                       </Button>
@@ -334,8 +334,8 @@ const ProjectsPage = () => {
                 ))
               )}
             </div>
-            <div className="p-3 border-t dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-end">
-              <Button size="sm" onClick={() => setIsTrashOpen(false)} className="bg-slate-800 hover:bg-slate-900 dark:bg-slate-200 dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium">
+            <div className="p-3 border-t border-border bg-muted flex justify-end">
+              <Button size="sm" onClick={() => setIsTrashOpen(false)} className="text-xs font-medium">
                 {t('pages:assets.cancel', 'Close')}
               </Button>
             </div>

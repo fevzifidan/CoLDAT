@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Settings, Tag, Image as ImageIcon, Users, Download, ArrowLeft, Save } from "lucide-react";
 import { useState, useEffect, useCallback } from 'react'; 
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import notificationService from '@/shared/services/notification/notification.service';
 
 import { projectService } from './services/projectService';
 
@@ -65,9 +65,9 @@ const ProjectDetailPage = () => {
           is_public: projectData.is_public ?? false
         });
       })
-      .catch((error: any) => {
+            .catch((error: any) => {
         console.error("Proje detayı yüklenirken hata oluştu:", error);
-        toast.error(t('pages:project_detail.not_found', "Project details could not be retrieved from backend."));
+        notificationService.error(t('pages:project_detail.not_found', "Project details could not be retrieved from backend."));
       })
       .finally(() => setLoading(false));
   };
@@ -83,51 +83,62 @@ const ProjectDetailPage = () => {
     }));
   }, []);
 
-  const handleDeleteProject = async () => {
+    const handleDeleteProject = async () => {
     if (!id) return;
     
     const confirmDelete = window.confirm(t('project_general.delete_confirm', 'Are you sure you want to permanently delete this project?'));
     if (!confirmDelete) return;
 
-    const deleteToastId = toast.loading(t('common:status.deleting', 'Deleting project...'));
     try {
-      await projectService.deleteProject(id);
-      toast.success(t('pages:project_detail.delete_success', "Project deleted successfully!"), { id: deleteToastId });
+      await notificationService.promise(
+        projectService.deleteProject(id),
+        {
+          loading: t('common:status.deleting', 'Deleting project...'),
+          success: t('pages:project_detail.delete_success', "Project deleted successfully!"),
+          error: t('pages:errors.delete_failed', "Failed to delete project from backend."),
+        }
+      );
       navigate('/projects'); 
     } catch (error: any) {
       console.error("Proje silinirken hata oluştu:", error);
-      toast.error(t('pages:errors.delete_failed', "Failed to delete project from backend."), { id: deleteToastId });
     }
   };
 
-  const handleGlobalSave = async () => {
+    const handleGlobalSave = async () => {
     if (!id) return;
     
     setIsSaving(true);
-    const saveToastId = toast.loading(t('common:status.saving', 'Saving changes...'));
 
     try {
-      if (pendingChanges.general) {
-        const updatedPayload = {
-          name: pendingChanges.general.name,
-          description: pendingChanges.general.description,
-          project_type: pendingChanges.general.project_type, 
-          is_public: Boolean(pendingChanges.general.is_public)
-        };
-        await projectService.updateProject(id, updatedPayload);
-      }
+      const savePromise = (async () => {
+        if (pendingChanges.general) {
+          const updatedPayload = {
+            name: pendingChanges.general.name,
+            description: pendingChanges.general.description,
+            project_type: pendingChanges.general.project_type, 
+            is_public: Boolean(pendingChanges.general.is_public)
+          };
+          await projectService.updateProject(id, updatedPayload);
+        }
 
-      if (pendingChanges.taxonomy) {
-        await projectService.updateProjectTaxonomy(id, pendingChanges.taxonomy);
-      }
+        if (pendingChanges.taxonomy) {
+          await projectService.updateProjectTaxonomy(id, pendingChanges.taxonomy);
+        }
+      })();
 
-      toast.success(t('pages:project_detail.alert_success', "Changes saved successfully!"), { id: saveToastId });
-      
+      await notificationService.promise(
+        savePromise,
+        {
+          loading: t('common:status.saving', 'Saving changes...'),
+          success: t('pages:project_detail.alert_success', "Changes saved successfully!"),
+          error: t('pages:errors.save_failed', "Failed to save some configurations to backend."),
+        }
+      );
+
       setPendingChanges({ general: null, taxonomy: null, team: null });
       loadProjectDetails(); 
     } catch (error: any) {
       console.error("Kayıt esnasında hata meydana geldi:", error);
-      toast.error(t('pages:errors.save_failed', "Failed to save some configurations to backend."), { id: saveToastId });
     } finally {
       setIsSaving(false);
     }

@@ -1,7 +1,7 @@
 // frontend/src/features/datasets/components/ExportManager.tsx
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import notificationService from '@/shared/services/notification/notification.service';
 import { 
   Card, 
   CardContent, 
@@ -70,7 +70,7 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
       setApiKeys(res.data || res || []);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to retrieve integration keys.");
+      notificationService.error("Failed to retrieve integration keys.");
     } finally {
       setIsLoadingKeys(false);
     }
@@ -80,20 +80,25 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
     loadApiKeys();
   }, [datasetId]);
 
-  // Yeni Anahtar Üret (POST)
+    // Yeni Anahtar Üret (POST)
   const handleCreateKey = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!datasetId || !newKeyName.trim()) return;
 
-    const toastId = toast.loading("Generating secure access credentials...");
     try {
       const payload = {
         name: newKeyName,
         ttl_days: 30, // Varsayılan 30 gün geçerlilik
         target_version: "v1.0"
       };
-      const res = await exportService.createApiKey(datasetId, payload);
-      toast.success("API Key generated successfully!", { id: toastId });
+      const res = await notificationService.promise(
+        exportService.createApiKey(datasetId, payload),
+        {
+          loading: "Generating secure access credentials...",
+          success: "API Key generated successfully!",
+          error: "Could not generate API access credentials.",
+        }
+      );
       setNewKeyName('');
       
       // Eğer backend yeni üretilen açık anahtarı (res.key) dönüyorsa, doğrudan kullanıcı görsün diye inject edelim:
@@ -104,24 +109,23 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
       loadApiKeys();
     } catch (err) {
       console.error(err);
-      toast.error("Could not generate API access credentials.", { id: toastId });
     }
   };
 
-  // Anahtarı Maskesiz Göster (Reveal)
+    // Anahtarı Maskesiz Göster (Reveal)
   const handleRevealKey = async (keyId: string) => {
     if (!datasetId) return;
     try {
       const res = await exportService.revealApiKey(datasetId, keyId);
       setRevealedKeys(prev => ({ ...prev, [keyId]: res.api_key }));
-      toast.success("Security signature revealed.");
+      notificationService.success("Security signature revealed.");
     } catch (err) {
       console.error(err);
-      toast.error("Unauthorized: Failed to decrypt secret string.");
+      notificationService.error("Unauthorized: Failed to decrypt secret string.");
     }
   };
 
-  // Anahtarı Sil / İptal Et (DELETE)
+    // Anahtarı Sil / İptal Et (DELETE)
   const handleDeleteKey = async (keyId: string) => {
     if (!datasetId) return;
     const confirmDelete = window.confirm("Are you sure you want to permanently delete this integration token?");
@@ -129,45 +133,49 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
 
     try {
       await exportService.deleteApiKey(datasetId, keyId);
-      toast.success("API Key revoked permanently.");
+      notificationService.success("API Key revoked permanently.");
       loadApiKeys();
     } catch (err) {
       console.error(err);
-      toast.error("Pipeline failure during key deletion.");
+      notificationService.error("Pipeline failure during key deletion.");
     }
   };
 
-  // PANIC BUTTON: Tümünü Topluca Kapat (Revoke All)
+    // PANIC BUTTON: Tümünü Topluca Kapat (Revoke All)
   const handlePanicRevokeAll = async () => {
     if (!datasetId) return;
     const confirmPanic = window.confirm("⚠️ WARNING: This will immediately revoke ALL active API keys for this dataset. External pipelines will break instantly. Proceed?");
     if (!confirmPanic) return;
 
-    const toastId = toast.loading("Executing global override revocation...");
     try {
-      await exportService.revokeAllKeys(datasetId);
-      toast.success("Security lockdown successful. All tokens invalidated.", { id: toastId });
+      await notificationService.promise(
+        exportService.revokeAllKeys(datasetId),
+        {
+          loading: "Executing global override revocation...",
+          success: "Security lockdown successful. All tokens invalidated.",
+          error: "Override pipeline execution failed.",
+        }
+      );
       loadApiKeys();
     } catch (err) {
       console.error(err);
-      toast.error("Override pipeline execution failed.", { id: toastId });
     }
   };
 
-  // Panoya Kopyalama Fonksiyonu
+    // Panoya Kopyalama Fonksiyonu
   const handleCopyToClipboard = (keyId: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedKeyId(keyId);
-    toast.success("Copied credentials to clipboard!");
+    notificationService.success("Copied credentials to clipboard!");
     setTimeout(() => setCopiedKeyId(null), 2000);
   };
 
   // Mock İndirme / Export Tetikleyicisi
   const handleExport = () => {
     setIsExporting(true);
-    setTimeout(() => {
+        setTimeout(() => {
       setIsExporting(false);
-      toast.success(`${selectedFormat.toUpperCase()} package generated! Ready to feed internal SDK frameworks.`);
+      notificationService.success(`${selectedFormat.toUpperCase()} package generated! Ready to feed internal SDK frameworks.`);
     }, 2000);
   };
 

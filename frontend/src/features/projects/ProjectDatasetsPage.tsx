@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Database, Plus, RefreshCw, Layers, FileSpreadsheet, FolderPlus, Image, CheckCircle } from "lucide-react"; 
 import { projectService } from './services/projectService';
 import { datasetService } from '../datasets/services/datasetService'; 
-import { toast } from 'sonner';
+import notificationService from '@/shared/services/notification/notification.service';
 
 export const ProjectDatasetsPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -56,9 +56,9 @@ export const ProjectDatasetsPage = () => {
         setProjectDatasets([]);
       }
 
-    } catch (err) {
+        } catch (err) {
       console.error("Error loading project datasets:", err);
-      toast.error("Veriler yüklenirken bir sorun oluştu.");
+      notificationService.error("Veriler yüklenirken bir sorun oluştu.");
       setProjectDatasets([]); 
     } finally {
       setLoading(false);
@@ -84,14 +84,20 @@ export const ProjectDatasetsPage = () => {
     loadProjectData();
   }, [projectId]);
 
-  // Mevcut Bir Dataseti Projeye Bağlama
+    // Mevcut Bir Dataseti Projeye Bağlama
   const handleAttachDataset = async (datasetId: string) => {
     if (!projectId) return;
     try {
       setAttachingId(datasetId);
-      await projectService.attachDataset(projectId, datasetId);
+      await notificationService.promise(
+        projectService.attachDataset(projectId, datasetId),
+        {
+          loading: 'Dataset projeye bağlanıyor...',
+          success: 'Dataset başarıyla projeye bağlandı.',
+          error: 'Bağlama işlemi sırasında bir hata oluştu.',
+        }
+      );
 
-      toast.success("Dataset başarıyla projeye bağlandı.");
       setIsAttachModalOpen(false);
       
       setTimeout(() => {
@@ -99,26 +105,31 @@ export const ProjectDatasetsPage = () => {
       }, 300);
     } catch (err) {
       console.error(err);
-      toast.error("Bağlama işlemi sırasında bir hata oluştu.");
     } finally {
       setAttachingId(null);
     }
   };
 
-  // Sıfırdan Yeni Dataset Oluşturup Projeye Ekleme
+    // Sıfırdan Yeni Dataset Oluşturup Projeye Ekleme
   const handleCreateDataset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!datasetName.trim() || !projectId) return;
 
     setSubmitting(true);
     try {
-      await datasetService.createDataset(projectId, { 
-        name: datasetName, 
-        description: datasetDesc, 
-        dataset_type: datasetType
-      });
-      
-      toast.success(t("common:status.success", "Dataset başarıyla oluşturuldu ve projeye eklendi."));
+      await notificationService.promise(
+        datasetService.createDataset(projectId, { 
+          name: datasetName, 
+          description: datasetDesc, 
+          dataset_type: datasetType
+        }),
+        {
+          loading: t("common:status.creating", 'Dataset oluşturuluyor...'),
+          success: t("common:status.success", "Dataset başarıyla oluşturuldu ve projeye eklendi."),
+          error: (err: any) => err?.message || t("common:status.error", "Bir hata oluştu."),
+        }
+      );
+
       setIsCreateModalOpen(false);
       
       setDatasetName("");
@@ -130,7 +141,6 @@ export const ProjectDatasetsPage = () => {
       }, 400);
     } catch (err: any) {
       console.error("Dataset oluşturma hatası:", err);
-      toast.error(err?.message || t("common:status.error", "Bir hata oluştu."));
     } finally {
       setSubmitting(false);
     }

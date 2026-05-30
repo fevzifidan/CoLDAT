@@ -84,21 +84,21 @@ export const ProjectCard = ({
 
   const buttonConfig = getButtonConfig();
 
-  const getStatusStyles = (status: string | undefined) => {
+    const getStatusStyles = (status: string | undefined) => {
     const normalized = status?.toLowerCase() || 'new';
 
     if (
       normalized === 'in progress' ||
       normalized === 'in_progress'
     ) {
-      return 'border-amber-100 dark:border-amber-900/50 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100/70 dark:hover:bg-amber-900/40';
+      return 'border-amber-500/20 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20';
     }
 
     if (normalized === 'completed') {
-      return 'border-emerald-100 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100/70 dark:hover:bg-amber-900/40';
+      return 'border-emerald-500/20 text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20';
     }
 
-    return 'border-blue-100 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/40 hover:bg-blue-100/70 dark:hover:bg-blue-900/40';
+    return 'border-primary/20 text-primary bg-primary/10 hover:bg-primary/20';
   };
 
   const currentStatus = project.status
@@ -112,7 +112,7 @@ export const ProjectCard = ({
   const roleKey = rawRole.replace(/ /g, '_');
 
   return (
-    <Card className="group relative overflow-hidden rounded-[2rem] bg-white dark:bg-slate-900 shadow-sm hover:shadow-xl dark:hover:shadow-black/40 transition-all duration-300 border border-slate-100 dark:border-slate-800">
+    <Card className="group relative overflow-hidden rounded-[2rem] bg-card shadow-sm hover:shadow-xl dark:hover:shadow-black/40 transition-all duration-300 border border-border">
       <CardHeader className="pb-2 text-left p-5">
         <div className="flex justify-between items-start mb-1">
           {cardType === 'task' ? (
@@ -133,7 +133,7 @@ export const ProjectCard = ({
           ) : (
             <Badge
               variant="secondary"
-              className="text-[8px] opacity-70 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 uppercase px-2 py-0"
+              className="text-[8px] opacity-70 uppercase px-2 py-0"
             >
               {t(
                 `pages:dashboard.roles.${roleKey}`,
@@ -143,18 +143,18 @@ export const ProjectCard = ({
           )}
         </div>
 
-        <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 leading-tight transition-colors">
+        <CardTitle className="text-base font-bold text-card-foreground leading-tight transition-colors">
           {project.name}
         </CardTitle>
       </CardHeader>
 
       <CardContent className="text-left px-5 py-2">
         <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-black tracking-tighter text-slate-900 dark:text-white">
+          <span className="text-3xl font-black tracking-tighter text-card-foreground">
             {project.count ?? 0}
           </span>
 
-          <span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-widest italic">
+          <span className="text-[9px] text-muted-foreground uppercase font-black tracking-widest italic">
             {t('pages:dashboard.files', 'PROCESSED FILES')}
           </span>
         </div>
@@ -164,7 +164,7 @@ export const ProjectCard = ({
         {cardType === 'project' && rawRole === 'admin' ? (
           <>
             <Button
-              className="flex-1 rounded-xl h-9 font-bold text-[10px] transition-all border-none bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:bg-[#e10613] dark:hover:bg-[#e10613] hover:text-white dark:hover:text-white cursor-pointer"
+              className="flex-1 rounded-xl h-9 font-bold text-[10px] transition-all border-none bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground cursor-pointer"
               onClick={handleManageNavigate}
             >
               {buttonConfig.text}
@@ -172,7 +172,7 @@ export const ProjectCard = ({
             </Button>
 
             <Button
-              className="flex-1 rounded-xl h-9 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 dark:hover:bg-indigo-600 hover:text-white dark:hover:text-white border-none font-bold text-[10px] transition-all gap-1 cursor-pointer"
+              className="flex-1 rounded-xl h-9 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-none font-bold text-[10px] transition-all gap-1 cursor-pointer"
               onClick={handleDatasetNavigate}
             >
               <Database size={12} />
@@ -181,7 +181,7 @@ export const ProjectCard = ({
           </>
         ) : (
           <Button
-            className="w-full rounded-xl h-9 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:bg-[#e10613] dark:hover:bg-[#e10613] hover:text-white dark:hover:text-white border-none font-bold text-[10px] transition-all cursor-pointer"
+            className="w-full rounded-xl h-9 bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground border-none font-bold text-[10px] transition-all cursor-pointer"
             onClick={handleManageNavigate}
           >
             {buttonConfig.text}

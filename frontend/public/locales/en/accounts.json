@@ -1,0 +1,85 @@
+{
+  "profile": {
+    "title": "Account Settings",
+    "description": "Manage your personal profile data and account details here",
+    "personalInfo": {
+      "title": "Personal Identity Information",
+      "description": "This information will be shown to other users in the projects and teams you are assigned to."
+    },
+    "fields": {
+      "firstName": "First Name",
+      "firstNamePlaceholder": "Your first name",
+      "lastName": "Last Name",
+      "lastNamePlaceholder": "Your last name",
+      "username": "Username",
+      "usernamePlaceholder": "Your username",
+      "email": "Email Address (Unchangeable)",
+      "msalWarning": "Users who signed in with Microsoft can only update their username."
+    },
+    "role": {
+      "title": "System Role",
+      "description": "The current permission level assigned to your account."
+    },
+    "buttons": {
+      "save": "Save Changes",
+      "saving": "Saving..."
+    },
+    "notifications": {
+      "updateLoading": "Updating profile settings...",
+      "updateSuccess": "Profile information updated successfully.",
+      "updateError": "An error occurred while updating the profile."
+    },
+    "dangerZone": {
+      "title": "Delete Account",
+      "description": "Use this section if you want to permanently delete your data and account.",
+      "deleteButton": "Delete Account Permanently",
+      "irreversibleWarning": "This action cannot be undone and all your data will be lost."
+    },
+    "deleteModal": {
+      "title": "Delete Account",
+      "requestDescription": "Please enter your password to initiate the process.",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "cancel": "Cancel",
+      "sendRequest": "Send Deletion Request",
+      "goBack": "Go Back",
+      "confirmTitle": "✓ Deletion Request Verified!",
+      "confirmMsalMessage": "Your Microsoft account will be signed out and the process will continue via the Microsoft verification screen.",
+      "confirmNormalMessage": "You can permanently delete your account by clicking the button below.",
+      "deleteAccount": "Delete Account Completely",
+      "continueWithMsal": "Continue with Microsoft",
+      "errors": {
+        "emptyPassword": "Please enter your password or authenticator.",
+        "requestFailed": "Deletion request failed (Password may be incorrect).",
+        "confirmFailed": "Account deletion could not be confirmed or the token has expired.",
+        "msalLogoutFailed": "An error occurred while terminating the Microsoft session."
+      },
+      "success": {
+        "requestCreated": "Deletion request created.",
+        "accountDeleted": "Your account has been successfully deleted. Redirecting..."
+      }
+    }
+  },
+  "team": {
+    "searchLabel": "Search User",
+    "searchPlaceholder": "type username or email...",
+    "selectUserWarning": "Please select a user from the list.",
+    "errors": {
+      "sessionExpired": "Your session has expired. Please log in again.",
+      "sessionExpiredShort": "Your session has expired.",
+      "sessionExpiredToken": "Session expired.",
+      "addFailed": "Failed to add member.",
+      "removeFailed": "This member cannot be removed.",
+      "userErrorPrefix": "User Error",
+      "roleErrorPrefix": "Role Error"
+    },
+    "roles": {
+      "OWNER": "Owner",
+      "ADMIN": "Admin",
+      "ANNOTATOR": "Labeler (Annotator)",
+      "VIEWER": "Reviewer (Viewer)",
+      "REVIEWER": "Reviewer (Viewer)"
+    },
+    "fallbackName": "User"
+  }
+}

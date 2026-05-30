@@ -91,10 +91,10 @@ setDatasetsList(activeDatasets);
   }));
 
   // --- ASENKRON DURUM EKRANLARI ---
-  if (isLoading) {
+    if (isLoading) {
     return (
-      <div className="h-[60vh] w-full flex flex-col items-center justify-center gap-3 text-slate-400">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+      <div className="h-[60vh] w-full flex flex-col items-center justify-center gap-3 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-sm font-medium tracking-wide">Synchronizing dashboard metrics...</p>
       </div>
     );
@@ -103,10 +103,10 @@ setDatasetsList(activeDatasets);
   if (error) {
     return (
       <div className="h-[50vh] flex items-center justify-center p-4">
-        <div className="p-5 rounded-2xl border border-rose-100 bg-rose-50/40 dark:bg-rose-950/10 dark:border-rose-900/30 text-center space-y-3 max-w-sm shadow-sm">
-          <AlertCircle size={28} className="mx-auto text-rose-500 animate-pulse" />
-          <p className="text-xs text-rose-600 dark:text-rose-400 font-medium leading-relaxed">{error}</p>
-          <Button size="sm" variant="outline" onClick={fetchDashboardData} className="text-xs h-8 bg-white dark:bg-slate-950">
+        <div className="p-5 rounded-2xl border border-destructive/20 bg-destructive/5 text-center space-y-3 max-w-sm shadow-sm">
+          <AlertCircle size={28} className="mx-auto text-destructive animate-pulse" />
+          <p className="text-xs text-destructive font-medium leading-relaxed">{error}</p>
+          <Button size="sm" variant="outline" onClick={fetchDashboardData} className="text-xs h-8">
             Retry Connection
           </Button>
         </div>
@@ -115,13 +115,13 @@ setDatasetsList(activeDatasets);
   }
 
   return (
-    <div className="p-6 space-y-10 max-w-7xl mx-auto text-slate-900 dark:text-slate-100">
+    <div className="p-6 space-y-10 max-w-7xl mx-auto">
       {/* Header */}
       <div className="text-left space-y-1 ml-1">
-        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
           {t('pages:dashboard.title', 'Overview')}
         </h1>
-        <p className="text-sm text-muted-foreground dark:text-slate-400 font-medium italic opacity-70">
+        <p className="text-sm text-muted-foreground font-medium italic opacity-70">
           {t('pages:dashboard.description', 'Welcome back! Here is a quick summary of your ecosystem.')}
         </p>
       </div>
@@ -130,10 +130,10 @@ setDatasetsList(activeDatasets);
       <section className="space-y-4">
         <div className="flex justify-between items-end px-1">
           <div className="text-left">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="text-xl font-bold text-foreground">
               {t('pages:dashboard.sections.recent_tasks', 'Recent Tasks')}
             </h2>
-            <p className="text-xs text-muted-foreground dark:text-slate-400 italic">
+            <p className="text-xs text-muted-foreground italic">
               {t('pages:dashboard.sections.tasks_description', 'Active annotation jobs assigned to you.')}
             </p>
           </div>
@@ -141,7 +141,7 @@ setDatasetsList(activeDatasets);
             <Button 
               variant="ghost" size="sm" 
               onClick={() => navigate('/tasks')} 
-              className="text-indigo-600 dark:text-indigo-400 font-bold text-[10px] hover:bg-indigo-50 dark:hover:bg-indigo-950/20 uppercase tracking-wider"
+              className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
             >
               {t('pages:dashboard.show_more', 'Show More')}
             </Button>
@@ -149,17 +149,17 @@ setDatasetsList(activeDatasets);
         </div>
 
         {recentTasks.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 dark:[&_h3]:!text-white dark:[&_h4]:!text-white">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {recentTasks.map((task) => (
               <ProjectCard key={task.id} project={task} cardType="task" />
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-[2rem] bg-slate-50/20 dark:bg-slate-900/20 shadow-inner">
-            <div className="bg-white dark:bg-slate-950 p-3 rounded-full shadow-sm mb-3 border dark:border-slate-800">
-               <span className="text-xl text-slate-300 dark:text-slate-600 font-serif font-bold">!</span>
+          <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-border rounded-[2rem] bg-muted/20 shadow-inner">
+            <div className="bg-card p-3 rounded-full shadow-sm mb-3 border border-border">
+               <span className="text-xl text-muted-foreground font-serif font-bold">!</span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold text-center px-4 max-w-xs">
+            <p className="text-xs text-muted-foreground font-semibold text-center px-4 max-w-xs">
               {t('pages:dashboard.no_assigned_tasks', 'No tasks assigned to you at the moment.')}
             </p>
           </div>
@@ -170,16 +170,16 @@ setDatasetsList(activeDatasets);
       <section className="space-y-4">
         <div className="flex justify-between items-end px-1">
           <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="text-xl font-bold text-foreground">
               {t('pages:dashboard.sections.recent_datasets', 'Recent Datasets')}
             </h2>
-            <p className="text-xs text-muted-foreground dark:text-slate-400 italic">Datasets linked with your primary active workspace.</p>
+            <p className="text-xs text-muted-foreground italic">Datasets linked with your primary active workspace.</p>
           </div>
           {recentDatasets.length > 0 && (
             <Button 
               variant="ghost" size="sm" 
               onClick={() => navigate('/datasets')} 
-              className="text-indigo-600 dark:text-indigo-400 font-bold text-[10px] hover:bg-indigo-50 dark:hover:bg-indigo-950/20 uppercase tracking-wider"
+              className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
             >
               {t('pages:dashboard.show_more', 'Show More')}
             </Button>
@@ -187,13 +187,13 @@ setDatasetsList(activeDatasets);
         </div>
         
         {recentDatasets.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 dark:[&_h3]:!text-white dark:[&_h4]:!text-white">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {recentDatasets.map((dataset) => (
               <ProjectCard key={dataset.id} project={dataset} cardType="dataset" />
             ))}
           </div>
         ) : (
-          <div className="text-center py-10 border border-dashed dark:border-slate-800 rounded-2xl text-slate-400 text-xs">
+          <div className="text-center py-10 border border-dashed border-border rounded-2xl text-muted-foreground text-xs">
             No datasets found for the primary project directory.
           </div>
         )}
@@ -203,16 +203,16 @@ setDatasetsList(activeDatasets);
       <section className="space-y-4">
         <div className="flex justify-between items-end px-1">
           <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="text-xl font-bold text-foreground">
               {t('pages:dashboard.sections.recent_projects', 'Recent Projects')}
             </h2>
-            <p className="text-xs text-muted-foreground dark:text-slate-400 italic">Enterprise project structures you have validation clearances for.</p>
+            <p className="text-xs text-muted-foreground italic">Enterprise project structures you have validation clearances for.</p>
           </div>
           {recentProjects.length > 0 && (
             <Button 
               variant="ghost" size="sm" 
               onClick={() => navigate('/projects')} 
-              className="text-indigo-600 dark:text-indigo-400 font-bold text-[10px] hover:bg-indigo-50 dark:hover:bg-indigo-950/20 uppercase tracking-wider"
+              className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
             >
               {t('pages:dashboard.show_more', 'Show More')}
             </Button>
@@ -220,13 +220,13 @@ setDatasetsList(activeDatasets);
         </div>
 
         {recentProjects.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 dark:[&_h3]:!text-white dark:[&_h4]:!text-white">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {recentProjects.map((project) => (
               <ProjectCard key={project.id} project={project} cardType="project" />
             ))}
           </div>
         ) : (
-          <div className="text-center py-10 border border-dashed dark:border-slate-800 rounded-2xl text-slate-400 text-xs">
+          <div className="text-center py-10 border border-dashed border-border rounded-2xl text-muted-foreground text-xs">
             No projects registers found in this workspace context.
           </div>
         )}
