@@ -57,7 +57,19 @@ export default function SaveToProjectDialog() {
   // isMounted guard for memory leak prevention
   const isMountedRef = useRef(true);
 
-  // ---- Paginated Projects ----
+    // ---- Paginated Projects ----
+  const fetchProjects = useCallback(
+    async (cursor: string | null, limit: number) => {
+      const response = await projectService.getAllProjects({ limit, after: cursor });
+      const data: Project[] = response?.data || response?.results || response || [];
+      return {
+        data: Array.isArray(data) ? data : [],
+        next_cursor: response?.next_cursor ?? null,
+      };
+    },
+    []
+  );
+
   const {
     items: projects,
     loading: isLoadingProjects,
@@ -66,19 +78,24 @@ export default function SaveToProjectDialog() {
     error: projectsError,
     initialLoading: projectsInitialLoading,
   } = useCursorPagination<Project>({
-    fetchFn: async (cursor, limit) => {
-      const response = await projectService.getAllProjects({ limit, after: cursor });
-      const data: Project[] = response?.data || response?.results || response || [];
-      return {
-        data: Array.isArray(data) ? data : [],
-        next_cursor: response?.next_cursor ?? null,
-      };
-    },
+    fetchFn: fetchProjects,
     limit: 10,
     enabled: showSaveDialog,
   });
 
   // ---- Paginated Datasets ----
+  const fetchDatasets = useCallback(
+    async (cursor: string | null, limit: number) => {
+      const response = await datasetService.getAllDatasets(selectedProjectId, { limit, after: cursor });
+      const data: Dataset[] = response?.data || response?.results || response || [];
+      return {
+        data: Array.isArray(data) ? data : [],
+        next_cursor: response?.next_cursor ?? null,
+      };
+    },
+    [selectedProjectId]
+  );
+
   const {
     items: datasets,
     loading: isLoadingDatasets,
@@ -88,14 +105,7 @@ export default function SaveToProjectDialog() {
     reset: resetDatasets,
     initialLoading: datasetsInitialLoading,
   } = useCursorPagination<Dataset>({
-    fetchFn: async (cursor, limit) => {
-      const response = await datasetService.getAllDatasets(selectedProjectId, { limit, after: cursor });
-      const data: Dataset[] = response?.data || response?.results || response || [];
-      return {
-        data: Array.isArray(data) ? data : [],
-        next_cursor: response?.next_cursor ?? null,
-      };
-    },
+    fetchFn: fetchDatasets,
     limit: 10,
     enabled: showSaveDialog && !!selectedProjectId,
   });

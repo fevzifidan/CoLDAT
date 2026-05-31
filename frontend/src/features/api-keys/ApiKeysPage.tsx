@@ -21,6 +21,15 @@ const ApiKeysPage = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
 
+  // fetchFn referansını stabilize et — useCallback olmadan her render'da yeni referans oluşur
+  const fetchKeys = useCallback(
+    async (cursor: string | null, limit: number) => {
+      const res = await apiKeyService.list(selectedDatasetId, { limit, after: cursor });
+      return { data: res.data, next_cursor: res.next_cursor };
+    },
+    [selectedDatasetId]
+  );
+
   const {
     items: apiKeys,
     loading,
@@ -29,10 +38,7 @@ const ApiKeysPage = () => {
     reset: resetKeys,
     initialLoading: keysInitialLoading,
   } = useCursorPagination<ApiKey>({
-    fetchFn: async (cursor, limit) => {
-      const res = await apiKeyService.list(selectedDatasetId, { limit, after: cursor });
-      return { data: res.data, next_cursor: res.next_cursor };
-    },
+    fetchFn: fetchKeys,
     limit: 10,
     enabled: !!selectedDatasetId,
   });

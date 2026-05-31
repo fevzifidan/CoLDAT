@@ -60,6 +60,10 @@ export function useCursorPagination<T>({
   const lastFetchId = useRef(0);
   const mountedRef = useRef(true);
 
+  // fetchFn referansını ref'te sakla ki her render'da değişmesin
+  const fetchFnRef = useRef(fetchFn);
+  fetchFnRef.current = fetchFn;
+
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -77,7 +81,7 @@ export function useCursorPagination<T>({
     setError(null);
 
     try {
-      const result = await fetchFn(cursor, limit);
+      const result = await fetchFnRef.current(cursor, limit);
       if (fetchId !== lastFetchId.current || !mountedRef.current) return;
 
       if (append) {
@@ -96,7 +100,7 @@ export function useCursorPagination<T>({
         setInitialLoading(false);
       }
     }
-  }, [fetchFn, limit]);
+  }, [limit]);
 
   // İlk/sıfırlama yüklemesi
   useEffect(() => {
@@ -108,7 +112,7 @@ export function useCursorPagination<T>({
       // Cleanup: son fetch'i iptal et (race condition önleme)
       lastFetchId.current++;
     };
-  }, [enabled, loadPage, manualFirstPage]);
+  }, [enabled, manualFirstPage]);
 
   const loadMore = useCallback(() => {
     if (nextCursor && !loading) {

@@ -21,16 +21,21 @@ export const AdminDatasetComboBox: React.FC<AdminDatasetComboBoxProps> = ({ valu
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const fetchAdminDatasets = useCallback(
+    async (cursor: string | null, limit: number) => {
+      const res = await datasetAdminService.list({ limit, after: cursor });
+      return { data: res.data, next_cursor: res.next_cursor };
+    },
+    []
+  );
+
   const {
     items: allDatasets,
     loading,
     hasNext,
     loadMore,
   } = useCursorPagination<AdminDataset>({
-    fetchFn: async (cursor, limit) => {
-      const res = await datasetAdminService.list({ limit, after: cursor });
-      return { data: res.data, next_cursor: res.next_cursor };
-    },
+    fetchFn: fetchAdminDatasets,
     limit: 20,
     enabled: true,
     manualFirstPage: false,
