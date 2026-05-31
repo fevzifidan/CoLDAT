@@ -22,14 +22,9 @@
     "error_needs_project": "You must first enter a project to create a dataset.",
     "success": "Dataset created successfully."
   },
-  "types": {
-    "image": "🖼️ Image / Vision Data",
-    "text": "📄 Text / Document Data",
-    "tabular": "📊 Tabular / Structured Data"
-  },
   "roles": {
-    "admin": "🔑 Admin",
-    "member": "👥 Member"
+    "admin": "Admin",
+    "member": "Member"
   },
   "card": {
     "no_description": "No description provided for this repository.",
@@ -133,27 +128,19 @@
     "error_create": "Failed to create dataset.",
     "error_fetch_projects": "Failed to load projects."
   },
-  "project_page": {
+    "project_page": {
     "manage_linked": "Linked Datasets Management",
     "active_datasets": "Active Datasets",
     "pipeline_status": "Pipeline Status",
     "requirements": "Requirements Link",
     "no_dataset_title": "No Dataset Connected Yet",
     "no_dataset_desc": "To unlock the project manager dashboard, you must first attach or upload a dataset matrix to this environment.",
-    "attach_existing": "Attach Existing",
     "create_new_dataset": "Create New",
-    "attach_from_pool": "Attach from Pool",
     "create_from_scratch": "Create from Scratch",
-    "attach_existing_modal_title": "Attach Existing Dataset",
-    "attach_existing_modal_desc": "Attach a dataset from the system pool to this project.",
-    "no_available_datasets": "No new datasets available to connect.",
-    "attach": "Attach",
-    "attaching": "Attaching...",
     "create_and_add": "Create & Add to Project",
     "create_modal_title": "Create New Dataset",
     "create_modal_desc": "Start a new data collection directly for this project.",
     "dataset_name_label": "Dataset Name",
-    "dataset_type_label": "Dataset Type",
     "description_label": "Description",
     "placeholder_name": "e.g., Autonomous Driving Camera Data",
     "placeholder_desc": "Briefly describe the purpose of this dataset...",
@@ -172,9 +159,6 @@
     "loading_configs": "Loading dataset configurations...",
     "notifications": {
       "load_error": "An error occurred while loading data.",
-      "attaching_dataset": "Attaching dataset to project...",
-      "attach_success": "Dataset successfully attached to project.",
-      "attach_error": "An error occurred during attachment.",
       "creating_dataset": "Creating dataset...",
       "create_success": "Dataset successfully created and added to project.",
       "create_error": "An error occurred."

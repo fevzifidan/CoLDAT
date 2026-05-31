@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Trash2, RotateCcw, X, Trash, Plus, LogIn } from "lucide-react";
+import { Search, Trash2, RotateCcw, X, Trash, Plus, LogIn, Layers, Shield, Pen, Eye } from "lucide-react";
+import { SelectFilter } from '@/shared/components/SelectFilter';
 import { ProjectCard } from './components/ProjectCard';
 import { projectService } from './services/projectService';
 import { useNavigate } from 'react-router-dom';
@@ -160,21 +161,20 @@ const ProjectsPage = () => {
             {t('projects:buttons.create_project', 'Create New Project')}
           </Button>
 
-          <div>
-            <select
-              value={roleFilter}
-              onChange={(e) => {
-                setRoleFilter(e.target.value);
-                setDisplayLimit(4);
-              }}
-              className="flex h-9 w-44 rounded-md border border-border bg-card px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer focus-visible:outline-none text-muted-foreground font-medium"
-            >
-                            <option value="ALL">✨ {t('projects:roles.all_roles', 'All Roles')}</option>
-              <option value="ADMIN">🛡️ {t('projects:roles.admin', 'Admin')}</option>
-              <option value="ANNOTATOR">✏️ {t('projects:roles.annotator', 'Annotator')}</option>
-              <option value="VIEWER">👁️ {t('projects:roles.viewer', 'Viewer')}</option>
-            </select>
-          </div>
+                    <SelectFilter
+                      value={roleFilter}
+                      onChange={(v) => {
+                        setRoleFilter(v);
+                        setDisplayLimit(4);
+                      }}
+                      triggerClassName="w-44"
+                      options={[
+                        { value: 'ALL', label: t('projects:roles.all_roles', 'All Roles'), icon: <Layers className="h-3.5 w-3.5" /> },
+                        { value: 'ADMIN', label: t('projects:roles.admin', 'Admin'), icon: <Shield className="h-3.5 w-3.5" /> },
+                        { value: 'ANNOTATOR', label: t('projects:roles.annotator', 'Annotator'), icon: <Pen className="h-3.5 w-3.5" /> },
+                        { value: 'VIEWER', label: t('projects:roles.viewer', 'Viewer'), icon: <Eye className="h-3.5 w-3.5" /> },
+                      ]}
+                    />
 
           <Button 
             variant="outline" 

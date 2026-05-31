@@ -76,10 +76,9 @@ setDatasetsList(activeDatasets);
     description: `Contains ${t.image_count ?? 0} master assets.`
   }));
 
-  const recentDatasets = datasetsList.slice(0, 4).map(d => ({
+    const recentDatasets = datasetsList.slice(0, 4).map(d => ({
     id: d.id,
     name: d.name || "Unnamed Dataset",
-    status: d.status || "",
     description: d.description || "Project dataset repository."
   }));
 

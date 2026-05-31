@@ -161,8 +161,8 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     switch (status?.toUpperCase()) {
       case "OPEN": return "bg-primary/10 text-primary border-primary/20";
       case "IN_PROGRESS": return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-      case "APPROVAL_PENDING": return "bg-muted text-muted-foreground border-border";
-      case "APPROVED": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+            case "APPROVAL_PENDING": return "bg-muted text-muted-foreground border-border";
+      case "COMPLETED": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
       case "REJECTED": return "bg-destructive/10 text-destructive border-destructive/20";
       default: return "bg-muted text-muted-foreground border-border";
     }
@@ -292,11 +292,11 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
               )}
 
               {/* Admin Rolü için Onay/Red Mekanizmaları */}
-              {isAdmin && task.status === "APPROVAL_PENDING" && (
+                            {isAdmin && task.status === "APPROVAL_PENDING" && (
                 <div className="flex gap-2">
                   <Button 
                     disabled={isSubmitting}
-                    onClick={() => handleUpdateStatus("APPROVED")}
+                    onClick={() => handleUpdateStatus("COMPLETED")}
                     className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs h-9 gap-1.5"
                   >
                     <CheckCircle2 size={14} /> {t('tasks:detail.approve', 'Approve')}
@@ -313,7 +313,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
               )}
 
               {/* Reset mekanizması */}
-              {(task.status === "APPROVED" || task.status === "REJECTED" || task.status === "OPEN") && (
+              {(task.status === "COMPLETED" || task.status === "REJECTED" || task.status === "OPEN") && (
                 <Button 
                   disabled={isSubmitting}
                   onClick={() => handleUpdateStatus("IN_PROGRESS")}

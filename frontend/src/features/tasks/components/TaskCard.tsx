@@ -25,9 +25,8 @@ export const TaskCard = ({ task, onViewDetail }: TaskCardProps) => {
       case "NEW":
       case "OPEN": return "bg-primary/10 text-primary border-primary/20";
       case "IN_PROGRESS": return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-      case "APPROVAL_PENDING": return "bg-muted text-muted-foreground border-border";
-      case "COMPLETED":
-      case "APPROVED": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+            case "APPROVAL_PENDING": return "bg-muted text-muted-foreground border-border";
+      case "COMPLETED": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
       case "REJECTED": return "bg-destructive/10 text-destructive border-destructive/20";
       default: return "bg-muted text-muted-foreground border-border";
     }

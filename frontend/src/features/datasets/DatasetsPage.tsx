@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Trash2, RotateCcw, X, Plus, Trash, ArrowLeft } from "lucide-react"; 
+import { Search, Trash2, RotateCcw, X, Plus, Trash, ArrowLeft, Layers, Shield, Users } from "lucide-react"; 
+import { SelectFilter } from '@/shared/components/SelectFilter';
 import { DatasetCard } from './components/DatasetCard';
 import { useNavigate, useParams } from 'react-router-dom';
 import notificationService from '@/shared/services/notification/notification.service';
@@ -198,20 +199,19 @@ const filteredDatasets = activeDatasets.filter(dataset => {
             onDatasetCreated={fetchDatasets}
           />
 
-                    <div>
-            <select
-              value={roleFilter}
-              onChange={(e) => {
-                setRoleFilter(e.target.value);
-                setDisplayLimit(8); 
-              }}
-              className="flex h-9 w-40 rounded-xl border border-border bg-card px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer focus-visible:outline-none text-muted-foreground font-medium"
-            >
-              <option value="ALL">✨ {t('pages:datasets.filter.all_roles', 'All Roles')}</option>
-                            <option value="ADMIN">{t("datasets:roles.admin", "🔑 Admin")}</option>
-              <option value="MEMBER">{t("datasets:roles.member", "👥 Member")}</option>
-            </select>
-          </div>
+                              <SelectFilter
+                                value={roleFilter}
+                                onChange={(v) => {
+                                  setRoleFilter(v);
+                                  setDisplayLimit(8);
+                                }}
+                                triggerClassName="w-40"
+                                options={[
+                                  { value: 'ALL', label: t('pages:datasets.filter.all_roles', 'All Roles'), icon: <Layers className="h-3.5 w-3.5" /> },
+                                  { value: 'ADMIN', label: t("datasets:roles.admin", "Admin"), icon: <Shield className="h-3.5 w-3.5" /> },
+                                  { value: 'MEMBER', label: t("datasets:roles.member", "Member"), icon: <Users className="h-3.5 w-3.5" /> },
+                                ]}
+                              />
 
           <Button 
             variant="outline" 
@@ -242,10 +242,7 @@ const filteredDatasets = activeDatasets.filter(dataset => {
               className="cursor-pointer transition-transform hover:scale-[1.02] relative group"
             >
               {/* DatasetCard içerisine backend verileri (total_images, role vb.) otomatik sızacaktır */}
-              <DatasetCard dataset={{
-                ...dataset,
-                created_at: (dataset as any).created_at ?? (dataset as any).createdAt ?? new Date().toISOString(),
-              }} />
+                            <DatasetCard dataset={dataset} />
               <button
                 onClick={(e) => handleDeleteDataset(dataset.id, e)}
                 className="absolute bottom-4 right-4 p-2 rounded-lg bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 border border-destructive/20 shadow-sm"

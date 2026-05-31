@@ -1,5 +1,5 @@
 import apiService from "@/shared/services/api/api.service";
-const IS_TAXONOMY_MOCK = true;
+const IS_TAXONOMY_MOCK = false;
 
 export const projectService = {
   /**
@@ -51,41 +51,7 @@ export const projectService = {
     return response;
   },
 
-  /**
-   * ================= MEMBERS ENDPOINTS =================
-   */
-
-  getProjectMembers: async (projectId) => {
-    const response = await apiService.get(
-      `projects/${projectId}/members/`
-    );
-    return response;
-  },
-
-  addProjectMember: async (projectId, memberData) => {
-    const response = await apiService.post(
-      `projects/${projectId}/members/`,
-      memberData
-    );
-    return response;
-  },
-
-  updateProjectMember: async (projectId, membershipId, memberData) => {
-    const response = await apiService.patch(
-      `projects/${projectId}/members/${membershipId}/`,
-      memberData
-    );
-    return response;
-  },
-
-  removeProjectMember: async (projectId, membershipId) => {
-    const response = await apiService.delete(
-      `projects/${projectId}/members/${membershipId}/`
-    );
-    return response;
-  },
-
-  /**
+    /**
    * ================= USER LOOKUP =================
    */
 
@@ -94,8 +60,8 @@ export const projectService = {
       return [];
     }
 
-    const response = await apiService.get(
-      `users/lookup/?q=${encodeURIComponent(query)}`
+        const response = await apiService.get(
+      `users/lookup/?username=${encodeURIComponent(query)}`
     );
 
     return response.data || response || [];
@@ -150,24 +116,7 @@ export const projectService = {
     return response;
   },
 
-  /**
- * ================= DATASET CONNECTION =================
- */
-
-attachDataset: async (projectId, datasetId) => {
-  const response = await apiService.post(
-    `projects/${projectId}/datasets/${datasetId}/attach/`
-  );
-  return response;
-},
-
-// Projeden dataset çıkar (opsiyonel ama genelde lazım olur)
-detachDataset: async (projectId, datasetId) => {
-  const response = await apiService.delete(
-    `projects/${projectId}/datasets/${datasetId}/detach/`
-  );
-  return response;
-},
+  
 };
 
 export default projectService;

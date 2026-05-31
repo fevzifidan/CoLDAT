@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Trash2, Plus, Loader2, AlertCircle } from "lucide-react";
+import { Search, Trash2, Plus, Loader2, AlertCircle, Layers, CircleDot, Play, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { SelectFilter, type SelectFilterOption } from '@/shared/components/SelectFilter';
 
 // Bileşen ve Servis Entegrasyonları
 import { TaskCard } from '@/features/tasks/components/TaskCard';
@@ -100,13 +101,13 @@ const fetchTasks = async () => {
   }
 
   // --- CLIENT-SIDE FILTERS ---
-  const filteredTasks = tasks.filter(task => {
+    const filteredTasks = tasks.filter(task => {
     // Backend verisinde 'name' alanı olmadığı için arama kriterini id, dataset_id veya kullanıcı adına eşliyoruz
     const searchTarget = `${task.id} ${task.dataset_id} ${task.assignee_username || ''}`.toLowerCase();
     const matchesSearch = searchTarget.includes(searchQuery.toLowerCase());
     
-    // API'den gelen statüleri normalize ediyoruz (örn: OPEN, COMPLETED)
-    const taskStatus = task.status?.toUpperCase().replace(/_/g, ' ');
+    // API'den gelen statüleri normalize ediyoruz (örn: open → OPEN, approval_pending → APPROVAL PENDING)
+    const taskStatus = task.status?.replace('_', ' ').toUpperCase();
     const matchesProgress = progressFilter === "ALL" || taskStatus === progressFilter;
     
     return matchesSearch && matchesProgress;
@@ -144,24 +145,23 @@ const fetchTasks = async () => {
                         {t('tasks:create_new', 'Create New Task')}
           </Button>
 
-          {/* Statü Filtresi */}
-          <div>
-            <select
-              value={progressFilter}
-              onChange={(e) => {
-                setProgressFilter(e.target.value);
-                setDisplayLimit(4);
-              }}
-              className="flex h-9 w-44 rounded-md border border-border bg-card px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer text-muted-foreground font-medium focus:outline-none"
-            >
-                            <option value="ALL">✨ {t('tasks:filter.all_progress', 'All Statuses')}</option>
-              <option value="OPEN">🆕 {t('tasks:filter.status.open', 'OPEN')}</option>
-              <option value="IN PROGRESS">⚡ {t('tasks:filter.status.in_progress', 'IN PROGRESS')}</option>
-              <option value="APPROVAL PENDING">⏳ {t('tasks:filter.status.pending', 'PENDING')}</option>
-              <option value="APPROVED">✅ {t('tasks:filter.status.approved', 'APPROVED')}</option>
-              <option value="REJECTED">❌ {t('tasks:filter.status.rejected', 'REJECTED')}</option>
-            </select>
-          </div>
+                                        {/* Statü Filtresi */}
+                    <SelectFilter
+            value={progressFilter}
+            onChange={(v) => {
+              setProgressFilter(v);
+              setDisplayLimit(4);
+            }}
+            triggerClassName="w-44"
+            options={[
+              { value: 'ALL', label: t('tasks:filter.all_progress', 'All Statuses'), icon: <Layers className="h-3.5 w-3.5" /> },
+              { value: 'OPEN', label: t('tasks:filter.status.open', 'OPEN'), icon: <CircleDot className="h-3.5 w-3.5" /> },
+              { value: 'IN PROGRESS', label: t('tasks:filter.status.in_progress', 'IN PROGRESS'), icon: <Play className="h-3.5 w-3.5" /> },
+              { value: 'APPROVAL PENDING', label: t('tasks:filter.status.pending', 'APPROVAL PENDING'), icon: <Clock className="h-3.5 w-3.5" /> },
+              { value: 'COMPLETED', label: t('tasks:filter.status.completed', 'COMPLETED'), icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+              { value: 'REJECTED', label: t('tasks:filter.status.rejected', 'REJECTED'), icon: <XCircle className="h-3.5 w-3.5" /> },
+            ]}
+          />
         </div>
       </div>
 

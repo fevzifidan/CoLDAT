@@ -17,6 +17,7 @@ import {
   UserCheck,
   Search,
 } from "lucide-react";
+import { SelectFilter } from '@/shared/components/SelectFilter';
 
 import { projectService } from '@/features/projects/services/projectService';
 
@@ -541,27 +542,16 @@ const TeamManager = ({
                   )}
                 </label>
 
-                <select
+                                <SelectFilter
                   value={role}
-                  onChange={(e) =>
-                    setRole(
-                      e.target.value
-                    )
-                  }
-                  className="w-full h-10 px-3 border rounded-md text-sm outline-none bg-white text-slate-900"
-                >
-                  <option value="admin">
-                    ADMIN
-                  </option>
-
-                  <option value="annotator">
-                    ANNOTATOR
-                  </option>
-
-                  <option value="viewer">
-                    VIEWER
-                  </option>
-                </select>
+                  onChange={setRole}
+                  triggerClassName="w-full h-10 bg-white"
+                  options={[
+                    { value: 'admin', label: 'ADMIN' },
+                    { value: 'annotator', label: 'ANNOTATOR' },
+                    { value: 'viewer', label: 'VIEWER' },
+                  ]}
+                />
               </div>
 
               <Button

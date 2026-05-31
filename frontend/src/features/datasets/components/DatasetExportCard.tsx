@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, Loader2, CheckCircle2, Layers } from 'lucide-react';
+import { SelectFilter } from '@/shared/components/SelectFilter';
 import notificationService from '@/shared/services/notification/notification.service';
 
 // Hata Çözümü: src/assets/services/ içindeki dosyaya giden doğru göreceli yol
@@ -43,18 +44,19 @@ export default function DataSetExportCard({ datasetId = "default-dataset-123" }:
       </p>
 
       <div className="space-y-4">
-        <div>
+                <div>
           <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">{t("pages:export.format_select", "Hedef Format Seçin")}</label>
-          <select 
-            value={format} 
-            onChange={(e) => setFormat(e.target.value as any)}
+          <SelectFilter
+            value={format}
+            onChange={(v) => setFormat(v as 'coco' | 'yolo' | 'visual_genome')}
             disabled={isExporting}
-            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500"
-          >
-            <option value="coco">COCO Format (.json)</option>
-            <option value="yolo">YOLO Format (.zip / .txt)</option>
-            <option value="visual_genome">Visual Genome (.json)</option>
-          </select>
+            triggerClassName="w-full bg-slate-50 dark:bg-slate-950"
+            options={[
+              { value: 'coco', label: 'COCO Format (.json)' },
+              { value: 'yolo', label: 'YOLO Format (.zip / .txt)' },
+              { value: 'visual_genome', label: 'Visual Genome (.json)' },
+            ]}
+          />
         </div>
 
         <button

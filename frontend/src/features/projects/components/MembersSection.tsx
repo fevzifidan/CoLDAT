@@ -4,11 +4,12 @@ import { memberService } from '../../datasets/services/memberService';
 import { Button } from "@/components/ui/button";
 import notificationService from '@/shared/services/notification/notification.service';
 import { UserPlus, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Member {
   id: string;
   user: { username: string; email: string };
-  role: 'owner' | 'editor' | 'viewer';
+  role: 'annotator' | 'viewer';
 }
 
 export const MembersSection = ({ datasetId }: { datasetId: string }) => {
@@ -68,15 +69,18 @@ export const MembersSection = ({ datasetId }: { datasetId: string }) => {
                 <p className="text-xs text-slate-500 dark:text-slate-400">{m.user?.email || ""}</p>
               </div>
               <div className="flex gap-2 items-center">
-                <select 
+                                <Select 
                   value={m.role} 
-                  onChange={(e) => handleUpdateRole(m.id, e.target.value)}
-                  className="text-xs border rounded p-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 dark:border-slate-700 focus:outline-none"
+                  onValueChange={(newRole) => handleUpdateRole(m.id, newRole)}
                 >
-                  <option value="owner">Owner</option>
-                  <option value="editor">Editor</option>
-                  <option value="viewer">Viewer</option>
-                </select>
+                  <SelectTrigger className="h-8 text-xs w-24 bg-white dark:bg-slate-800 border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                                        <SelectItem value="annotator" className="text-xs">Annotator</SelectItem>
+                    <SelectItem value="viewer" className="text-xs">Viewer</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Button variant="ghost" size="sm" onClick={() => handleRemoveMember(m.id)} className="h-8 w-8 p-0 hover:bg-rose-50 dark:hover:bg-rose-950/30">
                   <Trash2 size={14} className="text-rose-500" />
                 </Button>

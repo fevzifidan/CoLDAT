@@ -4,12 +4,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"; 
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Database, Plus, RefreshCw, Layers, FileSpreadsheet, FolderPlus, Image, CheckCircle } from "lucide-react"; 
+import { ArrowLeft, Database, Plus, RefreshCw, Layers, FileSpreadsheet, Image, CheckCircle } from "lucide-react";  
 import { projectService } from './services/projectService';
 import { datasetService } from '../datasets/services/datasetService'; 
+import { CreateDatasetModal } from '../datasets/components/CreateDatasetModal';
 import notificationService from '@/shared/services/notification/notification.service';
 
 export const ProjectDatasetsPage = () => {
@@ -21,18 +19,9 @@ export const ProjectDatasetsPage = () => {
   const [projectDetails, setProjectDetails] = useState<any>(null);
   const [projectDatasets, setProjectDatasets] = useState<any[]>([]); 
   
-  const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); 
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); 
   
-  const [allAvailableDatasets, setAllAvailableDatasets] = useState<any[]>([]);
-  const [attachingId, setAttachingId] = useState<string | null>(null);
-
-  const [datasetName, setDatasetName] = useState("");
-  const [datasetDesc, setDatasetDesc] = useState("");
-  const [datasetType, setDatasetType] = useState("image");
-  const [submitting, setSubmitting] = useState(false);
-
-  // Hem projeyi hem de o projeye ait gerçek datasetleri çekip eşitleyen ana fonksiyon
+    // Hem projeyi hem de o projeye ait gerçek datasetleri çekip eşitleyen ana fonksiyon
   const loadProjectData = async () => {
     if (!projectId) return;
     try {
@@ -65,86 +54,9 @@ export const ProjectDatasetsPage = () => {
     }
   };
 
-  // 🎯 REAL BACKEND ENTEGRASYONU: Havuzdaki Diğer Tüm Datasetleri Yükle (Attach Modalı için)
-  const loadAvailableDatasets = async () => {
-    try {
-      // Tüm projeleri gezmek yerine, kullanıcının erişebildiği ana havuzu tek istek ile çekiyoruz
-      const response = await datasetService.getAllDatasets();
-      const extractedList = response && response.data && Array.isArray(response.data) ? response.data : response;
-      
-      if (Array.isArray(extractedList)) {
-        setAllAvailableDatasets(extractedList);
-      }
-    } catch (err) {
-      console.error("Error loading available datasets:", err);
-    }
-  };
-
-  useEffect(() => {
+    useEffect(() => {
     loadProjectData();
   }, [projectId]);
-
-    // Mevcut Bir Dataseti Projeye Bağlama
-  const handleAttachDataset = async (datasetId: string) => {
-    if (!projectId) return;
-    try {
-      setAttachingId(datasetId);
-      await notificationService.promise(
-        projectService.attachDataset(projectId, datasetId),
-        {
-                    loading: t("datasets:project_page.notifications.attaching_dataset", 'Dataset projeye bağlanıyor...'),
-          success: t("datasets:project_page.notifications.attach_success", 'Dataset başarıyla projeye bağlandı.'),
-          error: t("datasets:project_page.notifications.attach_error", 'Bağlama işlemi sırasında bir hata oluştu.'),
-        }
-      );
-
-      setIsAttachModalOpen(false);
-      
-      setTimeout(() => {
-        loadProjectData();
-      }, 300);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setAttachingId(null);
-    }
-  };
-
-    // Sıfırdan Yeni Dataset Oluşturup Projeye Ekleme
-  const handleCreateDataset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!datasetName.trim() || !projectId) return;
-
-    setSubmitting(true);
-    try {
-      await notificationService.promise(
-        datasetService.createDataset(projectId, { 
-          name: datasetName, 
-          description: datasetDesc, 
-          dataset_type: datasetType
-        }),
-        {
-          loading: t("common:status.creating", 'Dataset oluşturuluyor...'),
-          success: t("common:status.success", "Dataset başarıyla oluşturuldu ve projeye eklendi."),
-          error: (err: any) => err?.message || t("common:status.error", "Bir hata oluştu."),
-        }
-      );
-
-      setIsCreateModalOpen(false);
-      
-      setDatasetName("");
-      setDatasetDesc("");
-      setDatasetType("image");
-      
-      setTimeout(() => {
-        loadProjectData();
-      }, 400);
-    } catch (err: any) {
-      console.error("Dataset oluşturma hatası:", err);
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto text-slate-900 dark:text-slate-100">
@@ -193,16 +105,8 @@ export const ProjectDatasetsPage = () => {
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 📂 {t('datasets:project_page.active_datasets', 'Active Datasets')} ({projectDatasets.length})
               </h3>
-              {projectDatasets.length > 0 && (
+                            {projectDatasets.length > 0 && (
                 <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => { loadAvailableDatasets(); setIsAttachModalOpen(true); }}
-                    className="rounded-xl h-8 text-xs gap-1"
-                  >
-                                        <Plus size={12} /> {t("datasets:project_page.attach_existing", "Var Olanı Bağla")}
-                  </Button>
                   <Button 
                     size="sm" 
                     onClick={() => setIsCreateModalOpen(true)}
@@ -227,15 +131,7 @@ export const ProjectDatasetsPage = () => {
                     </p>
                   </div>
                   
-                  <div className="flex justify-center gap-3 mt-4">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => { loadAvailableDatasets(); setIsAttachModalOpen(true); }}
-                      className="rounded-xl font-medium"
-                    >
-                                            <Plus size={14} className="mr-1" /> {t("datasets:project_page.attach_from_pool", "Havuzdan Dataset Bağla")}
-                    </Button>
+                                    <div className="flex justify-center gap-3 mt-4">
                     <Button 
                       size="sm" 
                       onClick={() => setIsCreateModalOpen(true)}
@@ -319,99 +215,14 @@ export const ProjectDatasetsPage = () => {
         </div>
       )}
 
-      {/* MODAL 1: Havuzdan Var Olanı Bağlama */}
-      <Dialog open={isAttachModalOpen} onOpenChange={setIsAttachModalOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-800">
-          <DialogHeader>
-                        <DialogTitle>{t("datasets:project_page.attach_existing_modal_title", "Mevcut Dataset İlişkilendir")}</DialogTitle>
-            <DialogDescription>
-              {t("datasets:project_page.attach_existing_modal_desc", "Sistemdeki kayıtlı havuzdan bir veri setini bu projeye bağlayın.")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 max-h-[350px] overflow-y-auto pt-2 pr-1">
-            {allAvailableDatasets.filter(d => !projectDatasets.some((existing: any) => existing.id === d.id)).length === 0 ? (
-              <p className="text-sm text-center text-slate-400 py-6">{t("datasets:project_page.no_available_datasets", "Bağlanabilecek yeni bir dataset bulunamadı.")}</p>
-            ) : (
-              allAvailableDatasets
-                .filter(d => !projectDatasets.some((existing: any) => existing.id === d.id))
-                .map((availableDs) => (
-                  <div key={availableDs.id} className="flex items-center justify-between p-3 border dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40">
-                    <div className="text-left">
-                      <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">{availableDs.name}</h4>
-                      <p className="text-xs text-slate-400 max-w-[280px] truncate">{availableDs.description || t("datasets:card.no_description", "Açıklama yok.")}</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      disabled={attachingId === availableDs.id}
-                      onClick={() => handleAttachDataset(availableDs.id)}
-                      className="bg-indigo-600 text-white hover:bg-indigo-700 h-8 text-xs rounded-lg"
-                    >
-                      {attachingId === availableDs.id ? t("datasets:project_page.attaching", "Bağlanıyor...") : t("datasets:project_page.attach", "Bağla")}
-                    </Button>
-                  </div>
-                ))
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* MODAL 2: Yeni Dataset Oluşturma Modalı */}
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-900 border-2 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              <span className="flex items-center gap-2 text-slate-900 dark:text-white">
-                                <FolderPlus className="text-indigo-600 dark:text-indigo-400 h-5 w-5" /> 
-                {t("datasets:project_page.create_modal_title", "Yeni Dataset Oluştur")}
-              </span>
-            </DialogTitle>
-            <DialogDescription>
-              <span className="block dark:text-slate-400">
-                {t("datasets:project_page.create_modal_desc", "Bu proje için doğrudan yeni bir veri seti koleksiyonu başlatın.")}
-              </span>
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleCreateDataset} className="space-y-4 pt-2">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">{t("datasets:project_page.dataset_name_label", "Dataset Adı")}</label>
-              <Input 
-                value={datasetName} 
-                onChange={(e) => setDatasetName(e.target.value)} 
-                placeholder={t("datasets:project_page.placeholder_name", "Örn: Otonom Sürüş Kamera Verileri")} 
-                required 
-                maxLength={100}
-                className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">{t("datasets:project_page.dataset_type_label", "Dataset Tipi")}</label>
-              <select
-                value={datasetType}
-                onChange={(e) => setDatasetType(e.target.value)}
-                className="flex h-9 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer text-slate-700 dark:text-slate-300 font-medium focus-visible:outline-none"
-              >
-                                <option value="image">{t("datasets:types.image", "🖼️ Görsel / Resim Verisi")}</option>
-                <option value="text">{t("datasets:types.text", "📄 Metin / Doküman Verisi")}</option>
-                <option value="tabular">{t("datasets:types.tabular", "📊 Tablo / Yapılandırılmış Veri")}</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">{t("datasets:project_page.description_label", "Açıklama")}</label>
-              <Textarea 
-                value={datasetDesc} 
-                onChange={(e) => setDatasetDesc(e.target.value)} 
-                placeholder={t("datasets:project_page.placeholder_desc", "Bu veri setinin amacını kısaca açıklayın...")} 
-                rows={3} 
-                maxLength={300}
-                className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl"
-              />
-            </div>
-            <Button type="submit" disabled={submitting} className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-50 dark:hover:bg-indigo-600 mt-2 font-bold text-white rounded-xl">
-              {submitting ? t("common:status.saving", "Kaydediliyor...") : t("datasets:project_page.create_and_add", "Oluştur ve Projeye Ekle")}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+                        {/* Yeni Dataset Oluşturma Modalı */}
+      <CreateDatasetModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onDatasetCreated={() => {
+          setTimeout(() => loadProjectData(), 400);
+        }}
+      />
     </div>
   );
 };
