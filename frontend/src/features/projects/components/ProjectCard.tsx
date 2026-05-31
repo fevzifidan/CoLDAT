@@ -13,7 +13,8 @@ import {
   ArrowUpRight,
   Settings,
   Eye,
-  Database
+  Database,
+  Calendar
 } from "lucide-react";
 
 interface CardProject {
@@ -40,7 +41,7 @@ export const ProjectCard = ({
   onStatusChange
 }: ProjectCardProps) => {
   const navigate = useNavigate();
-  const { t } = useTranslation(['projects']);
+  const { t, i18n } = useTranslation(['projects']);
 
   const rawRole = project.role?.toLowerCase() || 'viewer';
 
@@ -148,7 +149,7 @@ export const ProjectCard = ({
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="text-left px-5 py-2">
+            <CardContent className="text-left px-5 py-2">
         <div className="flex items-baseline gap-1">
           <span className="text-3xl font-black tracking-tighter text-card-foreground">
             {project.count ?? 0}
@@ -158,6 +159,19 @@ export const ProjectCard = ({
             {t('projects:files', 'PROCESSED FILES')}
           </span>
         </div>
+
+        {project.created_at && (
+          <div className="flex items-center gap-1.5 mt-2 text-[10px] text-muted-foreground border-t border-border/50 pt-2">
+            <Calendar size={11} className="text-primary/60" />
+            <span>
+              {new Date(project.created_at).toLocaleDateString(i18n.language === 'tr' ? 'tr-TR' : 'en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })}
+            </span>
+          </div>
+        )}
       </CardContent>
 
       <CardFooter className="p-5 pt-2 gap-2">

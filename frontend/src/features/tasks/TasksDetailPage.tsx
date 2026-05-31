@@ -13,7 +13,8 @@ import {
   Trash2, 
   AlertCircle,
   Clock,
-  Loader2
+  Loader2,
+  MessageSquareX
 } from "lucide-react";
 
 // taskService bağımlılığını ekliyoruz
@@ -35,6 +36,7 @@ interface TaskDetailData {
   status: string;
   total_assets: number;
   role?: string; // Giriş yapan kullanıcının rolü ('admin' vb.)
+  rejection_note?: string | null;
   images: Array<{ id: string; name: string; status: string }>;
 }
 
@@ -89,10 +91,15 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     if (!task) return;
     try {
       setIsSubmitting(true);
-      await taskService.updateTaskStatus(taskId, { status: newStatus, note: note });
+            await taskService.updateTaskStatus(taskId, { status: newStatus, note: note });
       
-      // Local state'i API'den gelen veriye göre ya da manuel senkronize et optimistik güncelleme:
-      setTask(prev => prev ? { ...prev, status: newStatus } : null);
+      // Local state'i zenginleştir: rejection_note'u API'den gelecek response'dan da alabiliriz,
+      // ancak optimistik olarak reject edildiğinde notu hemen yansıtalım
+      if (newStatus === "REJECTED" && note.trim()) {
+        setTask(prev => prev ? { ...prev, status: newStatus, rejection_note: note } : null);
+      } else {
+        setTask(prev => prev ? { ...prev, status: newStatus } : null);
+      }
       setNote("");
     } catch (err: any) {
       alert(err?.response?.data?.message || t('tasks:detail.status_update_failed', 'Status update failed.'));
@@ -213,7 +220,12 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
                 {task.status}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">{t('tasks:detail.dataset_id', 'Dataset ID:')} {task.dataset_id}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t('tasks:detail.dataset_id', 'Dataset ID:')} {task.dataset_id}
+              {task.assignee_username && (
+                <span className="ml-3 border-l border-border pl-3">@{task.assignee_username}</span>
+              )}
+            </p>
           </div>
         </div>
 
@@ -239,7 +251,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
                     <div className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
             <h3 className="font-bold text-sm tracking-wide text-muted-foreground uppercase">{t('tasks:detail.info_section', 'Task Information')}</h3>
             
-            <div className="space-y-3 text-sm">
+                        <div className="space-y-3 text-sm">
               <div className="flex justify-between border-b pb-2 border-border">
                 <span className="text-muted-foreground">{t('tasks:detail.assignee', 'Assignee:')}</span>
                 <span className="font-semibold text-primary">
@@ -250,6 +262,21 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
                 <span className="text-muted-foreground">{t('tasks:detail.total_assets', 'Total Assets:')}</span>
                 <span className="font-bold">{task.total_assets}{t('tasks:detail.files_suffix', ' files')}</span>
               </div>
+
+              {/* Rejection Note */}
+              {task.status === "REJECTED" && task.rejection_note && (
+                <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-3 space-y-1.5 mt-2">
+                  <div className="flex items-center gap-1.5 text-destructive">
+                    <MessageSquareX size={14} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">
+                      {t('tasks:detail.rejection_reason', 'Rejection Reason')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-card-foreground/80 leading-relaxed">
+                    {task.rejection_note}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Admin Atama Değiştirme Butonu */}

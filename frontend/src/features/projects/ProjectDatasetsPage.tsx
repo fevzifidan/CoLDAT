@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Database, Plus, RefreshCw, Layers, FileSpreadsheet, Image, CheckCircle } from "lucide-react";  
+import { ArrowLeft, Database, Plus, RefreshCw, Layers, FileSpreadsheet, Image, CheckCircle, Tag } from "lucide-react";  
 import { projectService } from './services/projectService';
 import { datasetService } from '../datasets/services/datasetService'; 
 import { CreateDatasetModal } from '../datasets/components/CreateDatasetModal';
@@ -145,9 +145,17 @@ export const ProjectDatasetsPage = () => {
             ) : (
               projectDatasets.map((ds: any) => (
                 <Card key={ds.id} className="rounded-[1.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
-                  <CardHeader className="p-5 pb-3 flex flex-row items-center justify-between space-y-0">
+                                    <CardHeader className="p-5 pb-3 flex flex-row items-center justify-between space-y-0">
                     <div>
-                      <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100">{ds.name}</CardTitle>
+                      <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100">
+                        {ds.name}
+                        {ds.current_version && (
+                          <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                            <Tag size={10} />
+                            v{ds.current_version}
+                          </span>
+                        )}
+                      </CardTitle>
                       <CardDescription className="text-xs mt-0.5">{ds.description || t("datasets:card.no_description", "No custom description provided.")}</CardDescription>
                     </div>
                     <div className="h-9 w-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">

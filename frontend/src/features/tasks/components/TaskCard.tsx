@@ -9,7 +9,8 @@ interface TaskItem {
   name: string;
   status: string;
   count?: number; 
-  assignee_username?: string | null; // 👈 Buraya '| null' eklendi
+  assignee_username?: string | null;
+  role?: string;
 }
 
 interface TaskCardProps {
@@ -47,11 +48,16 @@ export const TaskCard = ({ task, onViewDetail }: TaskCardProps) => {
             <FileText size={13} />
             <span>{task.count ?? 0} {t('tasks:card.processed_files', 'Processed Files')}</span>
           </div>
-          {/* null check koruması sağlandı */}
+                    {/* null check koruması sağlandı */}
           {task.assignee_username && (
             <div className="flex items-center gap-1.5">
               <User size={13} />
               <span>{t('tasks:card.assignee_prefix', 'Assignee: @')}{task.assignee_username}</span>
+              {task.role && (
+                <span className="ml-auto bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                  {task.role}
+                </span>
+              )}
             </div>
           )}
         </div>
