@@ -41,6 +41,7 @@
     "dark": "Karanlık",
     "system": "Sistem"
   },
+  "step_of": "Adım {{current}} / {{total}}",
   "search": {
     "placeholder": "Ara..."
   },

@@ -41,6 +41,7 @@
     "dark": "Dark",
     "system": "System"
   },
+  "step_of": "Step {{current}} of {{total}}",
   "search": {
     "placeholder": "Search..."
   },

@@ -28,6 +28,7 @@ import Login from "@/features/auth/Login/Login";
 import Register from "@/features/auth/Register/Register";
 
 import TasksPage from '@/features/tasks/TasksPage';
+import CreateTaskPage from '@/features/tasks/CreateTaskPage';
 import DatasetsPage from '@/features/datasets/DatasetsPage';
 import { ProjectDatasetsPage } from '@/features/projects/ProjectDatasetsPage'; 
 import ProjectsPage from '@/features/projects/ProjectsPage';
@@ -73,6 +74,7 @@ function App() {
                         <Route path="/datasets" element={<DatasetsPage />} />
 
                         <Route path="/tasks" element={<TasksPage />} />
+                        <Route path="/tasks/new" element={<CreateTaskPage />} />
                         <Route path="/api-keys" element={<ApiKeysPage />} />
                         
                         {/* Sol tarafta tıklandığında yüklenecek alan */}
