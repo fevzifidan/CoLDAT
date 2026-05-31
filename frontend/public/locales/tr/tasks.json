@@ -1,9 +1,12 @@
 {
-  "title": "Görevler",
+  "title": "Görev Çalışma Alanı",
   "create_new": "Yeni Görev Oluştur",
   "search_placeholder": "ID, Veri Seti veya Görevliye göre ara...",
-  "show_more": "Daha Fazla Göster",
-  "empty_list": "Filtre kriterlerine uygun görev bulunamadı.",
+  "show_more": "Daha Fazla Yükle",
+  "empty_list": "Filtre kriterlerine uygun görev bulunamadı veya veri havuzu boş.",
+  "loading": "Aktif görevler getiriliyor...",
+  "error_try_again": "Tekrar Dene",
+
   "filter": {
     "all_progress": "Tüm Durumlar",
     "status": {
@@ -13,5 +16,79 @@
       "approved": "ONAYLANDI",
       "rejected": "REDDEDİLDİ"
     }
+  },
+
+  "card": {
+    "manage_task": "Görevi Yönet",
+    "processed_files": "İşlenmiş Dosya",
+    "assignee_prefix": "Görevli: @"
+  },
+
+  "detail": {
+    "back": "Görev Çalışma Alanına Dön",
+    "loading": "Görev detayları sunucudan yükleniyor...",
+    "error_title": "Bir Hata Oluştu",
+    "error_task_not_found": "Görev bulunamadı.",
+    "dataset_id": "Veri Seti ID:",
+
+    "info_section": "Görev Bilgileri",
+    "assignee": "Görevli:",
+    "unassigned": "Atanmamış",
+    "total_assets": "Toplam Varlık:",
+    "files_suffix": " dosya",
+    "reassign_button": "Görevliyi Değiştir",
+
+    "workflow_section": "İş Akışı Eylemleri",
+    "note_label": "İşlem Notu (İsteğe Bağlı)",
+    "note_placeholder": "Doğrulama için bir not yazın...",
+    "submit_for_approval": "Onaya Gönder",
+    "approve": "Onayla",
+    "reject": "Reddet",
+    "start_reopen": "Başlat / Görevi Yeniden Aç",
+
+    "assets_section": "Atanmış Varlıklar",
+    "add_asset_button": "Varlık Ekle",
+    "asset_image_default": "Varlık Görseli",
+    "asset_id_prefix": "ID: ",
+    "asset_status_labeled": "etiketlendi",
+    "asset_status_unlabeled": "etiketsiz",
+    "no_assets": "Bu göreve henüz varlık atanmamış.",
+
+    "confirm_delete": "Bu görevi iptal etmek/silmek istediğinize emin misiniz?",
+    "revoke_button": "Görevi İptal Et",
+    "status_update_failed": "Durum güncellemesi başarısız oldu.",
+    "reassignment_failed": "Yeniden atama başarısız oldu.",
+    "add_asset_failed": "Varlık ekleme başarısız oldu.",
+    "delete_failed": "Görev silinemedi."
+  },
+
+  "modal": {
+    "create_title": "Yeni Görev Oluştur",
+    "reassign_title": "Görevliyi Yeniden Ata",
+    "add_asset_title": "Göreve Yeni Varlık Ekle",
+
+    "dataset_id_label": "Veri Seti UUID *",
+    "dataset_id_placeholder": "örn. 123e4567-e88b-12d3-a456-426614174000",
+    "assignee_id_label": "Görevli Kullanıcı UUID *",
+    "assignee_id_placeholder": "örn. 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "image_ids_label": "Görsel UUID'leri (Virgülle ayrılmış) *",
+    "image_ids_placeholder": "id1, id2, id3...",
+    "note_label": "Görev Notu (İsteğe Bağlı)",
+    "note_placeholder": "Toplu iş bağlam talimatları ekleyin...",
+
+    "reassign_username_label": "Hedef Kullanıcı Adı",
+    "reassign_username_placeholder": "örn. janesmith (Etiketleyici rolünde olmalı)",
+
+    "asset_id_label": "Varlık UUID / ID",
+    "asset_id_placeholder": "Atanmamış varlık ID'sini girin",
+    "asset_warning": "Sistem bu varlığın başka bir göreve bağlı olup olmadığını kontrol eder.",
+
+    "cancel": "İptal",
+    "create": "Oluştur",
+    "creating": "Oluşturuluyor...",
+    "assign": "Ata",
+    "assigning": "Atanıyor...",
+    "add": "Varlık Ekle",
+    "adding": "Ekleniyor..."
   }
 }

@@ -42,7 +42,7 @@ interface ExportManagerProps {
 }
 
 const ExportManager = ({ datasetId }: ExportManagerProps) => {
-  const { t } = useTranslation(['pages', 'common']);
+  const { t } = useTranslation(['pages', 'common', 'datasets']);
   
   // Format Seçim State'leri
   const [isExporting, setIsExporting] = useState(false);
@@ -56,9 +56,9 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
 
   const formats = [
-    { id: 'coco', name: 'COCO JSON', icon: FileJson, desc: t("export.formats.coco_desc", "Standard object detection annotation mapping structure.") },
-    { id: 'yolo', name: 'YOLO v8', icon: FileCode, desc: t("export.formats.yolo_desc", "TXT boundary box files optimal for darknet pipeline training.") },
-    { id: 'pascal', name: 'Pascal VOC', icon: Archive, desc: t("export.formats.pascal_desc", "XML hierarchical meta descriptors for model inference structures.") },
+        { id: 'coco', name: 'COCO JSON', icon: FileJson, desc: t("datasets:export.formats.coco_desc", "COCO") },
+    { id: 'yolo', name: 'YOLO v8', icon: FileCode, desc: t("datasets:export.formats.yolo_desc", "YOLO") },
+    { id: 'pascal', name: 'Pascal VOC', icon: Archive, desc: t("datasets:export.formats.pascal_desc", "Pascal VOC") },
   ];
 
   // API Anahtarlarını Listele
@@ -70,7 +70,7 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
       setApiKeys(res.data || res || []);
     } catch (err) {
       console.error(err);
-      notificationService.error("Failed to retrieve integration keys.");
+      notificationService.error(t("datasets:export.notifications.load_keys_error", "Failed to retrieve integration keys."));
     } finally {
       setIsLoadingKeys(false);
     }
@@ -94,9 +94,9 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
       const res = await notificationService.promise(
         exportService.createApiKey(datasetId, payload),
         {
-          loading: "Generating secure access credentials...",
-          success: "API Key generated successfully!",
-          error: "Could not generate API access credentials.",
+                    loading: t("datasets:export.notifications.creating_key", "Generating secure access credentials..."),
+          success: t("datasets:export.notifications.key_created", "API Key generated successfully!"),
+          error: t("datasets:export.notifications.key_error", "Could not generate API access credentials."),
         }
       );
       setNewKeyName('');
@@ -118,42 +118,42 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
     try {
       const res = await exportService.revealApiKey(datasetId, keyId);
       setRevealedKeys(prev => ({ ...prev, [keyId]: res.api_key }));
-      notificationService.success("Security signature revealed.");
+      notificationService.success(t("datasets:export.notifications.key_revealed", "Security signature revealed."));
     } catch (err) {
       console.error(err);
-      notificationService.error("Unauthorized: Failed to decrypt secret string.");
+      notificationService.error(t("datasets:export.notifications.key_reveal_error", "Unauthorized: Failed to decrypt secret string."));
     }
   };
 
     // Anahtarı Sil / İptal Et (DELETE)
   const handleDeleteKey = async (keyId: string) => {
     if (!datasetId) return;
-    const confirmDelete = window.confirm("Are you sure you want to permanently delete this integration token?");
+    const confirmDelete = window.confirm(t("datasets:export.confirm_delete_key", "Are you sure you want to permanently delete this integration token?"));
     if (!confirmDelete) return;
 
     try {
       await exportService.deleteApiKey(datasetId, keyId);
-      notificationService.success("API Key revoked permanently.");
+      notificationService.success(t("datasets:export.notifications.key_deleted", "API Key revoked permanently."));
       loadApiKeys();
     } catch (err) {
       console.error(err);
-      notificationService.error("Pipeline failure during key deletion.");
+      notificationService.error(t("datasets:export.notifications.key_delete_error", "Pipeline failure during key deletion."));
     }
   };
 
     // PANIC BUTTON: Tümünü Topluca Kapat (Revoke All)
   const handlePanicRevokeAll = async () => {
     if (!datasetId) return;
-    const confirmPanic = window.confirm("⚠️ WARNING: This will immediately revoke ALL active API keys for this dataset. External pipelines will break instantly. Proceed?");
+    const confirmPanic = window.confirm(t("datasets:export.confirm_revoke_all", "⚠️ WARNING: This will immediately revoke ALL active API keys for this dataset. External pipelines will break instantly. Proceed?"));
     if (!confirmPanic) return;
 
     try {
       await notificationService.promise(
         exportService.revokeAllKeys(datasetId),
         {
-          loading: "Executing global override revocation...",
-          success: "Security lockdown successful. All tokens invalidated.",
-          error: "Override pipeline execution failed.",
+                    loading: t("datasets:export.notifications.revoking_all", "Executing global override revocation..."),
+          success: t("datasets:export.notifications.revoke_success", "Security lockdown successful. All tokens invalidated."),
+          error: t("datasets:export.notifications.revoke_error", "Override pipeline execution failed."),
         }
       );
       loadApiKeys();
@@ -166,7 +166,7 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
   const handleCopyToClipboard = (keyId: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedKeyId(keyId);
-    notificationService.success("Copied credentials to clipboard!");
+    notificationService.success(t("datasets:export.notifications.key_copy", "Copied credentials to clipboard!"));
     setTimeout(() => setCopiedKeyId(null), 2000);
   };
 
@@ -175,7 +175,7 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
     setIsExporting(true);
         setTimeout(() => {
       setIsExporting(false);
-      notificationService.success(`${selectedFormat.toUpperCase()} package generated! Ready to feed internal SDK frameworks.`);
+      notificationService.success(`${selectedFormat.toUpperCase()} ${t("datasets:export.notifications.export_complete", "package generated! Ready to feed internal SDK frameworks.")}`);
     }, 2000);
   };
 
@@ -184,8 +184,8 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
       {/* 📁 FORMAT SEÇİM ALANI */}
       <div className="space-y-4">
         <div className="text-left">
-          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">{t("export.title", "Matrix Format Export Target")}</h3>
-          <p className="text-xs text-muted-foreground">{t("export.description", "Transform native annotation polygons into specialized pipeline layers.")}</p>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">{t("datasets:export.title", "Matrix Format Export Target")}</h3>
+          <p className="text-xs text-muted-foreground">{t("datasets:export.description", "Transform native annotation polygons into specialized pipeline layers.")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -221,9 +221,9 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
           <CardContent className="p-5">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-0.5 text-left">
-                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{t("export.ready_title", "Static Snapshot Export Bundle")}</h4>
+                                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{t("datasets:export.ready_title", "Static Snapshot Export Bundle")}</h4>
                 <p className="text-[11px] text-muted-foreground">
-                  {t("export.ready_desc", "Package current version matrix coordinates as: ")} 
+                  {t("datasets:export.ready_desc", "Package current version matrix coordinates as: ")}  
                   <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold ml-1">{selectedFormat === 'pascal' ? 'Pascal VOC' : selectedFormat.toUpperCase()}</span>
                 </p>
               </div>
@@ -234,11 +234,11 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
               >
                 {isExporting ? (
                   <>
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Compiling...
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> {t("datasets:export.compiling", "Compiling...")}
                   </>
                 ) : (
                   <>
-                    <Download className="mr-2 h-3.5 w-3.5" /> Pack & Download
+                    <Download className="mr-2 h-3.5 w-3.5" /> {t("datasets:export.pack_download", "Pack & Download")}
                   </>
                 )}
               </Button>
@@ -258,8 +258,8 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="text-left">
-            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">External API Integrations</h3>
-            <p className="text-xs text-muted-foreground">Automate cloud fetch processes using long-lived security signatures.</p>
+                        <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">{t("datasets:export.external_api", "External API Integrations")}</h3>
+            <p className="text-xs text-muted-foreground">{t("datasets:export.api_description", "Automate cloud fetch processes using long-lived security signatures.")}</p>
           </div>
           <Button 
             variant="destructive" 
@@ -268,20 +268,20 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
             disabled={apiKeys.length === 0}
             className="text-xs font-bold h-8 bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs"
           >
-            <AlertOctagon size={14} className="mr-1.5" /> Emergency Revoke All
+            <AlertOctagon size={14} className="mr-1.5" /> {t("datasets:export.emergency_revoke", "Emergency Revoke All")}
           </Button>
         </div>
 
         {/* Yeni Key Ekleme Formu */}
         <form onSubmit={handleCreateKey} className="flex gap-2 max-w-md">
           <Input 
-            placeholder="e.g., Jenkins_CI_Pipeline, Production_Sync"
+            placeholder={t("datasets:export.placeholder_key_name", "e.g., Jenkins_CI_Pipeline, Production_Sync")}
             value={newKeyName}
             onChange={(e) => setNewKeyName(e.target.value)}
             className="h-8 text-xs rounded-xl dark:border-slate-800"
           />
           <Button type="submit" size="sm" className="bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:opacity-90 h-8 font-bold text-xs rounded-xl whitespace-nowrap">
-            <Key size={12} className="mr-1" /> Mint API Token
+            <Key size={12} className="mr-1" /> {t("datasets:export.mint_token", "Mint API Token")}
           </Button>
         </form>
 
@@ -290,21 +290,21 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
           <div className="overflow-x-auto">
             {isLoadingKeys ? (
               <div className="flex justify-center items-center py-8 font-mono text-[11px] text-slate-400 gap-2">
-                <Loader2 size={13} className="animate-spin" /> Decoding Signature Records...
+                <Loader2 size={13} className="animate-spin" /> {t("datasets:export.decoding", "Decoding Signature Records...")}
               </div>
             ) : apiKeys.length === 0 ? (
               <div className="text-center py-8 font-mono text-[11px] text-slate-400">
-                No pipeline access integrations configured yet.
+                {t("datasets:export.no_keys", "No pipeline access integrations configured yet.")}
               </div>
             ) : (
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-900/60 border-b dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                    <th className="p-3 pl-4">Token Identifier</th>
-                    <th className="p-3">Secret Key Hash</th>
-                    <th className="p-3">Expiry Date</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3 text-right pr-4">Scope Actions</th>
+                                        <th className="p-3 pl-4">{t("datasets:export.table.token_identifier", "Token Identifier")}</th>
+                    <th className="p-3">{t("datasets:export.table.secret_hash", "Secret Key Hash")}</th>
+                    <th className="p-3">{t("datasets:export.table.expiry_date", "Expiry Date")}</th>
+                    <th className="p-3">{t("datasets:export.table.status", "Status")}</th>
+                    <th className="p-3 text-right pr-4">{t("datasets:export.table.scope_actions", "Scope Actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y dark:divide-slate-800 font-medium text-slate-600 dark:text-slate-300">
@@ -338,7 +338,7 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40'
                               : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
                           }`}>
-                            {key.is_active ? 'Active' : 'Revoked'}
+                            {key.is_active ? t("datasets:export.active", "Active") : t("datasets:export.revoked", "Revoked")}
                           </Badge>
                         </td>
                         <td className="p-3 text-right pr-4 space-x-1">

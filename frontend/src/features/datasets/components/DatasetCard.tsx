@@ -1,4 +1,5 @@
 // src/features/datasets/components/DatasetCard.tsx
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Database, Calendar, Layers, UserCheck } from "lucide-react";
 
@@ -14,10 +15,12 @@ interface DatasetCardProps {
 }
 
 export const DatasetCard = ({ dataset }: DatasetCardProps) => {
+  const { t, i18n } = useTranslation(['pages', 'datasets']);
+
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "-";
     try {
-      return new Date(dateStr).toLocaleDateString("tr-TR", {
+      return new Date(dateStr).toLocaleDateString(i18n.language === 'tr' ? "tr-TR" : "en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -42,7 +45,7 @@ export const DatasetCard = ({ dataset }: DatasetCardProps) => {
           {dataset.name}
         </CardTitle>
         <CardDescription className="text-xs text-muted-foreground line-clamp-2 min-h-[2rem]">
-          {dataset.description || "No description provided for this repository."}
+          {dataset.description || t("datasets:card.no_description", "No description provided for this repository.")}
         </CardDescription>
       </CardHeader>
 

@@ -36,7 +36,7 @@ const COLOR_PALETTE = [
 ];
 
 const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, isAdmin = false }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['pages', 'common', 'taxonomy']);
 
   const [loading, setLoading] = useState<boolean>(false);
   const [classes, setClasses] = useState<ClassItem[]>([]);
@@ -87,8 +87,8 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
   };
 
     const saveEdit = (type: 'class' | 'pred', id: string | number) => {
-    if (!isAdmin) {
-      notificationService.error(t("common:errors.unauthorized", "Sadece admin rolü düzenleme yapabilir."));
+        if (!isAdmin) {
+      notificationService.error(t("common:status.error", "Sadece admin rolü düzenleme yapabilir."));
       return;
     }
 
@@ -120,7 +120,7 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
 
     const deleteItem = async (type: 'class' | 'pred', id: string | number) => {
     if (!isAdmin) {
-      notificationService.error(t("common:errors.unauthorized", "Sadece yetkili admin bu öğeyi silebilir."));
+      notificationService.error(t("taxonomy:delete_error", "Sadece yetkili admin bu öğeyi silebilir."));
       return;
     }
 
@@ -257,16 +257,16 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
                       <div className="flex gap-4 bg-white dark:bg-slate-950 p-2 rounded-lg border dark:border-slate-800 text-xs">
                         <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-400 font-medium">
                           <input type="checkbox" checked={tempIsActive} onChange={(e) => setTempIsActive(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
-                          Active
+                                                    {t("taxonomy:active_label", "Active")}
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-400 font-medium">
                           <input type="checkbox" checked={tempIncludeInExport} onChange={(e) => setTempIncludeInExport(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
-                          Include in Export
+                          {t("taxonomy:include_export_label", "Include in Export")}
                         </label>
                       </div>
 
                       <div className="space-y-1">
-                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Class Color:</span>
+                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{t("taxonomy:class_color_label", "Class Color:")}</span>
                         <div className="grid grid-cols-6 gap-1 p-1.5 bg-white dark:bg-slate-950 rounded-lg border dark:border-slate-800">
                           {COLOR_PALETTE.map((color) => (
                             <button
@@ -288,8 +288,8 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
                           <span className={`text-sm font-semibold ${cls.isActive ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 line-through'}`}>{cls.name}</span>
                         </div>
                         <div className="flex gap-1 ml-1 sm:ml-4 scale-90 origin-left">
-                          {!cls.isActive && <span className="bg-amber-100 text-amber-700 text-[9px] px-1.5 py-0.5 rounded font-bold">Passive</span>}
-                          {cls.includeInExport && <span className="bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-[9px] px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5"><ShieldCheck size={10}/>Exportable</span>}
+                          {!cls.isActive && <span className="bg-amber-100 text-amber-700 text-[9px] px-1.5 py-0.5 rounded font-bold">{t("taxonomy:passive_badge", "Passive")}</span>}
+                          {cls.includeInExport && <span className="bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-[9px] px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5"><ShieldCheck size={10}/>{t("taxonomy:exportable_badge", "Exportable")}</span>}
                         </div>
                       </div>
                       {isAdmin && (
@@ -340,11 +340,11 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
                       <div className="flex gap-4 bg-white dark:bg-slate-950 p-2 rounded-lg border dark:border-slate-800 text-xs">
                         <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-400 font-medium">
                           <input type="checkbox" checked={tempIsActive} onChange={(e) => setTempIsActive(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
-                          Active
+                                                    {t("taxonomy:active_label", "Active")}
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-400 font-medium">
                           <input type="checkbox" checked={tempIncludeInExport} onChange={(e) => setTempIncludeInExport(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
-                          Include in Export
+                          {t("taxonomy:include_export_label", "Include in Export")}
                         </label>
                       </div>
                     </div>
@@ -353,8 +353,8 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                         <span className={`text-sm font-mono italic ${pred.isActive ? 'text-slate-600 dark:text-slate-400' : 'text-slate-400 line-through'}`}>{pred.name}</span>
                         <div className="flex gap-1 ml-1 sm:ml-4 scale-90 origin-left">
-                          {!pred.isActive && <span className="bg-amber-100 text-amber-700 text-[9px] px-1.5 py-0.5 rounded font-bold">Passive</span>}
-                          {pred.includeInExport && <span className="bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-[9px] px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5"><ShieldCheck size={10}/>Exportable</span>}
+                          {!pred.isActive && <span className="bg-amber-100 text-amber-700 text-[9px] px-1.5 py-0.5 rounded font-bold">{t("taxonomy:passive_badge", "Passive")}</span>}
+                          {pred.includeInExport && <span className="bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-[9px] px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5"><ShieldCheck size={10}/>{t("taxonomy:exportable_badge", "Exportable")}</span>}
                         </div>
                       </div>
                       

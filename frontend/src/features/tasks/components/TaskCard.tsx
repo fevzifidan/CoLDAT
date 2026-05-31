@@ -1,4 +1,5 @@
 // @/features/tasks/components/TaskCard.tsx
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Eye, FileText, User } from "lucide-react";
 
@@ -17,6 +18,8 @@ interface TaskCardProps {
 }
 
 export const TaskCard = ({ task, onViewDetail }: TaskCardProps) => {
+  const { t } = useTranslation(['tasks']);
+
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
       case "NEW":
@@ -43,13 +46,13 @@ export const TaskCard = ({ task, onViewDetail }: TaskCardProps) => {
         <div className="flex flex-col gap-1 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <FileText size={13} />
-            <span>{task.count ?? 0} Processed Files</span>
+            <span>{task.count ?? 0} {t('tasks:card.processed_files', 'Processed Files')}</span>
           </div>
           {/* null check koruması sağlandı */}
           {task.assignee_username && (
             <div className="flex items-center gap-1.5">
               <User size={13} />
-              <span>Assignee: @{task.assignee_username}</span>
+              <span>{t('tasks:card.assignee_prefix', 'Assignee: @')}{task.assignee_username}</span>
             </div>
           )}
         </div>
@@ -60,7 +63,7 @@ export const TaskCard = ({ task, onViewDetail }: TaskCardProps) => {
         variant="secondary" 
         className="w-full h-8 text-xs font-medium gap-1.5"
       >
-        <Eye size={14} /> Manage Task
+        <Eye size={14} /> {t('tasks:card.manage_task', 'Manage Task')}
       </Button>
     </div>
   );

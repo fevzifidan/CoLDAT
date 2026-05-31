@@ -1,9 +1,12 @@
 {
-  "title": "Tasks",
+  "title": "Tasks Workspace",
   "create_new": "Create New Task",
   "search_placeholder": "Search by ID, Dataset or Assignee...",
-  "show_more": "Show More",
-  "empty_list": "No tasks match your filter criteria.",
+  "show_more": "Load More",
+  "empty_list": "No tasks match your filter criteria or data repository is empty.",
+  "loading": "Fetching active workspace tasks...",
+  "error_try_again": "Try Again",
+
   "filter": {
     "all_progress": "All Statuses",
     "status": {
@@ -13,5 +16,79 @@
       "approved": "APPROVED",
       "rejected": "REJECTED"
     }
+  },
+
+  "card": {
+    "manage_task": "Manage Task",
+    "processed_files": "Processed Files",
+    "assignee_prefix": "Assignee: @"
+  },
+
+  "detail": {
+    "back": "Back to Tasks Workspace",
+    "loading": "Loading task details from server...",
+    "error_title": "An Error Occurred",
+    "error_task_not_found": "Task not found.",
+    "dataset_id": "Dataset ID:",
+
+    "info_section": "Task Information",
+    "assignee": "Assignee:",
+    "unassigned": "Unassigned",
+    "total_assets": "Total Assets:",
+    "files_suffix": " files",
+    "reassign_button": "Reassign Task",
+
+    "workflow_section": "Workflow Actions",
+    "note_label": "Process Note (Optional)",
+    "note_placeholder": "Write a note for validation...",
+    "submit_for_approval": "Submit for Approval",
+    "approve": "Approve",
+    "reject": "Reject",
+    "start_reopen": "Start / Re-open Task",
+
+    "assets_section": "Assigned Assets",
+    "add_asset_button": "Add Asset",
+    "asset_image_default": "Asset Image",
+    "asset_id_prefix": "ID: ",
+    "asset_status_labeled": "labeled",
+    "asset_status_unlabeled": "unlabeled",
+    "no_assets": "No assets bound to this task yet.",
+
+    "confirm_delete": "Are you sure you want to revoke/delete this task?",
+    "revoke_button": "Revoke Task",
+    "status_update_failed": "Status update failed.",
+    "reassignment_failed": "Reassignment failed.",
+    "add_asset_failed": "Adding asset failed.",
+    "delete_failed": "Failed to delete task."
+  },
+
+  "modal": {
+    "create_title": "Create New Task",
+    "reassign_title": "Reassign Task Assignee",
+    "add_asset_title": "Add New Asset to Task",
+
+    "dataset_id_label": "Dataset UUID *",
+    "dataset_id_placeholder": "e.g. 123e4567-e88b-12d3-a456-426614174000",
+    "assignee_id_label": "Assignee User UUID *",
+    "assignee_id_placeholder": "e.g. 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "image_ids_label": "Image UUIDs (Comma separated) *",
+    "image_ids_placeholder": "id1, id2, id3...",
+    "note_label": "Task Note (Optional)",
+    "note_placeholder": "Add batch context instructions...",
+
+    "reassign_username_label": "Target Username",
+    "reassign_username_placeholder": "e.g. janesmith (Must be annotator role)",
+
+    "asset_id_label": "Asset UUID / ID",
+    "asset_id_placeholder": "Enter unassigned asset string ID",
+    "asset_warning": "System checks if this asset is already linked to another task.",
+
+    "cancel": "Cancel",
+    "create": "Create",
+    "creating": "Creating...",
+    "assign": "Assign",
+    "assigning": "Assigning...",
+    "add": "Add Asset",
+    "adding": "Adding..."
   }
 }

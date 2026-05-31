@@ -66,8 +66,15 @@
     "add_global_attribute": "Genel öznitelik ekle",
     "global_attributes_title": "Genel Öznitelikler",
     "prompt_msg": "Yeni öznitelik adı girin (Örn. renk, kesiklik):",
-    "default_new_class": "Yeni Sınıf",
-    "default_new_relation": "yeni_iliski"
+        "default_new_class": "Yeni Sınıf",
+    "default_new_relation": "yeni_iliski",
+    "view_only": "Salt Okunur",
+    "no_classes": "Henüz sınıf tanımlanmadı.",
+    "no_predicates": "Henüz ilişki (predicate) tanımlanmadı.",
+    "permanent_delete_warning": "DİKKAT! Bu işlem bu öğeye ait tüm geçmiş etiketlemeleri veritabanından KALICI olarak silecektir. Emin misiniz?",
+    "deleting": "Silme işlemi gerçekleştiriliyor...",
+    "delete_success": "Öğe ve ilişkili tüm geçmiş etiketler başarıyla silindi.",
+    "delete_error": "Silme işlemi sırasında bir hata oluştu."
   },
   "assets": {
     "search_placeholder": "Varlıklarda ara...",
@@ -113,37 +120,5 @@
       "yolo_desc": "Darknet / PyTorch formatı",
       "pascal_desc": "Nesne algılama için XML formatı"
     }
-  },
-  "tasks": {
-    "title": "Görevler",
-    "create_new": "Yeni Görev Oluştur",
-    "search_placeholder": "Görevlerde ara...",
-    "empty_list": "Çöp kutunuz şu anda boş.",
-    "load_more": "Daha Fazla Göster",
-    "filter": {
-      "all_progress": "Tüm Durumlar",
-      "status": {
-        "new": "YENİ",
-        "in_progress": "DEVAM EDİYOR",
-        "completed": "TAMAMLANDI"
-      }
-    }
-  },
-  "status": {
-    "new": "YENİ",
-    "in_progress": "DEVAM EDİYOR",
-    "completed": "TAMAMLANDI",
-    "load_more": "Daha Fazla Göster"
-  },
-    "actions": {
-    "cancel": "İptal",
-    "create": "Oluştur",
-    "close": "Kapat"
-  },
-  "errors": {
-    "fetch_failed": "Liste yüklenirken bir hata oluştu.",
-    "save_failed": "Değişiklikler kaydedilirken bir hata oluştu.",
-    "delete_failed": "Silme işlemi başarısız oldu.",
-    "unauthorized": "Oturum süreniz dolmuş. Lütfen tekrar giriş yapın."
   }
 }

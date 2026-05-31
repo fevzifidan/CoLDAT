@@ -26,7 +26,7 @@ interface Dataset {
 }
 
 const DatasetsPage = () => {
-  const { t } = useTranslation(['pages', 'common']);
+  const { t } = useTranslation(['pages', 'common', 'datasets']);
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
 
@@ -110,7 +110,7 @@ const fetchDatasets = useCallback(async () => {
     if (!datasetName.trim()) return;
 
     if (!activeProjectId) {
-      notificationService.error("Dataset oluşturabilmek için öncelikle 'Projects' sayfasından bir projenin içerisine girmelisiniz.");
+            notificationService.error(t("datasets:create.error_needs_project", "Dataset oluşturabilmek için öncelikle bir projenin içerisine girmelisiniz."));
       return;
     }
 
@@ -225,7 +225,7 @@ const filteredDatasets = activeDatasets.filter(dataset => {
           <Button 
             onClick={() => {
               if (!activeProjectId) {
-                notificationService.error("Dataset oluşturabilmek için öncelikle 'Projects' sayfasından bir projenin içerisine girmelinesiniz.");
+                notificationService.error(t("datasets:create.error_needs_project", "Dataset oluşturabilmek için öncelikle bir projenin içerisine girmelisiniz."));
                 return;
               }
               setIsModalOpen(true);
@@ -269,9 +269,9 @@ const filteredDatasets = activeDatasets.filter(dataset => {
                     onChange={(e) => setDatasetType(e.target.value)}
                     className="flex h-9 w-full rounded-xl border border-border bg-background px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer text-card-foreground font-medium focus-visible:outline-none"
                   >
-                    <option value="image">🖼️ Image / Vision Data</option>
-                    <option value="text">📄 Text / Document Data</option>
-                    <option value="tabular">📊 Tabular / Structured Data</option>
+                                        <option value="image">{t("datasets:types.image", "🖼️ Image / Vision Data")}</option>
+                    <option value="text">{t("datasets:types.text", "📄 Text / Document Data")}</option>
+                    <option value="tabular">{t("datasets:types.tabular", "📊 Tabular / Structured Data")}</option>
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -302,8 +302,8 @@ const filteredDatasets = activeDatasets.filter(dataset => {
               className="flex h-9 w-40 rounded-xl border border-border bg-card px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer focus-visible:outline-none text-muted-foreground font-medium"
             >
               <option value="ALL">✨ {t('pages:datasets.filter.all_roles', 'All Roles')}</option>
-              <option value="ADMIN">🔑 Admin</option>
-              <option value="MEMBER">👥 Member</option>
+                            <option value="ADMIN">{t("datasets:roles.admin", "🔑 Admin")}</option>
+              <option value="MEMBER">{t("datasets:roles.member", "👥 Member")}</option>
             </select>
           </div>
 
@@ -385,7 +385,7 @@ const filteredDatasets = activeDatasets.filter(dataset => {
                   <div key={dataset.id} className="flex items-center justify-between p-3 border border-border rounded-xl bg-muted/30 gap-4">
                     <div className="text-left">
                       <h4 className="font-semibold text-card-foreground text-sm">{dataset.name}</h4>
-                      <p className="text-xs text-muted-foreground capitalize">Version: {dataset.current_version || 'v1.0'}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{t("datasets:card.version_label", "Version")}: {dataset.current_version || 'v1.0'}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Button size="sm" variant="outline" onClick={() => handleRecoverDataset(dataset.id)} className="h-8 border-emerald-500/20 bg-emerald-500/10 text-emerald-600 text-xs font-bold gap-1.5 rounded-xl">

@@ -66,8 +66,15 @@
     "add_global_attribute": "Add global attribute",
     "global_attributes_title": "Global Attributes",
     "prompt_msg": "Enter new attribute name (e.g., color, truncation):",
-    "default_new_class": "New Class",
-    "default_new_relation": "new_relation"
+        "default_new_class": "New Class",
+    "default_new_relation": "new_relation",
+    "view_only": "Read Only",
+    "no_classes": "No classes defined yet.",
+    "no_predicates": "No predicates defined yet.",
+    "permanent_delete_warning": "WARNING! This action will permanently delete ALL historical labels associated with this item from the database. Are you sure?",
+    "deleting": "Deleting item...",
+    "delete_success": "Item and all associated labels have been successfully deleted.",
+    "delete_error": "An error occurred while deleting the item."
   },
   "assets": {
     "search_placeholder": "Search assets...",
@@ -113,37 +120,5 @@
       "yolo_desc": "Darknet / PyTorch format",
       "pascal_desc": "XML format for object detection"
     }
-  },
-  "tasks": {
-    "title": "Tasks",
-    "create_new": "Create New Task",
-    "search_placeholder": "Search tasks...",
-    "empty_list": "Your trash is currently empty.",
-    "load_more": "Show More",
-    "filter": {
-      "all_progress": "All Statuses",
-      "status": {
-        "new": "NEW",
-        "in_progress": "IN PROGRESS",
-        "completed": "COMPLETED"
-      }
-    }
-  },
-  "status": {
-    "new": "NEW",
-    "in_progress": "IN PROGRESS",
-    "completed": "COMPLETED",
-    "load_more": "Show More"
-  },
-    "actions": {
-    "cancel": "Cancel",
-    "create": "Create",
-    "close": "Close"
-  },
-  "errors": {
-    "fetch_failed": "An error occurred while loading the list.",
-    "save_failed": "An error occurred while saving changes.",
-    "delete_failed": "Delete operation failed.",
-    "unauthorized": "Your session has expired. Please log in again."
   }
 }

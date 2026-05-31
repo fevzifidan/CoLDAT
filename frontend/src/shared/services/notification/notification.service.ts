@@ -59,20 +59,21 @@ export const notificationService = {
    * @param promise - Asynchronous process to be followed
    * @param messages - Loading, success, and error messages
    */
-  promise: <T>(
+  promise: async <T>(
     promise: Promise<T>,
     messages: {
       loading: string;
       success: string | ((data: T) => string);
       error: string | ((error: any) => string);
     }
-  ) => {
-    return toast.promise(promise, {
+  ): Promise<T> => {
+    toast.promise(promise, {
       loading: messages.loading,
       success: messages.success,
       error: messages.error,
       ...defaultOptions,
     });
+    return await promise;
   },
 
   /**
