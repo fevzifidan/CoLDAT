@@ -120,6 +120,19 @@
       "revoke_error": "Geçersiz kılma işlem hattı yürütmesi başarısız oldu."
     }
   },
+  "modal": {
+    "step1_title": "Proje Seçin",
+    "step1_desc": "İçinde veri seti oluşturmak için yöneticisi olduğunuz bir proje seçin.",
+    "step2_title": "Yeni Veri Seti Oluştur",
+    "step2_desc": "Veri seti şunun için yapılandırılıyor: {{projectName}}",
+    "back_button": "Geri",
+    "selected_project_label": "Seçilen Proje",
+    "no_admin_projects": "Yöneticisi olduğunuz bir proje bulunamadı. Bir proje oluşturarak başlayın.",
+    "loading_projects": "Projeler yükleniyor...",
+    "success": "Veri seti başarıyla oluşturuldu.",
+    "error_create": "Veri seti oluşturulamadı.",
+    "error_fetch_projects": "Projeler yüklenemedi."
+  },
   "project_page": {
     "manage_linked": "Bağlı Veri Seti Yönetimi",
     "active_datasets": "Aktif Veri Setleri",

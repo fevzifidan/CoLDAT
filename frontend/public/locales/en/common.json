@@ -27,7 +27,9 @@
     "back": "Go to Projects",
     "cancel": "Cancel",
     "close": "Close",
-    "load_more": "Load More"
+    "load_more": "Load More",
+    "no_results": "No results found.",
+    "action_cannot_be_undone": "This action cannot be undone."
   },
   "error": {
     "err_reach_server": "Could not reach server!"

@@ -3,20 +3,18 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Search, Trash2, RotateCcw, X, Plus, FolderPlus, Trash, ArrowLeft } from "lucide-react"; 
+import { Search, Trash2, RotateCcw, X, Plus, Trash, ArrowLeft } from "lucide-react"; 
 import { DatasetCard } from './components/DatasetCard';
 import { useNavigate, useParams } from 'react-router-dom';
 import notificationService from '@/shared/services/notification/notification.service';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { datasetService } from './services/datasetService';
+import { CreateDatasetModal } from './components/CreateDatasetModal';
 
 interface Dataset {
   id: string;
   project_id: string;
   name: string;
   description?: string;
-  dataset_type: string; // backend şemasına göre gerekirse 'text' | 'image' vb. veya default-string
   current_version?: string;
   total_images?: number;
   annotated_images?: number;
@@ -47,11 +45,7 @@ const DatasetsPage = () => {
   const [loading, setLoading] = useState(true);
   const [isTrashOpen, setIsTrashOpen] = useState(false);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [datasetName, setDatasetName] = useState("");
-  const [datasetDesc, setDatasetDesc] = useState("");
-  const [datasetType, setDatasetType] = useState("image"); // Backend imaj tabanlı şemaya sahip olduğundan varsayılanı 'image' yapabiliriz
-  const [submitting, setSubmitting] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
 const fetchDatasets = useCallback(async () => {
   setLoading(true);
@@ -104,37 +98,6 @@ const fetchDatasets = useCallback(async () => {
   useEffect(() => {
     fetchDatasets();
   }, [fetchDatasets]);
-
-  const handleCreateDataset = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!datasetName.trim()) return;
-
-    if (!activeProjectId) {
-            notificationService.error(t("datasets:create.error_needs_project", "Dataset oluşturabilmek için öncelikle bir projenin içerisine girmelisiniz."));
-      return;
-    }
-
-    setSubmitting(true);
-    
-    datasetService.createDataset(activeProjectId, { 
-      name: datasetName, 
-      description: datasetDesc, 
-      dataset_type: datasetType
-    })
-      .then(() => {
-        notificationService.success(t("common:status.success", "Created successfully."));
-        setIsModalOpen(false);
-        setDatasetName("");
-        setDatasetDesc("");
-        setDatasetType("image");
-        fetchDatasets(); 
-      })
-      .catch((err: any) => {
-        console.error("Dataset oluşturma hatası:", err);
-        notificationService.error(err?.message || t("common:status.error", "An error occurred."));
-      })
-      .finally(() => setSubmitting(false));
-  };
 
   const activeDatasets = datasetList.filter((d) => !d.isDeleted && !d.isPermanentlyDeleted);
   const archivedDatasets = datasetList.filter((d) => d.isDeleted && !d.isPermanentlyDeleted);
@@ -222,75 +185,18 @@ const filteredDatasets = activeDatasets.filter(dataset => {
             />
           </div>
 
-          <Button 
-            onClick={() => {
-              if (!activeProjectId) {
-                notificationService.error(t("datasets:create.error_needs_project", "Dataset oluşturabilmek için öncelikle bir projenin içerisine girmelisiniz."));
-                return;
-              }
-              setIsModalOpen(true);
-            }}
+                    <Button 
+            onClick={() => setIsModalOpen(true)}
             className="bg-primary hover:bg-primary/90 h-9 font-medium shadow-sm gap-1.5 text-primary-foreground rounded-xl"
           >
             <Plus size={16} /> {t('pages:datasets.create_dataset', "Create Dataset")}
           </Button>
 
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogContent className="sm:max-w-[425px] bg-card border-2 border-border text-card-foreground rounded-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  <span className="flex items-center gap-2">
-                    <FolderPlus className="text-primary h-5 w-5" /> 
-                    {t('pages:datasets.create_dataset', "Create Dataset")}
-                  </span>
-                </DialogTitle>
-                <DialogDescription>
-                  <span className="block text-muted-foreground">
-                    {t('pages:datasets.description', "Manage versioned data collections and track progress.")}
-                  </span>
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleCreateDataset} className="space-y-4 pt-2">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-card-foreground">{t('pages:project_general.project_name', 'Dataset Name')}</label>
-                  <Input 
-                    value={datasetName} 
-                    onChange={(e) => setDatasetName(e.target.value)} 
-                    placeholder={t('pages:project_general.placeholder_name', 'E.g. Autonomous Driving Dataset')} 
-                    required 
-                    maxLength={100}
-                    className="bg-background border-border text-foreground rounded-xl"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-card-foreground">{t('pages:project_general.task_type', 'Dataset Type')}</label>
-                  <select
-                    value={datasetType}
-                    onChange={(e) => setDatasetType(e.target.value)}
-                    className="flex h-9 w-full rounded-xl border border-border bg-background px-3 py-1 text-sm shadow-sm transition-colors cursor-pointer text-card-foreground font-medium focus-visible:outline-none"
-                  >
-                                        <option value="image">{t("datasets:types.image", "🖼️ Image / Vision Data")}</option>
-                    <option value="text">{t("datasets:types.text", "📄 Text / Document Data")}</option>
-                    <option value="tabular">{t("datasets:types.tabular", "📊 Tabular / Structured Data")}</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-card-foreground">{t('pages:project_general.description', 'Description')}</label>
-                  <Textarea 
-                    value={datasetDesc} 
-                    onChange={(e) => setDatasetDesc(e.target.value)} 
-                    placeholder={t('pages:project_general.placeholder_desc', 'Describe the purpose of this dataset...')} 
-                    rows={3} 
-                    maxLength={300}
-                    className="bg-background border-border text-foreground rounded-xl"
-                  />
-                </div>
-                <Button type="submit" disabled={submitting} className="w-full bg-primary hover:bg-primary/90 mt-2 font-bold text-primary-foreground rounded-xl">
-                  {submitting ? t("common:status.saving", "Saving...") : t("pages:datasets.create_dataset", "Create Dataset")}
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <CreateDatasetModal
+            open={isModalOpen}
+            onOpenChange={setIsModalOpen}
+            onDatasetCreated={fetchDatasets}
+          />
 
                     <div>
             <select

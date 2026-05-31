@@ -3,15 +3,12 @@
     "title": "Integration API Keys",
     "description": "Manage secret keys to access your datasets securely from external applications or SDKs."
   },
-  "external_provider": {
-    "title": "External Model Provider Configuration (Presentation Mode)",
-    "description": "Connect your own OpenAI API key to run models and send commands within the synthetic data studio.",
-    "privacy_notice": "Privacy Guarantee: Your key is strictly never saved to the remote database (backend). It is stored only in this browser's local storage and routed directly to the AI engine.",
-    "input_placeholder": "sk-proj-...",
-    "btn_update": "Update Key",
-    "btn_connect": "Connect Key",
-    "btn_clear": "Clear",
-    "success_message": "Key verified successfully and connected to the browser session. Synthetic Data Studio is active!"
+  "dataset_selector": {
+    "placeholder": "Select a dataset to manage its API keys...",
+    "search_placeholder": "Search datasets...",
+    "no_admin_datasets": "You are not an admin of any dataset. Select a dataset you administer to continue.",
+    "loading": "Loading datasets...",
+    "load_more": "Load more datasets"
   },
   "generate": {
     "title": "Create New Token",
@@ -26,10 +23,53 @@
   "key_list": {
     "title": "Active API Keys",
     "description": "Tokens currently authorized to make requests under this account.",
-    "empty": "No API keys generated yet.",
+    "empty": "No API keys generated yet for this dataset.",
     "revoke_button": "Revoke Key",
     "status_inactive": "Inactive",
     "created_on": "Created on:"
+  },
+  "table": {
+    "column_name": "Name",
+    "column_key": "API Key",
+    "column_created": "Created",
+    "column_expires": "Expires",
+    "column_status": "Status",
+    "column_actions": "Actions",
+    "status_active": "Active",
+    "status_inactive": "Inactive",
+    "never_expires": "Never",
+    "load_more": "Load More"
+  },
+  "create_dialog": {
+    "title": "Create New API Key",
+    "description": "Create a key for external access to this dataset.",
+    "name_label": "Key Name",
+    "name_placeholder": "e.g. Production Server",
+    "ttl_label": "Validity (days)",
+    "ttl_placeholder": "Leave empty for no expiry",
+    "version_label": "Target Version (optional)",
+    "version_placeholder": "All versions",
+    "cancel_button": "Cancel",
+    "create_button": "Generate Key",
+    "success_title": "Key Generated Successfully",
+    "success_message": "Copy this key now. You won't be able to see it again.",
+    "security_alert": "For security reasons, we will not show this key again. Please copy it now.",
+    "done_button": "I've saved my key",
+    "security_title": "Security Warning"
+  },
+  "edit_dialog": {
+    "title": "Edit API Key",
+    "name_label": "Key Name",
+    "toggle_active": "Active",
+    "extend_ttl_label": "Extend validity (days from now)",
+    "save_button": "Save Changes"
+  },
+  "revoke_all": {
+    "button": "Revoke All Keys",
+    "confirm_title": "Revoke All API Keys?",
+    "confirm_message": "This will immediately invalidate all API keys for this dataset. This action cannot be undone.",
+    "success": "All keys revoked successfully.",
+    "revoked_count": "{{count}} key(s) revoked."
   },
   "tooltips": {
     "refresh": "Refresh List",
@@ -40,15 +80,15 @@
   "messages": {
     "load_failed": "Failed to load API keys.",
     "created_success": "New API key generated successfully.",
-    "create_failed": "An error occurred while generating the key.",
-    "reveal_failed": "Key authentication failed.",
+    "create_failed": "Failed to generate key.",
+    "reveal_failed": "Failed to reveal key.",
     "confirm_revoke": "Are you sure you want to revoke this API key? This action cannot be undone.",
     "revoked_success": "API key has been permanently revoked.",
-    "revoke_failed": "An API error occurred while revoking the key.",
-    "name_required": "Name cannot be empty!",
-    "invalid_key": "Please enter a valid key starting with 'sk-' and at least 10 characters long.",
-    "external_success_toast": "External API key securely connected to your browser session!",
-    "key_cleared": "External key cleared from browser storage."
+    "revoke_failed": "Failed to revoke key.",
+    "name_required": "Name cannot be empty.",
+    "update_success": "API key updated successfully.",
+    "update_failed": "Failed to update API key.",
+    "copied": "Copied to clipboard."
   },
   "settings_page": {
     "title": "API Settings",
@@ -57,16 +97,5 @@
     "test_button": "Test & Save Key",
     "success_message": "Key verified and saved to browser storage!",
     "error_message": "Invalid key, please check (must start with sk-)."
-  },
-  "create_modal": {
-    "title": "Create New API Key",
-    "description": "Give your key a name to identify it later.",
-    "key_name_label": "Key Name",
-    "key_name_placeholder": "e.g. Production-Server",
-    "cancel_button": "Cancel",
-    "generate_button": "Generate Key",
-    "success_title": "Key Generated Successfully",
-    "security_alert": "For security reasons, we will not show this key again. Please copy it now.",
-    "done_button": "I have saved my key"
   }
 }

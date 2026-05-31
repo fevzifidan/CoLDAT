@@ -120,6 +120,19 @@
       "revoke_error": "Override pipeline execution failed."
     }
   },
+  "modal": {
+    "step1_title": "Select a Project",
+    "step1_desc": "Choose a project where you are an admin to create a dataset inside it.",
+    "step2_title": "Create New Dataset",
+    "step2_desc": "Configuring dataset for: {{projectName}}",
+    "back_button": "Back",
+    "selected_project_label": "Selected Project",
+    "no_admin_projects": "No projects found where you are an admin. Start by creating a project.",
+    "loading_projects": "Loading projects...",
+    "success": "Dataset created successfully.",
+    "error_create": "Failed to create dataset.",
+    "error_fetch_projects": "Failed to load projects."
+  },
   "project_page": {
     "manage_linked": "Linked Datasets Management",
     "active_datasets": "Active Datasets",

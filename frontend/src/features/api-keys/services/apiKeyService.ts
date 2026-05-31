@@ -6,63 +6,69 @@ export interface ApiKey {
   name: string;
   api_key?: string;
   created_at: string;
-  is_active: boolean;
   expires_at?: string;
+  is_active: boolean;
+  target_version?: string;
 }
 
-const VALID_UUID = "550e8400-e29b-41d4-a716-446655440000"; 
+export interface CreateApiKeyPayload {
+  name: string;
+  ttl_days?: number;
+  target_version?: string;
+}
 
-const MOCK_API_KEYS: ApiKey[] = [
-  { id: "key_1", name: "Production Key (Yedek Mod)", api_key: "sk_live_prod_••••••••••••••••••••", created_at: "2026-05-20T10:00:00Z", is_active: true }
-];
+export interface UpdateApiKeyPayload {
+  name?: string;
+  ttl_days?: number;
+  is_active?: boolean;
+}
 
-const getTargetId = (datasetId: string) => {
-  return (datasetId === "default-dataset-id" || !datasetId) ? VALID_UUID : datasetId;
-};
+export interface ApiKeyListResponse {
+  data: ApiKey[];
+  next_cursor: string | null;
+}
 
+export interface RevealApiKeyResponse {
+  id: string;
+  name: string;
+  api_key: string;
+  warning?: string;
+}
 export const apiKeyService = {
-  saveExternalKey: (key: string): void => localStorage.setItem('ai_api_key', key),
-  getExternalKey: (): string => localStorage.getItem('ai_api_key') || '',
-  clearExternalKey: (): void => localStorage.removeItem('ai_api_key'),
-
-  getApiKeys: async (datasetId: string): Promise<ApiKey[]> => {
-    const targetId = getTargetId(datasetId);
-    try {
-      // Artık istek /datasets/... ile relative başlıyor ve token otomatik ekleniyor
-      const res = await apiService.get(`/datasets/${targetId}/api-keys/`);
-      return res.data || res;
-    } catch (error) {
-      console.error("Backend bağlantı hatası:", error);
-      return MOCK_API_KEYS;
-    }
+  // GET /datasets/{datasetId}/api-keys/
+  list: async (
+    datasetId: string,
+    params?: { limit?: number; after?: string | null }
+  ): Promise<ApiKeyListResponse> => {
+    const query = new URLSearchParams();
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.after) query.set('after', params.after);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return apiService.get(`/datasets/${datasetId}/api-keys/${qs}`);
   },
 
-  createApiKey: async (datasetId: string, keyData: { name: string; expires_in_days?: number }): Promise<ApiKey> => {
-    const targetId = getTargetId(datasetId);
-    try {
-      const res = await apiService.post(`/datasets/${targetId}/api-keys/`, keyData);
-      return res.data || res;
-    } catch (error) {
-      return { id: "mock_" + Date.now(), name: keyData.name, api_key: "sk_live_...", created_at: new Date().toISOString(), is_active: true };
-    }
+  // POST /datasets/{datasetId}/api-keys/
+  create: async (datasetId: string, payload: CreateApiKeyPayload): Promise<RevealApiKeyResponse> => {
+    return apiService.post(`/datasets/${datasetId}/api-keys/`, payload);
   },
 
-  revealApiKey: async (datasetId: string, keyId: string): Promise<ApiKey> => {
-    const targetId = getTargetId(datasetId);
-    try {
-      const res = await apiService.get(`/datasets/${targetId}/api-keys/${keyId}/reveal/`);
-      return res.data || res;
-    } catch (error) {
-      return { id: keyId, name: "Revealed Key", api_key: "sk_live_actual_key...", created_at: new Date().toISOString(), is_active: true };
-    }
+  // GET /datasets/{datasetId}/api-keys/{keyId}/reveal/
+  reveal: async (datasetId: string, keyId: string): Promise<RevealApiKeyResponse> => {
+    return apiService.get(`/datasets/${datasetId}/api-keys/${keyId}/reveal/`);
   },
 
-  deleteApiKey: async (datasetId: string, keyId: string): Promise<void> => {
-    const targetId = getTargetId(datasetId);
-    try {
-      await apiService.delete(`/datasets/${targetId}/api-keys/${keyId}/`);
-    } catch (error) {
-      console.error("Silme hatası:", error);
-    }
-  }
+  // PATCH /datasets/{datasetId}/api-keys/{keyId}/
+  update: async (datasetId: string, keyId: string, payload: UpdateApiKeyPayload): Promise<ApiKey> => {
+    return apiService.patch(`/datasets/${datasetId}/api-keys/${keyId}/`, payload);
+  },
+
+  // DELETE /datasets/{datasetId}/api-keys/{keyId}/
+  revoke: async (datasetId: string, keyId: string): Promise<void> => {
+    return apiService.delete(`/datasets/${datasetId}/api-keys/${keyId}/`);
+  },
+
+  // POST /datasets/{datasetId}/api-keys/actions/revoke-all/
+  revokeAll: async (datasetId: string): Promise<{ message: string; revoked_count: number }> => {
+    return apiService.post(`/datasets/${datasetId}/api-keys/actions/revoke-all/`);
+  },
 };

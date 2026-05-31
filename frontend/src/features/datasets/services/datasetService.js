@@ -73,7 +73,8 @@ export const datasetService = {
     }
   },
 
-  // POST /projects/{projectId}/datasets/
+    // POST /projects/{projectId}/datasets/
+  // API Design spec: { name, description, initial_version_note }
   createDataset: async (projectId, datasetData) => {
     if (!projectId || projectId === "null" || projectId === "default-project") {
       throw new Error("Dataset oluşturmak için önce bir projenin içine girmelisiniz.");
@@ -85,7 +86,6 @@ export const datasetService = {
         id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11),
         name: datasetData.name,
         description: datasetData.description || "No description provided.",
-        dataset_type: datasetData.dataset_type || "text",
         created_at: new Date().toISOString(),
         status: "OWNER",
         role: "OWNER",
@@ -98,7 +98,11 @@ export const datasetService = {
 
     const response = await apiService.post(
       `projects/${projectId}/datasets/`,
-      datasetData,
+      {
+        name: datasetData.name,
+        description: datasetData.description || "",
+        initial_version_note: datasetData.initial_version_note || `Initial creation of ${datasetData.name}`,
+      },
       {
         headers: (() => {
           const token =
