@@ -167,14 +167,7 @@ export const ApiKeyTable: React.FC<ApiKeyTableProps> = ({
               return (
                 <TableRow key={key.id}>
                   <TableCell className="font-medium">
-                    <div className="flex flex-col">
-                      <span className="truncate max-w-[160px]">{key.name}</span>
-                      {key.target_version && (
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          v{key.target_version}
-                        </span>
-                      )}
-                    </div>
+                    <span className="truncate max-w-[160px] block">{key.name}</span>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
@@ -259,12 +252,12 @@ export const ApiKeyTable: React.FC<ApiKeyTableProps> = ({
             {/* Loading row */}
             {loading && (
               <TableRow>
-                <TableCell colSpan={6}>
+                <td colSpan={6} className="p-4 text-center">
                   <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     {t('common:status.loading')}
                   </div>
-                </TableCell>
+                </td>
               </TableRow>
             )}
           </TableBody>

@@ -13,7 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Copy, Check, AlertTriangle, Loader2, Key } from 'lucide-react';
-import { apiKeyService, type RevealApiKeyResponse } from '../services/apiKeyService';
+import {
+  apiKeyService,
+  type CreateApiKeyResponse,
+  type CreateApiKeyPayload,
+} from '../services/apiKeyService';
 import notificationService from '@/shared/services/notification/notification.service';
 
 interface CreateKeyDialogProps {
@@ -35,7 +39,7 @@ export const CreateKeyDialog: React.FC<CreateKeyDialogProps> = ({
   const [targetVersion, setTargetVersion] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [createdKey, setCreatedKey] = useState<RevealApiKeyResponse | null>(null);
+  const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(null);
   const [copied, setCopied] = useState(false);
 
   const resetForm = () => {
@@ -63,7 +67,7 @@ export const CreateKeyDialog: React.FC<CreateKeyDialogProps> = ({
     setLoading(true);
 
     try {
-      const payload: { name: string; ttl_days?: number; target_version?: string } = { name: trimmedName };
+      const payload: CreateApiKeyPayload = { name: trimmedName };
       const ttl = parseInt(ttlDays, 10);
       if (ttlDays && !isNaN(ttl) && ttl > 0) payload.ttl_days = ttl;
       if (targetVersion.trim()) payload.target_version = targetVersion.trim();
@@ -80,14 +84,29 @@ export const CreateKeyDialog: React.FC<CreateKeyDialogProps> = ({
   };
 
   const handleCopy = async () => {
-    if (!createdKey?.api_key) return;
+    if (!createdKey?.key) return;
     try {
-      await navigator.clipboard.writeText(createdKey.api_key);
+      await navigator.clipboard.writeText(createdKey.key);
       setCopied(true);
       notificationService.success(t('common:status.success_copied'));
       setTimeout(() => setCopied(false), 2000);
     } catch {
       notificationService.error(t('common:status.error_general'));
+    }
+  };
+
+  const formatDate = (dateStr?: string): string => {
+    if (!dateStr) return t('api-keys:table.never_expires');
+    try {
+      return new Date(dateStr).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return dateStr;
     }
   };
 
@@ -117,16 +136,30 @@ export const CreateKeyDialog: React.FC<CreateKeyDialogProps> = ({
               </AlertDescription>
             </Alert>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">{t('api-keys:create_dialog.name_label')}</Label>
-              <p className="text-sm font-medium">{createdKey.name}</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">{t('api-keys:create_dialog.name_label')}</Label>
+                <p className="text-sm font-medium">{name}</p>
+              </div>
+              {createdKey.target_version && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">{t('api-keys:create_dialog.version_label')}</Label>
+                  <p className="text-sm font-medium">{createdKey.target_version}</p>
+                </div>
+              )}
+              {createdKey.expires_at && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">{t('api-keys:table.column_expires')}</Label>
+                  <p className="text-sm font-medium">{formatDate(createdKey.expires_at)}</p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">API Key</Label>
               <div className="flex gap-2">
                 <code className="flex-1 bg-muted border border-border px-3 py-2 rounded-lg font-mono text-xs break-all select-all">
-                  {createdKey.api_key}
+                  {createdKey.key}
                 </code>
                 <Button size="icon" variant="outline" onClick={handleCopy} className="shrink-0">
                   {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}

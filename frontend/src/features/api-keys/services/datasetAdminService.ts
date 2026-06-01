@@ -20,6 +20,6 @@ export const datasetAdminService = {
     if (params?.limit) query.set('limit', String(params.limit));
     if (params?.after) query.set('after', params.after);
     const qs = query.toString() ? `?${query.toString()}` : '';
-    return apiService.get(`/datasets/${qs}`);
+    return apiService.get(`/datasets${qs}`);
   },
 };
