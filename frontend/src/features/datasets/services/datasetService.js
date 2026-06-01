@@ -14,6 +14,34 @@ const saveLocalDatasets = (projectId, datasets) => {
 };
 
 export const datasetService = {
+  /**
+   * GET /datasets/
+   * Cursor-based pagination ile kullanıcının erişebildiği tüm dataset'leri listeler.
+   * @param {Object} [params] - { limit?: number, after?: string | null }
+   */
+  fetchAllDatasets: async (params = {}) => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.limit) queryParams.set('limit', String(params.limit));
+      if (params.after) queryParams.set('after', params.after);
+      const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+      const response = await apiService.get(`datasets/${query}`);
+      return response;
+    } catch (error) {
+      console.error('fetchAllDatasets Hatası:', error);
+      return { data: [], next_cursor: null };
+    }
+  },
+
+  /**
+   * GET /datasets/{datasetId}/
+   * Tek bir dataset'in detaylarını getirir.
+   */
+  getDatasetById: async (datasetId) => {
+    const response = await apiService.get(`/datasets/${datasetId}/`);
+    return response;
+  },
+
   // GET /projects/{projectId}/datasets/
   // Cursor-based pagination destekler.
   // @param {Object} [params] - { limit?: number, after?: string | null }
@@ -208,10 +236,14 @@ return await apiService.delete(`/datasets/${id}/`, {
     return response?.data || response;
   },
 
-  removeDatasetMember: async (datasetId, memberId) => {
+    /**
+   * DELETE /datasets/{datasetId}/members?userId=<userId>
+   * userId query parametresi olarak gönderilir (CoLDAT API spec).
+   */
+  removeDatasetMember: async (datasetId, userId) => {
     if (IS_MOCK) return { success: true };
 
-    return await apiService.delete(`/datasets/${datasetId}/members/${memberId}/`, {
+    return await apiService.delete(`/datasets/${datasetId}/members/?userId=${userId}`, {
       headers: (() => {
         const token =
           localStorage.getItem('token') ||

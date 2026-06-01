@@ -1,7 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from "react-i18next";
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { 
   ArrowLeft, 
   UserPlus, 
@@ -14,35 +31,60 @@ import {
   AlertCircle,
   Clock,
   Loader2,
-  MessageSquareX
+  MessageSquareX,
+  PenLine,
+  ExternalLink,
+  Copy,
+  ChevronLeft,
+  ChevronRight,
+  FileImage,
+  FileText
 } from "lucide-react";
 
 // taskService bağımlılığını ekliyoruz
 import { taskService } from '@/features/tasks/services/taskService';
+import notificationService from '@/shared/services/notification/notification.service';
+import { useCursorPagination } from '@/shared/hooks/useCursorPagination';
+import type { PaginatedResponse } from '@/shared/hooks/useCursorPagination';
 
 interface TasksDetailPageProps {
   taskId: string;
   onBack?: () => void;
 }
 
-// Backend'den dönecek nesnenin iç yapısı için esnek interface
+// Backend'den dönecek response'ın iç yapısı
 interface TaskDetailData {
   id: string;
-  name: string;
   dataset_id: string;
-  dataset_name?: string;
   assignee_id?: string;
-  assignee_username?: string;
+  role?: string;
   status: string;
-  total_assets: number;
-  role?: string; // Giriş yapan kullanıcının rolü ('admin' vb.)
   rejection_note?: string | null;
-  images: Array<{ id: string; name: string; status: string }>;
+  image_count?: number;
 }
 
+/**
+ * GET /tasks/{taskId}/images endpoint'inden dönen image objesi
+ * CoLDAT API Design.yaml Image schema'sı ile birebir uyumludur.
+ */
+interface TaskImage {
+  asset_id: string;
+  filename: string;
+  mime_type: string;
+  asset_url: string;
+  asset_url_expiry_at: string;
+  sam_embedding_url: string | null;
+  sam_embedding_url_expiry_at: string | null;
+  status: string;
+  embedding_status: string | null;
+}
+
+/** Sayfa başına gösterilecek asset sayısı (API limit değeri ile aynı) */
+const ASSETS_PAGE_LIMIT = 50;
 
 const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
   const { t } = useTranslation(['tasks', 'common']);
+  const navigate = useNavigate();
   
   // --- STATE YÖNETİMİ ---
   const [task, setTask] = useState<TaskDetailData | null>(null);
@@ -59,6 +101,31 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
 
   const [note, setNote] = useState<string>("");
 
+  // --- GÖRSEL LİSTESİ (GET /tasks/{taskId}/images) — Cursor-based pagination ---
+  const fetchImagesAdapter = async (
+    cursor: string | null,
+    limit: number
+  ): Promise<PaginatedResponse<TaskImage>> => {
+    return await taskService.getTaskImages(taskId, { limit, after: cursor });
+  };
+
+  const {
+    items: images,
+    loading: imagesLoading,
+    error: imagesError,
+    hasNext,
+    hasPrev,
+    currentPage,
+    goNext,
+    goPrev,
+    loadPage: refreshImages,
+  } = useCursorPagination<TaskImage>({
+    fetchFn: fetchImagesAdapter,
+    limit: ASSETS_PAGE_LIMIT,
+    enabled: !!taskId,
+    mode: 'paginated',
+  });
+
   // --- DATA FETCHING (GET /tasks/{taskId}) ---
   const fetchTaskDetails = async () => {
     try {
@@ -66,10 +133,9 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
       setError(null);
       const data = await taskService.getTaskById(taskId);
       
-      // Backend rol verisini göndermiyorsa, admin kontrolü için fallback ekleyebilirsiniz
       setTask({
         ...data,
-        role: data.role || "admin" // UI üzerindeki admin butonlarını test edebilmeniz için default admin bırakılmıştır
+        role: data.role || 'Viewer'
       });
     } catch (err: any) {
       console.error("Error fetching task details:", err);
@@ -93,9 +159,9 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
       setIsSubmitting(true);
             await taskService.updateTaskStatus(taskId, { status: newStatus, note: note });
       
-      // Local state'i zenginleştir: rejection_note'u API'den gelecek response'dan da alabiliriz,
+            // Local state'i zenginleştir: rejection_note'u API'den gelecek response'dan da alabiliriz,
       // ancak optimistik olarak reject edildiğinde notu hemen yansıtalım
-      if (newStatus === "REJECTED" && note.trim()) {
+      if (newStatus === "rejected" && note.trim()) {
         setTask(prev => prev ? { ...prev, status: newStatus, rejection_note: note } : null);
       } else {
         setTask(prev => prev ? { ...prev, status: newStatus } : null);
@@ -132,12 +198,13 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     e.preventDefault();
     if (!newAssetId.trim() || !task) return;
 
-    try {
+        try {
       setIsSubmitting(true);
       await taskService.addAssetsToTask(taskId, { asset_ids: [newAssetId] });
       
-      // Listeyi güncel tutmak için veriyi yeniden çekebiliriz veya state'e ekleyebiliriz
-      await fetchTaskDetails(); 
+      // Asset eklendikten sonra task detaylarını ve görsel listesini yenile
+      await fetchTaskDetails();
+      await refreshImages(null, false);
       setIsAddAssetModalOpen(false);
       setNewAssetId("");
     } catch (err: any) {
@@ -147,7 +214,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     }
   };
 
-  // --- API EVENT HANDLERS (DELETE /tasks/{taskId}) ---
+    // --- API EVENT HANDLERS (DELETE /tasks/{taskId}) ---
   const handleDeleteTask = async () => {
     if (!task) return;
     if (window.confirm(t('tasks:detail.confirm_delete', "Are you sure you want to revoke/delete this task assignment?"))) {
@@ -160,6 +227,34 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
       } finally {
         setIsSubmitting(false);
       }
+    }
+  };
+
+  // --- ASSET YÖNLENDİRME HANDLER'LARI ---
+  const handleAssetClick = (assetId: string) => {
+    if (isAdmin) {
+      navigate(`/view/${taskId}/${assetId}`);
+    } else if (task?.role === 'Annotator') {
+      navigate(`/annotate/${taskId}/${assetId}`);
+    } else {
+      navigate(`/view/${taskId}/${assetId}`);
+    }
+  };
+
+  const handleOpenInAnnotator = (assetId: string) => {
+    navigate(`/annotate/${taskId}/${assetId}`);
+  };
+
+  const handleOpenInViewer = (assetId: string) => {
+    navigate(`/view/${taskId}/${assetId}`);
+  };
+
+  const handleCopyAssetId = async (assetId: string) => {
+    try {
+      await navigator.clipboard.writeText(assetId);
+      notificationService.success(t('tasks:detail.asset_id_copied', 'Asset ID copied to clipboard!'));
+    } catch {
+      notificationService.error(t('tasks:detail.asset_id_copy_failed', 'Failed to copy Asset ID.'));
     }
   };
 
@@ -202,7 +297,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     );
   }
 
-  const isAdmin = task.role === "admin";
+  const isAdmin = task.role?.toLowerCase() === "admin";
 
   return (
         <div className="p-6 space-y-6 max-w-7xl mx-auto animate-in fade-in duration-200">
@@ -215,15 +310,15 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
           </Button>
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-extrabold text-foreground">{task.name}</h1>
+              <h1 className="text-2xl font-extrabold text-foreground">{task.id}</h1>
               <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider ${getStatusBadge(task.status)}`}>
                 {task.status}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               {t('tasks:detail.dataset_id', 'Dataset ID:')} {task.dataset_id}
-              {task.assignee_username && (
-                <span className="ml-3 border-l border-border pl-3">@{task.assignee_username}</span>
+              {task.assignee_id && (
+                <span className="ml-3 border-l border-border pl-3">@{task.assignee_id}</span>
               )}
             </p>
           </div>
@@ -255,16 +350,16 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
               <div className="flex justify-between border-b pb-2 border-border">
                 <span className="text-muted-foreground">{t('tasks:detail.assignee', 'Assignee:')}</span>
                 <span className="font-semibold text-primary">
-                  {task.assignee_username ? `@${task.assignee_username}` : t('tasks:detail.unassigned', 'Unassigned')}
+                  {task.assignee_id ? `@${task.assignee_id}` : t('tasks:detail.unassigned', 'Unassigned')}
                 </span>
               </div>
               <div className="flex justify-between border-b pb-2 border-border">
                 <span className="text-muted-foreground">{t('tasks:detail.total_assets', 'Total Assets:')}</span>
-                <span className="font-bold">{task.total_assets}{t('tasks:detail.files_suffix', ' files')}</span>
+                <span className="font-bold">{task.image_count || 0}{t('tasks:detail.files_suffix', ' files')}</span>
               </div>
 
-              {/* Rejection Note */}
-              {task.status === "REJECTED" && task.rejection_note && (
+                            {/* Rejection Note */}
+              {task.status?.toLowerCase() === "rejected" && task.rejection_note && (
                 <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-3 space-y-1.5 mt-2">
                   <div className="flex items-center gap-1.5 text-destructive">
                     <MessageSquareX size={14} />
@@ -307,11 +402,11 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
             </div>
 
             <div className="grid gap-2">
-              {/* Annotator Rolü için Gönderme Mekanizması */}
-              {task.status === "IN_PROGRESS" && (
+                            {/* Annotator Rolü için Gönderme Mekanizması */}
+              {task.status?.toLowerCase() === "in_progress" && (
                 <Button 
                   disabled={isSubmitting}
-                  onClick={() => handleUpdateStatus("APPROVAL_PENDING")}
+                  onClick={() => handleUpdateStatus("approval_pending")}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs h-9 gap-1.5"
                 >
                   <Send size={14} /> {t('tasks:detail.submit_for_approval', 'Submit for Approval')}
@@ -319,18 +414,18 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
               )}
 
               {/* Admin Rolü için Onay/Red Mekanizmaları */}
-                            {isAdmin && task.status === "APPROVAL_PENDING" && (
+                            {isAdmin && task.status?.toLowerCase() === "approval_pending" && (
                 <div className="flex gap-2">
                   <Button 
                     disabled={isSubmitting}
-                    onClick={() => handleUpdateStatus("COMPLETED")}
+                    onClick={() => handleUpdateStatus("completed")}
                     className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs h-9 gap-1.5"
                   >
                     <CheckCircle2 size={14} /> {t('tasks:detail.approve', 'Approve')}
                   </Button>
                   <Button 
                     disabled={isSubmitting}
-                    onClick={() => handleUpdateStatus("REJECTED")}
+                    onClick={() => handleUpdateStatus("rejected")}
                     variant="destructive"
                     className="flex-1 font-medium text-xs h-9 gap-1.5"
                   >
@@ -340,10 +435,10 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
               )}
 
               {/* Reset mekanizması */}
-              {(task.status === "COMPLETED" || task.status === "REJECTED" || task.status === "OPEN") && (
+              {(["completed", "rejected", "open"] as string[]).includes(task.status?.toLowerCase() ?? "") && (
                 <Button 
                   disabled={isSubmitting}
-                  onClick={() => handleUpdateStatus("IN_PROGRESS")}
+                  onClick={() => handleUpdateStatus("in_progress")}
                   variant="outline"
                   className="w-full text-xs h-9"
                 >
@@ -354,16 +449,21 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
           </div>
         </div>
 
-        {/* Sağ Panel: Atanan Görseller / Asset Listesi */}
+                {/* Sağ Panel: Atanan Görseller / Asset Listesi (Shadcn Table) */}
                 <div className="md:col-span-2 bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ImageIcon size={18} className="text-muted-foreground" />
               <h3 className="font-bold text-sm tracking-wide text-muted-foreground uppercase">{t('tasks:detail.assets_section', 'Assigned Assets')}</h3>
+              {images.length > 0 && (
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full font-mono">
+                  {t('tasks:detail.page_info', 'Page {{page}}', { page: currentPage })}
+                </span>
+              )}
             </div>
             
             {/* Yeni Asset Ekleme Butonu */}
-            {isAdmin && (task.status === "OPEN" || task.status === "IN_PROGRESS") && (
+            {isAdmin && (["open", "in_progress"].includes(task.status?.toLowerCase() ?? "")) && (
               <Button 
                 onClick={() => setIsAddAssetModalOpen(true)}
                 size="sm" 
@@ -374,37 +474,142 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
             )}
           </div>
 
-          {/* Görsel Listesi */}
-          <div className="divide-y divide-border border border-border rounded-xl overflow-hidden max-h-[500px] overflow-y-auto">
-            {task.images && task.images.length > 0 ? (
-              task.images.map((img) => (
-                <div key={img.id} className="flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/60 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded bg-muted flex items-center justify-center text-muted-foreground">
-                      <ImageIcon size={14} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold truncate max-w-[200px] sm:max-w-xs">{img.name || t('tasks:detail.asset_image_default', 'Asset Image')}</p>
-                      <p className="text-[10px] text-muted-foreground font-mono">{t('tasks:detail.asset_id_prefix', 'ID: ')}{img.id}</p>
-                    </div>
-                  </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
-                    img.status === 'labeled' || img.status === 'COMPLETED'
-                      ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' 
-                      : 'bg-muted text-muted-foreground border-border'
-                  }`}>
-                    {img.status === 'labeled' || img.status === 'COMPLETED' 
-                      ? t('tasks:detail.asset_status_labeled', 'labeled')
-                      : (img.status || t('tasks:detail.asset_status_unlabeled', 'unlabeled'))}
+          {/* Görsel Listesi — Shadcn Table + ContextMenu sağ tık, sol tık direkt yönlendirme */}
+          {imagesLoading && images.length === 0 ? (
+            <div className="flex items-center justify-center py-12 text-muted-foreground">
+              <Loader2 size={20} className="animate-spin mr-2" />
+              <span className="text-xs">{t('tasks:detail.loading_images', 'Loading images...')}</span>
+            </div>
+          ) : imagesError ? (
+            <div className="flex flex-col items-center justify-center py-12 text-destructive gap-2">
+              <AlertCircle size={20} />
+              <p className="text-xs">{imagesError}</p>
+              <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => refreshImages(null, false)}>
+                {t('tasks:detail.retry', 'Retry')}
+              </Button>
+            </div>
+          ) : images.length > 0 ? (
+            <div className="border border-border rounded-xl overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[60px] text-xs">{t('tasks:table.type', 'Type')}</TableHead>
+                    <TableHead className="text-xs">{t('tasks:table.filename', 'Filename')}</TableHead>
+                    <TableHead className="hidden sm:table-cell text-xs">{t('tasks:table.mime_type', 'MIME Type')}</TableHead>
+                    <TableHead className="text-xs">{t('tasks:table.status', 'Status')}</TableHead>
+                    <TableHead className="hidden md:table-cell text-xs">{t('tasks:table.embedding', 'Embedding')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                                <TableBody>
+                                  {images.map((img) => (
+                                    <ContextMenu key={img.asset_id}>
+                                      <ContextMenuTrigger
+                                        onClick={() => handleAssetClick(img.asset_id)}
+                                        className="cursor-pointer [&:has([role=menuitem])]:bg-muted/50"
+                                      >
+                                        <TableRow>
+                                          <TableCell className="py-2.5" onClick={() => handleAssetClick(img.asset_id)}>
+                                            <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
+                                              {img.mime_type?.startsWith('image/') ? (
+                                                <FileImage size={14} />
+                                              ) : (
+                                                <FileText size={14} />
+                                              )}
+                                            </div>
+                                          </TableCell>
+                                          <TableCell className="py-2.5 font-medium max-w-[180px] truncate" onClick={() => handleAssetClick(img.asset_id)}>
+                                            <span className="text-sm">{img.filename || t('tasks:detail.untitled', 'Untitled')}</span>
+                                            <p className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">
+                                              {img.asset_id}
+                                            </p>
+                                          </TableCell>
+                                          <TableCell className="hidden sm:table-cell py-2.5 text-xs text-muted-foreground">
+                                            {img.mime_type || '—'}
+                                          </TableCell>
+                                          <TableCell className="py-2.5">
+                                            <span className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
+                                              img.status === 'UPLOADED' || img.status === 'COMPLETED'
+                                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                                                : img.status === 'PENDING'
+                                                  ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                                                  : img.status === 'FAILED' || img.status === 'VERIFICATION_FAILED'
+                                                    ? 'bg-destructive/10 text-destructive border-destructive/20'
+                                                    : 'bg-muted text-muted-foreground border-border'
+                                            }`}>
+                                              {img.status || 'UNKNOWN'}
+                                            </span>
+                                          </TableCell>
+                                          <TableCell className="hidden md:table-cell py-2.5">
+                                            <span className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
+                                              img.embedding_status === 'UPLOADED'
+                                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                                                : 'bg-muted text-muted-foreground border-border'
+                                            }`}>
+                                              {img.embedding_status || '—'}
+                                            </span>
+                                          </TableCell>
+                                        </TableRow>
+                                      </ContextMenuTrigger>
+
+                      <ContextMenuContent className="w-56 rounded-xl">
+                        <ContextMenuItem onClick={() => handleOpenInAnnotator(img.asset_id)} className="cursor-pointer gap-2 text-xs font-medium">
+                          <PenLine size={14} />
+                          {t('tasks:detail.open_annotator', 'Open in Annotator')}
+                          <ContextMenuShortcut>Annotator</ContextMenuShortcut>
+                        </ContextMenuItem>
+                        <ContextMenuItem onClick={() => handleOpenInViewer(img.asset_id)} className="cursor-pointer gap-2 text-xs font-medium">
+                          <ExternalLink size={14} />
+                          {t('tasks:detail.open_viewer', 'Open in Viewer')}
+                          <ContextMenuShortcut>Read-only</ContextMenuShortcut>
+                        </ContextMenuItem>
+                        <ContextMenuSeparator />
+                        <ContextMenuItem onClick={() => handleCopyAssetId(img.asset_id)} className="cursor-pointer gap-2 text-xs font-medium">
+                          <Copy size={14} />
+                          {t('tasks:detail.copy_asset_id', 'Copy Asset ID')}
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Sayfalama Butonları */}
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/30">
+                <span className="text-[11px] text-muted-foreground">
+                  {images.length} {t('tasks:table.items', 'items')}
+                  {!imagesLoading && !hasNext && currentPage > 0 && ` · ${t('tasks:table.last_page', 'last page')}`}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!hasPrev || imagesLoading}
+                    onClick={goPrev}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronLeft size={14} />
+                  </Button>
+                  <span className="text-xs font-medium text-muted-foreground min-w-[40px] text-center tabular-nums">
+                    {currentPage}
                   </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!hasNext || imagesLoading}
+                    onClick={goNext}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronRight size={14} />
+                  </Button>
                 </div>
-              ))
-            ) : (
-              <div className="p-8 text-center text-xs text-muted-foreground">
-                {t('tasks:detail.no_assets', 'No assets bound to this task yet.')}
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
+              <ImageIcon size={24} className="opacity-40" />
+              <p className="text-xs">{t('tasks:detail.no_assets', 'No assets bound to this task yet.')}</p>
+            </div>
+          )}
         </div>
 
       </div>

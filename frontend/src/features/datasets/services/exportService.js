@@ -48,12 +48,30 @@ export const exportService = {
     return response.data || response;
   },
 
-  /**
+    /**
    * GET /datasets/{datasetId}/api-keys/{keyId}/reveal
    * Maskelenmiş anahtarın orijinal halini gizli modda gösterir.
    */
   revealApiKey: async (datasetId, keyId) => {
     const response = await apiService.get(`/datasets/${datasetId}/api-keys/${keyId}/reveal`);
+    return response.data || response;
+  },
+
+  // ========== EXPORT DOWNLOAD ENDPOINT ==========
+
+  /**
+   * GET /datasets/{datasetId}/export
+   * Etiketlenmiş verileri indirilebilir formatta dışa aktarır.
+   * Public endpoint - hem Bearer JWT hem de X-API-KEY ile erişilebilir.
+   * @param {string} datasetId
+   * @param {Object} params - { format: "coco"|"yolo"|"visual_genome", version?: string }
+   */
+  downloadExport: async (datasetId, params) => {
+    const queryParams = new URLSearchParams();
+    if (params.format) queryParams.set('format', params.format);
+    if (params.version) queryParams.set('version', params.version);
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    const response = await apiService.get(`/datasets/${datasetId}/export${query}`);
     return response.data || response;
   }
 };

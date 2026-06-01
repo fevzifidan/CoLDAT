@@ -18,6 +18,7 @@ export const projectService = {
 
   /**
    * 2. Yeni proje oluştur (POST /projects/)
+   * API spec body: { name, description }
    */
   createProject: async (projectData) => {
     const response = await apiService.post('projects/', projectData);
@@ -25,46 +26,32 @@ export const projectService = {
   },
 
   /**
-   * 3. Proje detayını getir (GET /projects/{id}/)
-   */
-  getProjectById: async (id) => {
-    const response = await apiService.get(`projects/${id}/`);
-    return response;
-  },
-
-  /**
-   * 4. Projeyi güncelle (PATCH /projects/{id}/)
-   */
-  updateProject: async (id, projectData) => {
-    const response = await apiService.patch(
-      `projects/${id}/`,
-      projectData
-    );
-    return response;
-  },
-
-  /**
-   * 5. Projeyi sil (DELETE /projects/{id}/)
+   * 3. Projeyi sil (DELETE /projects/{projectId})
    */
   deleteProject: async (id) => {
     const response = await apiService.delete(`projects/${id}/`);
     return response;
   },
 
-    /**
+  /**
    * ================= USER LOOKUP =================
    */
-
+    /**
+   * GET /users/lookup?username=
+   * Kullanıcı araması. Backend'den { id, username, first_name, last_name } döner veya 404.
+   */
   lookupUsers: async (query) => {
     if (!query || query.trim().length < 2) {
       return [];
     }
 
-        const response = await apiService.get(
+    const response = await apiService.get(
       `users/lookup/?username=${encodeURIComponent(query)}`
     );
 
-    return response.data || response || [];
+    // API spec: direkt obje döner, data wrapper içinde değil
+    const userData = response?.data || response;
+    return userData ? [userData] : [];
   },
 
   /**
@@ -95,7 +82,7 @@ export const projectService = {
     return response;
   },
 
-  updateProjectTaxonomy: async (projectId, taxonomyData) => {
+    updateProjectTaxonomy: async (projectId, taxonomyData) => {
     if (IS_TAXONOMY_MOCK) {
       localStorage.setItem(
         `mock_taxonomy_${projectId}`,
@@ -116,7 +103,70 @@ export const projectService = {
     return response;
   },
 
-  
+  /**
+   * ================= TAXONOMY INDIVIDUAL PATCH ENDPOINTS =================
+   */
+
+  /**
+   * PATCH /projects/{projectId}/taxonomy/classes/{classId}
+   * Tek bir class'ın alanlarını kısmi olarak günceller.
+   * @param {string} projectId
+   * @param {string|number} classId
+   * @param {Object} payload - { name?, color?, isActive?, includeInExport? }
+   */
+  updateClass: async (projectId, classId, payload) => {
+    const response = await apiService.patch(
+      `projects/${projectId}/taxonomy/classes/${classId}/`,
+      payload
+    );
+    return response;
+  },
+
+  /**
+   * PATCH /projects/{projectId}/taxonomy/predicates/{predicateId}
+   * Tek bir predicate'in alanlarını kısmi olarak günceller.
+   * @param {string} projectId
+   * @param {string|number} predicateId
+   * @param {Object} payload - { name?, isActive?, includeInExport? }
+   */
+  updatePredicate: async (projectId, predicateId, payload) => {
+    const response = await apiService.patch(
+      `projects/${projectId}/taxonomy/predicates/${predicateId}/`,
+      payload
+    );
+    return response;
+  },
+
+  /**
+   * PATCH /projects/{projectId}/taxonomy/attributes/{attributeId}
+   * Tek bir attribute'un alanlarını kısmi olarak günceller.
+   * @param {string} projectId
+   * @param {string|number} attributeId
+   * @param {Object} payload
+   */
+  updateAttribute: async (projectId, attributeId, payload) => {
+    const response = await apiService.patch(
+      `projects/${projectId}/taxonomy/attributes/${attributeId}/`,
+      payload
+    );
+    return response;
+  },
+
+  /**
+   * DELETE /projects/{projectId}/taxonomy?type=...&targetId=...
+   * Bir taksonomi öğesini ve ona bağlı tüm geçmiş etiketlemeleri kalıcı olarak siler.
+   * Sadece admin tarafından gerçekleştirilebilir.
+   * @param {string} projectId
+   * @param {string} type - 'class', 'predicate', veya 'attribute'
+   * @param {string} targetId - silinecek öğenin UUID'si
+   */
+  deleteTaxonomyItem: async (projectId, type, targetId) => {
+    const queryParams = new URLSearchParams({ type, targetId });
+    const response = await apiService.delete(
+      `projects/${projectId}/taxonomy/?${queryParams.toString()}`
+    );
+    return response;
+  },
 };
 
 export default projectService;

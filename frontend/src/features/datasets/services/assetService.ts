@@ -38,7 +38,46 @@ interface RetryUploadResponse {
   };
 }
 
+/**
+ * GET /users/assets endpoint'inden dönen asset tipi.
+ * CoLDAT API Design'daki Image şemasına dayanır.
+ */
+export interface UserAsset {
+  id: string;
+  dataset_id: string;
+  dataset_name?: string;
+  filename: string;
+  mime_type: string;
+  width: number;
+  height: number;
+  file_size: number;
+  status: string;
+  created_at: string;
+  updated_at?: string;
+  thumbnail_url?: string;
+}
+
 export const assetService = {
+  /**
+   * GET /users/assets
+   * Kullanıcının yüklediği tüm asset'leri cursor-based pagination ile listeler.
+   * @param {Object} params - { status?, dataset_name?, dataset_id?, limit?, after? }
+   */
+  getUserAssets: async (params: {
+    status?: string;
+    dataset_name?: string;
+    dataset_id?: string;
+    limit?: number;
+    after?: string | null;
+  } = {}): Promise<{ data: UserAsset[]; next_cursor: string | null }> => {
+    const response = await apiService.get('/users/assets', { params });
+    const data = response?.data ?? response ?? [];
+    return {
+      data: Array.isArray(data) ? data : [],
+      next_cursor: response?.next_cursor ?? null,
+    };
+  },
+
   /**
    * POST /assets/bulk-update-status
    * İstemcide tamamlanan (başarılı/başarısız) yüklemeleri topluca backend'e bildirir.

@@ -45,11 +45,20 @@ export const ProjectCard = ({
 
   const rawRole = project.role?.toLowerCase() || 'viewer';
 
-  const handleManageNavigate = (e: React.MouseEvent) => {
+    const handleManageNavigate = (e: React.MouseEvent) => {
     e.stopPropagation();
 
+    // Task tipi için annotation/viewer sayfalarına yönlendir
+    if (cardType === 'task') {
+      const isViewer = rawRole === 'viewer';
+      const targetPath = isViewer
+        ? `/view/${project.id}`
+        : `/annotate/${project.id}`;
+      navigate(targetPath);
+      return;
+    }
+
     const paths = {
-      task: `/tasks/${project.id}`,
       dataset: `/datasets/${project.id}`,
       project: `/projects/${project.id}`
     };

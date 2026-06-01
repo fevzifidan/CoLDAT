@@ -25,7 +25,7 @@ export const DatasetCard = ({ dataset }: DatasetCardProps) => {
             <Database size={18} />
           </div>
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border">
-            <Layers size={11} /> v{dataset.current_version || "1.0"}
+            <Layers size={11} /> {dataset.current_version || "v1.0"}
           </span>
         </div>
         <CardTitle className="text-base font-bold text-card-foreground line-clamp-1 mt-2">
@@ -50,7 +50,7 @@ export const DatasetCard = ({ dataset }: DatasetCardProps) => {
           </div>
           <div className="ml-auto flex items-center gap-1 font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
             <UserCheck size={11} />
-            <span className="uppercase text-[10px] tracking-wider">{dataset.role || "OWNER"}</span>
+            <span className="uppercase text-[10px] tracking-wider">{dataset.role || "ADMIN"}</span>
           </div>
         </div>
       </CardContent>

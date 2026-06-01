@@ -30,6 +30,8 @@ import Register from "@/features/auth/Register/Register";
 import TasksPage from '@/features/tasks/TasksPage';
 import CreateTaskPage from '@/features/tasks/CreateTaskPage';
 import DatasetsPage from '@/features/datasets/DatasetsPage';
+import DatasetDetailPage from '@/features/datasets/DatasetDetailPage';
+import UserAssetsPage from '@/features/datasets/UserAssetsPage';
 import { ProjectDatasetsPage } from '@/features/projects/ProjectDatasetsPage'; 
 import ProjectsPage from '@/features/projects/ProjectsPage';
 import ViewerPage from '@/features/viewer/ViewerPage';
@@ -70,8 +72,12 @@ function App() {
                         
                         <Route path="/projects/:projectId/datasets" element={<ProjectDatasetsPage />} />
                         
-                        {/* Sol menü veya doğrudan erişim için genel Datasets rotası */}
-                        <Route path="/datasets" element={<DatasetsPage />} />
+                                                {/* Sol menü veya doğrudan erişim için genel Datasets rotası */}
+                                                <Route path="/datasets" element={<DatasetsPage />} />
+                                                <Route path="/datasets/:datasetId" element={<DatasetDetailPage />} />
+
+                                                {/* Kullanıcının tüm asset'lerini gösteren sayfa */}
+                                                <Route path="/assets" element={<UserAssetsPage />} />
 
                         <Route path="/tasks" element={<TasksPage />} />
                         <Route path="/tasks/new" element={<CreateTaskPage />} />

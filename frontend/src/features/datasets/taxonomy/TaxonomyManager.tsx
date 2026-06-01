@@ -6,11 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Plus, Edit2, Check, X, Link as LinkIcon, Tag, Loader2, Trash2, ShieldCheck, Lock } from "lucide-react";
 import { projectService } from '../../projects/services/projectService';
 import notificationService from '@/shared/services/notification/notification.service';
-import { apiService } from '@/shared/services/api/api.service';
+
+
+
+
 
 interface TaxonomyManagerProps {
   projectId: string | undefined;
-  onUpdate: (data: { classes: ClassItem[]; predicates: PredicateItem[]; attributes: string[] }) => void;
+  onUpdate?: (data: { classes: ClassItem[]; predicates: PredicateItem[]; attributes: string[] }) => void;
   isAdmin?: boolean; // 👑 Üst bileşenden gelen yetki kontrolü eklendi
 }
 
@@ -78,15 +81,17 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
       .finally(() => setLoading(false));
   }, [projectId]);
 
-  const updateParent = (updatedClasses: ClassItem[], updatedPreds: PredicateItem[]) => {
-    onUpdate({
-      classes: updatedClasses,
-      predicates: updatedPreds,
-      attributes: [] 
-    });
+    const updateParent = (updatedClasses: ClassItem[], updatedPreds: PredicateItem[]) => {
+    if (onUpdate) {
+      onUpdate({
+        classes: updatedClasses,
+        predicates: updatedPreds,
+        attributes: [] 
+      });
+    }
   };
 
-    const saveEdit = (type: 'class' | 'pred', id: string | number) => {
+        const saveEdit = (type: 'class' | 'pred', id: string | number) => {
         if (!isAdmin) {
       notificationService.error(t("common:status.error", "Sadece admin rolü düzenleme yapabilir."));
       return;
@@ -104,6 +109,20 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
         includeInExport: tempIncludeInExport
       } : c);
       setClasses(nextClasses);
+
+      // 🔁 Backend'e tekil PATCH isteği
+      if (projectId) {
+        projectService.updateClass(projectId, id, {
+          name: tempName,
+          color: selectedColor,
+          isActive: tempIsActive,
+          includeInExport: tempIncludeInExport,
+        }).catch((err) => {
+          console.error("Class PATCH hatası:", err);
+          // Hata durumunda eski state'e dön
+          setClasses(classes);
+        });
+      }
     } else {
       nextPredicates = predicates.map(p => p.id === id ? { 
         ...p, 
@@ -112,6 +131,18 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
         includeInExport: tempIncludeInExport
       } : p);
       setPredicates(nextPredicates);
+
+      // 🔁 Backend'e tekil PATCH isteği
+      if (projectId) {
+        projectService.updatePredicate(projectId, id, {
+          name: tempName,
+          isActive: tempIsActive,
+          includeInExport: tempIncludeInExport,
+        }).catch((err) => {
+          console.error("Predicate PATCH hatası:", err);
+          setPredicates(predicates);
+        });
+      }
     }
     
     setEditingId(null);
@@ -133,19 +164,16 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
     if (!confirmDelete) return;
 
         try {
-      await notificationService.promise(
-        apiService.delete(`projects/${projectId}/taxonomy/`, {
-          data: { 
-            type: type,      
-            itemId: id       
-          }
-        }),
-        {
-          loading: t("taxonomy.deleting", "Silme işlemi gerçekleştiriliyor..."),
-          success: t("taxonomy.delete_success", "Öğe ve ilişkili tüm geçmiş etiketler başarıyla silindi."),
-          error: t("taxonomy.delete_error", "Silme işlemi sırasında bir hata oluştu."),
-        }
-      );
+          const taxonomyType = type === 'class' ? 'class' : 'predicate';
+
+          await notificationService.promise(
+            projectService.deleteTaxonomyItem(projectId, taxonomyType, String(id)),
+            {
+              loading: t("taxonomy.deleting", "Silme işlemi gerçekleştiriliyor..."),
+              success: t("taxonomy.delete_success", "Öğe ve ilişkili tüm geçmiş etiketler başarıyla silindi."),
+              error: t("taxonomy.delete_error", "Silme işlemi sırasında bir hata oluştu."),
+            }
+          );
 
       let nextClasses = [...classes];
       let nextPredicates = [...predicates];

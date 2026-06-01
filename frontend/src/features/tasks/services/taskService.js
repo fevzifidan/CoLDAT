@@ -1,6 +1,16 @@
 import apiService from "@/shared/services/api/api.service";
 
 export const taskService = {
+  /**
+   * GET /projects/{projectId}/tasks/
+   * Proje seviyesindeki tüm task'ları cursor-based pagination ile listeler.
+   * @param {string} projectId
+   * @param {Object} [params] - { limit?: number, after?: string | null, status?: string }
+   */
+  getProjectTasks: async (projectId, params = {}) => {
+    const response = await apiService.get(`/projects/${projectId}/tasks/`, { params });
+    return response.data || response;
+  },
 
   /**
    * GET /tasks/
@@ -57,7 +67,7 @@ export const taskService = {
     return response.data;
   },
 
-  /**
+    /**
    * POST /tasks/{taskId}/images/
    * Add assets to an existing task
    */
@@ -66,6 +76,18 @@ export const taskService = {
       `/tasks/${taskId}/images/`,
       payload
     );
+    return response.data;
+  },
+
+  /**
+   * GET /tasks/{taskId}/images/
+   * Get paginated images for a task (cursor-based pagination)
+   * Response: { data: TaskImage[], next_cursor: string | null }
+   */
+  getTaskImages: async (taskId, { limit = 50, after = null } = {}) => {
+    const params = { limit };
+    if (after) params.after = after;
+    const response = await apiService.get(`/tasks/${taskId}/images/`, { params });
     return response.data;
   }
 };

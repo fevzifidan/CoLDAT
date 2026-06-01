@@ -13,13 +13,9 @@ interface ExtendedProject {
   id: string;
   name: string;
   description?: string;
-  project_type?: string;
-  status?: string;
-  count?: number;
   role?: string;
   created_at?: string;
   isDeleted?: boolean;
-  dataset_id?: string;
 }
 
 const ProjectsPage = () => {
@@ -59,7 +55,7 @@ const ProjectsPage = () => {
       const formatted = projectDataArray.map((p: any) => ({ 
         ...p, 
         isDeleted: p.isDeleted ?? false,
-        role: p.role || "ADMIN" 
+        role: (p.role || "admin").toLowerCase() 
       }));
 
       setProjectList(formatted);
@@ -87,7 +83,7 @@ const ProjectsPage = () => {
   const filteredProjects = activeProjects.filter(project => {
     const projectName = project.name ? String(project.name) : "";
     const matchesSearch = projectName.toLowerCase().includes(searchQuery.toLowerCase());
-    const projectRole = (project.role || "ADMIN").toUpperCase();
+        const projectRole = (project.role || "admin").toLowerCase();
     const matchesRole = roleFilter === "ALL" || projectRole === roleFilter;
     return matchesSearch && matchesRole;
   });
@@ -99,10 +95,9 @@ const ProjectsPage = () => {
     if (!newProjectName.trim()) return;
 
     try {
-      const payload = {
+            const payload = {
         name: newProjectName,
         description: "No description provided yet.",
-        project_type: "object_detection",
       };
 
       await projectService.createProject(payload);
@@ -161,7 +156,7 @@ const ProjectsPage = () => {
             {t('projects:buttons.create_project', 'Create New Project')}
           </Button>
 
-                    <SelectFilter
+                                        <SelectFilter
                       value={roleFilter}
                       onChange={(v) => {
                         setRoleFilter(v);
@@ -170,9 +165,9 @@ const ProjectsPage = () => {
                       triggerClassName="w-44"
                       options={[
                         { value: 'ALL', label: t('projects:roles.all_roles', 'All Roles'), icon: <Layers className="h-3.5 w-3.5" /> },
-                        { value: 'ADMIN', label: t('projects:roles.admin', 'Admin'), icon: <Shield className="h-3.5 w-3.5" /> },
-                        { value: 'ANNOTATOR', label: t('projects:roles.annotator', 'Annotator'), icon: <Pen className="h-3.5 w-3.5" /> },
-                        { value: 'VIEWER', label: t('projects:roles.viewer', 'Viewer'), icon: <Eye className="h-3.5 w-3.5" /> },
+                        { value: 'admin', label: t('projects:roles.admin', 'Admin'), icon: <Shield className="h-3.5 w-3.5" /> },
+                        { value: 'annotator', label: t('projects:roles.annotator', 'Annotator'), icon: <Pen className="h-3.5 w-3.5" /> },
+                        { value: 'viewer', label: t('projects:roles.viewer', 'Viewer'), icon: <Eye className="h-3.5 w-3.5" /> },
                       ]}
                     />
 
@@ -314,7 +309,7 @@ const ProjectsPage = () => {
                   <div key={project.id} className="flex items-center justify-between p-3 border border-border rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors gap-4">
                     <div>
                       <h4 className="font-semibold text-card-foreground text-sm">{project.name}</h4>
-                      <p className="text-xs text-muted-foreground uppercase">Role: {project.role || 'N/A'} | Type: {project.project_type || 'N/A'}</p>
+                      <p className="text-xs text-muted-foreground uppercase">Role: {project.role || 'N/A'}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Button 

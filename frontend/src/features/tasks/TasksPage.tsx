@@ -25,6 +25,7 @@ interface TaskItem {
   image_count: number;
   created_at: string;
   updated_at: string;
+  role?: string;
 }
 
 const TasksPage = () => {
@@ -106,8 +107,8 @@ const fetchTasks = async () => {
     const searchTarget = `${task.id} ${task.dataset_id} ${task.assignee_username || ''}`.toLowerCase();
     const matchesSearch = searchTarget.includes(searchQuery.toLowerCase());
     
-    // API'den gelen statüleri normalize ediyoruz (örn: open → OPEN, approval_pending → APPROVAL PENDING)
-    const taskStatus = task.status?.replace('_', ' ').toUpperCase();
+        // API'den gelen statüler (lowercase: open, in_progress, approval_pending, completed, rejected)
+    const taskStatus = task.status?.toLowerCase() ?? "";
     const matchesProgress = progressFilter === "ALL" || taskStatus === progressFilter;
     
     return matchesSearch && matchesProgress;
@@ -147,21 +148,21 @@ const fetchTasks = async () => {
 
                                         {/* Statü Filtresi */}
                     <SelectFilter
-            value={progressFilter}
-            onChange={(v) => {
-              setProgressFilter(v);
-              setDisplayLimit(4);
-            }}
-            triggerClassName="w-44"
-            options={[
-              { value: 'ALL', label: t('tasks:filter.all_progress', 'All Statuses'), icon: <Layers className="h-3.5 w-3.5" /> },
-              { value: 'OPEN', label: t('tasks:filter.status.open', 'OPEN'), icon: <CircleDot className="h-3.5 w-3.5" /> },
-              { value: 'IN PROGRESS', label: t('tasks:filter.status.in_progress', 'IN PROGRESS'), icon: <Play className="h-3.5 w-3.5" /> },
-              { value: 'APPROVAL PENDING', label: t('tasks:filter.status.pending', 'APPROVAL PENDING'), icon: <Clock className="h-3.5 w-3.5" /> },
-              { value: 'COMPLETED', label: t('tasks:filter.status.completed', 'COMPLETED'), icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
-              { value: 'REJECTED', label: t('tasks:filter.status.rejected', 'REJECTED'), icon: <XCircle className="h-3.5 w-3.5" /> },
-            ]}
-          />
+                      value={progressFilter}
+                      onChange={(v) => {
+                        setProgressFilter(v);
+                        setDisplayLimit(4);
+                      }}
+                      triggerClassName="w-44"
+                      options={[
+                        { value: 'ALL', label: t('tasks:filter.all_progress', 'All Statuses'), icon: <Layers className="h-3.5 w-3.5" /> },
+                        { value: 'open', label: t('tasks:filter.status.open', 'OPEN'), icon: <CircleDot className="h-3.5 w-3.5" /> },
+                        { value: 'in_progress', label: t('tasks:filter.status.in_progress', 'IN PROGRESS'), icon: <Play className="h-3.5 w-3.5" /> },
+                        { value: 'approval_pending', label: t('tasks:filter.status.pending', 'APPROVAL PENDING'), icon: <Clock className="h-3.5 w-3.5" /> },
+                        { value: 'completed', label: t('tasks:filter.status.completed', 'COMPLETED'), icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+                        { value: 'rejected', label: t('tasks:filter.status.rejected', 'REJECTED'), icon: <XCircle className="h-3.5 w-3.5" /> },
+                      ]}
+                    />
         </div>
       </div>
 
@@ -182,7 +183,7 @@ const fetchTasks = async () => {
           {t('tasks:empty_list', 'No tasks match your filter criteria or data repository is empty.')}
         </div>
       ) : (
-        /* Görev Kartları Grid Yapısı */
+                /* Görev Kartları Grid Yapısı */
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {visibleTasks.map(item => (
             <div key={item.id} className="relative group transition-transform hover:scale-[1.01]">
@@ -194,7 +195,9 @@ const fetchTasks = async () => {
                   // TaskSerializer'dan doğrudan dönen image_count yapısını bağlıyoruz
                   count: item.image_count || 0
                 }} 
-                onViewDetail={(id) => setSelectedTaskId(id)} 
+                onViewDetail={(id) => setSelectedTaskId(id)}
+                onAnnotate={(id) => navigate(`/annotate/${id}`)}
+                onView={(id) => navigate(`/view/${id}`)}
               />
               
                             {/* Kart Üstü Hızlı Silme / Revoke Aksiyonu */}

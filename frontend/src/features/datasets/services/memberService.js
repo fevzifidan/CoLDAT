@@ -35,10 +35,12 @@ export const memberService = {
     }
   },
 
-  // DELETE /datasets/{datasetId}/members/{memberId}/
-  removeMember: async (datasetId, memberId) => {
+        /**
+   * DELETE /datasets/{datasetId}/members?userId=<userId>
+   */
+  removeMember: async (datasetId, userId) => {
     try {
-      return await apiService.delete(`/datasets/${datasetId}/members/${memberId}/`);
+      return await apiService.delete(`/datasets/${datasetId}/members/?userId=${userId}`);
     } catch (error) {
       return true;
     }

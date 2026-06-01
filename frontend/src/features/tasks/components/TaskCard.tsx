@@ -1,7 +1,14 @@
 // @/features/tasks/components/TaskCard.tsx
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Eye, FileText, User } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Eye, FileText, User, PenLine, ChevronDown, ExternalLink } from "lucide-react";
 
 // Tipi backend'den null gelebilecek şekilde güncelledik
 interface TaskItem {
@@ -16,22 +23,26 @@ interface TaskItem {
 interface TaskCardProps {
   task: TaskItem;
   onViewDetail: (id: string) => void;
+  onAnnotate?: (id: string) => void;
+  onView?: (id: string) => void;
 }
 
-export const TaskCard = ({ task, onViewDetail }: TaskCardProps) => {
+export const TaskCard = ({ task, onViewDetail, onAnnotate, onView }: TaskCardProps) => {
   const { t } = useTranslation(['tasks']);
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case "NEW":
-      case "OPEN": return "bg-primary/10 text-primary border-primary/20";
-      case "IN_PROGRESS": return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-            case "APPROVAL_PENDING": return "bg-muted text-muted-foreground border-border";
-      case "COMPLETED": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
-      case "REJECTED": return "bg-destructive/10 text-destructive border-destructive/20";
+    const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "open": return "bg-primary/10 text-primary border-primary/20";
+      case "in_progress": return "bg-amber-500/10 text-amber-500 border-amber-500/20";
+      case "approval_pending": return "bg-muted text-muted-foreground border-border";
+      case "completed": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+      case "rejected": return "bg-destructive/10 text-destructive border-destructive/20";
       default: return "bg-muted text-muted-foreground border-border";
     }
   };
+
+  const isAnnotator = task.role === 'Annotator';
+  const isViewer = task.role === 'Viewer';
 
   return (
     <div className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col justify-between h-[180px] hover:shadow-md transition-shadow">
@@ -48,8 +59,7 @@ export const TaskCard = ({ task, onViewDetail }: TaskCardProps) => {
             <FileText size={13} />
             <span>{task.count ?? 0} {t('tasks:card.processed_files', 'Processed Files')}</span>
           </div>
-                    {/* null check koruması sağlandı */}
-          {task.assignee_username && (
+                    {task.assignee_username && (
             <div className="flex items-center gap-1.5">
               <User size={13} />
               <span>{t('tasks:card.assignee_prefix', 'Assignee: @')}{task.assignee_username}</span>
@@ -63,13 +73,54 @@ export const TaskCard = ({ task, onViewDetail }: TaskCardProps) => {
         </div>
       </div>
 
-      <Button 
-        onClick={() => onViewDetail(task.id)}
-        variant="secondary" 
-        className="w-full h-8 text-xs font-medium gap-1.5"
-      >
-        <Eye size={14} /> {t('tasks:card.manage_task', 'Manage Task')}
-      </Button>
+      <div className="flex gap-2">
+        {/* Ana aksiyon butonu: rol bazlı direkt git */}
+        <Button 
+          onClick={() => {
+            if (isViewer && onView) onView(task.id);
+            else if (isAnnotator && onAnnotate) onAnnotate(task.id);
+            else onViewDetail(task.id);
+          }}
+          variant="secondary" 
+          className="flex-1 h-8 text-xs font-medium gap-1.5"
+        >
+          {isAnnotator ? (
+            <><PenLine size={14} /> {t('tasks:card.annotate', 'Annotate')}</>
+          ) : isViewer ? (
+            <><Eye size={14} /> {t('tasks:card.view', 'View')}</>
+          ) : (
+            <><Eye size={14} /> {t('tasks:card.manage_task', 'Manage Task')}</>
+          )}
+        </Button>
+
+        {/* Dropdown menü (Admin için ek seçenekler) */}
+        {!isAnnotator && !isViewer && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" size="icon" className="h-8 w-8 shrink-0">
+                <ChevronDown size={14} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 rounded-xl">
+              <DropdownMenuItem onClick={() => onViewDetail(task.id)} className="cursor-pointer gap-2 text-xs font-medium">
+                <Eye size={14} />
+                {t('tasks:card.manage_task', 'Manage Task')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onAnnotate?.(task.id)} disabled={!onAnnotate} className="cursor-pointer gap-2 text-xs font-medium">
+                <PenLine size={14} />
+                {t('tasks:card.annotate', 'Annotate')}
+                <span className="ml-auto text-[10px] text-muted-foreground">Annotator</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onView?.(task.id)} disabled={!onView} className="cursor-pointer gap-2 text-xs font-medium">
+                <ExternalLink size={14} />
+                {t('tasks:card.view', 'View')}
+                <span className="ml-auto text-[10px] text-muted-foreground">Read-only</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
     </div>
   );
 };

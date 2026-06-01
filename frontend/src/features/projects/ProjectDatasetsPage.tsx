@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Database, Plus, RefreshCw, Layers, FileSpreadsheet, Image, CheckCircle, Tag } from "lucide-react";  
-import { projectService } from './services/projectService';
 import { datasetService } from '../datasets/services/datasetService'; 
 import { CreateDatasetModal } from '../datasets/components/CreateDatasetModal';
 import notificationService from '@/shared/services/notification/notification.service';
@@ -16,36 +15,27 @@ export const ProjectDatasetsPage = () => {
   const { t } = useTranslation(['pages', 'common', 'datasets']);
   
   const [loading, setLoading] = useState(true);
-  const [projectDetails, setProjectDetails] = useState<any>(null);
   const [projectDatasets, setProjectDatasets] = useState<any[]>([]); 
   
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); 
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); 
   
-    // Hem projeyi hem de o projeye ait gerçek datasetleri çekip eşitleyen ana fonksiyon
+  // O projeye ait gerçek dataset listesini çeken fonksiyon
   const loadProjectData = async () => {
     if (!projectId) return;
     try {
       setLoading(true);
       
-      // 1. Proje Detayını Çek
-      const projRes = await projectService.getProjectById(projectId);
-      const projData = projRes?.data || projRes;
-      setProjectDetails(projData);
-
-      // 2. O Projeye Bağlı Gerçek Dataset Listesini Çek
       const res = await datasetService.getAllDatasets(projectId);
       // Backend pagination objesiyse ({ data: [...] }) içini aç, değilse array kontrolü yap
       const datasetList = res && res.data && Array.isArray(res.data) ? res.data : res;
       
       if (Array.isArray(datasetList)) {
         setProjectDatasets(datasetList);
-      } else if (projData && Array.isArray(projData.datasets)) {
-        setProjectDatasets(projData.datasets);
       } else {
         setProjectDatasets([]);
       }
 
-        } catch (err) {
+    } catch (err) {
       console.error("Error loading project datasets:", err);
       notificationService.error(t("datasets:project_page.notifications.load_error", "Veriler yüklenirken bir sorun oluştu."));
       setProjectDatasets([]); 
@@ -54,7 +44,7 @@ export const ProjectDatasetsPage = () => {
     }
   };
 
-    useEffect(() => {
+  useEffect(() => {
     loadProjectData();
   }, [projectId]);
 
@@ -72,8 +62,8 @@ export const ProjectDatasetsPage = () => {
             <ArrowLeft size={16} />
           </Button>
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight">
-              {projectDetails?.name || t('projects:loading', 'Loading Project...')}
+                        <h1 className="text-xl font-extrabold tracking-tight">
+              {t('datasets:project_page.title', 'Project Datasets')}
             </h1>
             <p className="text-xs text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">
               {t('datasets:project_page.manage_linked', 'Linked Datasets Management')}

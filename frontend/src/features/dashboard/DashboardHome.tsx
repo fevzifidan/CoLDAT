@@ -28,7 +28,7 @@ const DashboardHome = () => {
       setIsLoading(true);
       setError(null);
 
-      // 1. Projeleri ve Taskları eş zamanlı olarak çağırıyoruz (Performans için Parallel Fetch)
+            // 1. Projeleri ve Taskları eş zamanlı olarak çağırıyoruz (Performans için Parallel Fetch)
       const [projectsData, tasksData] = await Promise.all([
         projectService.getAllProjects(),
         taskService.getTasks()
@@ -42,16 +42,21 @@ const DashboardHome = () => {
       const activeTasks = tasksData?.results || tasksData?.data || tasksData || [];
       setTasksList(activeTasks);
 
-      // 2. Projeler geldikten sonra, eğer en az bir proje varsa onun datasetlerini çekiyoruz
-      if (activeProjects.length > 0) {
-        const firstProjectId = activeProjects[0].id;
-        // Servisinizdeki isimlendirmeye göre örn: getProjectDatasets(id) çağrısı
-// projectService yerine zaten elinde olan ve projectId kabul eden datasetService'i çağırıyoruz
-const datasetsData = await datasetService.getAllDatasets(firstProjectId);
-const activeDatasets = datasetsData?.results || datasetsData?.data || datasetsData || [];
-setDatasetsList(activeDatasets);
-      } else {
-        setDatasetsList([]);
+      // 2. Kullanıcının eriştiği dataset'leri göstermek için global endpoint dene
+      try {
+        const datasetsData = await datasetService.fetchAllDatasets({ limit: 4 });
+        const activeDatasets = datasetsData?.data || datasetsData?.results || datasetsData || [];
+        setDatasetsList(activeDatasets);
+      } catch {
+        // Eğer global endpoint yoksa, ilk projenin dataset'lerini kullan
+        if (activeProjects.length > 0) {
+          const firstProjectId = activeProjects[0].id;
+          const datasetsData = await datasetService.getAllDatasets(firstProjectId);
+          const activeDatasets = datasetsData?.results || datasetsData?.data || datasetsData || [];
+          setDatasetsList(activeDatasets);
+        } else {
+          setDatasetsList([]);
+        }
       }
 
     } catch (err: any) {
@@ -69,10 +74,11 @@ setDatasetsList(activeDatasets);
   // --- VERİ LİMİTLEME VE KART UYUMLULUK MAPPING İŞLEMLERİ ---
   // API'den dönen nesneleri ProjectCard'ın beklediği esnek yapıya normalize ediyoruz
 
-  const recentTasks = tasksList.slice(0, 4).map(t => ({
+    const recentTasks = tasksList.slice(0, 4).map(t => ({
     id: t.id,
     name: t.name || `Task #${t.id.slice(0, 8)}`,
     status: t.status || "OPEN",
+    role: t.role || "Viewer",
     description: `Contains ${t.image_count ?? 0} master assets.`
   }));
 
