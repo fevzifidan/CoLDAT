@@ -7,37 +7,45 @@ export const taskService = {
    * @param {string} projectId
    * @param {Object} [params] - { limit?: number, after?: string | null, status?: string }
    */
+    /**
+   * GET /projects/{projectId}/tasks/
+   * Proje seviyesindeki tüm task'ları cursor-based pagination ile listeler.
+   * API spec response: { data: Task[], next_cursor: string | null }
+   */
   getProjectTasks: async (projectId, params = {}) => {
     const response = await apiService.get(`/projects/${projectId}/tasks/`, { params });
-    return response.data || response;
+    return response;
   },
 
   /**
    * GET /tasks/
    * Assigned tasks (dashboard list)
+   * API spec response: { data: Task[], next_cursor: string | null }
    */
   getTasks: async (params = {}) => {
     const response = await apiService.get('/tasks/', { params });
-    return response.data;
+    return response;
   },
 
   /**
    * GET /tasks/{taskId}/
    * Task detail
+   * API spec response: Single Task object
    */
   getTaskById: async (taskId) => {
     const response = await apiService.get(`/tasks/${taskId}/`);
-    return response.data;
+    return response;
   },
 
   /**
    * POST /tasks/
    * Admin assigns batch of images
    * Payload: { dataset_id, assignee_id, role, image_ids[], note? }
+   * API spec response: 201 Created (Task object)
    */
   createTask: async (payload) => {
     const response = await apiService.post('/tasks/', payload);
-    return response.data;
+    return response;
   },
 
   /**
@@ -46,7 +54,7 @@ export const taskService = {
    */
   updateTaskStatus: async (taskId, payload) => {
     const response = await apiService.patch(`/tasks/${taskId}/status/`, payload);
-    return response.data;
+    return response;
   },
 
   /**
@@ -55,7 +63,7 @@ export const taskService = {
    */
   reassignTask: async (taskId, payload) => {
     const response = await apiService.patch(`/tasks/${taskId}/assign/`, payload);
-    return response.data;
+    return response;
   },
 
   /**
@@ -64,7 +72,7 @@ export const taskService = {
    */
   deleteTask: async (taskId) => {
     const response = await apiService.delete(`/tasks/${taskId}/`);
-    return response.data;
+    return response;
   },
 
     /**
@@ -76,19 +84,19 @@ export const taskService = {
       `/tasks/${taskId}/images/`,
       payload
     );
-    return response.data;
+    return response;
   },
 
   /**
    * GET /tasks/{taskId}/images/
    * Get paginated images for a task (cursor-based pagination)
-   * Response: { data: TaskImage[], next_cursor: string | null }
+   * API spec response: { data: TaskImage[], next_cursor: string | null }
    */
   getTaskImages: async (taskId, { limit = 50, after = null } = {}) => {
     const params = { limit };
     if (after) params.after = after;
     const response = await apiService.get(`/tasks/${taskId}/images/`, { params });
-    return response.data;
+    return response;
   }
 };
 

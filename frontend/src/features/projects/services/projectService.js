@@ -45,12 +45,11 @@ export const projectService = {
       return [];
     }
 
-    const response = await apiService.get(
+        // API spec: direkt obje döner (axios interceptor zaten response.data'yı unwrap eder)
+    const userData = await apiService.get(
       `users/lookup/?username=${encodeURIComponent(query)}`
     );
 
-    // API spec: direkt obje döner, data wrapper içinde değil
-    const userData = response?.data || response;
     return userData ? [userData] : [];
   },
 

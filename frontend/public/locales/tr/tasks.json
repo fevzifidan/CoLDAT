@@ -12,8 +12,8 @@
     "status": {
       "open": "AÇIK",
       "in_progress": "DEVAM EDİYOR",
-      "pending": "BEKLEMEDE",
-      "approved": "ONAYLANDI",
+      "approval_pending": "ONAY BEKLENİYOR",
+      "completed": "TAMAMLANDI",
       "rejected": "REDDEDİLDİ"
     }
   },

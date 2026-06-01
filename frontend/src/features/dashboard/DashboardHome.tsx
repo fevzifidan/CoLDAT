@@ -34,15 +34,18 @@ const DashboardHome = () => {
         taskService.getTasks()
       ]);
 
-      // --- Proje Verisi Ayrıştırma ---
-      const activeProjects = projectsData?.results || projectsData?.data || projectsData || [];
+            // --- Proje Verisi Ayrıştırma ---
+      // API spec response: { data: Project[], next_cursor: string | null }
+      const activeProjects = projectsData?.data || projectsData?.results || projectsData || [];
       setProjectsList(activeProjects);
 
       // --- Görev Verisi Ayrıştırma ---
-      const activeTasks = tasksData?.results || tasksData?.data || tasksData || [];
+      // API spec response: { data: Task[], next_cursor: string | null }
+      const activeTasks = tasksData?.data || tasksData?.results || tasksData || [];
       setTasksList(activeTasks);
 
-      // 2. Kullanıcının eriştiği dataset'leri göstermek için global endpoint dene
+            // 2. Kullanıcının eriştiği dataset'leri göstermek için global endpoint dene
+      // API spec response: { data: Dataset[], next_cursor: string | null }
       try {
         const datasetsData = await datasetService.fetchAllDatasets({ limit: 4 });
         const activeDatasets = datasetsData?.data || datasetsData?.results || datasetsData || [];
@@ -52,7 +55,7 @@ const DashboardHome = () => {
         if (activeProjects.length > 0) {
           const firstProjectId = activeProjects[0].id;
           const datasetsData = await datasetService.getAllDatasets(firstProjectId);
-          const activeDatasets = datasetsData?.results || datasetsData?.data || datasetsData || [];
+          const activeDatasets = datasetsData?.data || datasetsData?.results || datasetsData || [];
           setDatasetsList(activeDatasets);
         } else {
           setDatasetsList([]);

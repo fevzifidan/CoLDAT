@@ -12,8 +12,8 @@
     "status": {
       "open": "OPEN",
       "in_progress": "IN PROGRESS",
-      "pending": "PENDING",
-      "approved": "APPROVED",
+      "approval_pending": "APPROVAL PENDING",
+      "completed": "COMPLETED",
       "rejected": "REJECTED"
     }
   },

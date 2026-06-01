@@ -46,18 +46,18 @@ const TasksPage = () => {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
 // --- DATA FETCHING (GET /tasks/) ---
+// API spec: { data: Task[], next_cursor: string | null }
 const fetchTasks = async () => {
   try {
     setIsLoading(true);
     setError(null);
     const data = await taskService.getTasks();
     
-    // 💡 EĞER backend pagination kullanıyorsa veriler 'results' içindedir.
-    // Her iki ihtimali de (sayfalamalı veya sayfalamasız) koruma altına alıyoruz:
+    // API spec response format: { data: Task[], next_cursor: string | null }
     if (data && Array.isArray(data)) {
       setTasks(data);
-    } else if (data && data.results && Array.isArray(data.results)) {
-      setTasks(data.results);
+    } else if (data && data.data && Array.isArray(data.data)) {
+      setTasks(data.data);
     } else {
       setTasks([]);
     }
