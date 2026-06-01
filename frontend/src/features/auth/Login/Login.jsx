@@ -32,7 +32,7 @@ const LoginForm = () => {
     try {
       const res = await login({ email: data.identifier, password: data.password }, { silent: true });
       if (res) {
-        navigate("/home");
+        navigate("/");
       }
     } catch (error) {
       if (error.response?.data?.errorCode === "ACCOUNT_NOT_VERIFIED") {
