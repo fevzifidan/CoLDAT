@@ -4,18 +4,15 @@ import { useAuth } from '@/context/AuthContext';
 import apiService from '@/shared/services/api/api.service';
 import { Button } from "@/components/ui/button";
 import notificationService from '@/shared/services/notification/notification.service';
+import DeleteAccountModal from './components/DeleteAccountModal';
 import {
   User,
   Mail,
   Save,
   Shield,
   UserCheck,
-  Key,
   Trash2,
   AlertTriangle,
-  Loader2,
-  Lock,
-  X
 } from 'lucide-react';
 
 interface ProfileForm {
@@ -39,19 +36,27 @@ const ProfilePage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
 
-  // Delete states
+  // Delete modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTokenFromUrl, setDeleteTokenFromUrl] = useState<string | null>(null);
 
-  const [deleteStep, setDeleteStep] = useState<'request' | 'confirm'>(
-    'request'
-  );
+  /* ------------------------------------------------ */
+  /* URL'DEN deleteToken OKU                          */
+  /* ------------------------------------------------ */
 
-  const [passwordOrIdentifier, setPasswordOrIdentifier] =
-    useState('');
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokenFromUrl = params.get('deleteToken');
+    if (tokenFromUrl) {
+      setDeleteTokenFromUrl(tokenFromUrl);
+      // Modal'ı token ile aç
+      setShowDeleteModal(true);
+    }
+  }, []);
 
-  const [receivedToken, setReceivedToken] = useState('');
-
-  const [deleteLoading, setDeleteLoading] = useState(false);
+  /* ------------------------------------------------ */
+  /* FORM VERILERINI DOLDUR                           */
+  /* ------------------------------------------------ */
 
   useEffect(() => {
     if (user) {
@@ -67,7 +72,6 @@ const ProfilePage: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const { name, value } = e.target;
-
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -75,10 +79,10 @@ const ProfilePage: React.FC = () => {
   };
 
   /* ------------------------------------------------ */
-  /* PROFILE UPDATE */
+  /* PROFILE UPDATE                                    */
   /* ------------------------------------------------ */
 
-    const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     setLoading(true);
@@ -94,7 +98,7 @@ const ProfilePage: React.FC = () => {
         payload.last_name = formData.last_name;
       }
 
-            const response = await notificationService.promise(
+      const response = await notificationService.promise(
         apiService.patch('account/me/', payload),
         {
           loading: t('accounts:profile.notifications.updateLoading'),
@@ -103,11 +107,6 @@ const ProfilePage: React.FC = () => {
             error?.response?.data?.message ||
             t('accounts:profile.notifications.updateError'),
         }
-      );
-
-      console.log(
-        'Profile update response:',
-        response
       );
 
       const responseData = response.data || response;
@@ -128,7 +127,7 @@ const ProfilePage: React.FC = () => {
         }
       }
     } catch (error: any) {
-            console.error(
+      console.error(
         'Profile update error:',
         error
       );
@@ -138,122 +137,29 @@ const ProfilePage: React.FC = () => {
   };
 
   /* ------------------------------------------------ */
-  /* NORMAL USER DELETE REQUEST */
+  /* DELETE MODAL HANDLERS                             */
   /* ------------------------------------------------ */
 
-    const handleUrlDeleteRequest = async () => {
-        if (!passwordOrIdentifier.trim()) {
-      notificationService.error(
-        t('accounts:profile.deleteModal.errors.emptyPassword')
-      );
-
-      return;
-    }
-
-    setDeleteLoading(true);
-
-    try {
-      const response = await apiService.post(
-        '/account/delete-request',
-        {
-          identifier: passwordOrIdentifier,
-        }
-      );
-
-      const resData = response.data || response;
-
-      notificationService.success(t('accounts:profile.deleteModal.success.requestCreated'));
-
-
-      const tokenFromServer =
-        resData.token || 'test_delete_token_bypass';
-
-      setReceivedToken(tokenFromServer);
-
-            try {
-        await apiService.get(
-          `/account/delete-confirm/validate?token=${tokenFromServer}`
-        );
-      } catch (vErr) {
-        console.log(
-          'Token validation step (Bypassed):',
-          vErr
-        );
-      }
-
-      setDeleteStep('confirm');
-    } catch (error: any) {
-            const errorMsg =
-        error.response?.data?.message ||
-        t('accounts:profile.deleteModal.errors.requestFailed');
-
-      notificationService.error(errorMsg);
-    } finally {
-      setDeleteLoading(false);
-    }
+  const handleOpenDeleteModal = () => {
+    setDeleteTokenFromUrl(null); // Reset URL token - manual flow
+    setShowDeleteModal(true);
   };
 
-  /* ------------------------------------------------ */
-  /* NORMAL USER DELETE CONFIRM */
-  /* ------------------------------------------------ */
-
-    const handleConfirmDelete = async () => {
-    setDeleteLoading(true);
-
-    try {
-      await apiService.post(
-        '/account/delete-confirm',
-        {
-          token: receivedToken,
-        }
-      );
-
-            notificationService.success(
-        t('accounts:profile.deleteModal.success.accountDeleted')
-      );
-
-      localStorage.clear();
-
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 2000);
-    } catch (error: any) {
-            const errorMsg =
-        error.response?.data?.message ||
-        t('accounts:profile.deleteModal.errors.confirmFailed');
-
-      notificationService.error(errorMsg);
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
-
-  /* ------------------------------------------------ */
-  /* MSAL DELETE FLOW */
-  /* ------------------------------------------------ */
-
-    const handleMsalDeleteRedirect = async () => {
-    try {
-      /**
-       * Backend endpoint varsa bunu kullan:
-       *
-       * window.location.href =
-       * `${import.meta.env.VITE_API_URL}/auth/msal/delete`;
-       */
-
-      window.location.href =
-        'https://login.microsoftonline.com/common/oauth2/v2.0/logout';
-        } catch (error) {
-      notificationService.error(
-        t('accounts:profile.deleteModal.errors.msalLogoutFailed')
-      );
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    // Clean up URL params if deleteToken was present
+    if (deleteTokenFromUrl) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('deleteToken');
+      window.history.replaceState({}, '', url.toString());
+      setDeleteTokenFromUrl(null);
     }
   };
 
   return (
     <div className="p-6 max-w-4xl mx-auto w-full space-y-6 text-slate-900 dark:text-slate-100 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
-            {/* HEADER */}
+      {/* HEADER */}
       <div>
         <h2 className="text-2xl font-black tracking-tight uppercase flex items-center gap-2">
           <User
@@ -275,7 +181,7 @@ const ProfilePage: React.FC = () => {
       >
         <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
 
-                    <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+          <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
             <h3 className="text-base font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
               <UserCheck
                 size={18}
@@ -291,7 +197,7 @@ const ProfilePage: React.FC = () => {
 
           <div className="p-6 space-y-4">
 
-                        {/* FIRST NAME / LAST NAME */}
+            {/* FIRST NAME / LAST NAME */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
               <div className="space-y-2">
@@ -329,7 +235,7 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-                        {/* USERNAME */}
+            {/* USERNAME */}
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase text-slate-500">
                 {t('accounts:profile.fields.username')}
@@ -378,7 +284,7 @@ const ProfilePage: React.FC = () => {
                 />
               </div>
 
-                            {isMsalUser && (
+              {isMsalUser && (
                 <p className="text-[11px] text-amber-500 font-medium mt-1">
                   {t('accounts:profile.fields.msalWarning')}
                 </p>
@@ -387,7 +293,7 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
 
-                {/* SAVE BUTTON */}
+        {/* SAVE BUTTON */}
         <div className="flex justify-end">
           <Button
             type="submit"
@@ -403,32 +309,7 @@ const ProfilePage: React.FC = () => {
         </div>
       </form>
 
-      {/* ROLE */}
-      {user?.role && (
-        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-50 dark:bg-indigo-950/50 rounded-lg text-indigo-600">
-              <Key size={18} />
-            </div>
-
-                        <div>
-              <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                {t('accounts:profile.role.title')}
-              </p>
-
-              <p className="text-xs text-slate-400 font-semibold">
-                {t('accounts:profile.role.description')}
-              </p>
-            </div>
-          </div>
-
-          <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 rounded-full text-xs font-bold uppercase tracking-wider">
-            {user.role}
-          </span>
-        </div>
-      )}
-
-            {/* DANGER ZONE */}
+      {/* DANGER ZONE */}
       <div className="bg-red-50/50 dark:bg-red-950/10 border border-red-200 dark:border-red-900/50 rounded-3xl p-6 space-y-4">
 
         <div className="flex items-start gap-3">
@@ -447,20 +328,10 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
 
-                <div className="flex justify-end pt-2 border-t border-red-200/50 dark:border-red-900/20">
+        <div className="flex justify-end pt-2 border-t border-red-200/50 dark:border-red-900/20">
           <Button
             type="button"
-            onClick={() => {
-              setShowDeleteModal(true);
-
-              if (isMsalUser) {
-                setDeleteStep('confirm');
-              } else {
-                setDeleteStep('request');
-              }
-
-              setPasswordOrIdentifier('');
-            }}
+            onClick={handleOpenDeleteModal}
             className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition-all uppercase tracking-wider shadow-sm cursor-pointer"
           >
             <Trash2 size={14} />
@@ -469,150 +340,13 @@ const ProfilePage: React.FC = () => {
         </div>
       </div>
 
-      {/* DELETE MODAL */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+      {/* DELETE ACCOUNT MODAL */}
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        onClose={handleCloseDeleteModal}
+        initialToken={deleteTokenFromUrl}
+      />
 
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-xl space-y-4 animate-in zoom-in-95 duration-200">
-
-                        <div className="flex justify-between items-center pb-2 border-b dark:border-slate-800">
-              <h4 className="font-black text-sm text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                <Trash2
-                  size={16}
-                  className="text-red-500"
-                />
-                {t('accounts:profile.deleteModal.title')}
-              </h4>
-
-              <button
-                onClick={() =>
-                  setShowDeleteModal(false)
-                }
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg transition-colors"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-                        {/* NORMAL USER FLOW */}
-            {deleteStep === 'request' &&
-            !isMsalUser ? (
-              <div className="space-y-4">
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  {t('accounts:profile.deleteModal.requestDescription')}
-                </p>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase text-slate-400">
-                    {t('accounts:profile.deleteModal.passwordLabel')}
-                  </label>
-
-                  <div className="relative">
-                    <input
-                      type="password"
-                      value={passwordOrIdentifier}
-                      onChange={(e) =>
-                        setPasswordOrIdentifier(
-                          e.target.value
-                        )
-                      }
-                      placeholder={t('accounts:profile.deleteModal.passwordPlaceholder')}
-                      className="w-full h-10 pl-9 pr-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
-                    />
-
-                    <Lock
-                      size={14}
-                      className="absolute left-3 top-3.5 text-slate-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-2 pt-2 justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      setShowDeleteModal(false)
-                    }
-                    disabled={deleteLoading}
-                  >
-                    {t('accounts:profile.deleteModal.cancel')}
-                  </Button>
-
-                                    <Button
-                    onClick={handleUrlDeleteRequest}
-                    disabled={deleteLoading}
-                    className="h-9 px-4 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
-                  >
-                    {deleteLoading ? (
-                      <Loader2
-                        size={14}
-                        className="animate-spin"
-                      />
-                    ) : null}
-
-                    {t('accounts:profile.deleteModal.sendRequest')}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              /* CONFIRM */
-              <div className="space-y-4">
-
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs text-amber-800 dark:text-amber-400 flex flex-col gap-1">
-
-                  <span className="font-bold">
-                    {t('accounts:profile.deleteModal.confirmTitle')}
-                  </span>
-
-                  <span>
-                    {isMsalUser
-                      ? t('accounts:profile.deleteModal.confirmMsalMessage')
-                      : t('accounts:profile.deleteModal.confirmNormalMessage')}
-                  </span>
-                </div>
-
-                <div className="flex gap-2 pt-2 justify-end">
-
-                  {!isMsalUser && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        setDeleteStep('request')
-                      }
-                      disabled={deleteLoading}
-                    >
-                      {t('accounts:profile.deleteModal.goBack')}
-                    </Button>
-                  )}
-
-                                    <Button
-                    onClick={
-                      isMsalUser
-                        ? handleMsalDeleteRedirect
-                        : handleConfirmDelete
-                    }
-                    disabled={deleteLoading}
-                    className="h-9 px-4 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
-                  >
-                    {deleteLoading ? (
-                      <Loader2
-                        size={14}
-                        className="animate-spin"
-                      />
-                    ) : null}
-
-                    {isMsalUser
-                      ? t('accounts:profile.deleteModal.continueWithMsal')
-                      : t('accounts:profile.deleteModal.deleteAccount')}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

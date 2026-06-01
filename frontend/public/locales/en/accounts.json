@@ -16,10 +16,6 @@
       "email": "Email Address (Unchangeable)",
       "msalWarning": "Users who signed in with Microsoft can only update their username."
     },
-    "role": {
-      "title": "System Role",
-      "description": "The current permission level assigned to your account."
-    },
     "buttons": {
       "save": "Save Changes",
       "saving": "Saving..."
@@ -42,17 +38,19 @@
       "passwordPlaceholder": "••••••••",
       "cancel": "Cancel",
       "sendRequest": "Send Deletion Request",
-      "goBack": "Go Back",
-      "confirmTitle": "✓ Deletion Request Verified!",
-      "confirmMsalMessage": "Your Microsoft account will be signed out and the process will continue via the Microsoft verification screen.",
-      "confirmNormalMessage": "You can permanently delete your account by clicking the button below.",
+      "emailSentTitle": "✓ Deletion Email Sent!",
+      "emailSentMessage": "Please check your email inbox. We've sent you a confirmation link to complete the account deletion process. The link will expire after a certain period.",
+      "close": "Close",
+      "validationErrorTitle": "✗ Invalid or Expired Link",
+      "validationErrorMessage": "The deletion confirmation link is invalid or has expired. Please request a new deletion link from your profile settings.",
+      "confirmTitle": "✓ Token Validated",
+      "confirmNormalMessage": "You can now permanently delete your account by clicking the button below.",
+      "expiresAt": "Link expires at: {{date}}",
       "deleteAccount": "Delete Account Completely",
-      "continueWithMsal": "Continue with Microsoft",
       "errors": {
         "emptyPassword": "Please enter your password or authenticator.",
         "requestFailed": "Deletion request failed (Password may be incorrect).",
-        "confirmFailed": "Account deletion could not be confirmed or the token has expired.",
-        "msalLogoutFailed": "An error occurred while terminating the Microsoft session."
+        "confirmFailed": "Account deletion could not be confirmed or the token has expired."
       },
       "success": {
         "requestCreated": "Deletion request created.",

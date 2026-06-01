@@ -16,10 +16,6 @@
       "email": "E-posta Adresi (Değiştirilemez)",
       "msalWarning": "Microsoft ile giriş yapan kullanıcılar yalnızca kullanıcı adlarını güncelleyebilir."
     },
-    "role": {
-      "title": "Sistem Rolü",
-      "description": "Hesabınıza atanmış mevcut yetki seviyesi."
-    },
     "buttons": {
       "save": "Değişiklikleri Kaydet",
       "saving": "Kaydediliyor..."
@@ -42,17 +38,19 @@
       "passwordPlaceholder": "••••••••",
       "cancel": "Vazgeç",
       "sendRequest": "Silme İsteği Gönder",
-      "goBack": "Geri Git",
-      "confirmTitle": "✓ Silme İsteği Doğrulandı!",
-      "confirmMsalMessage": "Microsoft hesabınızın oturumu kapatılacak ve işlem Microsoft doğrulama ekranı üzerinden devam edecektir.",
+      "emailSentTitle": "✓ Silme E-postası Gönderildi!",
+      "emailSentMessage": "Lütfen e-posta gelen kutunuzu kontrol edin. Hesap silme işlemini tamamlamak için size bir onay bağlantısı gönderdik. Bağlantı belirli bir süre sonra geçersiz olacaktır.",
+      "close": "Kapat",
+      "validationErrorTitle": "✗ Geçersiz veya Süresi Dolmuş Bağlantı",
+      "validationErrorMessage": "Silme onay bağlantısı geçersiz veya süresi dolmuş. Lütfen profil ayarlarınızdan yeni bir silme bağlantısı talep edin.",
+      "confirmTitle": "✓ Token Doğrulandı",
       "confirmNormalMessage": "Aşağıdaki butona tıklayarak hesabınızı kalıcı olarak silebilirsiniz.",
+      "expiresAt": "Bağlantı son geçerlilik: {{date}}",
       "deleteAccount": "Hesabı Tamamen Sil",
-      "continueWithMsal": "Microsoft ile Devam Et",
       "errors": {
         "emptyPassword": "Lütfen şifrenizi veya kimlik doğrulayıcınızı girin.",
         "requestFailed": "Silme isteği başarısız oldu (Şifre hatalı olabilir).",
-        "confirmFailed": "Hesap silme onaylanamadı veya token süresi doldu.",
-        "msalLogoutFailed": "Microsoft oturumu sonlandırılırken bir hata oluştu."
+        "confirmFailed": "Hesap silme onaylanamadı veya token süresi doldu."
       },
       "success": {
         "requestCreated": "Silme isteği oluşturuldu.",
