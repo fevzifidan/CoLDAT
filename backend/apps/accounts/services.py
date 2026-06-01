@@ -18,6 +18,8 @@ def create_user(
         password=password,
         first_name=first_name,
         last_name=last_name,
+        auth_provider=auth_provider,
+        is_active=is_active,
         auth_provider=User.AuthProvider.EMAIL,
         is_active=False,
     )

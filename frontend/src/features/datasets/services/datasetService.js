@@ -1,91 +1,79 @@
 // src/features/datasets/services/datasetService.js
 import apiService from '@/shared/services/api/apiClient';
 
-/**
- * @typedef {Object} Dataset
- * @property {string} id
- * @property {string} [project_id]
- * @property {string} name
- * @property {string} description
- * @property {string} [current_version]
- * @property {number} [total_images]
- * @property {number} [annotated_images]
- * @property {'admin' | 'annotator' | 'viewer'} [role]
+/** * MOCK VERİLER (Backend hazır olana kadar arayüzü test etmek için)
  */
-
-/**
- * @typedef {Object} ApiKey
- * @property {string} id
- * @property {string} name
- * @property {string} [api_key]
- * @property {string} created_at
- * @property {boolean} is_active
- * @property {string} [expires_at]
- */
+const MOCK_DATA = {
+  datasets: [
+    { id: "1", name: "Autonomous Driving", description: "City traffic data", total_images: 120, annotated_images: 50, role: 'admin' },
+    { id: "2", name: "Medical Records", description: "X-Ray archives", total_images: 450, annotated_images: 450, role: 'viewer' }
+  ],
+  apiKeys: [
+    { id: "key_1", name: "Production Key", created_at: "2026-05-20", is_active: true },
+    { id: "key_2", name: "Staging Key", created_at: "2026-05-21", is_active: false }
+  ]
+};
 
 export const datasetService = {
-  /**
-   * 1. Tüm Veri Setlerini Listele (GET /datasets)
-   * @returns {Promise<Dataset[]>}
-   */
-  getAllDatasets: () => {
-    return apiService.get('/datasets');
+  getAllDatasets: async () => {
+    try {
+      return await apiService.get('/datasets');
+    } catch (error) {
+      console.warn("Mocking: getAllDatasets");
+      return MOCK_DATA.datasets;
+    }
   },
 
-  /**
-   * 2. Yeni Veri Seti Oluştur (POST /datasets)
-   * @param {Object} datasetData
-   * @returns {Promise<Dataset>}
-   */
-  createDataset: (datasetData) => {
-    return apiService.post('/datasets', datasetData);
+  createDataset: async (datasetData) => {
+    try {
+      return await apiService.post('/datasets', datasetData);
+    } catch (error) {
+      console.warn("Mocking: createDataset", datasetData);
+      return { data: { ...datasetData, id: Math.random().toString() } };
+    }
   },
 
-  /**
-   * 3. Veri Setini Sistemden Sil (DELETE /datasets/{id})
-   * @param {string} id
-   * @returns {Promise<void>}
-   */
-  deleteDataset: (id) => {
-    return apiService.delete(`/datasets/${id}`);
+  deleteDataset: async (id) => {
+    try {
+      return await apiService.delete(`/datasets/${id}`);
+    } catch (error) {
+      console.warn("Mocking: deleteDataset", id);
+      return;
+    }
   },
 
-  /**
-   * 4. Veri Setine Bağlı API Key'leri Listele (GET /datasets/{datasetId}/api-keys)
-   * @param {string} datasetId
-   * @returns {Promise<ApiKey[]>}
-   */
-  getApiKeys: (datasetId) => {
-    return apiService.get(`/datasets/${datasetId}/api-keys`);
+  getApiKeys: async (datasetId) => {
+    try {
+      return await apiService.get(`/datasets/${datasetId}/api-keys`);
+    } catch (error) {
+      console.warn("Mocking: getApiKeys");
+      return MOCK_DATA.apiKeys;
+    }
   },
 
-  /**
-   * 5. Veri Seti için API Key Oluştur (POST /datasets/{datasetId}/api-keys)
-   * @param {string} datasetId
-   * @param {Object} keyData
-   * @returns {Promise<ApiKey>}
-   */
-  createApiKey: (datasetId, keyData) => {
-    return apiService.post(`/datasets/${datasetId}/api-keys`, keyData);
+  createApiKey: async (datasetId, keyData) => {
+    try {
+      return await apiService.post(`/datasets/${datasetId}/api-keys`, keyData);
+    } catch (error) {
+      console.warn("Mocking: createApiKey", keyData);
+      return { data: { id: "new_key_" + Date.now(), ...keyData, is_active: true } };
+    }
   },
 
-  /**
-   * 6. API Key'i Tamamen Görünür Yap (GET /datasets/{datasetId}/api-keys/{keyId}/reveal)
-   * @param {string} datasetId
-   * @param {string} keyId
-   * @returns {Promise<ApiKey>}
-   */
-  revealApiKey: (datasetId, keyId) => {
-    return apiService.get(`/datasets/${datasetId}/api-keys/${keyId}/reveal`);
+  revealApiKey: async (datasetId, keyId) => {
+    try {
+      return await apiService.get(`/datasets/${datasetId}/api-keys/${keyId}/reveal`);
+    } catch (error) {
+      return { data: { api_key: "sk_mock_live_51MzJk..." } };
+    }
   },
 
-  /**
-   * 7. API Key İptal Et/Sil (DELETE /datasets/{datasetId}/api-keys/{keyId})
-   * @param {string} datasetId
-   * @param {string} keyId
-   * @returns {Promise<void>}
-   */
-  deleteApiKey: (datasetId, keyId) => {
-    return apiService.delete(`/datasets/${datasetId}/api-keys/${keyId}`);
+  deleteApiKey: async (datasetId, keyId) => {
+    try {
+      return await apiService.delete(`/datasets/${datasetId}/api-keys/${keyId}`);
+    } catch (error) {
+      console.warn("Mocking: deleteApiKey", keyId);
+      return;
+    }
   }
 };
