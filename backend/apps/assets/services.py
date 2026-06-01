@@ -1,11 +1,10 @@
+from datetime import timedelta
 from typing import Optional
 
-from django.utils import timezone
 from django.conf import settings
-from datetime import timedelta
-
 from django.db import transaction
-from rest_framework.exceptions import ValidationError
+from django.utils import timezone
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from .models import Asset
 
@@ -22,6 +21,13 @@ def create_asset(
     embedding_storage_key: str = "",
     content_sha256: str = "",
 ) -> Asset:
+    """
+    Manual/dev asset creation.
+
+    This creates an asset as already UPLOADED.
+    Do not use this for the normal MinIO direct-upload flow.
+    Normal flow should use create_pending_asset_upload().
+    """
     asset = Asset.objects.create(
         dataset=dataset,
         uploaded_by=uploaded_by,
@@ -38,6 +44,7 @@ def create_asset(
     )
 
     return asset
+
 
 def create_pending_asset_upload(
     *,
@@ -71,6 +78,7 @@ def create_pending_asset_upload(
 
     return asset
 
+
 @transaction.atomic
 def bulk_update_asset_upload_status(*, assets_by_id: dict, items: list):
     updated_assets = []
@@ -84,14 +92,14 @@ def bulk_update_asset_upload_status(*, assets_by_id: dict, items: list):
         asset = assets_by_id.get(asset_id)
 
         if asset is None:
-            raise ValidationError(
-                f"Asset {asset_id} was not found or you do not have permission."
+            raise PermissionDenied(
+                f"Status update rejected for asset {asset_id}."
             )
 
         if upload_type == "asset":
             if asset.status != Asset.UploadStatus.PENDING:
-                raise ValidationError(
-                    f"Asset {asset_id} is not pending and cannot be updated by this endpoint."
+                raise PermissionDenied(
+                    f"Status update rejected for asset {asset_id}: asset is not pending."
                 )
 
             if success:
@@ -123,8 +131,8 @@ def bulk_update_asset_upload_status(*, assets_by_id: dict, items: list):
 
         elif upload_type == "embedding":
             if asset.embedding_status != Asset.EmbeddingStatus.PENDING:
-                raise ValidationError(
-                    f"Embedding for asset {asset_id} is not pending and cannot be updated by this endpoint."
+                raise PermissionDenied(
+                    f"Status update rejected for asset {asset_id}: embedding is not pending."
                 )
 
             if success:
@@ -165,6 +173,7 @@ def bulk_update_asset_upload_status(*, assets_by_id: dict, items: list):
 def delete_asset(*, asset: Asset):
     asset.is_deleted = True
     asset.save(update_fields=["is_deleted", "updated_at"])
+
 
 def retry_asset_upload(
     *,
@@ -211,6 +220,7 @@ def retry_asset_upload(
 
     return asset
 
+
 def create_pending_embedding_upload(
     *,
     asset: Asset,
@@ -218,7 +228,9 @@ def create_pending_embedding_upload(
     embedding_sha256: str,
 ) -> Asset:
     if asset.status != Asset.UploadStatus.UPLOADED:
-        raise ValidationError("Asset image must be uploaded before uploading embedding.")
+        raise ValidationError(
+            "Asset image must be uploaded before uploading embedding."
+        )
 
     expires_at = timezone.now() + timedelta(
         seconds=settings.ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS

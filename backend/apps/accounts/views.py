@@ -1,11 +1,14 @@
+from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from .serializers import (
     AccountUpdateSerializer,
     LoginSerializer,
+    RefreshTokenSerializer,
     RegisterSerializer,
     UserLookupSerializer,
     UserSerializer,
@@ -14,6 +17,9 @@ from .services import update_user_account
 from .selectors import user_lookup
 
 # Create your views here.
+
+User = get_user_model()
+
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -79,6 +85,22 @@ class LoginView(APIView):
                 "access_token": str(refresh.access_token),
                 "refresh_token": str(refresh),
                 "user": UserSerializer(user).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+    
+class RefreshTokenView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RefreshTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        refresh = RefreshToken(serializer.validated_data["refresh_token"])
+
+        return Response(
+            {
+                "access_token": str(refresh.access_token),
             },
             status=status.HTTP_200_OK,
         )

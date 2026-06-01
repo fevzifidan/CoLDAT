@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import transaction
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -12,6 +12,7 @@ from .storage import (
     create_presigned_upload_url,
     generate_asset_storage_key,
     generate_embedding_storage_key,
+    object_exists,
 )
 
 from .permissions import CanManageDatasetAssets
@@ -20,14 +21,18 @@ from .selectors import (
     get_assets_for_status_update,
     get_dataset_assets_for_user,
     get_dataset_images_for_user,
+    get_user_uploaded_assets,
 )
 from .serializers import (
+    AssetBulkRefreshURLSerializer,
     AssetBulkStatusUpdateSerializer,
+    AssetCheckDanglingSerializer,
     AssetCreateSerializer,
     AssetRetryUploadSerializer,
     AssetSerializer,
     AssetUploadURLCreateSerializer,
     ImageSerializer,
+    UserAssetListQuerySerializer,
 )
 
 from .services import (
@@ -335,6 +340,237 @@ class DatasetImageListView(APIView):
                     },
                 ).data,
                 "next_cursor": None,
+            },
+            status=status.HTTP_200_OK,
+        )
+class UserAssetListView(APIView):
+    def get(self, request):
+        query_serializer = UserAssetListQuerySerializer(
+            data=request.query_params
+        )
+        query_serializer.is_valid(raise_exception=True)
+
+        assets = get_user_uploaded_assets(
+            user=request.user,
+            status=query_serializer.validated_data.get("status"),
+            search=query_serializer.validated_data.get("search"),
+        )
+
+        return Response(
+            {
+                "data": AssetSerializer(assets, many=True).data,
+                "next_cursor": None,
+            },
+            status=status.HTTP_200_OK,
+        )
+    
+class AssetCheckDanglingView(APIView):
+    def post(self, request):
+        serializer = AssetCheckDanglingSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        asset_ids = serializer.validated_data.get("asset_ids")
+
+        assets = get_user_uploaded_assets(
+            user=request.user,
+        )
+
+        if asset_ids:
+            assets = assets.filter(id__in=asset_ids)
+
+        results = []
+
+        for asset in assets:
+            asset_missing = False
+            embedding_missing = False
+
+            if asset.status == asset.UploadStatus.UPLOADED:
+                asset_missing = not object_exists(
+                    storage_key=asset.storage_key,
+                )
+
+                if asset_missing:
+                    asset.status = asset.UploadStatus.VERIFICATION_FAILED
+                    asset.upload_error_message = (
+                        "Database says asset is uploaded, but object was not found in storage."
+                    )
+                    asset.save(
+                        update_fields=[
+                            "status",
+                            "upload_error_message",
+                            "updated_at",
+                        ]
+                    )
+
+            if asset.embedding_status == asset.EmbeddingStatus.UPLOADED:
+                if not asset.embedding_storage_key:
+                    embedding_missing = True
+                else:
+                    embedding_missing = not object_exists(
+                        storage_key=asset.embedding_storage_key,
+                    )
+
+                if embedding_missing:
+                    asset.embedding_status = asset.EmbeddingStatus.VERIFICATION_FAILED
+                    asset.embedding_error_message = (
+                        "Database says embedding is uploaded, but object was not found in storage."
+                    )
+                    asset.save(
+                        update_fields=[
+                            "embedding_status",
+                            "embedding_error_message",
+                            "updated_at",
+                        ]
+                    )
+
+            results.append(
+                {
+                    "asset_id": str(asset.id),
+                    "filename": asset.filename,
+                    "asset_exists": not asset_missing,
+                    "embedding_exists": None
+                    if asset.embedding_status == asset.EmbeddingStatus.NOT_REQUESTED
+                    else not embedding_missing,
+                    "status": asset.status.upper(),
+                    "embedding_status": None
+                    if asset.embedding_status == asset.EmbeddingStatus.NOT_REQUESTED
+                    else asset.embedding_status.upper(),
+                    "upload_error_message": asset.upload_error_message,
+                    "embedding_error_message": asset.embedding_error_message,
+                }
+            )
+
+        return Response(
+            {
+                "data": results,
+            },
+            status=status.HTTP_200_OK,
+        )
+    
+class AssetBulkRefreshURLView(APIView):
+    def post(self, request):
+        serializer = AssetBulkRefreshURLSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        items = serializer.validated_data["items"]
+        asset_ids = [
+            item["asset_id"]
+            for item in items
+        ]
+
+        assets = get_assets_for_status_update(
+            asset_ids=asset_ids,
+            user=request.user,
+        )
+
+        assets_by_id = {
+            str(asset.id): asset
+            for asset in assets
+        }
+
+        refreshed_urls = []
+
+        for item in items:
+            asset_id = str(item["asset_id"])
+            upload_type = item["upload_type"]
+
+            asset = assets_by_id.get(asset_id)
+
+            if asset is None:
+                raise PermissionDenied(
+                    f"URL refresh rejected for asset {asset_id}."
+                )
+
+            if upload_type == "asset":
+                if asset.status != asset.UploadStatus.PENDING:
+                    raise PermissionDenied(
+                        f"URL refresh rejected for asset {asset_id}: asset upload is not pending."
+                    )
+
+                if not asset.content_sha256:
+                    raise ValidationError(
+                        f"Asset {asset_id} does not have content_sha256."
+                    )
+
+                expires_at = timezone.now() + timedelta(
+                    seconds=settings.ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS
+                )
+
+                asset.upload_url_valid_until = expires_at
+                asset.save(
+                    update_fields=[
+                        "upload_url_valid_until",
+                        "updated_at",
+                    ]
+                )
+
+                presigned_upload = create_presigned_upload_url(
+                    storage_key=asset.storage_key,
+                    mime_type=asset.mime_type,
+                    file_sha256=asset.content_sha256,
+                    expires_in=settings.ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS,
+                )
+
+                refreshed_urls.append(
+                    {
+                        "asset_id": str(asset.id),
+                        "upload_type": "asset",
+                        "upload_url": presigned_upload["upload_url"],
+                        "storage_key": asset.storage_key,
+                        "expiry_at": asset.upload_url_valid_until,
+                        "headers": presigned_upload["headers"],
+                    }
+                )
+
+            elif upload_type == "embedding":
+                if asset.embedding_status != asset.EmbeddingStatus.PENDING:
+                    raise PermissionDenied(
+                        f"URL refresh rejected for asset {asset_id}: embedding upload is not pending."
+                    )
+
+                if not asset.embedding_sha256:
+                    raise ValidationError(
+                        f"Asset {asset_id} does not have embedding_sha256."
+                    )
+
+                if not asset.embedding_storage_key:
+                    raise ValidationError(
+                        f"Asset {asset_id} does not have embedding_storage_key."
+                    )
+
+                expires_at = timezone.now() + timedelta(
+                    seconds=settings.ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS
+                )
+
+                asset.embedding_upload_url_valid_until = expires_at
+                asset.save(
+                    update_fields=[
+                        "embedding_upload_url_valid_until",
+                        "updated_at",
+                    ]
+                )
+
+                presigned_upload = create_presigned_upload_url(
+                    storage_key=asset.embedding_storage_key,
+                    mime_type="application/octet-stream",
+                    file_sha256=asset.embedding_sha256,
+                    expires_in=settings.ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS,
+                )
+
+                refreshed_urls.append(
+                    {
+                        "asset_id": str(asset.id),
+                        "upload_type": "embedding",
+                        "upload_url": presigned_upload["upload_url"],
+                        "storage_key": asset.embedding_storage_key,
+                        "expiry_at": asset.embedding_upload_url_valid_until,
+                        "headers": presigned_upload["headers"],
+                    }
+                )
+
+        return Response(
+            {
+                "urls": refreshed_urls,
             },
             status=status.HTTP_200_OK,
         )

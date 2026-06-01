@@ -139,3 +139,29 @@ def create_presigned_download_url(
         },
         ExpiresIn=expires_in,
     )
+
+def object_exists(*, storage_key: str) -> bool:
+    """
+    Checks whether an object exists in MinIO/S3 using Django's internal
+    container-to-container MinIO connection.
+    """
+    client = get_internal_minio_client()
+
+    try:
+        client.head_object(
+            Bucket=settings.MINIO_BUCKET_NAME,
+            Key=storage_key,
+        )
+        return True
+
+    except ClientError as exc:
+        error_code = exc.response.get("Error", {}).get("Code", "")
+
+        if error_code in {
+            "404",
+            "NoSuchKey",
+            "NotFound",
+        }:
+            return False
+
+        raise

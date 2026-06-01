@@ -1,8 +1,13 @@
-from apps.projects.models import ProjectMembership
 from django.contrib.auth import get_user_model
+from rest_framework.exceptions import ValidationError
+
+from apps.projects.models import ProjectMembership
+
 from .models import Dataset, DatasetMember
 
+
 User = get_user_model()
+
 
 def create_dataset(
     *,
@@ -34,9 +39,33 @@ def create_dataset(
     return dataset
 
 
+def update_dataset(
+    *,
+    dataset: Dataset,
+    name: str | None = None,
+    description: str | None = None,
+) -> Dataset:
+    update_fields = []
+
+    if name is not None:
+        dataset.name = name
+        update_fields.append("name")
+
+    if description is not None:
+        dataset.description = description
+        update_fields.append("description")
+
+    if update_fields:
+        update_fields.append("updated_at")
+        dataset.save(update_fields=update_fields)
+
+    return dataset
+
+
 def delete_dataset(*, dataset: Dataset):
     dataset.is_deleted = True
     dataset.save(update_fields=["is_deleted", "updated_at"])
+
 
 def add_or_update_dataset_member(
     *,

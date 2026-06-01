@@ -1,12 +1,13 @@
 from django.urls import path
 
 from .views import (
+    AssetBulkRefreshURLView,
     AssetBulkStatusUpdateView,
+    AssetCheckDanglingView,
     AssetDetailView,
     AssetRetryUploadView,
     AssetUploadURLCreateView,
 )
-from apps.assets.views import DatasetImageListView
 
 
 urlpatterns = [
@@ -14,11 +15,6 @@ urlpatterns = [
         "upload-urls/<uuid:dataset_id>/",
         AssetUploadURLCreateView.as_view(),
         name="asset-upload-urls",
-    ),
-    path(
-        "<uuid:dataset_id>/images/",
-        DatasetImageListView.as_view(),
-        name="dataset-images",
     ),
     path(
         "bulk-update-status/",
@@ -34,5 +30,15 @@ urlpatterns = [
         "<uuid:asset_id>/",
         AssetDetailView.as_view(),
         name="asset-detail",
+    ),
+    path(
+        "check-dangling/",
+        AssetCheckDanglingView.as_view(),
+        name="asset-check-dangling",
+    ),
+    path(
+        "bulk-refresh-urls/",
+        AssetBulkRefreshURLView.as_view(),
+        name="asset-bulk-refresh-urls",
     ),
 ]

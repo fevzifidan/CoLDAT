@@ -9,6 +9,8 @@ class AssetAdmin(admin.ModelAdmin):
         "filename",
         "dataset",
         "mime_type",
+        "status",
+        "embedding_status",
         "uploaded_by",
         "is_deleted",
         "created_at",
@@ -24,6 +26,7 @@ class AssetAdmin(admin.ModelAdmin):
 
     list_filter = (
         "status",
+        "embedding_status",
         "mime_type",
         "is_deleted",
         "created_at",

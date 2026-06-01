@@ -6,18 +6,9 @@
       "http://localhost:5174",
       "http://127.0.0.1:5174"
     ],
-    "AllowedMethods": [
-      "GET",
-      "PUT",
-      "HEAD"
-    ],
-    "AllowedHeaders": [
-      "*"
-    ],
-    "ExposeHeaders": [
-      "ETag",
-      "x-amz-checksum-sha256"
-    ],
+    "AllowedMethods": ["GET", "PUT", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag", "x-amz-checksum-sha256"],
     "MaxAgeSeconds": 3600
   }
 ]

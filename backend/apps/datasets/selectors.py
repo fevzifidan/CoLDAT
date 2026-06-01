@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
 from apps.projects.models import ProjectMembership
@@ -17,12 +18,36 @@ def get_project_datasets_for_user(*, project_id, user):
     return project, datasets
 
 
+def get_datasets_for_user(*, user, search=None):
+    datasets = (
+        Dataset.objects.filter(
+            Q(project__memberships__user=user)
+            | Q(memberships__user=user),
+            is_deleted=False,
+            project__is_archived=False,
+        )
+        .select_related("project", "created_by")
+        .distinct()
+        .order_by("-created_at")
+    )
+
+    if search:
+        datasets = datasets.filter(name__icontains=search)
+
+    return datasets
+
+
 def get_dataset_for_user(*, dataset_id, user):
-    return get_object_or_404(
-        Dataset,
-        id=dataset_id,
+    datasets = Dataset.objects.filter(
+        Q(project__memberships__user=user)
+        | Q(memberships__user=user),
         is_deleted=False,
-        project__memberships__user=user,
+        project__is_archived=False,
+    ).distinct()
+
+    return get_object_or_404(
+        datasets,
+        id=dataset_id,
     )
 
 
@@ -40,6 +65,7 @@ def user_is_project_admin(*, project, user) -> bool:
         user=user,
         role=ProjectMembership.Role.ADMIN,
     ).exists()
+
 
 def get_dataset_member_by_id(*, dataset, member_id):
     return get_object_or_404(

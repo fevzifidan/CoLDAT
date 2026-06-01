@@ -66,3 +66,22 @@ def get_dataset_images_for_user(*, dataset_id, user, search=None):
         images = images.filter(filename__icontains=search)
 
     return dataset, images
+
+def get_user_uploaded_assets(
+    *,
+    user,
+    status=None,
+    search=None,
+):
+    assets = Asset.objects.filter(
+        uploaded_by=user,
+        is_deleted=False,
+    ).order_by("-created_at")
+
+    if status:
+        assets = assets.filter(status=status)
+
+    if search:
+        assets = assets.filter(filename__icontains=search)
+
+    return assets

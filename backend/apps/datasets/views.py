@@ -1,16 +1,19 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 
 from .permissions import IsDatasetProjectAdmin
 from .selectors import (
     get_dataset_for_user,
     get_dataset_member_by_id,
     get_dataset_members,
+    get_datasets_for_user,
     get_project_datasets_for_user,
 )
 from .serializers import (
     DatasetCreateSerializer,
+    DatasetListQuerySerializer,
     DatasetMemberCreateSerializer,
     DatasetMemberSerializer,
     DatasetMemberUpdateSerializer,
@@ -21,8 +24,32 @@ from .services import (
     create_dataset,
     delete_dataset,
     remove_dataset_member,
+    update_dataset,
     update_dataset_member_role,
 )
+
+
+class DatasetListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        query_serializer = DatasetListQuerySerializer(
+            data=request.query_params
+        )
+        query_serializer.is_valid(raise_exception=True)
+
+        datasets = get_datasets_for_user(
+            user=request.user,
+            search=query_serializer.validated_data.get("search"),
+        )
+
+        return Response(
+            {
+                "data": DatasetSerializer(datasets, many=True).data,
+                "next_cursor": None,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class ProjectDatasetListCreateView(APIView):
@@ -71,6 +98,42 @@ class ProjectDatasetListCreateView(APIView):
 
 
 class DatasetDetailView(APIView):
+    def get(self, request, dataset_id):
+        dataset = get_dataset_for_user(
+            dataset_id=dataset_id,
+            user=request.user,
+        )
+
+        return Response(
+            DatasetSerializer(dataset).data,
+            status=status.HTTP_200_OK,
+        )
+
+    def patch(self, request, dataset_id):
+        dataset = get_dataset_for_user(
+            dataset_id=dataset_id,
+            user=request.user,
+        )
+
+        self.check_object_permissions(request, dataset)
+
+        serializer = DatasetCreateSerializer(
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        dataset = update_dataset(
+            dataset=dataset,
+            name=serializer.validated_data.get("name"),
+            description=serializer.validated_data.get("description"),
+        )
+
+        return Response(
+            DatasetSerializer(dataset).data,
+            status=status.HTTP_200_OK,
+        )
+
     def delete(self, request, dataset_id):
         dataset = get_dataset_for_user(
             dataset_id=dataset_id,
@@ -84,7 +147,10 @@ class DatasetDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_permissions(self):
-        return [IsDatasetProjectAdmin()]
+        if self.request.method in ["PATCH", "DELETE"]:
+            return [IsDatasetProjectAdmin()]
+
+        return super().get_permissions()
 
 
 class DatasetMemberListCreateView(APIView):
@@ -131,7 +197,8 @@ class DatasetMemberListCreateView(APIView):
             return [IsDatasetProjectAdmin()]
 
         return super().get_permissions()
-    
+
+
 class DatasetMemberDetailView(APIView):
     def patch(self, request, dataset_id, member_id):
         dataset = get_dataset_for_user(

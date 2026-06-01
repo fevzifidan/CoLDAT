@@ -137,6 +137,25 @@ class ImageSerializer(serializers.ModelSerializer):
             return None
 
         return obj.embedding_status.upper()
+    
+class UserAssetListQuerySerializer(serializers.Serializer):
+    status = serializers.ChoiceField(
+        choices=[
+            "PENDING",
+            "UPLOADED",
+            "FAILED",
+            "VERIFICATION_FAILED",
+        ],
+        required=False,
+    )
+
+    search = serializers.CharField(
+        required=False,
+        allow_blank=False,
+    )
+
+    def validate_status(self, value):
+        return value.lower()
 
 
 class AssetCreateSerializer(serializers.Serializer):
@@ -295,3 +314,46 @@ class AssetRetryUploadSerializer(serializers.Serializer):
             raise serializers.ValidationError("SHA256 hash must be hexadecimal.")
 
         return value.lower()
+    
+class AssetCheckDanglingSerializer(serializers.Serializer):
+    asset_ids = serializers.ListField(
+        child=serializers.UUIDField(),
+        required=False,
+        allow_empty=False,
+    )
+
+
+class AssetBulkRefreshURLItemSerializer(serializers.Serializer):
+    asset_id = serializers.UUIDField()
+
+    upload_type = serializers.ChoiceField(
+        choices=[
+            "asset",
+            "embedding",
+        ]
+    )
+
+
+class AssetBulkRefreshURLSerializer(serializers.Serializer):
+    items = AssetBulkRefreshURLItemSerializer(many=True)
+
+    def validate_items(self, value):
+        if not value:
+            raise serializers.ValidationError("At least one item is required.")
+
+        upload_targets = [
+            (str(item["asset_id"]), item["upload_type"])
+            for item in value
+        ]
+
+        if len(upload_targets) != len(set(upload_targets)):
+            raise serializers.ValidationError(
+                "Duplicate asset_id and upload_type combinations are not allowed."
+            )
+
+        if len(value) > 100:
+            raise serializers.ValidationError(
+                "Maximum 100 upload URLs can be refreshed at once."
+            )
+
+        return value

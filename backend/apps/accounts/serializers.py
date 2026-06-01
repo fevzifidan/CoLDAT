@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth import get_user_model
 from .services import create_user
+from config.exceptions import Conflict
 
 
 User = get_user_model()
@@ -15,14 +16,18 @@ class RegisterSerializer(serializers.Serializer):
     last_name = serializers.CharField(max_length=150)
 
     def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("A user with this username already exists.")
+        if User.objects.filter(username__iexact=value).exists():
+            raise Conflict("A user with this username already exists.")
+
         return value
 
     def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("A user with this email already exists.")
-        return value
+        normalized_email = value.lower().strip()
+
+        if User.objects.filter(email__iexact=normalized_email).exists():
+            raise Conflict("A user with this email already exists.")
+
+        return normalized_email
 
     def create(self, validated_data):
         return create_user(**validated_data)
@@ -90,4 +95,7 @@ class UserLookupSerializer(serializers.ModelSerializer):
             return full_name
 
         return obj.username
+    
+class RefreshTokenSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField()
     
