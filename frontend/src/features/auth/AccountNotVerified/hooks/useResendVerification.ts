@@ -9,7 +9,7 @@ export const useResendVerification = () => {
         setLoading(true);
         setStatus('idle');
         try {
-            await apiService.post('/auth/resend-verify-email', { email }, { silent: true });
+            await apiService.post('/auth/resend-verify-email/', { email }, { silent: true });
             setStatus('success');
         } catch (error: any) {
             if (error.response?.status === 429) {

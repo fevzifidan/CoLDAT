@@ -1,0 +1,18 @@
+{
+    "internal": {
+        "system_runtime_error": "system.runtime.error",
+        "system_server_timeout": "system.server.timeout",
+        "database_connection_failed": "database.connection.failed",
+        "database_query_crash": "database.query.crash"
+    },
+    "auth": {
+        "login_success": "auth.login.success",
+        "login_failure": "auth.login.failure",
+        "register_success": "auth.register.success",
+        "register_failure": "auth.register.failure",
+        "verification_email_sent_success": "auth.verification_email_sent.success",
+        "verification_email_sent_failure": "auth.verification_email_sent.failure",
+        "password_reset_email_sent_success": "auth.password_reset_email_sent.success",
+        "password_reset_email_sent_failure": "auth.password_reset_email_sent.failure"
+    }
+}

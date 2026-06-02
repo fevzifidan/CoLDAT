@@ -1,54 +1,85 @@
-// default export olarak apiClient'ı apiService takma adıyla içeri alıyoruz
+// src/features/projects/services/projectService.js
 import apiService from '@/shared/services/api/apiClient';
-
-/**
- * @typedef {Object} Project
- * @property {string} id
- * @property {string} name
- * @property {string} [description]
- * @property {'object_detection' | 'entity_recognition' | 'semantic_relation'} project_type
- * @property {string} dataset_id
- * @property {string} created_at
- * @property {string} [status]
- * @property {string} [role]
- * @property {string} [type]
- * @property {any} [task]
- * @property {any} [count]
- */
 
 export const projectService = {
   /**
-   * 1. Tüm projeleri listele (GET /projects)
-   * @returns {Promise<Project[]>}
+   * 1. Tüm projeleri listele (GET /projects/)
    */
-  getAllProjects: () => {
-    return apiService.get('/projects');
+  getAllProjects: async () => {
+    // apiService interceptor kullanarak 'Authorization: Bearer <token>' başlığını otomatik ekler
+    const response = await apiService.get('projects/');
+    // Axios her zaman veriyi .data içinde taşır.
+    return response.data;
   },
 
   /**
-   * 2. Yeni proje oluştur (POST /projects)
-   * @param {Object} projectData
-   * @returns {Promise<Project>}
+   * 2. Yeni proje oluştur (POST /projects/)
    */
-  createProject: (projectData) => {
-    return apiService.post('/projects', projectData);
+  createProject: async (projectData) => {
+    const response = await apiService.post('projects/', projectData);
+    return response.data;
   },
 
   /**
-   * 3. Proje detayını getir (GET /projects/{id})
-   * @param {string} id
-   * @returns {Promise<Project>}
+   * 3. Proje detayını getir (GET /projects/{id}/)
    */
-  getProjectById: (id) => {
-    return apiService.get(`/projects/${id}`);
+  getProjectById: async (id) => {
+    const response = await apiService.get(`projects/${id}/`);
+    return response.data;
   },
 
   /**
-   * 4. Projeyi sil (DELETE /projects/{id})
-   * @param {string} id
-   * @returns {Promise<void>}
+   * 4. Projeyi güncelle (PATCH /projects/{id}/)
    */
-  deleteProject: (id) => {
-    return apiService.delete(`/projects/${id}`);
+  updateProject: async (id, projectData) => {
+    const response = await apiService.patch(`projects/${id}/`, projectData);
+    return response.data;
+  },
+
+  /**
+   * 5. Projeyi sil (DELETE /projects/{id}/)
+   */
+  deleteProject: async (id) => {
+    const response = await apiService.delete(`projects/${id}/`);
+    return response.data;
+  },
+
+  /**
+   * ================= MEMBERS ENDPOINTS =================
+   */
+
+  /**
+   * 6. Proje üyelerini listele (GET /projects/{id}/members/)
+   */
+  getProjectMembers: async (projectId) => {
+    const response = await apiService.get(`projects/${projectId}/members/`);
+    return response.data;
+  },
+
+  /**
+   * 7. Projeye üye ekle (POST /projects/{id}/members/)
+   */
+  addProjectMember: async (projectId, memberData) => {
+    const response = await apiService.post(`projects/${projectId}/members/`, memberData);
+    return response.data;
+  },
+
+  /**
+   * 8. Proje üye rolünü güncelle (PATCH /projects/{id}/members/${membershipId}/)
+   */
+  updateProjectMember: async (projectId, membershipId, memberData) => {
+    const response = await apiService.patch(`projects/${projectId}/members/${membershipId}/`, memberData);
+    return response.data;
+  },
+
+  /**
+   * 9. Projeden üye çıkar (DELETE /projects/{id}/members/${membershipId}/)
+   */
+  removeProjectMember: async (projectId, membershipId) => {
+    const response = await apiService.delete(`projects/${projectId}/members/${membershipId}/`);
+    return response.data;
   }
 };
+
+// KRİTİK DÜZELTME: Projenin her iki çağırım tarzını da (named/default) desteklemesi için default export ekliyoruz.
+export default projectService;

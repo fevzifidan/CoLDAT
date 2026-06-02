@@ -28,8 +28,7 @@ export const useEmailVerification = (token: string | null) => {
         };
 
         verify();
-    }, [token]);
-
+    }, [token, t]);  // t eklendi
     return {
         status,
         errorMessage

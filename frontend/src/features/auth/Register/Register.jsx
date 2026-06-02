@@ -31,9 +31,10 @@ const RegisterPage = () => {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      await apiService.post("/auth/register", {
-        givenName: data.name,
-        familyName: data.surname,
+      await apiService.post("/auth/register/", {
+        first_name: data.name,
+        last_name: data.surname,
+        username: data.username,
         email: data.email,
         password: data.password,
       });

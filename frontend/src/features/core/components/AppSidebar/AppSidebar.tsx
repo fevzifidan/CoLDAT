@@ -31,7 +31,8 @@ import { cn } from "@/lib/utils";
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t, i18n } = useTranslation(["common"]);
+  // sidebar ve common namespace'lerini yüklüyoruz
+  const { t, i18n } = useTranslation(["sidebar", "common"]);
   const { toggleSidebar } = useSidebar();
   const { theme, setTheme } = useTheme();
 
@@ -42,7 +43,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      variant="inset" // Orijinal gömülü moda geri alındı
+      variant="inset" 
       collapsible="icon"
       className="border-r shadow-sm"
     >
@@ -69,9 +70,8 @@ export function AppSidebar() {
               const isActive = location.pathname === item.url || 
                                (item.url !== "/" && location.pathname.startsWith(item.url));
               
-              const translatedTitle = item.title === "dashboard" 
-                ? t("dashboard.title") 
-                : t(`sidebar.${item.title}`);
+              // Yeni atomik sidebar.json dosyasından karşılıkları eşliyoruz
+              const translatedTitle = t(`sidebar:${item.title}`, item.title);
 
               return (
                 <SidebarMenuItem key={item.title}>
@@ -106,26 +106,26 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton tooltip={t("theme.appearance")}>
+                <SidebarMenuButton tooltip={t("common:theme.appearance", "Appearance")}>
                   <Monitor size={20} className="shrink-0 text-muted-foreground" />
-                  <span className="ml-2 font-medium text-muted-foreground">{t("theme.appearance")}</span>
+                  <span className="ml-2 font-medium text-muted-foreground">{t("common:theme.appearance", "Appearance")}</span>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-44" side="right" align="end">
-                <DropdownMenuLabel>{t("theme.appearance")}</DropdownMenuLabel>
+                <DropdownMenuLabel>{t("common:theme.appearance", "Appearance")}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
                   <DropdownMenuRadioItem value="light" className="cursor-pointer">
                     <Sun className="mr-2 h-4 w-4" />
-                    <span>{t("theme.light")}</span>
+                    <span>{t("common:theme.light", "Light")}</span>
                   </DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="dark" className="cursor-pointer">
                     <Moon className="mr-2 h-4 w-4" />
-                    <span>{t("theme.dark")}</span>
+                    <span>{t("common:theme.dark", "Dark")}</span>
                   </DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="system" className="cursor-pointer">
                     <Monitor className="mr-2 h-4 w-4" />
-                    <span>{t("theme.system")}</span>
+                    <span>{t("common:theme.system", "System")}</span>
                   </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
@@ -146,12 +146,12 @@ export function AppSidebar() {
 
           <SidebarMenuItem>
             <SidebarMenuButton 
-              tooltip={t("logout")} 
+              tooltip={t("common:logout", "Logout")} 
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
               onClick={() => navigate('/login')}
             >
               <LogOut size={20} className="shrink-0" />
-              <span className="ml-2 font-medium">{t("logout")}</span>
+              <span className="ml-2 font-medium">{t("common:logout", "Logout")}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

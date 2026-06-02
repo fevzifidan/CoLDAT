@@ -17,9 +17,22 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from django.contrib import admin
+from django.urls import include, path
+
+
 urlpatterns = [
     path("admin/", admin.site.urls),
 
+    # YAML-compatible API routes
     path("api/v1/auth/", include("apps.accounts.urls")),
     path("api/v1/account/", include("apps.accounts.account_urls")),
+    path("api/v1/users/", include("apps.accounts.users_urls")),
+    path("api/v1/projects/", include("apps.projects.urls")),
+    path("api/v1/projects/", include("apps.taxonomy.urls")),
+    path("api/v1/datasets/", include("apps.datasets.urls")),
+    path("api/v1/datasets/", include("apps.exports.urls")),
+    path("api/v1/assets/", include("apps.assets.urls")),
+    path("api/v1/tasks/", include("apps.tasks.urls")),
+    path("api/v1/images/", include("apps.annotations.urls")),
 ]

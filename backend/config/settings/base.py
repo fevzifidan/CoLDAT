@@ -13,11 +13,17 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from corsheaders.defaults import default_headers
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-load_dotenv(BASE_DIR / ".env")
+env_path = BASE_DIR / ".env"
+
+if env_path.exists():
+    load_dotenv(env_path)  # override=False varsayılan, güvenli
 
 
 # Quick-start development settings - unsuitable for production
@@ -43,18 +49,28 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "rest_framework",
+    "corsheaders",
 
     "apps.accounts.apps.AccountsConfig",
+    "apps.projects.apps.ProjectsConfig",
+    "apps.datasets.apps.DatasetsConfig",
+    "apps.assets.apps.AssetsConfig",
+    "apps.tasks.apps.TasksConfig",
+    "apps.taxonomy.apps.TaxonomyConfig",
+    "apps.annotations.apps.AnnotationsConfig",
+    "apps.exports.apps.ExportsConfig",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "config.middleware.SentryClientErrorMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -74,6 +90,13 @@ TEMPLATES = [
         },
     },
 ]
+
+CORS_ALLOW_HEADERS = (
+    *default_headers,
+    "sentry-trace",
+    "baggage",
+    "traceparent",
+)
 
 WSGI_APPLICATION = "config.wsgi.application"
 
@@ -115,8 +138,24 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    "EXCEPTION_HANDLER": "config.settings.base.custom_exception_handler",
 }
 
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://localhost:9000")
+MINIO_INTERNAL_ENDPOINT = os.getenv("MINIO_INTERNAL_ENDPOINT", MINIO_ENDPOINT)
+
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin123")
+MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "coldat-assets")
+MINIO_REGION = os.getenv("MINIO_REGION", "us-east-1")
+MINIO_USE_SSL = os.getenv("MINIO_USE_SSL", "False") == "True"
+
+ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS = int(
+    os.getenv("ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS", "900")
+)
+ASSET_READ_URL_EXPIRES_IN_SECONDS = int(
+    os.getenv("ASSET_READ_URL_EXPIRES_IN_SECONDS", "900")
+)
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -129,6 +168,10 @@ USE_I18N = True
 
 USE_TZ = True
 
+LOCALE_PATHS = [
+    BASE_DIR / "locale",
+]
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
@@ -139,3 +182,327 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ---------------------------------------------------------------------------
+# Redis Cache Configuration
+# ---------------------------------------------------------------------------
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Mail / Email Backend Configuration
+# ---------------------------------------------------------------------------
+MAIL_MODE = os.getenv("MAIL_MODE", "dev").lower()
+
+if MAIL_MODE in ("prod", "dev"):
+    # Resend SDK kullaniliyor, Anymail'e gerek yok
+    pass
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Resend API key (kullanilmadigi durumda bos string)
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL",
+    "CoLDAT Data Annotation Platform <noreply@mail.coldat.org.tr>",
+)
+
+# ---------------------------------------------------------------------------
+# Mail Rate Limiting Configuration
+# ---------------------------------------------------------------------------
+MAIL_RATE_LIMIT_SECONDS = int(os.getenv("MAIL_RATE_LIMIT_SECONDS", "600"))
+MAIL_VERIFICATION_TOKEN_TTL_HOURS = int(os.getenv("MAIL_VERIFICATION_TOKEN_TTL_HOURS", "24"))
+MAIL_PASSWORD_RESET_TOKEN_TTL_HOURS = int(os.getenv("MAIL_PASSWORD_RESET_TOKEN_TTL_HOURS", "1"))
+
+# ---------------------------------------------------------------------------
+# Resend Template Configuration
+# ---------------------------------------------------------------------------
+
+RESEND_TEMPLATE_EMAIL_VERIFY = os.getenv(
+    "RESEND_TEMPLATE_EMAIL_VERIFY",
+    "tmpl_placeholder_email_verify",
+)
+RESEND_TEMPLATE_PASSWORD_RESET = os.getenv(
+    "RESEND_TEMPLATE_PASSWORD_RESET",
+    "tmpl_placeholder_password_reset",
+)
+
+SENSITIVE_FIELDS = {
+    'password', 'password1', 'password2', 'new_password', 'old_password',
+    'token', 'access_token', 'refresh_token', 'api_key', 'secret_key',
+    'secret', 'authorization', 'credit_card', 'cvv', 'ssn', 'private_key',
+    'passcode', 'pin', 'security_answer',
+}
+
+SENSITIVE_HEADERS = {
+    'authorization', 'cookie', 'set-cookie', 'x-api-key',
+    'x-csrftoken', 'x-xsrf-token', 'proxy-authorization',
+}
+
+SENSITIVE_COOKIE_KEYS = {
+    'sessionid', 'csrftoken', 'jwt', 'access_token',
+    'refresh_token', 'auth', '__Secure-', '__Host-',
+}
+
+PII_FIELDS = {
+    'email', 'phone', 'phone_number', 'first_name', 'last_name',
+    'address', 'ip_address',
+}
+
+import re
+from copy import deepcopy
+
+def _is_sensitive_key(key, sensitive_set):
+    """Anahtarın hassas olup olmadığını, partial match ile kontrol eder."""
+    key_lower = key.lower().replace('-', '_').replace(' ', '_')
+    for sensitive in sensitive_set:
+        if sensitive in key_lower:
+            return True
+    return False
+
+
+def _mask_pii(value, key):
+    """PII verilerini kısmen maskeler - örn: email'in ilk karakterlerini korur."""
+    if not isinstance(value, str):
+        return value
+
+    if 'email' in key.lower() and '@' in value:
+        # j***@example.com formatında maskeleme
+        parts = value.split('@')
+        if len(parts) == 2:
+            return f"{parts[0][0]}{'*' * max(len(parts[0]) - 1, 1)}@{parts[1]}"
+
+    if 'phone' in key.lower():
+        # +90 (***) ***-1234 formatında maskeleme
+        return re.sub(r'\d', '*', value[:-4]) + value[-4:] if len(value) > 4 else '****'
+
+    return '[FILTERED]'
+
+
+def _deep_sanitize(data, sensitive_fields, pii_fields, depth=0, max_depth=10):
+    """
+    Dict veya list içindeki hassas verileri rekürsif olarak temizler.
+    Sonsuz döngüyü engellemek için max_depth kontrolü yapar.
+    """
+    if depth > max_depth:
+        return data
+
+    if isinstance(data, dict):
+        sanitized = {}
+        for key, value in data.items():
+            if _is_sensitive_key(key, sensitive_fields):
+                sanitized[key] = '[FILTERED]'
+            elif key.lower() in pii_fields or _is_sensitive_key(key, pii_fields):
+                sanitized[key] = _mask_pii(value, key)
+            elif isinstance(value, (dict, list)):
+                sanitized[key] = _deep_sanitize(value, sensitive_fields, pii_fields, depth + 1, max_depth)
+            else:
+                sanitized[key] = value
+        return sanitized
+
+    elif isinstance(data, list):
+        return [
+            _deep_sanitize(item, sensitive_fields, pii_fields, depth + 1, max_depth)
+            if isinstance(item, (dict, list)) else item
+            for item in data
+        ]
+
+    return data
+
+
+def before_send(event, hint):
+    """
+    Sentry'ye gönderilmeden önce olayları filtrelemek ve hassas verileri temizlemek için.
+
+    Yaptıkları:
+    - Request body'deki hassas alanları (şifre, token, api_key vb.) filtreler
+    - Hassas header'ları temizler
+    - Cookie'lerdeki hassas değerleri maskeler
+    - PII (email, telefon) verilerini kısmen maskeler
+    - Nested objeleri rekürsif olarak tarar
+    - Response body'deki hassas verileri de kontrol eder
+    """
+    try:
+        # 1. Request verilerini temizle
+        request_data = event.get("request", {})
+
+        if request_data:
+            # Request body'deki hassas alanları temizle
+            if "data" in request_data and isinstance(request_data["data"], dict):
+                request_data["data"] = _deep_sanitize(
+                    request_data["data"],
+                    SENSITIVE_FIELDS,
+                    PII_FIELDS
+                )
+
+            # JSON body varsa onu da temizle
+            if "json" in request_data and isinstance(request_data["json"], (dict, list)):
+                request_data["json"] = _deep_sanitize(
+                    request_data["json"],
+                    SENSITIVE_FIELDS,
+                    PII_FIELDS
+                )
+
+            # Header'ları temizle
+            if "headers" in request_data and isinstance(request_data["headers"], dict):
+                for header_key in list(request_data["headers"].keys()):
+                    if header_key.lower().replace('-', '_') in {
+                        h.replace('-', '_') for h in SENSITIVE_HEADERS
+                    }:
+                        request_data["headers"][header_key] = "[FILTERED]"
+
+            # Cookie'leri temizle
+            if "cookies" in request_data and isinstance(request_data["cookies"], dict):
+                for cookie_key in list(request_data["cookies"].keys()):
+                    if _is_sensitive_key(cookie_key, SENSITIVE_COOKIE_KEYS):
+                        request_data["cookies"][cookie_key] = "[FILTERED]"
+
+            # Query string'deki hassas parametreleri temizle
+            if "query_string" in request_data and isinstance(request_data["query_string"], str):
+                for sensitive in SENSITIVE_FIELDS:
+                    pattern = re.compile(
+                        rf'({re.escape(sensitive)}=[^&]+)',
+                        re.IGNORECASE
+                    )
+                    request_data["query_string"] = pattern.sub(
+                        r'\1=[FILTERED]',
+                        request_data["query_string"]
+                    )
+
+            # Gereksiz yere büyük request body'leri kırp (performans için)
+            if "data" in request_data and isinstance(request_data["data"], str):
+                if len(request_data["data"]) > 10_000:  # 10KB üstünü kırp
+                    request_data["data"] = request_data["data"][:10_000] + "...[TRUNCATED]"
+
+        # 2. Breadcrumbs içindeki hassas verileri temizle
+        if "breadcrumbs" in event and isinstance(event["breadcrumbs"], list):
+            for crumb in event["breadcrumbs"]:
+                if "data" in crumb and isinstance(crumb["data"], dict):
+                    crumb["data"] = _deep_sanitize(
+                        crumb["data"],
+                        SENSITIVE_FIELDS,
+                        PII_FIELDS
+                    )
+
+        # 3. Exception'daki mesajlarda hassas veri kontrolü (temel regex)
+        if "exception" in event and "values" in event["exception"]:
+            for exc_value in event["exception"]["values"]:
+                if "value" in exc_value and isinstance(exc_value["value"], str):
+                    # Email adreslerini maskele
+                    exc_value["value"] = re.sub(
+                        r'[\w.+-]+@[\w-]+\.[\w.-]+',
+                        '[EMAIL_REDACTED]',
+                        exc_value["value"]
+                    )
+
+        # 4. Kullanıcı IP'sini maskeleme (opsiyonel - GDPR uyumluluğu için)
+        if "user" in event and isinstance(event["user"], dict):
+            if "ip_address" in event["user"]:
+                ip = event["user"]["ip_address"]
+                # Son okteti maskele: 192.168.1.XXX
+                parts = ip.rsplit('.', 1)
+                if len(parts) == 2:
+                    event["user"]["ip_address"] = f"{parts[0]}.0"
+
+    except Exception as sanitize_error:
+        # Temizleme sırasında hata olursa Sentry'ye session'ı bozmadan logla
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(
+            f"Sentry before_send sanitization failed: {sanitize_error}",
+            exc_info=True
+        )
+
+    # Her durumda event'i döndür (None dönersek Sentry event'i göndermez!)
+    return event
+
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+
+sentry_sdk.init(
+    dsn=SENTRY_DSN,
+    integrations=[
+        DjangoIntegration(
+            # İsteklerin Sentry'de nasıl gruplanacağını belirler. 
+            # 'url' seçeneği, Django URL pattern'larını (örn: /api/v1/users/<int:id>/) kullanır.
+            transaction_style="url", 
+        ),
+    ],
+    # Performans izleme oranı. 500 hatalarının trace akışını görmek için 
+    # bu oranın sıfırdan büyük olması gerekir.
+    # Üretim (production) ortamında sistem yüküne göre %10 ila %20 arası (0.1 - 0.2) idealdir.
+    traces_sample_rate=0.2, 
+    
+    # İstekteki POST verilerini, header'ları ve kullanıcı bilgilerini (IP gibi) 
+    # Sentry'ye göndermek için True olmalıdır. (Hassas veriler için filtreleme yapılabilir)
+    send_default_pii=True, 
+    
+    environment="production",
+    before_send=before_send,
+)
+
+client_errors_to_be_captured = [400, 404, 405, 406, 409, 413, 414, 415, 416, 422, 425, 428, 429, 431, 444, 494, 495, 496, 497, 499]
+
+def _flatten_error_message(data):
+    if isinstance(data, dict):
+        if "detail" in data:
+            return _flatten_error_message(data["detail"])
+
+        messages = []
+
+        for field, value in data.items():
+            field_message = _flatten_error_message(value)
+
+            if field == "non_field_errors":
+                messages.append(field_message)
+            else:
+                messages.append(f"{field}: {field_message}")
+
+        return " ".join(messages)
+
+    if isinstance(data, list):
+        return " ".join(_flatten_error_message(item) for item in data)
+
+    return str(data)
+
+
+def custom_exception_handler(exc, context):
+    from rest_framework.views import exception_handler
+
+    response = exception_handler(exc, context)
+    request = context.get("request")
+
+    if response is None:
+        sentry_sdk.capture_exception(exc)
+        return None
+
+    if response.status_code >= 500:
+        sentry_sdk.capture_exception(exc)
+    elif response.status_code in client_errors_to_be_captured:
+        sentry_sdk.capture_message(
+            f"Client Error {response.status_code}: {exc}",
+            level="warning",
+        )
+        if request:
+            request._sentry_captured = True
+
+    if isinstance(response.data, dict) and "errorCode" in response.data:
+        return response
+
+    message = _flatten_error_message(response.data)
+
+    response.data = {
+        "code": response.status_code,
+        "message": message,
+    }
+
+    return response

@@ -1,0 +1,18 @@
+{
+  "title": "Datasets",
+  "create_dataset": "Create Dataset",
+  "empty_list": "No datasets found matching the criteria.",
+  "description": "Manage versioned data collections and track progress.",
+  "search_placeholder": "Search datasets...",
+  "total": "Total",
+  "annotated": "Annotated",
+  "progress": "Progress",
+  "view_data": "View Data",
+  "members": "Members",
+  "filter": {
+    "all_roles": "All Roles"
+  },
+  "messages": {
+    "load_failed": "Failed to load datasets."
+  }
+}

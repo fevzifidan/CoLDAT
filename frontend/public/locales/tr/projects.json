@@ -1,0 +1,13 @@
+{
+  "title": "Projeler",
+  "create_new": "Yeni Proje Oluştur",
+  "import": "Projeyi İçe Aktar",
+  "search_placeholder": "Projelerde ara...",
+  "more_load": "Daha Fazla Yükle",
+  "filter": {
+    "all_roles": "Tüm Roller",
+    "owner": "Sahibi",
+    "member": "Üye"
+  },
+  "trash_btn": "Çöp Kutusu"
+}

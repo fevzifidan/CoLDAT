@@ -7,9 +7,7 @@ export interface VerificationResponse {
 
 export const verificationService = {
     verifyEmail: async (token: string): Promise<VerificationResponse> => {
-        const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-        await sleep(5000);
-        const response = await apiService.post('/auth/verify-email', { token });
-        return response.data;
+        const response = await apiService.post('/auth/verify-email/', { token });
+        return response;
     }
 };

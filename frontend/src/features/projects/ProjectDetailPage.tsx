@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-// Az önce JSDoc ile güncellediğimiz gerçek servis import ediliyor
 import { projectService } from './services/projectService';
 
 // Bileşen Importları
@@ -16,7 +15,6 @@ import TeamManager from '@/assets/TeamManager';
 import ExportManager from '@/assets/ExportManager';
 import GeneralSettings from './tabs/GeneralSettings'; 
 
-// Backend YAML dökümantasyonu ve UI gereksinimleriyle uyumlu TypeScript Tipi
 interface Project {
   id: string;
   name: string;
@@ -32,10 +30,9 @@ interface Project {
 const ProjectDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t } = useTranslation(['pages', 'common']);
   const [activeTab, setActiveTab] = useState('general');
   
-  // Backend'den gelecek veriyi tutacak stateler
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,14 +43,12 @@ const ProjectDetailPage = () => {
     team: null
   });
 
-  // Sayfa yüklendiğinde veya ID değiştiğinde backend'den veriyi çekiyoruz
   useEffect(() => {
     if (!id) return;
 
     setLoading(true);
     projectService.getProjectById(id)
       .then((data: any) => {
-        // Backend verisini eski UI field'ları (task, status) çökmesin diye default değerlerle sarmalıyoruz
         setProject({
           ...data,
           task: data.task || data.project_type || 'OBJECT_DETECTION',
@@ -62,12 +57,11 @@ const ProjectDetailPage = () => {
       })
       .catch((error: any) => {
         console.error("Proje detayı yüklenirken hata oluştu:", error);
-        toast.error(t('project_detail.not_found', "Proje detayları backend'den alınamadı."));
+        toast.error(t('pages:project_detail.not_found', "Project details could not be retrieved from backend."));
       })
       .finally(() => setLoading(false));
   }, [id, t]);
 
-  // Veri güncelleme yakalayıcı
   const handleDataUpdate = (tab: string, data: any) => {
     setPendingChanges(prev => ({
       ...prev,
@@ -75,17 +69,15 @@ const ProjectDetailPage = () => {
     }));
   };
 
-  // Kaydetme işlemi
   const handleGlobalSave = async () => {
     console.log("Kaydedilecek Değişiklikler:", pendingChanges);
-    // TODO: İlerleyen süreçte pendingChanges durumuna göre POST/PUT istekleri buraya bağlanacak
-    toast.success(t('project_detail.alert_success', "Değişiklikler başarıyla kaydedildi!"));
+    toast.success(t('pages:project_detail.alert_success', "Changes saved successfully!"));
   };
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center font-mono text-slate-500 bg-white dark:bg-slate-950">
-        {t('common.loading', 'Yükleniyor...')}
+        {t('common:status.loading', 'Loading...')}
       </div>
     );
   }
@@ -93,20 +85,20 @@ const ProjectDetailPage = () => {
   if (!project) {
     return (
       <div className="p-8 text-center text-slate-500 bg-white dark:bg-slate-950 min-h-screen flex flex-col items-center justify-center gap-4">
-        <p>{t('project_detail.not_found', 'Proje bulunamadı.')}</p>
+        <p>{t('pages:project_detail.not_found', 'Project not found.')}</p>
         <Button onClick={() => navigate(-1)} variant="outline" size="sm">
-          <ArrowLeft className="mr-2 h-4 w-4" /> {t('common.back', 'Geri Dön')}
+          <ArrowLeft className="mr-2 h-4 w-4" /> {t('common:status.back', 'Go Back')}
         </Button>
       </div>
     );
   }
 
   const tabs = [
-    { value: 'general', label: t('project_detail.tabs.general'), icon: Settings },
-    { value: 'taxonomy', label: t('project_detail.tabs.taxonomy'), icon: Tag },
-    { value: 'assets', label: t('project_detail.tabs.assets'), icon: ImageIcon },
-    { value: 'team', label: t('project_detail.tabs.users'), icon: Users },
-    { value: 'export', label: t('project_detail.tabs.export'), icon: Download },
+    { value: 'general', label: t('pages:project_detail.tabs.general', 'General'), icon: Settings },
+    { value: 'taxonomy', label: t('pages:project_detail.tabs.taxonomy', 'Taxonomy'), icon: Tag },
+    { value: 'assets', label: t('pages:project_detail.tabs.assets', 'Assets'), icon: ImageIcon },
+    { value: 'team', label: t('pages:project_detail.tabs.users', 'Team'), icon: Users },
+    { value: 'export', label: t('pages:project_detail.tabs.export', 'Export'), icon: Download },
   ];
 
   return (
@@ -132,10 +124,10 @@ const ProjectDetailPage = () => {
             className="bg-green-600 hover:bg-green-700 text-white"
             onClick={handleGlobalSave}
           >
-            <Save className="mr-2 h-4 w-4" /> {t('project_detail.save_all')}
+            <Save className="mr-2 h-4 w-4" /> {t('pages:project_detail.save_all', 'Save All')}
           </Button>
           <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
-            {t('project_detail.annotate_data')}
+            {t('pages:project_detail.annotate_data', 'Annotate Data')}
           </Button>
         </div>
       </div>
@@ -169,7 +161,7 @@ const ProjectDetailPage = () => {
           <div className="pb-20">
               {activeTab === 'general' && (
                 <GeneralSettings 
-                  project={project as any} // Alt bileşenin katı tip kurallarını rahatlatmak için casting yapıldı
+                  project={project as any} 
                   onUpdate={(data) => handleDataUpdate('general', data)} 
                 />
               )}
