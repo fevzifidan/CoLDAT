@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Dataset, DatasetMember
+from .models import Dataset, DatasetMember, DatasetVersion
 
 
 class DatasetMemberInline(admin.TabularInline):
@@ -46,4 +46,22 @@ class DatasetMemberAdmin(admin.ModelAdmin):
     list_filter = (
         "role",
         "joined_at",
+    )
+
+@admin.register(DatasetVersion)
+class DatasetVersionAdmin(admin.ModelAdmin):
+    list_display = (
+        "version_tag",
+        "dataset",
+        "created_by",
+        "created_at",
+    )
+    search_fields = (
+        "version_tag",
+        "dataset__name",
+        "created_by__username",
+        "created_by__email",
+    )
+    list_filter = (
+        "created_at",
     )

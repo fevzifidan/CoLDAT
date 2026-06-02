@@ -3,6 +3,8 @@ from .converters import (
     bbox_to_yolo,
     object_to_bbox,
     object_to_coco_segmentation,
+    keypoints_to_bbox,
+    polygon_to_bbox,
 )
 from .selectors import (
     get_export_annotation_objects,
@@ -211,5 +213,228 @@ def build_dataset_export(*, dataset, export_format: str):
 
     if export_format == "visual_genome":
         return build_visual_genome_export(dataset=dataset)
+
+    raise ValueError("Unsupported export format.")
+
+def snapshot_object_to_bbox(*, snapshot_object):
+    geometry_type = snapshot_object.get("type")
+    coordinates = snapshot_object.get("coordinates", [])
+
+    if geometry_type == "bbox":
+        return coordinates
+
+    if geometry_type == "polygon":
+        return polygon_to_bbox(coordinates=coordinates)
+
+    if geometry_type == "keypoint":
+        return keypoints_to_bbox(coordinates=coordinates)
+
+    return [0, 0, 0, 0]
+
+
+def snapshot_object_to_coco_segmentation(*, snapshot_object):
+    if snapshot_object.get("type") == "polygon":
+        return [snapshot_object.get("coordinates", [])]
+
+    return []
+
+
+def get_export_snapshot_classes(*, snapshot):
+    return [
+        item
+        for item in snapshot.get("taxonomy", {}).get("classes", [])
+        if item.get("include_in_export", True)
+    ]
+
+
+def build_coco_export_from_snapshot(*, snapshot):
+    assets = snapshot.get("assets", [])
+    classes = get_export_snapshot_classes(snapshot=snapshot)
+
+    image_to_export_id = {
+        str(asset["asset_id"]): index + 1
+        for index, asset in enumerate(assets)
+    }
+
+    class_to_category_id = {
+        str(project_class["id"]): index + 1
+        for index, project_class in enumerate(classes)
+    }
+
+    annotations = []
+    annotation_index = 1
+
+    for asset in assets:
+        image_id = str(asset["asset_id"])
+
+        for obj in asset.get("objects", []):
+            class_id = str(obj["class_id"])
+
+            if class_id not in class_to_category_id:
+                continue
+
+            bbox = snapshot_object_to_bbox(snapshot_object=obj)
+
+            annotations.append(
+                {
+                    "id": annotation_index,
+                    "image_id": image_to_export_id[image_id],
+                    "category_id": class_to_category_id[class_id],
+                    "bbox": bbox,
+                    "segmentation": snapshot_object_to_coco_segmentation(
+                        snapshot_object=obj,
+                    ),
+                    "area": bbox_area(bbox=bbox),
+                    "iscrowd": 0,
+                }
+            )
+
+            annotation_index += 1
+
+    return {
+        "format": "coco",
+        "info": {
+            "description": (
+                "CoLDAT COCO export for dataset "
+                f"{snapshot.get('dataset', {}).get('name', '')}"
+            ),
+        },
+        "images": [
+            {
+                "id": image_to_export_id[str(asset["asset_id"])],
+                "file_name": asset["filename"],
+                "width": asset["width"],
+                "height": asset["height"],
+            }
+            for asset in assets
+        ],
+        "categories": [
+            {
+                "id": class_to_category_id[str(project_class["id"])],
+                "name": project_class["name"],
+                "original_index": project_class["index"],
+            }
+            for project_class in classes
+        ],
+        "annotations": annotations,
+    }
+
+
+def build_yolo_export_from_snapshot(*, snapshot):
+    assets = snapshot.get("assets", [])
+    classes = get_export_snapshot_classes(snapshot=snapshot)
+
+    class_id_to_yolo_index = {
+        str(project_class["id"]): export_index
+        for export_index, project_class in enumerate(classes)
+    }
+
+    files = []
+
+    for asset in assets:
+        image_id = str(asset["asset_id"])
+        image_width = asset.get("width")
+        image_height = asset.get("height")
+
+        lines = []
+
+        if image_width and image_height:
+            for obj in asset.get("objects", []):
+                class_id = str(obj["class_id"])
+
+                if class_id not in class_id_to_yolo_index:
+                    continue
+
+                bbox = snapshot_object_to_bbox(snapshot_object=obj)
+
+                yolo_bbox = bbox_to_yolo(
+                    bbox=bbox,
+                    image_width=image_width,
+                    image_height=image_height,
+                )
+
+                class_index = class_id_to_yolo_index[class_id]
+
+                lines.append(
+                    " ".join(
+                        [
+                            str(class_index),
+                            *[str(round(value, 6)) for value in yolo_bbox],
+                        ]
+                    )
+                )
+
+        files.append(
+            {
+                "image_id": image_id,
+                "image_filename": asset["filename"],
+                "label_filename": asset["filename"].rsplit(".", 1)[0] + ".txt",
+                "content": "\n".join(lines),
+            }
+        )
+
+    return {
+        "format": "yolo",
+        "classes": [
+            {
+                "id": str(project_class["id"]),
+                "name": project_class["name"],
+                "original_index": project_class["index"],
+                "export_index": class_id_to_yolo_index[str(project_class["id"])],
+            }
+            for project_class in classes
+        ],
+        "files": files,
+    }
+
+
+def build_visual_genome_export_from_snapshot(*, snapshot):
+    assets = snapshot.get("assets", [])
+
+    return {
+        "format": "visual_genome",
+        "images": [
+            {
+                "image_id": str(asset["asset_id"]),
+                "filename": asset["filename"],
+                "width": asset["width"],
+                "height": asset["height"],
+                "objects": [
+                    {
+                        "object_id": str(obj["id"]),
+                        "names": [
+                            obj["class_name"],
+                        ],
+                        "x": snapshot_object_to_bbox(snapshot_object=obj)[0],
+                        "y": snapshot_object_to_bbox(snapshot_object=obj)[1],
+                        "w": snapshot_object_to_bbox(snapshot_object=obj)[2],
+                        "h": snapshot_object_to_bbox(snapshot_object=obj)[3],
+                    }
+                    for obj in asset.get("objects", [])
+                ],
+                "relationships": [
+                    {
+                        "relationship_id": str(rel["id"]),
+                        "subject_id": str(rel["subject_id"]),
+                        "object_id": str(rel["object_id"]),
+                        "predicate": rel["predicate"],
+                    }
+                    for rel in asset.get("relationships", [])
+                ],
+            }
+            for asset in assets
+        ],
+    }
+
+
+def build_dataset_export_from_snapshot(*, snapshot, export_format: str):
+    if export_format == "coco":
+        return build_coco_export_from_snapshot(snapshot=snapshot)
+
+    if export_format == "yolo":
+        return build_yolo_export_from_snapshot(snapshot=snapshot)
+
+    if export_format == "visual_genome":
+        return build_visual_genome_export_from_snapshot(snapshot=snapshot)
 
     raise ValueError("Unsupported export format.")

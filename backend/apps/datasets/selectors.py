@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from apps.projects.models import ProjectMembership
 from apps.projects.selectors import get_project_for_user
 
-from .models import Dataset, DatasetMember
+from .models import Dataset, DatasetMember, DatasetVersion
 
 
 def get_project_datasets_for_user(*, project_id, user):
@@ -73,3 +73,32 @@ def get_dataset_member_by_id(*, dataset, member_id):
         id=member_id,
         dataset=dataset,
     )
+
+def get_dataset_versions_for_user(*, dataset_id, user):
+    dataset = get_dataset_for_user(
+        dataset_id=dataset_id,
+        user=user,
+    )
+
+    versions = (
+        DatasetVersion.objects.filter(dataset=dataset)
+        .select_related("dataset", "created_by")
+        .order_by("-created_at")
+    )
+
+    return dataset, versions
+
+
+def get_dataset_version_for_user(*, dataset_id, version_tag, user):
+    dataset = get_dataset_for_user(
+        dataset_id=dataset_id,
+        user=user,
+    )
+
+    version = get_object_or_404(
+        DatasetVersion.objects.select_related("dataset", "created_by"),
+        dataset=dataset,
+        version_tag=version_tag,
+    )
+
+    return dataset, version

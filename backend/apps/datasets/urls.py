@@ -11,6 +11,8 @@ from .views import (
     DatasetListView,
     DatasetMemberDetailView,
     DatasetMemberListCreateView,
+    DatasetVersionDetailView,
+    DatasetVersionListCreateView,
 )
 
 
@@ -49,5 +51,15 @@ urlpatterns = [
         "<uuid:dataset_id>/images/",
         DatasetImageListView.as_view(),
         name="dataset-images",
+    ),
+    path(
+        "<uuid:dataset_id>/versions/",
+        DatasetVersionListCreateView.as_view(),
+        name="dataset-version-list-create",
+    ),
+    path(
+        "<uuid:dataset_id>/versions/<str:version_tag>/",
+        DatasetVersionDetailView.as_view(),
+        name="dataset-version-detail",
     ),
 ]

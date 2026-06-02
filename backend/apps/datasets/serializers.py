@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Dataset, DatasetMember
+from .models import Dataset, DatasetMember, DatasetVersion
 
 
 class DatasetSerializer(serializers.ModelSerializer):
@@ -82,4 +82,54 @@ class DatasetListQuerySerializer(serializers.Serializer):
     search = serializers.CharField(
         required=False,
         allow_blank=False,
+    )
+
+class DatasetVersionSerializer(serializers.ModelSerializer):
+    dataset_id = serializers.UUIDField(source="dataset.id", read_only=True)
+    created_by_id = serializers.UUIDField(source="created_by.id", read_only=True)
+    created_by_username = serializers.CharField(
+        source="created_by.username",
+        read_only=True,
+    )
+
+    class Meta:
+        model = DatasetVersion
+        fields = [
+            "id",
+            "dataset_id",
+            "version_tag",
+            "description",
+            "snapshot",
+            "created_by_id",
+            "created_by_username",
+            "created_at",
+        ]
+
+
+class DatasetVersionListSerializer(serializers.ModelSerializer):
+    dataset_id = serializers.UUIDField(source="dataset.id", read_only=True)
+    created_by_id = serializers.UUIDField(source="created_by.id", read_only=True)
+    created_by_username = serializers.CharField(
+        source="created_by.username",
+        read_only=True,
+    )
+
+    class Meta:
+        model = DatasetVersion
+        fields = [
+            "id",
+            "dataset_id",
+            "version_tag",
+            "description",
+            "created_by_id",
+            "created_by_username",
+            "created_at",
+        ]
+
+
+class DatasetVersionCreateSerializer(serializers.Serializer):
+    version_tag = serializers.CharField(max_length=100)
+    description = serializers.CharField(
+        required=False,
+        allow_blank=True,
     )

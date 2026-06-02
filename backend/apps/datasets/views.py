@@ -10,6 +10,8 @@ from .selectors import (
     get_dataset_members,
     get_datasets_for_user,
     get_project_datasets_for_user,
+    get_dataset_version_for_user,
+    get_dataset_versions_for_user,
 )
 from .serializers import (
     DatasetCreateSerializer,
@@ -18,6 +20,9 @@ from .serializers import (
     DatasetMemberSerializer,
     DatasetMemberUpdateSerializer,
     DatasetSerializer,
+    DatasetVersionCreateSerializer,
+    DatasetVersionListSerializer,
+    DatasetVersionSerializer,
 )
 from .services import (
     add_or_update_dataset_member,
@@ -26,6 +31,7 @@ from .services import (
     remove_dataset_member,
     update_dataset,
     update_dataset_member_role,
+    create_dataset_version,
 )
 
 
@@ -245,3 +251,61 @@ class DatasetMemberDetailView(APIView):
 
     def get_permissions(self):
         return [IsDatasetProjectAdmin()]
+    
+class DatasetVersionListCreateView(APIView):
+    def get(self, request, dataset_id):
+        dataset, versions = get_dataset_versions_for_user(
+            dataset_id=dataset_id,
+            user=request.user,
+        )
+
+        return Response(
+            {
+                "data": DatasetVersionListSerializer(versions, many=True).data,
+                "next_cursor": None,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request, dataset_id):
+        dataset = get_dataset_for_user(
+            dataset_id=dataset_id,
+            user=request.user,
+        )
+
+        self.check_object_permissions(request, dataset)
+
+        serializer = DatasetVersionCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        version = create_dataset_version(
+            dataset=dataset,
+            created_by=request.user,
+            version_tag=serializer.validated_data["version_tag"],
+            description=serializer.validated_data.get("description", ""),
+        )
+
+        return Response(
+            DatasetVersionSerializer(version).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsDatasetProjectAdmin()]
+
+        return super().get_permissions()
+
+
+class DatasetVersionDetailView(APIView):
+    def get(self, request, dataset_id, version_tag):
+        dataset, version = get_dataset_version_for_user(
+            dataset_id=dataset_id,
+            version_tag=version_tag,
+            user=request.user,
+        )
+
+        return Response(
+            DatasetVersionSerializer(version).data,
+            status=status.HTTP_200_OK,
+        )

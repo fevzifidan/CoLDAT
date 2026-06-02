@@ -1,17 +1,13 @@
-from django.shortcuts import get_object_or_404
-
 from apps.annotations.models import AnnotationObject, SceneGraphRelationship
 from apps.assets.models import Asset
-from apps.datasets.models import Dataset
+from apps.datasets.selectors import get_dataset_for_user
 from apps.taxonomy.models import ProjectClass, ProjectPredicate
 
 
 def get_dataset_for_export_user(*, dataset_id, user):
-    return get_object_or_404(
-        Dataset,
-        id=dataset_id,
-        is_deleted=False,
-        project__memberships__user=user,
+    return get_dataset_for_user(
+        dataset_id=dataset_id,
+        user=user,
     )
 
 
