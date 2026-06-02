@@ -107,8 +107,8 @@ const fetchTasks = async () => {
     const searchTarget = `${task.id} ${task.dataset_id} ${task.assignee_username || ''}`.toLowerCase();
     const matchesSearch = searchTarget.includes(searchQuery.toLowerCase());
     
-        // API'den gelen statüler (lowercase: open, in_progress, approval_pending, completed, rejected)
-    const taskStatus = task.status?.toLowerCase() ?? "";
+        // API'den gelen statüler (lowercase: assigned, in_progress, submitted, approved, rejected)
+        const taskStatus = task.status?.toLowerCase() ?? "";
     const matchesProgress = progressFilter === "ALL" || taskStatus === progressFilter;
     
     return matchesSearch && matchesProgress;
@@ -147,7 +147,7 @@ const fetchTasks = async () => {
           </Button>
 
                                         {/* Statü Filtresi */}
-                    <SelectFilter
+                                        <SelectFilter
                       value={progressFilter}
                       onChange={(v) => {
                         setProgressFilter(v);
@@ -156,10 +156,10 @@ const fetchTasks = async () => {
                       triggerClassName="w-44"
                       options={[
                         { value: 'ALL', label: t('tasks:filter.all_progress', 'All Statuses'), icon: <Layers className="h-3.5 w-3.5" /> },
-                        { value: 'open', label: t('tasks:filter.status.open', 'OPEN'), icon: <CircleDot className="h-3.5 w-3.5" /> },
+                        { value: 'assigned', label: t('tasks:filter.status.assigned', 'ASSIGNED'), icon: <CircleDot className="h-3.5 w-3.5" /> },
                         { value: 'in_progress', label: t('tasks:filter.status.in_progress', 'IN PROGRESS'), icon: <Play className="h-3.5 w-3.5" /> },
-                        { value: 'approval_pending', label: t('tasks:filter.status.pending', 'APPROVAL PENDING'), icon: <Clock className="h-3.5 w-3.5" /> },
-                        { value: 'completed', label: t('tasks:filter.status.completed', 'COMPLETED'), icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+                        { value: 'submitted', label: t('tasks:filter.status.submitted', 'SUBMITTED'), icon: <Clock className="h-3.5 w-3.5" /> },
+                        { value: 'approved', label: t('tasks:filter.status.approved', 'APPROVED'), icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
                         { value: 'rejected', label: t('tasks:filter.status.rejected', 'REJECTED'), icon: <XCircle className="h-3.5 w-3.5" /> },
                       ]}
                     />

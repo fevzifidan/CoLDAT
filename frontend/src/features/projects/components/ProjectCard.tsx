@@ -48,13 +48,9 @@ export const ProjectCard = ({
     const handleManageNavigate = (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    // Task tipi için annotation/viewer sayfalarına yönlendir
+        // Task tipi için task detay sayfasına yönlendir (imageId gerekli olduğu için doğrudan annotation sayfasına gitme)
     if (cardType === 'task') {
-      const isViewer = rawRole === 'viewer';
-      const targetPath = isViewer
-        ? `/view/${project.id}`
-        : `/annotate/${project.id}`;
-      navigate(targetPath);
+      navigate(`/tasks/${project.id}`);
       return;
     }
 
@@ -111,9 +107,9 @@ export const ProjectCard = ({
     return 'border-primary/20 text-primary bg-primary/10 hover:bg-primary/20';
   };
 
-  const currentStatus = project.status
+    const currentStatus = project.status
     ? String(project.status)
-    : 'New';
+    : 'assigned';
 
   const statusKey = currentStatus
     .toLowerCase()

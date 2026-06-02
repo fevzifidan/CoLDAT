@@ -1,105 +1,111 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle } from "lucide-react";
+import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 // Bileşen ve Servis Entegrasyonları
 import { ProjectCard } from '@/features/projects/components/ProjectCard';
-import { projectService } from '@/features/projects/services/projectService'; // Proje servisiniz
-import { taskService } from '@/features/tasks/services/taskService';       // Görev servisiniz
+import { projectService } from '@/features/projects/services/projectService';
+import { taskService } from '@/features/tasks/services/taskService';
 import { datasetService } from '@/features/datasets/services/datasetService';
+import { useCursorPagination } from '@/shared/hooks/useCursorPagination';
+import type { PaginatedResponse } from '@/shared/hooks/useCursorPagination';
 
 const DashboardHome = () => {
   const navigate = useNavigate();
   const { t } = useTranslation(['dashboard', 'common']);
 
-  // --- API STATE YÖNETİMİ ---
-  const [projectsList, setProjectsList] = useState<any[]>([]);
-  const [datasetsList, setDatasetsList] = useState<any[]>([]);
-  const [tasksList, setTasksList] = useState<any[]>([]);
-  
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  // --- PROJECTS PAGINATION (limit=4, accumulate mode) ---
+  const {
+    items: projectsList,
+    loading: projectsLoading,
+    error: projectsError,
+    hasNext: projectsHasNext,
+    loadMore: loadMoreProjects,
+    loadPage: reloadProjects,
+  } = useCursorPagination({
+    fetchFn: async (cursor, limit) => {
+      const res = await projectService.getAllProjects({ limit, after: cursor });
+      return res as PaginatedResponse<any>;
+    },
+    limit: 4,
+    mode: 'accumulate',
+  });
 
-  // --- DATA FETCHING ---
-  const fetchDashboardData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  // --- TASKS PAGINATION (limit=4, accumulate mode) ---
+  const {
+    items: tasksList,
+    loading: tasksLoading,
+    error: tasksError,
+    hasNext: tasksHasNext,
+    loadMore: loadMoreTasks,
+  } = useCursorPagination({
+    fetchFn: async (cursor, limit) => {
+      const res = await taskService.getTasks({ limit, after: cursor });
+      return res as PaginatedResponse<any>;
+    },
+    limit: 4,
+    mode: 'accumulate',
+  });
 
-            // 1. Projeleri ve Taskları eş zamanlı olarak çağırıyoruz (Performans için Parallel Fetch)
-      const [projectsData, tasksData] = await Promise.all([
-        projectService.getAllProjects(),
-        taskService.getTasks()
-      ]);
+  // --- DATASETS PAGINATION (limit=4, accumulate mode) ---
+  const {
+    items: datasetsList,
+    loading: datasetsLoading,
+    error: datasetsError,
+    hasNext: datasetsHasNext,
+    loadMore: loadMoreDatasets,
+  } = useCursorPagination({
+    fetchFn: async (cursor, limit) => {
+      const res = await datasetService.fetchAllDatasets({ limit, after: cursor });
+      return res as PaginatedResponse<any>;
+    },
+    limit: 4,
+    mode: 'accumulate',
+  });
 
-            // --- Proje Verisi Ayrıştırma ---
-      // API spec response: { data: Project[], next_cursor: string | null }
-      const activeProjects = projectsData?.data || projectsData?.results || projectsData || [];
-      setProjectsList(activeProjects);
+  // Combine all loading states for the initial loading screen
+  const isLoading = projectsLoading && projectsList.length === 0
+    || tasksLoading && tasksList.length === 0
+    || datasetsLoading && datasetsList.length === 0;
 
-      // --- Görev Verisi Ayrıştırma ---
-      // API spec response: { data: Task[], next_cursor: string | null }
-      const activeTasks = tasksData?.data || tasksData?.results || tasksData || [];
-      setTasksList(activeTasks);
+  // Combine errors (per-section errors shown inline)
+  const hasGlobalError = [projectsError, tasksError, datasetsError].some(Boolean);
 
-            // 2. Kullanıcının eriştiği dataset'leri göstermek için global endpoint dene
-      // API spec response: { data: Dataset[], next_cursor: string | null }
-      try {
-        const datasetsData = await datasetService.fetchAllDatasets({ limit: 4 });
-        const activeDatasets = datasetsData?.data || datasetsData?.results || datasetsData || [];
-        setDatasetsList(activeDatasets);
-      } catch {
-        // Eğer global endpoint yoksa, ilk projenin dataset'lerini kullan
-        if (activeProjects.length > 0) {
-          const firstProjectId = activeProjects[0].id;
-          const datasetsData = await datasetService.getAllDatasets(firstProjectId);
-          const activeDatasets = datasetsData?.data || datasetsData?.results || datasetsData || [];
-          setDatasetsList(activeDatasets);
-        } else {
-          setDatasetsList([]);
-        }
-      }
+  // --- VERİ KART UYUMLULUK MAPPING İŞLEMLERİ ---
+  const mappedTasks = useMemo(() =>
+    tasksList.map(t => ({
+      id: t.id,
+      name: t.name || `Task #${t.id.slice(0, 8)}`,
+      status: t.status || 'assigned',
+      role: t.role || 'Viewer',
+      count: t.image_count ?? 0,
+    })),
+    [tasksList]
+  );
 
-    } catch (err: any) {
-      console.error("Dashboard loading error:", err);
-      setError(err?.response?.data?.message || t('dashboard:fetch_error'));
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const mappedDatasets = useMemo(() =>
+    datasetsList.map(d => ({
+      id: d.id,
+      name: d.name || 'Unnamed Dataset',
+      description: d.description || 'Project dataset repository.',
+    })),
+    [datasetsList]
+  );
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  // --- VERİ LİMİTLEME VE KART UYUMLULUK MAPPING İŞLEMLERİ ---
-  // API'den dönen nesneleri ProjectCard'ın beklediği esnek yapıya normalize ediyoruz
-
-    const recentTasks = tasksList.slice(0, 4).map(t => ({
-    id: t.id,
-    name: t.name || `Task #${t.id.slice(0, 8)}`,
-    status: t.status || "OPEN",
-    role: t.role || "Viewer",
-    description: `Contains ${t.image_count ?? 0} master assets.`
-  }));
-
-    const recentDatasets = datasetsList.slice(0, 4).map(d => ({
-    id: d.id,
-    name: d.name || "Unnamed Dataset",
-    description: d.description || "Project dataset repository."
-  }));
-
-  const recentProjects = projectsList.slice(0, 4).map(p => ({
-    id: p.id,
-    name: p.name || "Standard Project",
-    status: p.status || "",
-    description: p.description || "Ecosystem managed project workspace."
-  }));
+  const mappedProjects = useMemo(() =>
+    projectsList.map(p => ({
+      id: p.id,
+      name: p.name || 'Standard Project',
+      status: p.status || '',
+      description: p.description || 'Ecosystem managed project workspace.',
+    })),
+    [projectsList]
+  );
 
   // --- ASENKRON DURUM EKRANLARI ---
-    if (isLoading) {
+  if (isLoading) {
     return (
       <div className="h-[60vh] w-full flex flex-col items-center justify-center gap-3 text-muted-foreground">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -108,13 +114,18 @@ const DashboardHome = () => {
     );
   }
 
-  if (error) {
+  if (hasGlobalError && projectsList.length === 0 && tasksList.length === 0 && datasetsList.length === 0) {
     return (
       <div className="h-[50vh] flex items-center justify-center p-4">
         <div className="p-5 rounded-2xl border border-destructive/20 bg-destructive/5 text-center space-y-3 max-w-sm shadow-sm">
           <AlertCircle size={28} className="mx-auto text-destructive animate-pulse" />
-          <p className="text-xs text-destructive font-medium leading-relaxed">{error}</p>
-          <Button size="sm" variant="outline" onClick={fetchDashboardData} className="text-xs h-8">
+          <p className="text-xs text-destructive font-medium leading-relaxed">{t('dashboard:fetch_error')}</p>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => { reloadProjects(null, false); }}
+            className="text-xs h-8"
+          >
             {t('dashboard:retry_button')}
           </Button>
         </div>
@@ -145,20 +156,41 @@ const DashboardHome = () => {
               {t('dashboard:sections.tasks_description')}
             </p>
           </div>
-          {recentTasks.length > 0 && (
-            <Button 
-              variant="ghost" size="sm" 
-              onClick={() => navigate('/tasks')} 
-              className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
-            >
-              {t('dashboard:show_more')}
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {tasksHasNext && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={loadMoreTasks}
+                disabled={tasksLoading}
+                className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
+              >
+                {t('dashboard:load_more')}
+              </Button>
+            )}
+            {mappedTasks.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/tasks')}
+                className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
+              >
+                {t('dashboard:show_more')}
+              </Button>
+            )}
+          </div>
         </div>
 
-        {recentTasks.length > 0 ? (
+        {tasksError && (
+          <div className="flex items-center justify-center gap-2 py-4 text-destructive/80 text-xs">
+            <AlertCircle size={14} />
+            <span>{tasksError}</span>
+          </div>
+        )}
+
+        {mappedTasks.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {recentTasks.map((task) => (
+            {mappedTasks.map((task) => (
               <ProjectCard key={task.id} project={task} cardType="task" />
             ))}
           </div>
@@ -183,20 +215,41 @@ const DashboardHome = () => {
             </h2>
             <p className="text-xs text-muted-foreground italic">{t('dashboard:sections.datasets_description')}</p>
           </div>
-          {recentDatasets.length > 0 && (
-            <Button 
-              variant="ghost" size="sm" 
-              onClick={() => navigate('/datasets')} 
-              className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
-            >
-              {t('dashboard:show_more')}
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {datasetsHasNext && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={loadMoreDatasets}
+                disabled={datasetsLoading}
+                className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
+              >
+                {t('dashboard:load_more')}
+              </Button>
+            )}
+            {mappedDatasets.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/datasets')}
+                className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
+              >
+                {t('dashboard:show_more')}
+              </Button>
+            )}
+          </div>
         </div>
-        
-        {recentDatasets.length > 0 ? (
+
+        {datasetsError && (
+          <div className="flex items-center justify-center gap-2 py-4 text-destructive/80 text-xs">
+            <AlertCircle size={14} />
+            <span>{datasetsError}</span>
+          </div>
+        )}
+
+        {mappedDatasets.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {recentDatasets.map((dataset) => (
+            {mappedDatasets.map((dataset) => (
               <ProjectCard key={dataset.id} project={dataset} cardType="dataset" />
             ))}
           </div>
@@ -216,20 +269,41 @@ const DashboardHome = () => {
             </h2>
             <p className="text-xs text-muted-foreground italic">{t('dashboard:sections.projects_description')}</p>
           </div>
-          {recentProjects.length > 0 && (
-            <Button 
-              variant="ghost" size="sm" 
-              onClick={() => navigate('/projects')} 
-              className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
-            >
-              {t('dashboard:show_more')}
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {projectsHasNext && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={loadMoreProjects}
+                disabled={projectsLoading}
+                className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
+              >
+                {t('dashboard:load_more')}
+              </Button>
+            )}
+            {mappedProjects.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/projects')}
+                className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
+              >
+                {t('dashboard:show_more')}
+              </Button>
+            )}
+          </div>
         </div>
 
-        {recentProjects.length > 0 ? (
+        {projectsError && (
+          <div className="flex items-center justify-center gap-2 py-4 text-destructive/80 text-xs">
+            <AlertCircle size={14} />
+            <span>{projectsError}</span>
+          </div>
+        )}
+
+        {mappedProjects.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {recentProjects.map((project) => (
+            {mappedProjects.map((project) => (
               <ProjectCard key={project.id} project={project} cardType="project" />
             ))}
           </div>

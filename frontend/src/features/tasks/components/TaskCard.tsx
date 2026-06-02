@@ -30,12 +30,12 @@ interface TaskCardProps {
 export const TaskCard = ({ task, onViewDetail, onAnnotate, onView }: TaskCardProps) => {
   const { t } = useTranslation(['tasks']);
 
-    const getStatusColor = (status: string) => {
+        const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case "open": return "bg-primary/10 text-primary border-primary/20";
+      case "assigned": return "bg-primary/10 text-primary border-primary/20";
       case "in_progress": return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-      case "approval_pending": return "bg-muted text-muted-foreground border-border";
-      case "completed": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+      case "submitted": return "bg-muted text-muted-foreground border-border";
+      case "approved": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
       case "rejected": return "bg-destructive/10 text-destructive border-destructive/20";
       default: return "bg-muted text-muted-foreground border-border";
     }

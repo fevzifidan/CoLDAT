@@ -16,7 +16,7 @@ export interface Task {
   dataset_id: string;
   assignee_id: string;
   role: 'Annotator' | 'Viewer';
-  status: 'open' | 'in_progress' | 'approval_pending' | 'completed' | 'rejected';
+  status: 'assigned' | 'in_progress' | 'submitted' | 'approved' | 'rejected';
   rejection_note: string | null;
   image_count: number;
 }

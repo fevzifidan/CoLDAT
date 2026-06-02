@@ -1,5 +1,17 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import apiService from "@/shared/services/api/api.service";
+
+/**
+ * Backend /account/me endpoint'i userID döndürebilir.
+ * Tüm uygulama user.id beklediği için normalizasyon yapıyoruz.
+ */
+const normalizeUser = (raw) => {
+  if (!raw) return null;
+  return {
+    ...raw,
+    id: raw.userID || raw.id,
+  };
+};
 
 const AuthContext = createContext();
 
@@ -16,7 +28,7 @@ export const AuthProvider = ({ children }) => {
         try {
           const response = await apiService.get("/account/me/"); 
           const responseData = response?.data || response;
-          setUser(responseData);
+          setUser(normalizeUser(responseData));
         } catch (error) {
           console.error("Token geçersiz, temizleniyor...");
           localStorage.removeItem("access_token");
@@ -51,7 +63,7 @@ export const AuthProvider = ({ children }) => {
 
       if (token) {
         localStorage.setItem("access_token", token);
-        setUser(userData);
+        setUser(normalizeUser(userData));
       }
       
       return response;
@@ -62,10 +74,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 3. Logout Fonksiyonu
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("access_token");
     setUser(null);
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading, isAuthenticated: !!user }}>

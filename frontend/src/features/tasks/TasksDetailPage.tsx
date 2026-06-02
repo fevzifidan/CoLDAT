@@ -259,12 +259,12 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
   };
 
     // Badge renk dinamikleri
-  const getStatusBadge = (status: string) => {
+    const getStatusBadge = (status: string) => {
     switch (status?.toUpperCase()) {
-      case "OPEN": return "bg-primary/10 text-primary border-primary/20";
+      case "ASSIGNED": return "bg-primary/10 text-primary border-primary/20";
       case "IN_PROGRESS": return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-            case "APPROVAL_PENDING": return "bg-muted text-muted-foreground border-border";
-      case "COMPLETED": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+            case "SUBMITTED": return "bg-muted text-muted-foreground border-border";
+      case "APPROVED": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
       case "REJECTED": return "bg-destructive/10 text-destructive border-destructive/20";
       default: return "bg-muted text-muted-foreground border-border";
     }
@@ -403,39 +403,39 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
 
             <div className="grid gap-2">
                             {/* Annotator Rolü için Gönderme Mekanizması */}
-              {task.status?.toLowerCase() === "in_progress" && (
-                <Button 
-                  disabled={isSubmitting}
-                  onClick={() => handleUpdateStatus("approval_pending")}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs h-9 gap-1.5"
-                >
-                  <Send size={14} /> {t('tasks:detail.submit_for_approval', 'Submit for Approval')}
-                </Button>
-              )}
+                            {task.status?.toLowerCase() === "in_progress" && (
+                              <Button 
+                                disabled={isSubmitting}
+                                onClick={() => handleUpdateStatus("submitted")}
+                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs h-9 gap-1.5"
+                              >
+                                <Send size={14} /> {t('tasks:detail.submit_for_approval', 'Submit for Approval')}
+                              </Button>
+                            )}
 
-              {/* Admin Rolü için Onay/Red Mekanizmaları */}
-                            {isAdmin && task.status?.toLowerCase() === "approval_pending" && (
-                <div className="flex gap-2">
-                  <Button 
-                    disabled={isSubmitting}
-                    onClick={() => handleUpdateStatus("completed")}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs h-9 gap-1.5"
-                  >
-                    <CheckCircle2 size={14} /> {t('tasks:detail.approve', 'Approve')}
-                  </Button>
-                  <Button 
-                    disabled={isSubmitting}
-                    onClick={() => handleUpdateStatus("rejected")}
-                    variant="destructive"
-                    className="flex-1 font-medium text-xs h-9 gap-1.5"
-                  >
-                    <XCircle size={14} /> {t('tasks:detail.reject', 'Reject')}
-                  </Button>
-                </div>
-              )}
+                            {/* Admin Rolü için Onay/Red Mekanizmaları */}
+                                          {isAdmin && task.status?.toLowerCase() === "submitted" && (
+                              <div className="flex gap-2">
+                                <Button 
+                                  disabled={isSubmitting}
+                                  onClick={() => handleUpdateStatus("approved")}
+                                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs h-9 gap-1.5"
+                                >
+                                  <CheckCircle2 size={14} /> {t('tasks:detail.approve', 'Approve')}
+                                </Button>
+                                <Button 
+                                  disabled={isSubmitting}
+                                  onClick={() => handleUpdateStatus("rejected")}
+                                  variant="destructive"
+                                  className="flex-1 font-medium text-xs h-9 gap-1.5"
+                                >
+                                  <XCircle size={14} /> {t('tasks:detail.reject', 'Reject')}
+                                </Button>
+                              </div>
+                            )}
 
               {/* Reset mekanizması */}
-              {(["completed", "rejected", "open"] as string[]).includes(task.status?.toLowerCase() ?? "") && (
+              {(["approved", "rejected", "assigned"] as string[]).includes(task.status?.toLowerCase() ?? "") && (
                 <Button 
                   disabled={isSubmitting}
                   onClick={() => handleUpdateStatus("in_progress")}
@@ -463,7 +463,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
             </div>
             
             {/* Yeni Asset Ekleme Butonu */}
-            {isAdmin && (["open", "in_progress"].includes(task.status?.toLowerCase() ?? "")) && (
+            {isAdmin && (["assigned", "in_progress"].includes(task.status?.toLowerCase() ?? "")) && (
               <Button 
                 onClick={() => setIsAddAssetModalOpen(true)}
                 size="sm" 
