@@ -67,6 +67,22 @@ class TaskCreateSerializer(serializers.Serializer):
     )
     note = serializers.CharField(required=False, allow_blank=True)
 
+class TaskImageAddSerializer(serializers.Serializer):
+    image_ids = serializers.ListField(
+        child=serializers.UUIDField(),
+        allow_empty=False,
+    )
+
+    def validate_image_ids(self, value):
+        unique_ids = list(dict.fromkeys(value))
+
+        if len(unique_ids) > 100:
+            raise serializers.ValidationError(
+                "Maximum 100 images can be added at once."
+            )
+
+        return unique_ids
+
 
 class TaskStatusUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Task.Status.choices)
@@ -74,4 +90,16 @@ class TaskStatusUpdateSerializer(serializers.Serializer):
 
 
 class TaskAssignSerializer(serializers.Serializer):
-    assignee_id = serializers.UUIDField()
+    assignee_username = serializers.CharField(max_length=150)
+
+class TaskListQuerySerializer(serializers.Serializer):
+    status = serializers.ChoiceField(
+        choices=Task.Status.choices,
+        required=False,
+    )
+
+    assignee_username = serializers.CharField(
+        max_length=150,
+        required=False,
+        allow_blank=False,
+    )

@@ -24,6 +24,7 @@ def create_user(
 
     return user
 
+
 def update_user_account(*, user: User, data: dict) -> User:
     allowed_fields = [
         "username",
@@ -32,10 +33,14 @@ def update_user_account(*, user: User, data: dict) -> User:
         "last_name",
     ]
 
+    update_fields = []
+
     for field in allowed_fields:
         if field in data:
             setattr(user, field, data[field])
+            update_fields.append(field)
 
-    user.save(update_fields=allowed_fields)
+    if update_fields:
+        user.save(update_fields=update_fields)
 
     return user

@@ -74,6 +74,45 @@ def create_task(
 
     return task
 
+def add_images_to_task(
+    *,
+    task: Task,
+    image_ids: Iterable,
+) -> list[TaskImage]:
+    unique_image_ids = list(set(image_ids))
+
+    if not unique_image_ids:
+        raise ValidationError("At least one image_id is required.")
+
+    images = Asset.objects.filter(
+        id__in=unique_image_ids,
+        dataset=task.dataset,
+        is_deleted=False,
+        status=Asset.UploadStatus.UPLOADED,
+    )
+
+    if images.count() != len(unique_image_ids):
+        raise ValidationError(
+            "One or more images do not exist, do not belong to this task's dataset, or are not uploaded."
+        )
+
+    existing_image_ids = set(
+        TaskImage.objects.filter(
+            task=task,
+            image_id__in=unique_image_ids,
+        ).values_list("image_id", flat=True)
+    )
+
+    new_links = [
+        TaskImage(task=task, image=image)
+        for image in images
+        if image.id not in existing_image_ids
+    ]
+
+    created_links = TaskImage.objects.bulk_create(new_links)
+
+    return created_links
+
 
 def user_can_manage_task(*, task: Task, user) -> bool:
     return task.dataset.project.memberships.filter(
@@ -178,9 +217,15 @@ def update_task_status(
 def assign_task(
     *,
     task: Task,
-    assignee_id,
+    assignee_username: str,
 ) -> Task:
-    assignee = User.objects.get(id=assignee_id)
+    assignee = User.objects.filter(
+        username=assignee_username,
+        is_active=True,
+    ).first()
+
+    if assignee is None:
+        raise ValidationError("Assignee with this username does not exist.")
 
     dataset_membership = DatasetMember.objects.filter(
         dataset=task.dataset,
@@ -189,6 +234,13 @@ def assign_task(
 
     if dataset_membership is None:
         raise ValidationError("Assignee must be a dataset member.")
+
+    if dataset_membership.role not in [
+        DatasetMember.Role.ANNOTATOR,
+        DatasetMember.Role.REVIEWER,
+        DatasetMember.Role.ADMIN,
+    ]:
+        raise ValidationError("Assignee does not have a valid dataset role.")
 
     task.assignee = assignee
     task.save(update_fields=["assignee", "updated_at"])

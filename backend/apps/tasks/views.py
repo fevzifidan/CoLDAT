@@ -18,18 +18,29 @@ from .serializers import (
     TaskImageSerializer,
     TaskSerializer,
     TaskStatusUpdateSerializer,
+    TaskImageAddSerializer,
+    TaskListQuerySerializer,
 )
 from .services import (
     assign_task,
     create_task,
     delete_task,
     update_task_status,
+    add_images_to_task,
 )
 
 
 class TaskListCreateView(APIView):
     def get(self, request):
-        tasks = get_tasks_assigned_to_user(user=request.user)
+        query_serializer = TaskListQuerySerializer(
+            data=request.query_params
+        )
+        query_serializer.is_valid(raise_exception=True)
+
+        tasks = get_tasks_assigned_to_user(
+            user=request.user,
+            status=query_serializer.validated_data.get("status"),
+        )
 
         return Response(
             {
@@ -71,6 +82,17 @@ class TaskListCreateView(APIView):
 
 
 class TaskDetailView(APIView):
+    def get(self, request, task_id):
+        task = get_task_for_user(
+            task_id=task_id,
+            user=request.user,
+        )
+
+        return Response(
+            TaskSerializer(task).data,
+            status=status.HTTP_200_OK,
+        )
+
     def delete(self, request, task_id):
         task = get_task_for_user(
             task_id=task_id,
@@ -84,7 +106,10 @@ class TaskDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_permissions(self):
-        return [CanManageTasks()]
+        if self.request.method == "DELETE":
+            return [CanManageTasks()]
+
+        return super().get_permissions()
 
 
 class TaskStatusUpdateView(APIView):
@@ -109,35 +134,6 @@ class TaskStatusUpdateView(APIView):
             status=status.HTTP_200_OK,
         )
 
-        serializer = TaskStatusUpdateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        # Assignee can move their own task to in_progress / approval_pending.
-        # Admin/reviewer can also approve/reject/complete.
-        is_assignee = task.assignee_id == request.user.id
-
-        manager_permission = CanManageTasks()
-        is_manager = manager_permission.has_object_permission(request, self, task)
-
-        if not is_assignee and not is_manager:
-            return Response(
-                {"detail": "You do not have permission to update this task status."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        task = update_task_status(
-            task=task,
-            user=request.user,
-            status=serializer.validated_data["status"],
-            note=serializer.validated_data.get("note"),
-        )
-
-        return Response(
-            TaskSerializer(task).data,
-            status=status.HTTP_200_OK,
-        )
-
-
 class TaskAssignView(APIView):
     def patch(self, request, task_id):
         task = get_task_for_user(
@@ -152,7 +148,7 @@ class TaskAssignView(APIView):
 
         task = assign_task(
             task=task,
-            assignee_id=serializer.validated_data["assignee_id"],
+            assignee_username=serializer.validated_data["assignee_username"],
         )
 
         return Response(
@@ -178,13 +174,20 @@ class TaskImageListView(APIView):
             },
             status=status.HTTP_200_OK,
         )
-
+    
 
 class DatasetTaskListView(APIView):
     def get(self, request, dataset_id):
+        query_serializer = TaskListQuerySerializer(
+            data=request.query_params
+        )
+        query_serializer.is_valid(raise_exception=True)
+
         dataset, tasks = get_dataset_tasks_for_user(
             dataset_id=dataset_id,
             user=request.user,
+            status=query_serializer.validated_data.get("status"),
+            assignee_username=query_serializer.validated_data.get("assignee_username"),
         )
 
         return Response(
@@ -195,12 +198,24 @@ class DatasetTaskListView(APIView):
             status=status.HTTP_200_OK,
         )
 
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [CanManageTasks()]
+
+        return super().get_permissions()
+
 
 class ProjectTaskListView(APIView):
     def get(self, request, project_id):
+        query_serializer = TaskListQuerySerializer(
+            data=request.query_params
+        )
+        query_serializer.is_valid(raise_exception=True)
+
         project, tasks = get_project_tasks_for_user(
             project_id=project_id,
             user=request.user,
+            status=query_serializer.validated_data.get("status"),
         )
 
         return Response(

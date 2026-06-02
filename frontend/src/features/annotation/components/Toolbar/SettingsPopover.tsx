@@ -42,7 +42,7 @@ import { clearCache, getCacheSize } from '@/features/annotation/tools/sam/embedd
 import { notificationService } from '@/shared/services/notification/notification.service';
 import LanguageSelector from '@/components/custom/LanguageSelector/LanguageSelector';
 
-type SettingsPage = 'main' | 'view' | 'sam';
+type SettingsPage = 'main' | 'view' | 'sam' | 'livewire';
 
 export default function SettingsPopover() {
   const { t } = useTranslation('annotation');
@@ -74,6 +74,13 @@ export default function SettingsPopover() {
       opacity: state.opacity,
       setOpacity: state.setOpacity,
       resetFilters: state.resetFilters,
+    }))
+  );
+
+  const { livewireEpsilon, setLivewireEpsilon } = useAppStore(
+    useShallow((state) => ({
+      livewireEpsilon: state.livewireEpsilon,
+      setLivewireEpsilon: state.setLivewireEpsilon,
     }))
   );
 
@@ -128,6 +135,9 @@ export default function SettingsPopover() {
     (vals: number[]) => setOpacity(vals[0]),
     [setOpacity]
   );
+  const handleLivewireSettingsReset = useCallback(() => {
+    setLivewireEpsilon(1.0);
+  }, [setLivewireEpsilon]);
 
   return (
     <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -207,7 +217,7 @@ export default function SettingsPopover() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-            <Separator className="my-1" />
+              <Separator className="my-1" />
 
               {/* === GÖRÜNÜM SECTION === */}
               <Button
@@ -243,9 +253,26 @@ export default function SettingsPopover() {
 
               <Separator className="my-1" />
 
+              {/* === LIVEWIRE SETTINGS SECTION === */}
+              <Button
+                variant="ghost"
+                className="w-full justify-between h-9 px-2"
+                onClick={() => setPage('livewire')}
+              >
+                <span className="flex items-center gap-2 text-sm">
+                  <SlidersHorizontal size={16} />
+                  {t('toolbar.livewireSettings')}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {t('toolbar.livewireSettingsDescription')}
+                </span>
+              </Button>
+
+              <Separator className="my-1" />
+
               {/* === DİL SECTION === */}
               <div className="px-2 py-1.5">
-                <LanguageSelector className='max-w-full'/>
+                <LanguageSelector className='max-w-full' />
               </div>
             </div>
           )}
@@ -263,7 +290,7 @@ export default function SettingsPopover() {
                 {t('toolbar.settings')}
               </Button>
 
-                <div className="px-1 space-y-6">
+              <div className="px-1 space-y-6">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium leading-none text-sm">
                     {t('toolbar.imageSettings')}
@@ -399,9 +426,64 @@ export default function SettingsPopover() {
               </div>
             </div>
           )}
+
+          {page === 'livewire' && (
+            <div className="p-2 space-y-4 pb-6">
+              {/* Geri butonu */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-1 gap-1 text-xs text-muted-foreground"
+                onClick={() => setPage('main')}
+              >
+                <ChevronLeft size={14} />
+                {t('toolbar.settings')}
+              </Button>
+
+              <div className="px-1 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium leading-none text-sm">
+                    {t('toolbar.livewireSettings')}
+                  </h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[10px]"
+                    onClick={handleLivewireSettingsReset}
+                  >
+                    <RotateCcw size={10} className="mr-1" />{' '}
+                    {t('toolbar.reset')}
+                  </Button>
+                </div>
+
+                {/* === EPSILON SLIDER === */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs flex items-center gap-2 font-semibold text-primary">
+                      <SlidersHorizontal size={12} /> {t('toolbar.livewireEpsilon')}
+                    </Label>
+                    <span className="text-[10px] font-mono font-semibold bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                      {livewireEpsilon.toFixed(1)} px
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground/80 leading-relaxed px-1">
+                    {t('toolbar.livewireEpsilonDescription')}
+                  </p>
+                  <Slider
+                    value={[livewireEpsilon]}
+                    onValueChange={(vals) => setLivewireEpsilon(vals[0])}
+                    min={0.1}
+                    max={5.0}
+                    step={0.1}
+                    className="pt-2"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </PopoverContent>
-      
+
     </Popover>
   );
 }

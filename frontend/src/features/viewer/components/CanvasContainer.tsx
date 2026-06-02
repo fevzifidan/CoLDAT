@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { useStageResize } from '../hooks/useStageResize';
 import { MainStage } from './MainStage';
 import { SamProcessingOverlay } from '../../annotation/tools/sam/SamProcessingOverlay';
+import { LivewireProcessingOverlay } from '../../annotation/tools/livewire/LivewireProcessingOverlay';
 
 interface CanvasContainerProps {
   imageUrl: string;
@@ -17,6 +18,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({ imageUrl }) =>
         <>
           <MainStage width={size.width} height={size.height} imageUrl={imageUrl} />
           <SamProcessingOverlay />
+          <LivewireProcessingOverlay />
         </>
       )}
     </div>

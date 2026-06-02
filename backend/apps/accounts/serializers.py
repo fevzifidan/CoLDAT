@@ -1,8 +1,12 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model
 from .services import create_user
+from config.exceptions import Conflict
+
 
 User = get_user_model()
+
 
 class RegisterSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
@@ -12,14 +16,18 @@ class RegisterSerializer(serializers.Serializer):
     last_name = serializers.CharField(max_length=150)
 
     def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("A user with this username already exists.")
+        if User.objects.filter(username__iexact=value).exists():
+            raise Conflict("A user with this username already exists.")
+
         return value
 
     def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("A user with this email already exists.")
-        return value
+        normalized_email = value.lower().strip()
+
+        if User.objects.filter(email__iexact=normalized_email).exists():
+            raise Conflict("A user with this email already exists.")
+
+        return normalized_email
 
     def create(self, validated_data):
         return create_user(**validated_data)
@@ -46,24 +54,6 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
-
-    def validate(self, attrs):
-        email = attrs.get("email")
-        password = attrs.get("password")
-
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            raise serializers.ValidationError("Invalid email or password.")
-
-        if not user.check_password(password):
-            raise serializers.ValidationError("Invalid email or password.")
-
-        if not user.is_active:
-            raise serializers.ValidationError("Please verify your email before logging in.")
-
-        attrs["user"] = user
-        return attrs
     
 class AccountUpdateSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150, required=False)
@@ -72,18 +62,17 @@ class AccountUpdateSerializer(serializers.Serializer):
     last_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
 
     def validate_username(self, value):
-        # Kendi kullanıcı adımızı güncellerken hata almamak için kendimizi dışlıyoruz
-        user = self.context['request'].user
-        if User.objects.filter(username=value).exclude(pk=user.pk).exists():
+        if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("A user with this username already exists.")
         return value
 
     def validate_email(self, value):
-        # Kendi e-postamızı güncellerken hata almamak için kendimizi dışlıyoruz
-        user = self.context['request'].user
-        if User.objects.filter(email=value).exclude(pk=user.pk).exists():
+        if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("A user with this email already exists.")
         return value
+    
+    def create(self, validated_data):
+        return create_user(**validated_data)
     
 class UserLookupSerializer(serializers.ModelSerializer):
     display_name = serializers.SerializerMethodField()
@@ -101,6 +90,12 @@ class UserLookupSerializer(serializers.ModelSerializer):
 
     def get_display_name(self, obj):
         full_name = f"{obj.first_name} {obj.last_name}".strip()
+
         if full_name:
             return full_name
+
         return obj.username
+    
+class RefreshTokenSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField()
+    

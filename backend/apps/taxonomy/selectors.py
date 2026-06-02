@@ -5,7 +5,7 @@ from apps.projects.selectors import get_project_for_user
 from .models import ProjectAttribute, ProjectClass, ProjectPredicate
 
 
-def get_project_taxonomy_for_user(*, project_id, user):
+def get_project_taxonomy_for_user(*, project_id, user, status="all"):
     project = get_project_for_user(
         project_id=project_id,
         user=user,
@@ -14,6 +14,16 @@ def get_project_taxonomy_for_user(*, project_id, user):
     classes = ProjectClass.objects.filter(project=project)
     predicates = ProjectPredicate.objects.filter(project=project)
     attributes = ProjectAttribute.objects.filter(project=project)
+
+    if status == "active":
+        classes = classes.filter(is_active=True)
+        predicates = predicates.filter(is_active=True)
+        attributes = attributes.filter(is_active=True)
+
+    elif status == "inactive":
+        classes = classes.filter(is_active=False)
+        predicates = predicates.filter(is_active=False)
+        attributes = attributes.filter(is_active=False)
 
     return project, classes, predicates, attributes
 

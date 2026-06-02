@@ -77,3 +77,9 @@ class DatasetMemberCreateSerializer(serializers.Serializer):
 
 class DatasetMemberUpdateSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=DatasetMember.Role.choices)
+
+class DatasetListQuerySerializer(serializers.Serializer):
+    search = serializers.CharField(
+        required=False,
+        allow_blank=False,
+    )

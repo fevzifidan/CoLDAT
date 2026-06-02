@@ -1,18 +1,18 @@
+import React, { memo } from 'react';
 import { Circle } from 'react-konva';
-import { useAppStore } from '../../../../store/hooks/useAppStore';
 
 interface PolygonAnchorProps {
   x: number;
   y: number;
   index: number;
   color: string;
+  scale: number;
   onDrag: (index: number, x: number, y: number) => void;
   onDragEnd: (index: number, x: number, y: number) => void;
+  onDelete?: (index: number) => void;
 }
 
-export const PolygonAnchor: React.FC<PolygonAnchorProps> = ({ x, y, index, color, onDrag, onDragEnd }) => {
-  const scale = useAppStore(state => state.scale);
-
+export const PolygonAnchor: React.FC<PolygonAnchorProps> = memo(({ x, y, index, color, scale, onDrag, onDragEnd, onDelete }) => {
   return (
     <Circle
       x={x}
@@ -28,6 +28,14 @@ export const PolygonAnchor: React.FC<PolygonAnchorProps> = ({ x, y, index, color
       onDragEnd={(e) => {
         onDragEnd(index, e.target.x(), e.target.y());
       }}
+      onDblClick={(e) => {
+        e.cancelBubble = true;
+        if (onDelete) onDelete(index);
+      }}
+      onDblTap={(e) => {
+        e.cancelBubble = true;
+        if (onDelete) onDelete(index);
+      }}
       hitStrokeWidth={12 / scale}
       onMouseEnter={(e) => {
         const container = e.target.getStage()?.container();
@@ -39,4 +47,6 @@ export const PolygonAnchor: React.FC<PolygonAnchorProps> = ({ x, y, index, color
       }}
     />
   );
-};
+});
+
+PolygonAnchor.displayName = 'PolygonAnchor';

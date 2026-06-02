@@ -134,3 +134,24 @@ class ProjectTaxonomyUpdateSerializer(serializers.Serializer):
     classes = ClassBulkItemSerializer(many=True, required=False)
     predicates = TaxonomyBaseBulkItemSerializer(many=True, required=False)
     attributes = AttributeBulkItemSerializer(many=True, required=False)
+
+class ProjectTaxonomyDeleteSerializer(serializers.Serializer):
+    type = serializers.ChoiceField(
+        choices=[
+            "class",
+            "predicate",
+            "attribute",
+        ]
+    )
+    target_id = serializers.UUIDField()
+
+class ProjectTaxonomyQuerySerializer(serializers.Serializer):
+    status = serializers.ChoiceField(
+        choices=[
+            "active",
+            "inactive",
+            "all",
+        ],
+        required=False,
+        default="all",
+    )

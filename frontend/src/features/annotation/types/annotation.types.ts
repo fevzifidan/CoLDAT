@@ -266,3 +266,18 @@ export interface SamState {
   setSamBboxPrompt: (bbox: SAMBboxPrompt | null) => void;
 }
 
+// ─── Livewire-specific Types ──────────────────────────────────────────────────
+
+export type LivewireStatus = 'idle' | 'preprocessing' | 'ready';
+
+export interface LivewireState {
+  livewireStatus: LivewireStatus;
+  livewireProgress: string;
+  livewireEpsilon: number;
+  setLivewireStatus: (status: LivewireStatus) => void;
+  setLivewireProgress: (progress: string) => void;
+  setLivewireEpsilon: (epsilon: number) => void;
+  resetLivewireState: () => void;
+}
+
+
