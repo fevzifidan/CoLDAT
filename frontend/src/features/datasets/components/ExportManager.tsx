@@ -55,10 +55,10 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
   const [revealedKeys, setRevealedKeys] = useState<{ [keyId: string]: string }>({});
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
 
-  const formats = [
-        { id: 'coco', name: 'COCO JSON', icon: FileJson, desc: t("datasets:export.formats.coco_desc", "COCO") },
+    const formats = [
+    { id: 'coco', name: 'COCO JSON', icon: FileJson, desc: t("datasets:export.formats.coco_desc", "COCO") },
     { id: 'yolo', name: 'YOLO v8', icon: FileCode, desc: t("datasets:export.formats.yolo_desc", "YOLO") },
-    { id: 'pascal', name: 'Pascal VOC', icon: Archive, desc: t("datasets:export.formats.pascal_desc", "Pascal VOC") },
+    { id: 'visual_genome', name: 'Visual Genome', icon: Archive, desc: t("datasets:export.formats.visual_genome_desc", "Visual Genome") },
   ];
 
   // API Anahtarlarını Listele
@@ -170,13 +170,19 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
     setTimeout(() => setCopiedKeyId(null), 2000);
   };
 
-  // Mock İndirme / Export Tetikleyicisi
-  const handleExport = () => {
+    // Export tetikleyicisi - gerçek backend bağlantısı
+  const handleExport = async () => {
+    if (!datasetId) return;
     setIsExporting(true);
-        setTimeout(() => {
+    try {
+      await exportService.downloadExport(datasetId, { format: selectedFormat });
+      notificationService.success(`${selectedFormat === 'visual_genome' ? 'Visual Genome' : selectedFormat.toUpperCase()} ${t("datasets:export.notifications.export_complete", "package generated! Ready to feed internal SDK frameworks.")}`);
+    } catch (err) {
+      console.error(err);
+      notificationService.error(t("datasets:export.notifications.export_error", "Export failed. Please try again."));
+    } finally {
       setIsExporting(false);
-      notificationService.success(`${selectedFormat.toUpperCase()} ${t("datasets:export.notifications.export_complete", "package generated! Ready to feed internal SDK frameworks.")}`);
-    }, 2000);
+    }
   };
 
   return (
@@ -224,7 +230,7 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
                                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{t("datasets:export.ready_title", "Static Snapshot Export Bundle")}</h4>
                 <p className="text-[11px] text-muted-foreground">
                   {t("datasets:export.ready_desc", "Package current version matrix coordinates as: ")}  
-                  <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold ml-1">{selectedFormat === 'pascal' ? 'Pascal VOC' : selectedFormat.toUpperCase()}</span>
+                  <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold ml-1">{selectedFormat === 'visual_genome' ? 'Visual Genome' : selectedFormat.toUpperCase()}</span>
                 </p>
               </div>
               <Button 

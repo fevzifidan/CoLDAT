@@ -23,10 +23,11 @@ interface ProjectTasksTabProps {
 
 const STATUS_OPTIONS = [
   { value: 'ALL', label: 'All Statuses', icon: <ListTodo className="h-3.5 w-3.5" /> },
-  { value: 'open', label: 'Open' },
+  { value: 'assigned', label: 'Open' },
   { value: 'in_progress', label: 'In Progress' },
-  { value: 'approval_pending', label: 'Approval Pending' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'submitted', label: 'Submitted' },
+  { value: 'approved', label: 'Completed' },
+  { value: 'rejected', label: 'Rejected' },
 ];
 
 export const ProjectTasksTab = ({ projectId }: ProjectTasksTabProps) => {

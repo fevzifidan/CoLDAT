@@ -4,28 +4,30 @@ import { useTranslation } from 'react-i18next';
 import { Download, Loader2, CheckCircle2, Layers } from 'lucide-react';
 import { SelectFilter } from '@/shared/components/SelectFilter';
 import notificationService from '@/shared/services/notification/notification.service';
-
-// Hata Çözümü: src/assets/services/ içindeki dosyaya giden doğru göreceli yol
-import { mockExportService } from '../services/mockExportService';
+import { exportService } from '../services/exportService';
 
 interface DataSetExportCardProps {
   datasetId?: string;
 }
 
-export default function DataSetExportCard({ datasetId = "default-dataset-123" }: DataSetExportCardProps) {
+export default function DataSetExportCard({ datasetId }: DataSetExportCardProps) {
   const { t } = useTranslation(['pages', 'common', 'datasets']);
   const [format, setFormat] = useState<'coco' | 'yolo' | 'visual_genome'>('coco');
   const [isExporting, setIsExporting] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 
   const handleExport = async () => {
+    if (!datasetId) return;
     setIsExporting(true);
     setDownloadUrl(null);
     try {
-      const response = await mockExportService.exportDataset(datasetId, format);
-      if (response.success && response.downloadUrl) {
-        setDownloadUrl(response.downloadUrl);
-        notificationService.success(response.message);
+      const response = await exportService.downloadExport(datasetId, { format });
+      const blob = response?.data || response;
+      if (blob) {
+        // Eğer backend direkt blob/stream dönüyorsa download tetikle
+        const url = URL.createObjectURL(new Blob([response]));
+        setDownloadUrl(url);
+        notificationService.success(t("pages:export.file_ready", "Dosyanız İndirmeye Hazır!"));
       }
     } catch (error: any) {
       notificationService.error(error.message || t("common:status.error", "Dışa aktarma başarısız."));
@@ -61,7 +63,7 @@ export default function DataSetExportCard({ datasetId = "default-dataset-123" }:
 
         <button
           onClick={handleExport}
-          disabled={isExporting}
+          disabled={isExporting || !datasetId}
           className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold text-sm py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
         >
           {isExporting ? (
@@ -83,11 +85,11 @@ export default function DataSetExportCard({ datasetId = "default-dataset-123" }:
               <CheckCircle2 size={16} /> {t("pages:export.file_ready", "Dosyanız İndirmeye Hazır!")}
             </div>
             <a 
-              href="#" 
-              onClick={(e) => { e.preventDefault(); notificationService.info(`Simüle edilen indirme tetiklendi: ${downloadUrl}`); }}
+              href={downloadUrl}
+              download
               className="text-xs font-mono text-violet-600 dark:text-violet-400 underline truncate max-w-full"
             >
-              export_file.zip
+              export_file.{format === 'coco' ? 'json' : 'zip'}
             </a>
           </div>
         )}
