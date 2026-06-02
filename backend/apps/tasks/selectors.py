@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
 from apps.datasets.selectors import get_dataset_for_user
@@ -12,7 +13,7 @@ def get_tasks_assigned_to_user(*, user, status=None):
             assignee=user,
             is_deleted=False,
         )
-        .select_related("dataset", "assignee", "created_by")
+        .select_related("dataset", "dataset__project", "assignee", "created_by")
         .order_by("-created_at")
     )
 
@@ -39,7 +40,7 @@ def get_dataset_tasks_for_user(
             dataset=dataset,
             is_deleted=False,
         )
-        .select_related("dataset", "assignee", "created_by")
+        .select_related("dataset", "dataset__project", "assignee", "created_by")
         .order_by("-created_at")
     )
 
@@ -57,6 +58,7 @@ def get_project_tasks_for_user(
     project_id,
     user,
     status=None,
+    assignee_username=None,
 ):
     project = get_project_for_user(
         project_id=project_id,
@@ -68,14 +70,35 @@ def get_project_tasks_for_user(
             dataset__project=project,
             is_deleted=False,
         )
-        .select_related("dataset", "assignee", "created_by")
+        .select_related("dataset", "dataset__project", "assignee", "created_by")
         .order_by("-created_at")
     )
 
     if status:
         tasks = tasks.filter(status=status)
 
+    if assignee_username:
+        tasks = tasks.filter(assignee__username__iexact=assignee_username)
+
     return project, tasks
+
+
+def get_task_for_user(*, task_id, user):
+    return get_object_or_404(
+        Task.objects.filter(
+            Q(dataset__project__memberships__user=user)
+            | Q(dataset__memberships__user=user),
+            is_deleted=False,
+        )
+        .select_related(
+            "dataset",
+            "dataset__project",
+            "assignee",
+            "created_by",
+        )
+        .distinct(),
+        id=task_id,
+    )
 
 
 def get_task_images_for_user(*, task_id, user):

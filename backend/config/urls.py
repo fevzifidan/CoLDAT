@@ -29,6 +29,7 @@ urlpatterns = [
     path("api/v1/account/", include("apps.accounts.account_urls")),
     path("api/v1/users/", include("apps.accounts.users_urls")),
     path("api/v1/projects/", include("apps.projects.urls")),
+    path("api/v1/projects/", include("apps.taxonomy.urls")),
     path("api/v1/datasets/", include("apps.datasets.urls")),
     path("api/v1/datasets/", include("apps.exports.urls")),
     path("api/v1/assets/", include("apps.assets.urls")),
