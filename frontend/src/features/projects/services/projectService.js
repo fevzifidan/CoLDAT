@@ -7,17 +7,27 @@ export const projectService = {
    * Cursor-based pagination destekler.
    * @param {Object} [params] - { limit?: number, after?: string | null }
    */
-  getAllProjects: async (params = {}) => {
+    getAllProjects: async (params = {}) => {
     const queryParams = new URLSearchParams();
-    if (params.limit) queryParams.set('limit', String(params.limit));
+    if (params.limit != null) queryParams.set('limit', String(params.limit));
     if (params.after) queryParams.set('after', params.after);
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
     const response = await apiService.get(`projects/${query}`);
     return response;
   },
 
+    /**
+   * 2. Proje detayını getir (GET /projects/{projectId})
+   * Backend response: ProjectSerializer (id, name, description, owner_id, owner_username, is_archived, created_at, updated_at)
+   * @param {string} id - Project UUID
+   */
+  getProject: async (id) => {
+    const response = await apiService.get(`projects/${id}/`);
+    return response;
+  },
+
   /**
-   * 2. Yeni proje oluştur (POST /projects/)
+   * 3. Yeni proje oluştur (POST /projects/)
    * API spec body: { name, description }
    */
   createProject: async (projectData) => {
@@ -25,11 +35,22 @@ export const projectService = {
     return response;
   },
 
-  /**
-   * 3. Projeyi sil (DELETE /projects/{projectId})
+    /**
+   * 4. Projeyi sil (DELETE /projects/{projectId})
    */
   deleteProject: async (id) => {
     const response = await apiService.delete(`projects/${id}/`);
+    return response;
+  },
+
+  /**
+   * 5. Projeyi güncelle (PATCH /projects/{projectId})
+   * API spec body (partial): { name?, description? }
+   * @param {string} id - Project UUID
+   * @param {object} projectData - { name?, description? }
+   */
+  updateProject: async (id, projectData) => {
+    const response = await apiService.patch(`projects/${id}/`, projectData);
     return response;
   },
 

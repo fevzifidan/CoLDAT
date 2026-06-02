@@ -149,9 +149,14 @@ export const ProjectCard = ({
           )}
         </div>
 
-        <CardTitle className="text-base font-bold text-card-foreground leading-tight transition-colors">
+                <CardTitle className="text-base font-bold text-card-foreground leading-tight transition-colors">
           {project.name}
         </CardTitle>
+        {project.description && (
+          <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2 leading-snug">
+            {project.description}
+          </p>
+        )}
       </CardHeader>
 
             <CardContent className="text-left px-5 py-2">

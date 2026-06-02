@@ -1,10 +1,13 @@
 // src/features/projects/ProjectsPage.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Search, Trash2, RotateCcw, X, Trash, Plus, LogIn, Layers, Shield, Pen, Eye } from "lucide-react";
 import { SelectFilter } from '@/shared/components/SelectFilter';
+import { useCursorPagination } from '@/shared/hooks/useCursorPagination';
+import type { PaginatedResponse } from '@/shared/hooks/useCursorPagination';
 import { ProjectCard } from './components/ProjectCard';
 import { projectService } from './services/projectService';
 import { useNavigate } from 'react-router-dom';
@@ -18,116 +21,120 @@ interface ExtendedProject {
   isDeleted?: boolean;
 }
 
+// Backend API response: { data: Project[], next_cursor: string | null }
+const fetchProjectsPage = async (
+  cursor: string | null,
+  limit: number
+): Promise<PaginatedResponse<ExtendedProject>> => {
+  const response = await projectService.getAllProjects({ limit, after: cursor });
+
+  const projects: ExtendedProject[] = (response?.data ?? []).map((p: any) => ({
+    ...p,
+    isDeleted: false,
+    role: (p.role || "admin").toLowerCase(),
+  }));
+
+  return {
+    data: projects,
+    next_cursor: response?.next_cursor ?? null,
+  };
+};
+
 const ProjectsPage = () => {
   const { t } = useTranslation(['projects', 'pages']);
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
-  const [displayLimit, setDisplayLimit] = useState<number>(4);
   const [isTrashOpen, setIsTrashOpen] = useState<boolean>(false);
 
-  const [projectList, setProjectList] = useState<ExtendedProject[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [isUnauthorized, setIsUnauthorized] = useState<boolean>(false);
+  // Cursor-based pagination hook
+  const {
+    items: projectList,
+    loading: isLoading,
+    hasNext,
+    loadMore,
+    error: apiError,
+    reset: resetPagination,
+    initialLoading,
+    loadPage,
+  } = useCursorPagination<ExtendedProject>({
+    fetchFn: fetchProjectsPage,
+    limit: 8,
+    manualFirstPage: true,
+  });
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
-  const [newProjectName, setNewProjectName] = useState("");
-
-  const fetchProjects = async () => {
-    try {
-      setIsLoading(true);
-      setApiError(null);
-      setIsUnauthorized(false);
-      const response = await projectService.getAllProjects();
-      
-      let projectDataArray: any[] = [];
-      if (response) {
-        if (Array.isArray(response)) {
-          projectDataArray = response;
-        } else if (response.data && Array.isArray(response.data)) {
-          projectDataArray = response.data;
-        } else if (typeof response === 'object') {
-          projectDataArray = Array.isArray((response as any).results) ? (response as any).results : [];
-        }
-      }
-
-      const formatted = projectDataArray.map((p: any) => ({ 
-        ...p, 
-        isDeleted: p.isDeleted ?? false,
-        role: (p.role || "admin").toLowerCase() 
-      }));
-
-      setProjectList(formatted);
-    } catch (err: any) {
-      console.error("API error fetching projects:", err);
-      
-      if (err?.response?.status === 401 || err?.status === 401) {
-        setIsUnauthorized(true);
-        setApiError(t('pages:errors.unauthorized', 'Session expired or unauthorized. Please log in again.'));
-      } else {
-        setApiError(t('pages:errors.fetch_failed', 'Failed to load projects from backend server.'));
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // İlk sayfayı yükle
+  const fetchProjects = useCallback(() => {
+    loadPage(null, false);
+  }, [loadPage]);
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [fetchProjects]);
 
-  const activeProjects = projectList.filter(p => p.isDeleted === false || !p.isDeleted);
-  const archivedProjects = projectList.filter(p => p.isDeleted === true);
+  // 401 hatası tespiti
+  const isUnauthorized = apiError?.toLowerCase().includes('401') ?? false;
 
-  const filteredProjects = activeProjects.filter(project => {
+  // Trash: sadece placeholder — backend'de archive endpoint'i yok
+  const [trashProjects, setTrashProjects] = useState<ExtendedProject[]>([]);
+
+  // Client-side filtreleme (search + role) yalnızca mevcut yüklenen sayfalarda
+  const filteredProjects = projectList.filter(project => {
     const projectName = project.name ? String(project.name) : "";
     const matchesSearch = projectName.toLowerCase().includes(searchQuery.toLowerCase());
-        const projectRole = (project.role || "admin").toLowerCase();
+    const projectRole = (project.role || "admin").toLowerCase();
     const matchesRole = roleFilter === "ALL" || projectRole === roleFilter;
     return matchesSearch && matchesRole;
   });
-
-  const visibleProjects = filteredProjects.slice(0, displayLimit);
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProjectName.trim()) return;
 
     try {
-            const payload = {
+      const payload = {
         name: newProjectName,
-        description: "No description provided yet.",
+        description: newProjectDescription.trim() || "No description provided yet.",
       };
 
       await projectService.createProject(payload);
       setNewProjectName("");
+      setNewProjectDescription("");
       setIsCreateModalOpen(false);
-      await fetchProjects();
+      resetPagination();
+      fetchProjects();
     } catch (err) {
       console.error("Proje oluşturulurken hata:", err);
       alert("Project creation failed on backend.");
     }
   };
 
+  // Trash handlers (placeholder — sadece client-side state)
   const handleDeleteProject = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setProjectList(prev => prev.map(p => p.id === id ? { ...p, isDeleted: true } : p));
+    const project = projectList.find(p => p.id === id);
+    if (project) {
+      setTrashProjects(prev => [...prev, { ...project, isDeleted: true }]);
+    }
   };
 
   const handleRecoverProject = (id: string) => {
-    setProjectList(prev => prev.map(p => p.id === id ? { ...p, isDeleted: false } : p));
+    setTrashProjects(prev => prev.filter(p => p.id !== id));
   };
 
   const handlePermanentDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to permanently delete this project?")) return;
     try {
       await projectService.deleteProject(id);
-      setProjectList(prev => prev.filter(p => p.id !== id));
+      setTrashProjects(prev => prev.filter(p => p.id !== id));
     } catch (err) {
       alert("Failed to permanently delete the project from backend.");
     }
   };
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectDescription, setNewProjectDescription] = useState("");
 
   return (
         <div className="p-6 space-y-6 max-w-7xl mx-auto relative">
@@ -160,7 +167,6 @@ const ProjectsPage = () => {
                       value={roleFilter}
                       onChange={(v) => {
                         setRoleFilter(v);
-                        setDisplayLimit(4);
                       }}
                       triggerClassName="w-44"
                       options={[
@@ -177,9 +183,9 @@ const ProjectsPage = () => {
             onClick={() => setIsTrashOpen(true)}
           >
             <Trash className="h-4 w-4 text-muted-foreground" />
-            {archivedProjects.length > 0 && (
+            {trashProjects.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center animate-pulse">
-                {archivedProjects.length}
+                {trashProjects.length}
               </span>
             )}
             {t('pages:trash.title', 'Trash')}
@@ -187,14 +193,14 @@ const ProjectsPage = () => {
         </div>
       </div>
 
-            {isLoading && (
+            {initialLoading && (
         <div className="flex justify-center items-center py-24 text-primary font-medium">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current mr-3" />
           {t('pages:assets.loading', 'Loading data from backend...')}
         </div>
       )}
 
-      {apiError && (
+      {apiError && !initialLoading && (
         <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-6 text-destructive text-sm text-center max-w-md mx-auto space-y-3 shadow-sm">
           <p className="font-medium">{apiError}</p>
           <div className="flex justify-center gap-3">
@@ -211,16 +217,15 @@ const ProjectsPage = () => {
         </div>
       )}
 
-      {!isLoading && !apiError && (
+      {!initialLoading && !apiError && (
         <>
-                    {visibleProjects.length === 0 ? (
+                    {filteredProjects.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground text-sm">
               {t('projects:no_projects', 'No active projects found matching criteria.')}
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {visibleProjects.map(item => (
-                /* 🎯 DÜZELTME: Dış div üzerindeki onClick yönlendirmesi tamamen temizlendi */
+              {filteredProjects.map(item => (
                 <div 
                   key={item.id} 
                   className="relative group transition-transform hover:scale-[1.01]"
@@ -241,10 +246,18 @@ const ProjectsPage = () => {
         </>
       )}
 
-      {!isLoading && displayLimit < filteredProjects.length && (
-                <div className="flex justify-center mt-8">
-          <Button onClick={() => setDisplayLimit(prev => prev + 4)} variant="outline">
-            {t('projects:show_more', 'Show More')} 
+      {/* Load More — backend cursor-based */}
+      {!initialLoading && hasNext && (
+        <div className="flex justify-center mt-8">
+          <Button onClick={loadMore} variant="outline" disabled={isLoading}>
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+                {t('projects:more_load', 'Loading...')}
+              </span>
+            ) : (
+              t('projects:show_more', 'Show More')
+            )}
           </Button>
         </div>
       )}
@@ -260,7 +273,7 @@ const ProjectsPage = () => {
             </div>
             <form onSubmit={handleCreateProject}>
               <div className="p-4 space-y-4">
-                <div className="space-y-1.5">
+                                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     {t('pages:project_general.project_name', 'Project Name')}
                   </label>
@@ -269,6 +282,19 @@ const ProjectsPage = () => {
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
                     placeholder={t('pages:project_general.placeholder_name', 'E.g. Autonomous Driving Dataset...')}
+                    className="bg-background border-border text-foreground"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    {t('pages:project_general.description', 'Description')}
+                  </label>
+                  <Textarea
+                    value={newProjectDescription}
+                    onChange={(e) => setNewProjectDescription(e.target.value)}
+                    placeholder={t('pages:project_general.placeholder_desc', 'Describe the purpose of this project...')}
+                    rows={3}
+                    maxLength={300}
                     className="bg-background border-border text-foreground"
                   />
                 </div>
@@ -299,13 +325,13 @@ const ProjectsPage = () => {
               </button>
             </div>
             <div className="p-4 overflow-y-auto space-y-3 flex-1 min-h-[200px]">
-              {archivedProjects.length === 0 ? (
+              {trashProjects.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground space-y-2">
                   <Trash2 size={40} className="mx-auto text-muted-foreground/30" />
                   <p className="text-sm">{t('pages:trash.empty', 'Your trash is currently empty.')}</p>
                 </div>
               ) : (
-                archivedProjects.map((project) => (
+                trashProjects.map((project) => (
                   <div key={project.id} className="flex items-center justify-between p-3 border border-border rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors gap-4">
                     <div>
                       <h4 className="font-semibold text-card-foreground text-sm">{project.name}</h4>

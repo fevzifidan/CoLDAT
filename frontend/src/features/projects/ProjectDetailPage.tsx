@@ -1,23 +1,70 @@
 // frontend/src/features/projects/ProjectDetailPage.tsx
 
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Tag, Database, ArrowLeft, ListTodo } from "lucide-react";
-import { useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Tag, Database, ArrowLeft, ListTodo, Settings } from "lucide-react";
 import TaxonomyManager from '@/features/datasets/taxonomy/TaxonomyManager';
 import ProjectDatasetsPage from './ProjectDatasetsPage';
 import { ProjectTasksTab } from './tabs/ProjectTasksTab';
+import GeneralSettings from './tabs/GeneralSettings';
+import { projectService } from './services/projectService';
+import notificationService from '@/shared/services/notification/notification.service';
 
 const ProjectDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation(['pages', 'common']);
   const [activeTab, setActiveTab] = useState('datasets');
-  
-  // Project info obtained from URL params; no GET /projects/{id} endpoint exists.
+  const [project, setProject] = useState<{ id: string; name: string; description?: string } | null>(null);
+  const [loadingProject, setLoadingProject] = useState(true);
+
   const projectId = id || '';
+
+  // Proje detayını backend'den çek
+  const fetchProject = useCallback(async () => {
+    if (!projectId) return;
+    setLoadingProject(true);
+    try {
+      const data = await projectService.getProject(projectId);
+      setProject(data);
+    } catch (err) {
+      console.error("Failed to fetch project:", err);
+    } finally {
+      setLoadingProject(false);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    fetchProject();
+  }, [fetchProject]);
+
+  // General Settings güncelleme callback'i
+  const handleProjectUpdate = async (data: any) => {
+    if (!data) return;
+    try {
+      const updated = await projectService.updateProject(projectId, data);
+      setProject(updated);
+      notificationService.success(t('pages:project_detail.alert_success', 'Changes saved successfully.'));
+    } catch (err) {
+      notificationService.error(t('common:status.error_general', 'An error occurred.'));
+    }
+  };
+
+  // Proje silme
+  const handleProjectDelete = async () => {
+    if (!window.confirm(t('pages:project_general.delete_warning', 'Are you sure you want to delete this project? This action is permanent.'))) return;
+    try {
+      await projectService.deleteProject(projectId);
+      notificationService.success(t('common:status.success', 'Project deleted.'));
+      navigate('/projects');
+    } catch (err) {
+      notificationService.error(t('common:status.error_general', 'An error occurred.'));
+    }
+  };
+
   const tabs = [
+    { value: 'general', label: t('pages:project_detail.tabs.general', 'General'), icon: Settings },
     { value: 'datasets', label: t('pages:project_detail.tabs.datasets', 'Datasets'), icon: Database },
     { value: 'taxonomy', label: t('pages:project_detail.tabs.taxonomy', 'Taxonomy'), icon: Tag },
     { value: 'tasks', label: t('pages:project_detail.tabs.tasks', 'Tasks'), icon: ListTodo },
@@ -34,7 +81,7 @@ const ProjectDetailPage = () => {
           <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2" />
           <div>
             <h2 className="text-xl font-bold tracking-tight">
-              {t('pages:project_detail.page_title', 'Project Details')}
+              {project ? project.name : t('pages:project_detail.page_title', 'Project Details')}
             </h2>
             <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
               {t('pages:project_detail.subtitle', 'Manage Datasets, Taxonomy & Tasks')}
@@ -69,6 +116,25 @@ const ProjectDetailPage = () => {
 
           {/* Tab Content */}
           <div className="pb-20">
+            {activeTab === 'general' && (
+              loadingProject ? (
+                <div className="flex justify-center items-center py-24 text-primary font-medium">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current mr-3" />
+                  {t('common:status.loading', 'Loading...')}
+                </div>
+              ) : project ? (
+                <GeneralSettings
+                  project={project}
+                  onUpdate={handleProjectUpdate}
+                  onDelete={handleProjectDelete}
+                />
+              ) : (
+                <div className="text-center py-24 text-muted-foreground">
+                  {t('pages:project_detail.not_found', 'Project Not Found.')}
+                </div>
+              )
+            )}
+
             {activeTab === 'datasets' && (
               <ProjectDatasetsPage />
             )}
