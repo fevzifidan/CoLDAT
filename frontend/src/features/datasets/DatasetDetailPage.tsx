@@ -1,5 +1,5 @@
       // src/features/datasets/DatasetDetailPage.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { datasetService } from './services/datasetService';
 import DatasetMemberManager from './components/DatasetMemberManager';
+import DatasetImageUploader from './components/DatasetImageUploader';
+import DatasetImageGallery from './components/DatasetImageGallery';
 
 interface DatasetDetail {
   id: string;
@@ -34,11 +36,13 @@ const DatasetDetailPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation(['pages', 'common', 'datasets']);
 
-  const [dataset, setDataset] = useState<DatasetDetail | null>(null);
+    const [dataset, setDataset] = useState<DatasetDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Refresh key — her upload/görsel değişiminde artırılarak galeri ve istatistiklerin yenilenmesi sağlanır
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
+  const fetchDataset = useCallback(() => {
     if (!datasetId) return;
 
     setLoading(true);
@@ -68,6 +72,15 @@ const DatasetDetailPage = () => {
       })
       .finally(() => setLoading(false));
   }, [datasetId, t]);
+
+  useEffect(() => {
+    fetchDataset();
+  }, [fetchDataset, refreshKey]);
+
+  const handleImagesChanged = useCallback(() => {
+    // İstatistikleri ve galeriyi yenile
+    setRefreshKey((prev) => prev + 1);
+  }, []);
 
   if (loading) {
     return (
@@ -224,11 +237,25 @@ const DatasetDetailPage = () => {
         </Card>
       </div>
 
+            {/* Upload Images Section */}
+            <DatasetImageUploader
+              datasetId={dataset.id}
+              currentUserRole={dataset.role}
+              onUploadComplete={handleImagesChanged}
+            />
+
+            {/* Image Gallery Section */}
+            <DatasetImageGallery
+              datasetId={dataset.id}
+              currentUserRole={dataset.role}
+              onImagesChanged={handleImagesChanged}
+            />
+
             {/* Team Members Section */}
-      <DatasetMemberManager
-        datasetId={dataset.id}
-        currentUserRole={dataset.role}
-      />
+            <DatasetMemberManager
+              datasetId={dataset.id}
+              currentUserRole={dataset.role}
+            />
     </div>
   );
 };
