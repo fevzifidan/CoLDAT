@@ -1,6 +1,17 @@
-// src/context/AuthContext.js
-import { createContext, useContext, useState, useEffect } from "react";
-import apiService from "@/shared/services/api";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import apiService from "@/shared/services/api/api.service";
+
+/**
+ * Backend /account/me endpoint'i userID döndürebilir.
+ * Tüm uygulama user.id beklediği için normalizasyon yapıyoruz.
+ */
+const normalizeUser = (raw) => {
+  if (!raw) return null;
+  return {
+    ...raw,
+    id: raw.userID || raw.id,
+  };
+};
 
 const AuthContext = createContext();
 
@@ -8,18 +19,21 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Uygulama ilk açıldığında token'ı kontrol et
+  // 1. Uygulama ilk açıldığında token kontrolü
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("access_token");
       
       if (token) {
         try {
-            const userData = await apiService.get("/account/me/"); 
-            setUser(userData);
-        } catch (error) {
-            // Token is not valid
-            setUser(null);
+          const response = await apiService.get("/account/me/"); 
+          const responseData = response?.data || response;
+          setUser(normalizeUser(responseData));
+                } catch (error) {
+          console.error("Token geçersiz, temizleniyor...");
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+          setUser(null);
         }
       }
       setLoading(false);
@@ -28,21 +42,59 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-  // 2. Login Fonksiyonu
+// 2. Login Fonksiyonu
   const login = async (credentials, config = {}) => {
-    // credentials = { email, password }
-    const response = await apiService.post("/auth/login/", credentials, config);
-    // response.token ve response.user geldiğini varsayalım
-    localStorage.setItem("token", response.token);
-    setUser(response.user);
-    return response;
+    try {
+      // Ekranda kullanıcı ne yazdıysa (ister email kutusu, ister username) 
+      // onu alıp backend'in ZORUNLU istediği 'email' anahtarına koyuyoruz.
+      const djangoPayload = {
+        email: credentials.email || credentials.username || credentials.identifier,
+        password: credentials.password
+      };
+
+      console.log("Çalışan URL'e giden paket:", djangoPayload);
+
+      // Çalışan tam backend URL'iniz (http://localhost:8000/auth/login/)
+      const response = await apiService.post("/auth/login/", djangoPayload, config);
+      
+            console.log("Backend'den gelen yanıt:", response);
+
+      const token = response?.access || response?.token || response?.access_token || response?.data?.access;
+      const refreshToken = response?.refresh || response?.refresh_token || response?.data?.refresh;
+      const userData = response?.user || response;
+
+      if (token) {
+        localStorage.setItem("access_token", token);
+        if (refreshToken) {
+          localStorage.setItem("refresh_token", refreshToken);
+        }
+        setUser(normalizeUser(userData));
+      }
+      
+      return response;
+    } catch (error) {
+      console.error("Giriş hatası:", error.response?.data || error);
+      throw error;
+    }
   };
 
-  // 3. Logout Fonksiyonu
-  const logout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
+  const refresh_token = async (refresh_token, config = {}) => {
+    try {
+      const response = await apiService.post("/auth/refresh/", { refresh_token: refresh_token }, config);
+      return response;
+    }
+    catch (error) {
+      console.error("Token yenileme hatası:", error.response?.data || error);
+      throw error;
+    }
   };
+
+    // 3. Logout Fonksiyonu
+  const logout = useCallback(() => {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    setUser(null);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading, isAuthenticated: !!user }}>

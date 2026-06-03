@@ -47,7 +47,6 @@ class DatasetMember(models.Model):
         ADMIN = "admin", "Admin"
         ANNOTATOR = "annotator", "Annotator"
         VIEWER = "viewer", "Viewer"
-
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,

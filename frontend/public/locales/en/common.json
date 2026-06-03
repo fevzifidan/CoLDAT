@@ -1,5 +1,6 @@
 {
   "brand": "CoLDAT",
+  "workspace_title": "CoLDAT Workspace",
   "actions": {
     "save": "Save",
     "cancel": "Cancel",
@@ -21,7 +22,14 @@
     "deleting": "Deleting...",
     "updating": "Updating...",
     "saving": "Saving...",
-    "load_more": "Load More"
+    "creating": "Creating...",
+    "moved_to_trash": "Moved to trash.",
+    "back": "Go to Projects",
+    "cancel": "Cancel",
+    "close": "Close",
+    "load_more": "Load More",
+    "no_results": "No results found.",
+    "action_cannot_be_undone": "This action cannot be undone."
   },
   "error": {
     "err_reach_server": "Could not reach server!"
@@ -33,6 +41,7 @@
     "dark": "Dark",
     "system": "System"
   },
+  "step_of": "Step {{current}} of {{total}}",
   "search": {
     "placeholder": "Search..."
   },

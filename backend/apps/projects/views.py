@@ -114,6 +114,7 @@ class ProjectDetailView(APIView):
 
         return super().get_permissions()
     
+    
 class ProjectMemberListCreateView(APIView):
     def get(self, request, project_id):
         project = get_project_for_user(

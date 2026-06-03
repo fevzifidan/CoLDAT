@@ -18,8 +18,10 @@ import { createUploadManagerSlice } from '../features/upload_manager/store/uploa
 import type { UploadManagerState } from '../features/upload_manager/store/uploadManagerSlice';
 import { createSamSlice } from '../features/annotation/store/samSlice';
 import type { SamState } from '../features/annotation/store/samSlice';
+import { createLivewireSlice } from '../features/annotation/store/livewireSlice';
+import type { LivewireState } from '../features/annotation/store/livewireSlice';
 
-export type AppState = ViewerState & AnnotationState & ToolModeState & UIState & ContextState & KeyboardState & ViewerUIState & UploadManagerState & SamState;
+export type AppState = ViewerState & AnnotationState & ToolModeState & UIState & ContextState & KeyboardState & ViewerUIState & UploadManagerState & SamState & LivewireState;
 
 export const useAppStore = create<AppState>()(
   devtools(
@@ -33,8 +35,10 @@ export const useAppStore = create<AppState>()(
       ...createViewerUISlice(...a),
       ...createUploadManagerSlice(...a),
       ...createSamSlice(...a),
+      ...createLivewireSlice(...a),
     }),
     { name: 'ColdatAppStore' }
   )
 );
+
 

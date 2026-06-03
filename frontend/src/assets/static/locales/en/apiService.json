@@ -5,6 +5,7 @@
         "forbidden": "You do not have permission to perform this action.",
         "not_found": "The information you requested could not be found (404).",
         "internal_server": "An error occurred on the server side. Please try again later.",
-        "network": "Check your internet connection."
+        "network": "Check your internet connection.",
+        "session_expired": "Your session has expired. Please log in again."
     }
 }

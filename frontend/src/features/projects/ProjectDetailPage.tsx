@@ -1,140 +1,102 @@
+// frontend/src/features/projects/ProjectDetailPage.tsx
+
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Settings, Tag, Image as ImageIcon, Users, Download, ArrowLeft, Save } from "lucide-react";
-import { useState, useEffect } from 'react'; 
+import { useCallback, useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-
-import { projectService } from './services/projectService';
-
-// Bileşen Importları
+import { Tag, Database, ArrowLeft, ListTodo, Settings } from "lucide-react";
 import TaxonomyManager from '@/features/datasets/taxonomy/TaxonomyManager';
-import AssetManager from '@/assets/AssetManager';
-import TeamManager from '@/assets/TeamManager';
-import ExportManager from '@/assets/ExportManager';
-import GeneralSettings from './tabs/GeneralSettings'; 
-
-interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  project_type: 'object_detection' | 'entity_recognition' | 'semantic_relation';
-  dataset_id: string;
-  created_at: string;
-  status?: string; 
-  role?: string;
-  task?: string | number;
-}
+import ProjectDatasetsPage from './ProjectDatasetsPage';
+import { ProjectTasksTab } from './tabs/ProjectTasksTab';
+import GeneralSettings from './tabs/GeneralSettings';
+import { projectService } from './services/projectService';
+import notificationService from '@/shared/services/notification/notification.service';
 
 const ProjectDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation(['pages', 'common']);
-  const [activeTab, setActiveTab] = useState('general');
-  
-  const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('datasets');
+  const [project, setProject] = useState<{ id: string; name: string; description?: string; user_role?: string } | null>(null);
+  const [loadingProject, setLoadingProject] = useState(true);
 
-  // Global Değişiklik Takibi
-  const [pendingChanges, setPendingChanges] = useState({
-    general: null,
-    taxonomy: null,
-    team: null
-  });
+  const projectId = id || '';
+
+  // Kullanıcının bu projedeki rolünü hesapla
+  const isAdmin = useMemo(() => {
+    return project?.user_role === 'admin';
+  }, [project?.user_role]);
+
+  // Proje detayını backend'den çek
+  const fetchProject = useCallback(async () => {
+    if (!projectId) return;
+    setLoadingProject(true);
+    try {
+      const data = await projectService.getProject(projectId);
+      setProject(data);
+    } catch (err) {
+      console.error("Failed to fetch project:", err);
+    } finally {
+      setLoadingProject(false);
+    }
+  }, [projectId]);
 
   useEffect(() => {
-    if (!id) return;
+    fetchProject();
+  }, [fetchProject]);
 
-    setLoading(true);
-    projectService.getProjectById(id)
-      .then((data: any) => {
-        setProject({
-          ...data,
-          task: data.task || data.project_type || 'OBJECT_DETECTION',
-          status: data.status || 'ACTIVE'
-        });
-      })
-      .catch((error: any) => {
-        console.error("Proje detayı yüklenirken hata oluştu:", error);
-        toast.error(t('pages:project_detail.not_found', "Project details could not be retrieved from backend."));
-      })
-      .finally(() => setLoading(false));
-  }, [id, t]);
-
-  const handleDataUpdate = (tab: string, data: any) => {
-    setPendingChanges(prev => ({
-      ...prev,
-      [tab]: data
-    }));
+  // General Settings güncelleme callback'i
+  const handleProjectUpdate = async (data: any) => {
+    if (!data) return;
+    try {
+      const updated = await projectService.updateProject(projectId, data);
+      setProject(updated);
+      notificationService.success(t('pages:project_detail.alert_success', 'Changes saved successfully.'));
+    } catch (err) {
+      notificationService.error(t('common:status.error_general', 'An error occurred.'));
+    }
   };
 
-  const handleGlobalSave = async () => {
-    console.log("Kaydedilecek Değişiklikler:", pendingChanges);
-    toast.success(t('pages:project_detail.alert_success', "Changes saved successfully!"));
+  // Proje silme
+  const handleProjectDelete = async () => {
+    if (!window.confirm(t('pages:project_general.delete_warning', 'Are you sure you want to delete this project? This action is permanent.'))) return;
+    try {
+      await projectService.deleteProject(projectId);
+      notificationService.success(t('common:status.success', 'Project deleted.'));
+      navigate('/projects');
+    } catch (err) {
+      notificationService.error(t('common:status.error_general', 'An error occurred.'));
+    }
   };
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center font-mono text-slate-500 bg-white dark:bg-slate-950">
-        {t('common:status.loading', 'Loading...')}
-      </div>
-    );
-  }
-
-  if (!project) {
-    return (
-      <div className="p-8 text-center text-slate-500 bg-white dark:bg-slate-950 min-h-screen flex flex-col items-center justify-center gap-4">
-        <p>{t('pages:project_detail.not_found', 'Project not found.')}</p>
-        <Button onClick={() => navigate(-1)} variant="outline" size="sm">
-          <ArrowLeft className="mr-2 h-4 w-4" /> {t('common:status.back', 'Go Back')}
-        </Button>
-      </div>
-    );
-  }
 
   const tabs = [
     { value: 'general', label: t('pages:project_detail.tabs.general', 'General'), icon: Settings },
+    { value: 'datasets', label: t('pages:project_detail.tabs.datasets', 'Datasets'), icon: Database },
     { value: 'taxonomy', label: t('pages:project_detail.tabs.taxonomy', 'Taxonomy'), icon: Tag },
-    { value: 'assets', label: t('pages:project_detail.tabs.assets', 'Assets'), icon: ImageIcon },
-    { value: 'team', label: t('pages:project_detail.tabs.users', 'Team'), icon: Users },
-    { value: 'export', label: t('pages:project_detail.tabs.export', 'Export'), icon: Download },
+    { value: 'tasks', label: t('pages:project_detail.tabs.tasks', 'Tasks'), icon: ListTodo },
   ];
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      {/* Sticky Header */}
+      {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 shadow-sm">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+          <button onClick={() => navigate('/projects')} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2" />
           <div>
-            <h2 className="text-xl font-bold tracking-tight">{project.name}</h2>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{project.task}</p>
+            <h2 className="text-xl font-bold tracking-tight">
+              {project ? project.name : t('pages:project_detail.page_title', 'Project Details')}
+            </h2>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+              {t('pages:project_detail.subtitle', 'Manage Datasets, Taxonomy & Tasks')}
+            </p>
           </div>
-          <Badge variant="secondary" className="ml-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-100 dark:border-indigo-800 uppercase text-[9px]">
-            {project.status}
-          </Badge>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            size="sm" 
-            className="bg-green-600 hover:bg-green-700 text-white"
-            onClick={handleGlobalSave}
-          >
-            <Save className="mr-2 h-4 w-4" /> {t('pages:project_detail.save_all', 'Save All')}
-          </Button>
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
-            {t('pages:project_detail.annotate_data', 'Annotate Data')}
-          </Button>
         </div>
       </div>
 
       <div className="p-6 max-w-7xl mx-auto w-full">
         <div className="space-y-8">
-          
           {/* Tab Navigation */}
           <div className="flex gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl w-fit border border-slate-200/50 dark:border-slate-800 shadow-inner">
             {tabs.map((tab) => {
@@ -159,28 +121,39 @@ const ProjectDetailPage = () => {
 
           {/* Tab Content */}
           <div className="pb-20">
-              {activeTab === 'general' && (
-                <GeneralSettings 
-                  project={project as any} 
-                  onUpdate={(data) => handleDataUpdate('general', data)} 
+            {activeTab === 'general' && (
+              loadingProject ? (
+                <div className="flex justify-center items-center py-24 text-primary font-medium">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current mr-3" />
+                  {t('common:status.loading', 'Loading...')}
+                </div>
+              ) : project ? (
+                <GeneralSettings
+                  project={project}
+                  onUpdate={handleProjectUpdate}
+                  onDelete={handleProjectDelete}
                 />
-              )}
+              ) : (
+                <div className="text-center py-24 text-muted-foreground">
+                  {t('pages:project_detail.not_found', 'Project Not Found.')}
+                </div>
+              )
+            )}
 
-              {activeTab === 'taxonomy' && (
-                <TaxonomyManager />
-              )}
+                        {activeTab === 'datasets' && (
+              <ProjectDatasetsPage projectId={projectId} />
+            )}
 
-              {activeTab === 'assets' && (
-                <AssetManager />
-              )}
+            {activeTab === 'taxonomy' && (
+              <TaxonomyManager 
+                projectId={projectId}
+                isAdmin={isAdmin}
+              />
+            )}
 
-              {activeTab === 'team' && (
-                <TeamManager />
-              )}
-
-              {activeTab === 'export' && (
-                <ExportManager />
-              )}
+            {activeTab === 'tasks' && (
+              <ProjectTasksTab projectId={projectId} />
+            )}
           </div>
         </div>
       </div>

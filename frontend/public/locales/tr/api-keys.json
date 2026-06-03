@@ -1,0 +1,101 @@
+{
+  "page": {
+    "title": "Entegrasyon API Anahtarları",
+    "description": "Harici uygulamalardan veya SDK'lardan veri setlerinize güvenli bir şekilde erişmek için gizli anahtarları yönetin."
+  },
+  "dataset_selector": {
+    "placeholder": "API anahtarlarını yönetmek için bir dataset seçin...",
+    "search_placeholder": "Dataset ara...",
+    "no_admin_datasets": "Admin olduğunuz bir dataset bulunamadı. Devam etmek için yöneticisi olduğunuz bir dataset seçin.",
+    "loading": "Dataset'ler yükleniyor...",
+    "load_more": "Daha fazla dataset yükle"
+  },
+  "generate": {
+    "title": "Yeni Token Oluştur",
+    "description": "Nerede kullanıldığını hatırlamak için anahtarınıza açıklayıcı bir ad verin.",
+    "name_placeholder": "örn. Python SDK Üretim, Jenkins CI",
+    "button": "Anahtar Üret"
+  },
+  "security_warning": {
+    "title": "Güvenlik Uyarısı:",
+    "message": "API anahtarlarınızı genel depolarda (public repositories) veya istemci tarafı kodlarında paylaşmayın. Bu anahtara sahip olan herkes veri seti yapılandırmalarınızı değiştirebilir."
+  },
+  "key_list": {
+    "title": "Aktif API Anahtarları",
+    "description": "Şu anda bu hesap altında istek yapmaya yetkili tokenlar.",
+    "empty": "Bu dataset için henüz API anahtarı oluşturulmamış.",
+    "revoke_button": "Anahtarı İptal Et",
+    "status_inactive": "Pasif",
+    "created_on": "Oluşturulma tarihi:"
+  },
+  "table": {
+    "column_name": "Ad",
+    "column_key": "API Anahtarı",
+    "column_created": "Oluşturulma",
+    "column_expires": "Bitiş",
+    "column_status": "Durum",
+    "column_actions": "İşlemler",
+    "status_active": "Aktif",
+    "status_inactive": "Pasif",
+    "never_expires": "Süresiz",
+    "load_more": "Daha Fazla Yükle"
+  },
+  "create_dialog": {
+    "title": "Yeni API Anahtarı Oluştur",
+    "description": "Bu dataset'e harici erişim için bir anahtar oluşturun.",
+    "name_label": "Anahtar Adı",
+    "name_placeholder": "örn. Production Sunucu",
+    "ttl_label": "Geçerlilik (gün)",
+    "ttl_placeholder": "Boş bırakılırsa süresiz",
+    "version_label": "Hedef Versiyon (opsiyonel)",
+    "version_placeholder": "Tüm versiyonlar",
+    "cancel_button": "İptal",
+    "create_button": "Anahtar Üret",
+    "success_title": "Anahtar Başarıyla Oluşturuldu",
+    "success_message": "Bu anahtarı şimdi kopyalayın. Daha sonra tekrar gösterilmeyecektir.",
+    "security_alert": "Güvenlik gereği bunu size tekrar göstermeyeceğiz. Lütfen şimdi kopyalayın.",
+    "done_button": "Anahtarımı Kaydettim",
+    "security_title": "Güvenlik Uyarısı"
+  },
+  "edit_dialog": {
+    "title": "API Anahtarını Düzenle",
+    "name_label": "Anahtar Adı",
+    "toggle_active": "Aktif",
+    "extend_ttl_label": "Geçerliliği uzat (bugünden itibaren gün)",
+    "save_button": "Değişiklikleri Kaydet"
+  },
+  "revoke_all": {
+    "button": "Tüm Anahtarları İptal Et",
+    "confirm_title": "Tüm API Anahtarları İptal Edilsin mi?",
+    "confirm_message": "Bu işlem dataset'teki tüm API anahtarlarını anında geçersiz kılacaktır. Bu işlem geri alınamaz.",
+    "success": "Tüm anahtarlar başarıyla iptal edildi.",
+    "revoked_count": "{{count}} anahtar iptal edildi."
+  },
+  "tooltips": {
+    "refresh": "Listeyi Yenile",
+    "hide": "Anahtarı Gizle",
+    "reveal": "Anahtarı Göster",
+    "copy": "Panoya Kopyala"
+  },
+  "messages": {
+    "load_failed": "API anahtarları yüklenemedi.",
+    "created_success": "Yeni API anahtarı başarıyla oluşturuldu.",
+    "create_failed": "Anahtar oluşturulamadı.",
+    "reveal_failed": "Anahtar gösterilemedi.",
+    "confirm_revoke": "Bu API anahtarını iptal etmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+    "revoked_success": "API anahtarı kalıcı olarak iptal edildi.",
+    "revoke_failed": "Anahtar iptal edilemedi.",
+    "name_required": "İsim boş olamaz.",
+    "update_success": "API anahtarı başarıyla güncellendi.",
+    "update_failed": "API anahtarı güncellenemedi.",
+    "copied": "Panoya kopyalandı."
+  },
+  "settings_page": {
+    "title": "API Ayarları",
+    "label": "OpenAI / Servis API Anahtarı",
+    "input_placeholder": "sk-...",
+    "test_button": "Anahtarı Test Et ve Kaydet",
+    "success_message": "Anahtar başarıyla doğrulandı ve tarayıcıya kaydedildi!",
+    "error_message": "Anahtar geçersiz, lütfen kontrol edin (sk- ile başlamalıdır)."
+  }
+}

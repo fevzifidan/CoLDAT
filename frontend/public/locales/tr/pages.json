@@ -1,39 +1,5 @@
 {
-  "dashboard": {
-    "title": "Genel Bakış",
-    "description": "Tekrar hoş geldiniz! İşte ekosisteminizin hızlı bir özeti.",
-    "no_assigned_tasks": "Şu anda size atanmış bir g​​örev bulunmuyor.",
-    "show_more": "Daha Fazla Göster",
-    "files": "İŞLENMİŞ DOSYA",
-    "sections": {
-      "recent_tasks": "Son Görevler",
-      "tasks_description": "Size atanmış aktif etiketleme işleri.",
-      "recent_datasets": "Son Veri Setleri",
-      "recent_projects": "Son Projeler"
-    },
-    "buttons": {
-      "manage": "YÖNET",
-      "start_labeling": "ETİKETLEMEYE BAŞLA",
-      "open": "PROJEYİ AÇ",
-      "create_project": "Yeni Proje Oluştur"
-    },
-    "status": {
-      "new": "YENİ",
-      "in_progress": "DEVAM EDİYOR",
-      "completed": "TAMAMLANDI"
-    },
-    "tasks": {
-      "object_detection": "Nesne Algılama",
-      "entity_recognition": "Varlık Tanıma",
-      "semantic_relation": "Anlamsal İlişki"
-    },
-    "roles": {
-      "all_roles": "Tüm Roller",
-      "annotator": "Etiketleyici",
-      "viewer": "İzleyici",
-      "admin": "Yönetici"
-    }
-  },
+  
   "datasets": {
     "title": "Veri Setleri",
     "create_dataset": "Veri Seti Oluştur",
@@ -57,48 +23,7 @@
       "delete_permanently": "Kalıcı Olarak Sil"
     }
   },
-  "apikeys_detail": {
-    "title": "Entegrasyon API Anahtarları",
-    "description": "Harici uygulamalardan veya SDK'lardan veri setlerinize güvenli bir şekilde erişmek için gizli anahtarları yönetin.",
-    "generate_title": "Yeni Token Oluştur",
-    "generate_desc": "Nerede kullanıldığını hatırlamak için anahtarınıza açıklayıcı bir ad verin.",
-    "placeholder": "örn. Python SDK Üretim, Jenkins CI",
-    "generate_btn": "Anahtar Üret",
-    "warning_title": "Güvenlik Uyarısı:",
-    "security_notice": "API anahtarlarınızı genel depolarda (public repositories) veya istemci tarafı kodlarında paylaşmayın. Bu anahtara sahip olan herkes veri seti yapılandırmalarınızı değiştirebilir.",
-    "list_title": "Aktif API Anahtarları",
-    "list_desc": "Şu anda bu hesap altında istek yapmaya yetkili tokenlar.",
-    "empty_list": "Henüz bir API anahtarı üretilmedi.",
-    "status_inactive": "Pasif",
-    "created_on": "Oluşturulma tarihi:",
-    "revoke_btn": "Anahtarı İptal Et",
-    "external_provider_title": "Harici Model Sağlayıcı Yapılandırması (Sunum Modu)",
-    "external_provider_desc": "Sentetik veri stüdyosunda model çalıştırmak ve komut göndermek için kendi OpenAI API anahtarınızı bağlayın.",
-    "external_privacy_notice": "Gizlilik Garantisi: Girdiğiniz anahtar kesinlikle uzak veritabanına (backend) kaydedilmez. Sadece bu tarayıcının yerel hafızasında saklanır ve doğrudan yapay zeka motoruna yönlendirilir.",
-    "external_success_msg": "Anahtar başarıyla doğrulandı ve tarayıcı oturumuna bağlandı. Sentetik Veri Stüdyosu aktif!",
-    "external_btn_clear": "Temizle",
-    "external_btn_update": "Anahtarı Güncelle",
-    "external_btn_connect": "Anahtarı Bağla",
-    "tooltips": {
-      "refresh": "Listeyi Yenile",
-      "hide": "Anahtarı Gizle",
-      "reveal": "Anahtarı Göster",
-      "copy": "Panoya Kopyala"
-    },
-    "messages": {
-      "load_failed": "API anahtarları yüklenemedi.",
-      "created_success": "Yeni API anahtarı başarıyla oluşturuldu.",
-      "create_failed": "Anahtar oluşturulurken bir hata oluştu.",
-      "reveal_failed": "Anahtar doğrulaması başarısız oldu.",
-      "confirm_revoke": "Bu API anahtarını iptal etmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
-      "revoked_success": "API anahtarı kalıcı olarak iptal edildi.",
-      "revoke_failed": "Anahtar iptal edilirken bir API hatası oluştu.",
-      "name_required": "İsim boş olamaz!",
-      "invalid_key": "Lütfen geçerli bir anahtar girin.",
-      "external_success_toast": "Harici API anahtarı tarayıcı oturumunuza güvenle bağlandı!",
-      "key_cleared": "Harici anahtar tarayıcı hafızasından silindi."
-    }
-  },
+  
   "project_detail": {
     "not_found": "Proje Bulunamadı.",
     "save_all": "Tüm Değişiklikleri Kaydet",
@@ -141,8 +66,15 @@
     "add_global_attribute": "Genel öznitelik ekle",
     "global_attributes_title": "Genel Öznitelikler",
     "prompt_msg": "Yeni öznitelik adı girin (Örn. renk, kesiklik):",
-    "default_new_class": "Yeni Sınıf",
-    "default_new_relation": "yeni_iliski"
+        "default_new_class": "Yeni Sınıf",
+    "default_new_relation": "yeni_iliski",
+    "view_only": "Salt Okunur",
+    "no_classes": "Henüz sınıf tanımlanmadı.",
+    "no_predicates": "Henüz ilişki (predicate) tanımlanmadı.",
+    "permanent_delete_warning": "DİKKAT! Bu işlem bu öğeye ait tüm geçmiş etiketlemeleri veritabanından KALICI olarak silecektir. Emin misiniz?",
+    "deleting": "Silme işlemi gerçekleştiriliyor...",
+    "delete_success": "Öğe ve ilişkili tüm geçmiş etiketler başarıyla silindi.",
+    "delete_error": "Silme işlemi sırasında bir hata oluştu."
   },
   "assets": {
     "search_placeholder": "Varlıklarda ara...",
@@ -188,31 +120,5 @@
       "yolo_desc": "Darknet / PyTorch formatı",
       "pascal_desc": "Nesne algılama için XML formatı"
     }
-  },
-  "tasks": {
-    "title": "Görevler",
-    "create_new": "Yeni Görev Oluştur",
-    "search_placeholder": "Görevlerde ara...",
-    "empty_list": "Çöp kutunuz şu anda boş.",
-    "load_more": "Daha Fazla Göster",
-    "filter": {
-      "all_progress": "Tüm Durumlar",
-      "status": {
-        "new": "YENİ",
-        "in_progress": "DEVAM EDİYOR",
-        "completed": "TAMAMLANDI"
-      }
-    }
-  },
-  "status": {
-    "new": "YENİ",
-    "in_progress": "DEVAM EDİYOR",
-    "completed": "TAMAMLANDI",
-    "load_more": "Daha Fazla Göster"
-  },
-  "actions": {
-    "cancel": "İptal",
-    "create": "Oluştur",
-    "close": "Kapat"
   }
 }

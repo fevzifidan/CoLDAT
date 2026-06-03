@@ -1,0 +1,191 @@
+{
+  "title": "Tasks Workspace",
+  "create_new": "Create New Task",
+  "search_placeholder": "Search by ID, Dataset or Assignee...",
+  "show_more": "Load More",
+  "empty_list": "No tasks match your filter criteria or data repository is empty.",
+  "loading": "Fetching active workspace tasks...",
+  "error_try_again": "Try Again",
+
+  "filter": {
+    "all_progress": "All Statuses",
+    "status": {
+      "open": "OPEN",
+      "in_progress": "IN PROGRESS",
+      "approval_pending": "APPROVAL PENDING",
+      "completed": "COMPLETED",
+      "rejected": "REJECTED"
+    }
+  },
+
+  "card": {
+    "manage_task": "Manage Task",
+    "processed_files": "Processed Files",
+    "assignee_prefix": "Assignee: @"
+  },
+
+  "detail": {
+    "back": "Back to Tasks Workspace",
+    "loading": "Loading task details from server...",
+    "error_title": "An Error Occurred",
+    "error_task_not_found": "Task not found.",
+    "dataset_id": "Dataset ID:",
+
+    "info_section": "Task Information",
+    "assignee": "Assignee:",
+    "unassigned": "Unassigned",
+    "total_assets": "Total Assets:",
+    "files_suffix": " files",
+    "reassign_button": "Reassign Task",
+
+    "workflow_section": "Workflow Actions",
+    "note_label": "Process Note (Optional)",
+    "note_placeholder": "Write a note for validation...",
+    "submit_for_approval": "Submit for Approval",
+    "approve": "Approve",
+    "reject": "Reject",
+    "start_reopen": "Start / Re-open Task",
+
+    "assets_section": "Assigned Assets",
+    "add_asset_button": "Add Asset",
+    "asset_image_default": "Asset Image",
+    "asset_id_prefix": "ID: ",
+    "asset_status_labeled": "labeled",
+    "asset_status_unlabeled": "unlabeled",
+    "no_assets": "No assets bound to this task yet.",
+
+    "confirm_delete": "Are you sure you want to revoke/delete this task?",
+    "revoke_button": "Revoke Task",
+    "status_update_failed": "Status update failed.",
+    "reassignment_failed": "Reassignment failed.",
+    "add_asset_failed": "Adding asset failed.",
+    "delete_failed": "Failed to delete task."
+  },
+
+  "modal": {
+    "create_title": "Create New Task",
+    "reassign_title": "Reassign Task Assignee",
+    "add_asset_title": "Add New Asset to Task",
+
+    "dataset_id_label": "Dataset UUID *",
+    "dataset_id_placeholder": "e.g. 123e4567-e88b-12d3-a456-426614174000",
+    "assignee_id_label": "Assignee User UUID *",
+    "assignee_id_placeholder": "e.g. 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "image_ids_label": "Image UUIDs (Comma separated) *",
+    "image_ids_placeholder": "id1, id2, id3...",
+    "note_label": "Task Note (Optional)",
+    "note_placeholder": "Add batch context instructions...",
+
+    "reassign_username_label": "Target Username",
+    "reassign_username_placeholder": "e.g. janesmith (Must be annotator role)",
+
+    "asset_id_label": "Asset UUID / ID",
+    "asset_id_placeholder": "Enter unassigned asset string ID",
+    "asset_warning": "System checks if this asset is already linked to another task.",
+
+    "cancel": "Cancel",
+    "create": "Create",
+    "creating": "Creating...",
+    "assign": "Assign",
+    "assigning": "Assigning...",
+    "add": "Add Asset",
+    "adding": "Adding..."
+  },
+
+  "create": {
+    "title": "Create New Task",
+    "back_to_tasks": "Back to Tasks",
+    "discard_changes_title": "Discard Changes?",
+    "discard_changes_desc": "You have unsaved changes. Are you sure you want to leave?",
+    "discard_button": "Discard",
+    "step1_title": "Select Dataset",
+    "step2_title": "Select Member",
+    "step3_title": "Choose Role",
+    "step4_title": "Select Assets",
+    "step1_description": "Select a dataset you want to assign tasks for.",
+    "step2_description": "Select a member from this dataset who will receive the task.",
+    "step3_description": "Assign a role for this task.",
+    "step4_description": "Browse the dataset assets and select the ones to assign.",
+    "continue": "Continue",
+    "back": "Back",
+    "create_button": "Create Task",
+    "creating": "Creating Task...",
+    "success": "Task created successfully!",
+    "error": "Failed to create task.",
+    "search_placeholder": "Search by username or email...",
+    "no_users_found": "No users matching your search.",
+    "user_search_error": "Failed to search users. Please try again.",
+    "user_table": {
+      "username": "Username",
+      "email": "Email",
+      "full_name": "Full Name",
+      "select": "Select",
+      "selected": "Selected"
+    },
+    "role": {
+      "annotator": "Annotator",
+      "viewer": "Viewer",
+      "label": "Task Role",
+      "annotator_hint": "Annotators can edit annotations. An asset cannot be assigned to two different annotators.",
+      "viewer_hint": "Viewers can only view annotations. Multiple viewers can view the same asset.",
+      "selected_user": "Selected User",
+      "dataset_role": "Dataset role:",
+      "allowed_hint": "This user can be assigned both Annotator and Viewer tasks.",
+      "viewer_cannot_annotate": "This user is a Viewer in the dataset. Annotator task role may not be allowed. Please add them as Annotator to the dataset first."
+    },
+    "dataset_search_placeholder": "Search datasets...",
+    "dataset_table": {
+      "name": "Dataset Name",
+      "images": "Images",
+      "version": "Version",
+      "select": "Select",
+      "selected": "Selected"
+    },
+    "dataset_picker_placeholder": "Select a dataset...",
+    "no_datasets": "No datasets available.",
+    "no_dataset_selected": "No dataset selected. Please go back.",
+    "no_member_selected": "No member selected. Please go back.",
+    "error_generic": "Session error. Please go back.",
+    "member_list_description": "Select a member from this dataset or add a new one.",
+    "member_list_empty": "No members in this dataset yet.",
+    "member_add_button": "Add Member",
+    "member_add_title": "Add Member to Dataset",
+    "member_add_description": "Look up an existing user by username and assign a role.",
+    "member_add_username_label": "Username",
+    "member_add_username_placeholder": "e.g. johndoe",
+    "member_lookup_button": "Lookup",
+    "member_lookup_found": "User found:",
+    "member_lookup_not_found": "User not found.",
+    "member_lookup_error": "Failed to look up user.",
+    "member_add_role_label": "Role",
+    "member_add_confirm": "Add Member",
+    "member_add_success": "Member added successfully.",
+    "member_remove_confirm": "Remove this member from the dataset?",
+    "member_remove_success": "Member removed successfully.",
+    "member_table": {
+      "user": "User",
+      "role": "Role",
+      "select": "Select",
+      "selected": "Selected"
+    },
+    "member_role_owner": "Owner",
+    "asset_search_placeholder": "Search by filename...",
+    "asset_table": {
+      "preview": "Preview",
+      "filename": "Filename",
+      "assignment": "Status",
+      "available": "Available",
+      "will_be_assigned": "Will be assigned",
+      "assigned_to": "Assigned to @{{user}}",
+      "assigned_to_other_tooltip": "This asset is already assigned to @{{user}}. Annotators cannot share assets.",
+      "select_all": "Select All",
+      "no_assets": "No assets found in this dataset.",
+      "selected_count": "{{count}} assets selected"
+    },
+    "note_label": "Task Note (Optional)",
+    "note_placeholder": "Add instructions or context...",
+    "missing_dataset": "Please select a dataset first.",
+    "no_assets_selected": "Please select at least one asset.",
+    "load_more": "Load More"
+  }
+}

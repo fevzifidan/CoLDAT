@@ -4,6 +4,28 @@
   "import": "Projeyi İçe Aktar",
   "search_placeholder": "Projelerde ara...",
   "more_load": "Daha Fazla Yükle",
+  "show_more": "Daha Fazla Göster",
+  "no_projects": "Kriterlere uygun aktif proje bulunamadı.",
+  "loading": "Proje yükleniyor...",
+  "files": "İŞLENMİŞ DOSYA",
+  "buttons": {
+    "manage": "YÖNET",
+    "start_labeling": "ETİKETLEMEYE BAŞLA",
+    "open": "PROJEYİ AÇ",
+    "create_project": "Yeni Proje Oluştur",
+    "dataset": "VERİ SETİ"
+  },
+  "status": {
+    "new": "YENİ",
+    "in_progress": "DEVAM EDİYOR",
+    "completed": "TAMAMLANDI"
+  },
+  "roles": {
+    "all_roles": "Tüm Roller",
+    "annotator": "Etiketleyici",
+    "viewer": "İzleyici",
+    "admin": "Yönetici"
+  },
   "filter": {
     "all_roles": "Tüm Roller",
     "owner": "Sahibi",

@@ -1,0 +1,83 @@
+{
+  "profile": {
+    "title": "Hesap Ayarları",
+    "description": "Kişisel profil verilerinizi ve hesap detaylarınızı buradan yönetebilirsiniz",
+    "personalInfo": {
+      "title": "Kişisel Kimlik Bilgileri",
+      "description": "Bu bilgiler atandığınız projelerde ve takımlarda diğer kullanıcılara gösterilecektir."
+    },
+    "fields": {
+      "firstName": "Ad",
+      "firstNamePlaceholder": "Adınız",
+      "lastName": "Soyad",
+      "lastNamePlaceholder": "Soyadınız",
+      "username": "Kullanıcı Adı",
+      "usernamePlaceholder": "Kullanıcı adınız",
+      "email": "E-posta Adresi (Değiştirilemez)",
+      "msalWarning": "Microsoft ile giriş yapan kullanıcılar yalnızca kullanıcı adlarını güncelleyebilir."
+    },
+    "buttons": {
+      "save": "Değişiklikleri Kaydet",
+      "saving": "Kaydediliyor..."
+    },
+    "notifications": {
+      "updateLoading": "Profil ayarları güncelleniyor...",
+      "updateSuccess": "Profil bilgileri başarıyla güncellendi.",
+      "updateError": "Profil güncellenirken bir hata oluştu."
+    },
+    "dangerZone": {
+      "title": "Hesap Silme",
+      "description": "Verilerinizi ve hesabınızı kalıcı olarak silmek isterseniz bu bölümü kullanabilirsiniz.",
+      "deleteButton": "Hesabı Kalıcı Olarak Sil",
+      "irreversibleWarning": "Bu işlem geri alınamaz ve tüm verileriniz kaybolur."
+    },
+    "deleteModal": {
+      "title": "Hesap Silme",
+      "requestDescription": "İşlemi başlatmak için lütfen şifrenizi girin.",
+      "passwordLabel": "Şifre",
+      "passwordPlaceholder": "••••••••",
+      "cancel": "Vazgeç",
+      "sendRequest": "Silme İsteği Gönder",
+      "emailSentTitle": "✓ Silme E-postası Gönderildi!",
+      "emailSentMessage": "Lütfen e-posta gelen kutunuzu kontrol edin. Hesap silme işlemini tamamlamak için size bir onay bağlantısı gönderdik. Bağlantı belirli bir süre sonra geçersiz olacaktır.",
+      "close": "Kapat",
+      "validationErrorTitle": "✗ Geçersiz veya Süresi Dolmuş Bağlantı",
+      "validationErrorMessage": "Silme onay bağlantısı geçersiz veya süresi dolmuş. Lütfen profil ayarlarınızdan yeni bir silme bağlantısı talep edin.",
+      "confirmTitle": "✓ Token Doğrulandı",
+      "confirmNormalMessage": "Aşağıdaki butona tıklayarak hesabınızı kalıcı olarak silebilirsiniz.",
+      "expiresAt": "Bağlantı son geçerlilik: {{date}}",
+      "deleteAccount": "Hesabı Tamamen Sil",
+      "errors": {
+        "emptyPassword": "Lütfen şifrenizi veya kimlik doğrulayıcınızı girin.",
+        "requestFailed": "Silme isteği başarısız oldu (Şifre hatalı olabilir).",
+        "confirmFailed": "Hesap silme onaylanamadı veya token süresi doldu."
+      },
+      "success": {
+        "requestCreated": "Silme isteği oluşturuldu.",
+        "accountDeleted": "Hesabınız başarıyla silindi. Yönlendiriliyorsunuz..."
+      }
+    }
+  },
+  "team": {
+    "searchLabel": "Kullanıcı Ara",
+    "searchPlaceholder": "username veya email yazın...",
+    "selectUserWarning": "Lütfen listeden bir kullanıcı seçin.",
+    "errors": {
+      "sessionExpired": "Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.",
+      "sessionExpiredShort": "Oturumunuzun süresi dolmuş.",
+      "sessionExpiredToken": "Oturum süresi dolmuş.",
+      "addFailed": "Üye eklenemedi.",
+      "removeFailed": "Bu üye silinemez.",
+      "userErrorPrefix": "Kullanıcı Hatası",
+      "roleErrorPrefix": "Rol Hatası"
+    },
+    "roles": {
+      "OWNER": "Proje Sahibi",
+      "ADMIN": "Yönetici",
+      "ANNOTATOR": "Etiketleyici",
+      "VIEWER": "İnceleyici",
+      "REVIEWER": "İnceleyici"
+    },
+    "fallbackName": "Kullanıcı"
+  }
+}

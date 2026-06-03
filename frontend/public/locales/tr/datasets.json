@@ -9,10 +9,159 @@
   "progress": "İlerleme",
   "view_data": "Veriyi Görüntüle",
   "members": "Üyeler",
+  "more_load": "Daha Fazla Yükle",
   "filter": {
-    "all_roles": "Tüm Roller"
+    "all_roles": "Tüm Roller",
+    "owner": "Sahibi",
+    "member": "Üye"
   },
   "messages": {
     "load_failed": "Veri setleri yüklenemedi."
+  },
+  "create": {
+    "error_needs_project": "Veri seti oluşturabilmek için öncelikle bir projenin içerisine girmelisiniz.",
+    "success": "Veri seti başarıyla oluşturuldu."
+  },
+  "roles": {
+    "admin": "Admin",
+    "member": "Üye"
+  },
+  "card": {
+    "no_description": "Bu depo için açıklama sağlanmamış.",
+    "version_label": "Sürüm"
+  },
+  "trash": {
+    "title": "Çöp Kutusu",
+    "modal_title": "Çöp Kutusu",
+    "empty": "Çöp kutusu boş",
+    "recover": "Geri Yükle",
+    "permanent_delete": "Sil",
+    "tooltips": {
+      "delete_permanently": "Kalıcı Olarak Sil"
+    }
+  },
+  "assets": {
+    "bulk_actions": "Toplu İşlemler",
+    "url_lifetimes": "URL Süreleri",
+    "dangling_pointers": "Askıda Kalanlar",
+    "queue_metrics": "Kuyruk Metrikleri",
+    "sync_pending": "Bekleyenleri Senkronize Et",
+    "extend_links": "Süresi Dolan Bağlantıları Uzat",
+    "force_verification": "S3 Doğrulamasını Zorla",
+    "matrix_items": "Veri Seti Matris Öğeleri",
+    "upload_items": "Öğeleri Yükle",
+    "no_assets": "Bu proje bağlamında hiçbir varlık bulunamadı.",
+    "retry_pipeline": "Yeniden Dene",
+    "expires_label": "Son Kullanma:",
+    "status": {
+      "annotated": "Etiketlendi",
+      "pending": "Beklemede",
+      "verify_failed": "DOĞRULAMA_BAŞARISIZ",
+      "upload_failed": "YÜKLEME_BAŞARISIZ"
+    },
+    "notifications": {
+      "no_pending_assets": "Durumu güncellenecek bekleyen varlık bulunamadı.",
+      "sending_batch": "Toplu yükleme durumu backend'e gönderiliyor...",
+      "batch_completed": "Toplu durum senkronizasyonu tamamlandı!",
+      "batch_error": "Toplu durum güncellemesi işlenemedi.",
+      "no_pending_urls": "URL yenileme gerektiren bekleyen varlık bulunamadı.",
+      "refreshing_urls": "Ön imzalı URL'ler yenileniyor...",
+      "urls_refreshed": "{{count}} varlık için URL'ler başarıyla yenilendi!",
+      "urls_error": "URL yenileme sırasında erişim reddedildi veya doğrulama başarısız oldu.",
+      "scanning_dangling": "Askıda kalan varlıklar için S3 taranıyor...",
+      "scan_completed": "Tarama tamamlandı. Yüklenene Senkronize Edilen: {{count}}",
+      "scan_error": "Askıda işaretçi senkronizasyon hattı başarısız oldu.",
+      "retrying_upload": "{{filename}} için kurulum yeniden başlatılıyor...",
+      "retry_success": "Yeni Ön İmzalı URL oluşturuldu! S3 hattı için hazır.",
+      "retry_error": "Varlık yeniden deneme iş akışı için uygun değil."
+    }
+  },
+  "export": {
+    "title": "Matris Formatı Dışa Aktarma Hedefi",
+    "description": "Yerel açıklama çokgenlerini uzmanlaşmış işlem hattı katmanlarına dönüştürün.",
+    "ready_title": "Statik Anlık Görüntü Dışa Aktarma Paketi",
+    "ready_desc": "Geçerli sürüm matris koordinatlarını şu şekilde paketle:",
+    "compiling": "Derleniyor...",
+    "pack_download": "Paketle ve İndir",
+    "external_api": "Harici API Entegrasyonları",
+    "api_description": "Uzun ömürlü güvenlik imzaları kullanarak bulut getirme süreçlerini otomatikleştirin.",
+    "emergency_revoke": "Acil Durumda Tümünü İptal Et",
+    "mint_token": "API Token Oluştur",
+    "no_keys": "Henüz yapılandırılmış işlem hattı erişim entegrasyonu yok.",
+    "decoding": "İmza Kayıtları Çözülüyor...",
+    "active": "Aktif",
+    "revoked": "İptal Edildi",
+    "table": {
+      "token_identifier": "Token Tanımlayıcı",
+      "secret_hash": "Gizli Anahtar Hash",
+      "expiry_date": "Son Kullanma Tarihi",
+      "status": "Durum",
+      "scope_actions": "İşlemler"
+    },
+    "placeholder_key_name": "Örn: Jenkins_CI_Pipeline, Production_Sync",
+    "confirm_delete_key": "Bu entegrasyon token'ını kalıcı olarak silmek istediğinize emin misiniz?",
+    "confirm_revoke_all": "⚠️ UYARI: Bu işlem bu veri seti için TÜM aktif API anahtarlarını anında iptal edecektir. Harici işlem hatları anında kesilecektir. Devam edilsin mi?",
+    "notifications": {
+      "load_keys_error": "Entegrasyon anahtarları alınamadı.",
+      "creating_key": "Güvenli erişim kimlik bilgileri oluşturuluyor...",
+      "key_created": "API Anahtarı başarıyla oluşturuldu!",
+      "key_error": "API erişim kimlik bilgileri oluşturulamadı.",
+      "key_revealed": "Güvenlik imzası açıklandı.",
+      "key_reveal_error": "Yetkisiz: Gizli dize çözülemedi.",
+      "key_deleted": "API Anahtarı kalıcı olarak iptal edildi.",
+      "key_delete_error": "Anahtar silme sırasında işlem hattı hatası.",
+      "revoking_all": "Genel geçersiz kılma iptali yürütülüyor...",
+      "revoke_success": "Güvenlik kilitlemesi başarılı. Tüm token'lar geçersiz kılındı.",
+      "revoke_error": "Geçersiz kılma işlem hattı yürütmesi başarısız oldu."
+    }
+  },
+  "modal": {
+    "step1_title": "Proje Seçin",
+    "step1_desc": "İçinde veri seti oluşturmak için yöneticisi olduğunuz bir proje seçin.",
+    "step2_title": "Yeni Veri Seti Oluştur",
+    "step2_desc": "Veri seti şunun için yapılandırılıyor: {{projectName}}",
+    "back_button": "Geri",
+    "selected_project_label": "Seçilen Proje",
+    "no_admin_projects": "Yöneticisi olduğunuz bir proje bulunamadı. Bir proje oluşturarak başlayın.",
+    "loading_projects": "Projeler yükleniyor...",
+    "success": "Veri seti başarıyla oluşturuldu.",
+    "error_create": "Veri seti oluşturulamadı.",
+    "error_fetch_projects": "Projeler yüklenemedi."
+  },
+    "project_page": {
+    "manage_linked": "Bağlı Veri Seti Yönetimi",
+    "active_datasets": "Aktif Veri Setleri",
+    "pipeline_status": "İşlem Hattı Durumu",
+    "requirements": "Gereksinim Bağlantısı",
+    "no_dataset_title": "Henüz Bağlı Veri Seti Yok",
+    "no_dataset_desc": "Proje yöneticisi panosunun kilidini açmak için önce bu ortama bir veri seti matrisi eklemelisiniz.",
+    "create_new_dataset": "Yeni Oluştur",
+    "create_from_scratch": "Sıfırdan Dataset Oluştur",
+    "create_and_add": "Oluştur ve Projeye Ekle",
+    "create_modal_title": "Yeni Dataset Oluştur",
+    "create_modal_desc": "Bu proje için doğrudan yeni bir veri seti koleksiyonu başlatın.",
+    "dataset_name_label": "Dataset Adı",
+    "description_label": "Açıklama",
+    "placeholder_name": "Örn: Otonom Sürüş Kamera Verileri",
+    "placeholder_desc": "Bu veri setinin amacını kısaca açıklayın...",
+    "pipeline_info": "Projenin ana kontrol paneline (YÖNET) erişebilmek için en az 1 adet doğrulanmış veri setinin yukarıdaki listeye eklenmesi gerekmektedir.",
+    "dataset_connection": "Veri Seti Bağlantısı:",
+    "manager_access": "Yönetici Erişimi:",
+    "passed": "BAŞARILI",
+    "required_label": "GEREKLİ",
+    "unlocked": "AÇIK",
+    "locked": "KAPALI",
+    "id_label": "ID",
+    "images_label": "Görseller",
+    "annotated_label": "Etiketlenen",
+    "role_label": "Rol",
+    "refresh": "Yenile",
+    "loading_configs": "Veri seti yapılandırmaları yükleniyor...",
+    "notifications": {
+      "load_error": "Veriler yüklenirken bir sorun oluştu.",
+      "creating_dataset": "Dataset oluşturuluyor...",
+      "create_success": "Dataset başarıyla oluşturuldu ve projeye eklendi.",
+      "create_error": "Bir hata oluştu."
+    }
   }
 }

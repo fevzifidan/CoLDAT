@@ -4,7 +4,8 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useAuth } from "@/context/AuthContext";
-import apiService from "@/shared/services/api";
+// KLASÖR DÜZELTMESİ: Doğru api.service dosyasına giden yol ayarlandı
+import apiService from "@/shared/services/api/api.service";
 import { getRegisterSchema } from "./validations/registerSchema";
 import { useTranslation } from "react-i18next";
 
@@ -28,20 +29,31 @@ const RegisterPage = () => {
     defaultValues: { name: "", surname: "", username: "", email: "", password: "", confirmPassword: "" },
   });
 
-  const onSubmit = async (data) => {
+const onSubmit = async (data) => {
     setLoading(true);
     try {
-      await apiService.post("/auth/register/", {
+      const djangoPayload = {
         first_name: data.name,
         last_name: data.surname,
         username: data.username,
         email: data.email,
         password: data.password,
-      });
+      };
 
-      await login({ email: data.email, password: data.password });
+      console.log("Kayıt isteği gönderiliyor...");
+      await apiService.post("/auth/register", djangoPayload);
+      console.log("Kayıt veritabanına başarıyla eklendi!");
+      
+      // KULLANICIYA BİLGİ VERİYORUZ:
+      alert("Kayıt işleminiz başarılı! Hesabınızı aktifleştirmek için lütfen e-posta kutunuza gönderilen doğrulama linkine tıklayın.");
+      
+      // Doğrulamayı tamamlayıp geri gelmesi için login sayfasına paslıyoruz
+      navigate("/login"); 
+      
     } catch (error) {
-      // Hata yönetimi
+      console.error("Kayıt hatası:", error.response?.data || error);
+      const backendError = error.response?.data?.message || "Kayıt sırasında bir sorun oluştu.";
+      alert(backendError);
     } finally {
       setLoading(false);
     }

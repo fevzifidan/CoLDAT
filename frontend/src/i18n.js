@@ -13,7 +13,7 @@ i18n
   .use(initReactI18next)
   .init({
     fallbackLng: 'en',
-        ns: ['common', 'sidebar', 'annotation', 'viewer', 'auth', 'upload'],
+        ns: ['common', 'sidebar', 'annotation', 'viewer', 'auth', 'upload', 'synthetic', 'pages', 'accounts', 'api-keys', 'datasets', 'taxonomy', 'tasks'],
 
     defaultNS: 'common',
     detection: {

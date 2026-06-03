@@ -1,0 +1,38 @@
+{
+  "title": "Genel Bakış",
+  "description": "Tekrar hoş geldiniz! İşte ekosisteminizin hızlı bir özeti.",
+  "no_assigned_tasks": "Şu anda size atanmış bir görev bulunmuyor.",
+  "show_more": "Daha Fazla Göster",
+  "files": "İŞLENMİŞ DOSYA",
+  "loading_text": "Dashboard metrikleri senkronize ediliyor...",
+  "retry_button": "Bağlantıyı Yeniden Dene",
+  "fetch_error": "Backend ile ekosistem metrikleri senkronize edilemedi.",
+  "sections": {
+    "recent_tasks": "Son Görevler",
+    "tasks_description": "Size atanmış aktif etiketleme işleri.",
+    "recent_datasets": "Son Veri Setleri",
+    "datasets_description": "Birincil çalışma alanınıza bağlı veri setleri.",
+    "datasets_empty": "Birincil proje dizini için veri seti bulunamadı.",
+    "recent_projects": "Son Projeler",
+    "projects_description": "Doğrulama yetkinizin olduğu kurumsal proje yapıları.",
+    "projects_empty": "Bu çalışma alanında kayıtlı proje bulunamadı."
+  },
+  "buttons": {
+    "manage": "YÖNET",
+    "start_labeling": "ETİKETLEMEYE BAŞLA",
+    "open": "PROJEYİ AÇ",
+    "create_project": "Yeni Proje Oluştur",
+    "dataset": "VERİ SETİ"
+  },
+  "status": {
+    "new": "YENİ",
+    "in_progress": "DEVAM EDİYOR",
+    "completed": "TAMAMLANDI"
+  },
+  "roles": {
+    "all_roles": "Tüm Roller",
+    "annotator": "Etiketleyici",
+    "viewer": "İzleyici",
+    "admin": "Yönetici"
+  }
+}

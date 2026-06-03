@@ -5,6 +5,6 @@
   "tasks": "Tasks",
   "api_keys": "API Keys",
   "settings": "Settings",
-  "synthetic_data": "Synthetic Data"
-  
+    "synthetic_data": "Synthetic Data",
+  "account_settings": "Account Settings"
 }

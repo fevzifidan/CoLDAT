@@ -5,5 +5,6 @@
   "tasks": "Görevler",
   "api_keys": "API Anahtarları",
   "settings": "Ayarlar",
-  "synthetic_data": "Sentetik Veri"
+    "synthetic_data": "Sentetik Veri",
+  "account_settings": "Hesap Ayarları"
 }

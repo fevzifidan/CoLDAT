@@ -1,39 +1,5 @@
 {
-  "dashboard": {
-    "title": "Overview",
-    "description": "Welcome back! Here is a quick summary of your ecosystem.",
-    "no_assigned_tasks": "There are no tasks assigned to you at the moment.",
-    "show_more": "Show More",
-    "files": "PROCESSED FILE",
-    "sections": {
-      "recent_tasks": "Recent Tasks",
-      "tasks_description": "Active labeling jobs assigned to you.",
-      "recent_datasets": "Recent Datasets",
-      "recent_projects": "Recent Projects"
-    },
-    "buttons": {
-      "manage": "MANAGE",
-      "start_labeling": "START LABELING",
-      "open": "OPEN PROJECT",
-      "create_project": "Create New Project"
-    },
-    "status": {
-      "new": "NEW",
-      "in_progress": "IN PROGRESS",
-      "completed": "COMPLETED"
-    },
-    "tasks": {
-      "object_detection": "Object Detection",
-      "entity_recognition": "Entity Recognition",
-      "semantic_relation": "Semantic Relation"
-    },
-    "roles": {
-      "all_roles": "All Roles",
-      "annotator": "Annotator",
-      "viewer": "Viewer",
-      "admin": "Admin"
-    }
-  },
+  
   "datasets": {
     "title": "Datasets",
     "create_dataset": "Create Dataset",
@@ -57,48 +23,7 @@
       "delete_permanently": "Delete Permanently"
     }
   },
-  "apikeys_detail": {
-    "title": "Integration API Keys",
-    "description": "Manage secret keys to access your datasets securely from external applications or SDKs.",
-    "generate_title": "Create New Token",
-    "generate_desc": "Give your key a descriptive name to remember where it is used.",
-    "placeholder": "e.g., Python SDK Production, Jenkins CI",
-    "generate_btn": "Generate Key",
-    "warning_title": "Security Warning:",
-    "security_notice": "Do not share your API keys in public repositories or client-side code. Anyone with this key can modify your dataset configurations.",
-    "list_title": "Active API Keys",
-    "list_desc": "Tokens currently authorized to make requests under this account.",
-    "empty_list": "No API keys generated yet.",
-    "status_inactive": "Inactive",
-    "created_on": "Created on:",
-    "revoke_btn": "Revoke Key",
-    "external_provider_title": "External Model Provider Configuration (Presentation Mode)",
-    "external_provider_desc": "Connect your own OpenAI API key to run models and send commands within the synthetic data studio.",
-    "external_privacy_notice": "Privacy Guarantee: Your key is strictly never saved to the remote database (backend). It is stored only in this browser's local storage and routed directly to the AI engine.",
-    "external_success_msg": "Key verified successfully and connected to the browser session. Synthetic Data Studio is active!",
-    "external_btn_clear": "Clear",
-    "external_btn_update": "Update Key",
-    "external_btn_connect": "Connect Key",
-    "tooltips": {
-      "refresh": "Refresh List",
-      "hide": "Hide Key",
-      "reveal": "Reveal Key",
-      "copy": "Copy to Clipboard"
-    },
-    "messages": {
-      "load_failed": "Failed to load API keys.",
-      "created_success": "New API key generated successfully.",
-      "create_failed": "An error occurred while generating the key.",
-      "reveal_failed": "Key authentication failed.",
-      "confirm_revoke": "Are you sure you want to revoke this API key? This action cannot be undone.",
-      "revoked_success": "API key has been permanently revoked.",
-      "revoke_failed": "An API error occurred while revoking the key.",
-      "name_required": "Name cannot be empty!",
-      "invalid_key": "Please enter a valid key.",
-      "external_success_toast": "External API key securely connected to your browser session!",
-      "key_cleared": "External key cleared from browser storage."
-    }
-  },
+  
   "project_detail": {
     "not_found": "Project Not Found.",
     "save_all": "Save All Changes",
@@ -141,8 +66,15 @@
     "add_global_attribute": "Add global attribute",
     "global_attributes_title": "Global Attributes",
     "prompt_msg": "Enter new attribute name (e.g., color, truncation):",
-    "default_new_class": "New Class",
-    "default_new_relation": "new_relation"
+        "default_new_class": "New Class",
+    "default_new_relation": "new_relation",
+    "view_only": "Read Only",
+    "no_classes": "No classes defined yet.",
+    "no_predicates": "No predicates defined yet.",
+    "permanent_delete_warning": "WARNING! This action will permanently delete ALL historical labels associated with this item from the database. Are you sure?",
+    "deleting": "Deleting item...",
+    "delete_success": "Item and all associated labels have been successfully deleted.",
+    "delete_error": "An error occurred while deleting the item."
   },
   "assets": {
     "search_placeholder": "Search assets...",
@@ -188,31 +120,5 @@
       "yolo_desc": "Darknet / PyTorch format",
       "pascal_desc": "XML format for object detection"
     }
-  },
-  "tasks": {
-    "title": "Tasks",
-    "create_new": "Create New Task",
-    "search_placeholder": "Search tasks...",
-    "empty_list": "Your trash is currently empty.",
-    "load_more": "Show More",
-    "filter": {
-      "all_progress": "All Statuses",
-      "status": {
-        "new": "NEW",
-        "in_progress": "IN PROGRESS",
-        "completed": "COMPLETED"
-      }
-    }
-  },
-  "status": {
-    "new": "NEW",
-    "in_progress": "IN PROGRESS",
-    "completed": "COMPLETED",
-    "load_more": "Show More"
-  },
-  "actions": {
-    "cancel": "Cancel",
-    "create": "Create",
-    "close": "Close"
   }
 }

@@ -1,73 +1,104 @@
-// src/features/api-keys/services/apiKeyService.ts
-import axios from 'axios'; 
+// FEVZİ'NİN UYARISI: Ham axios ve hardcoded URL'ler temizlendi, merkezi apiService'e bağlandı.
+import apiService from '@/shared/services/api/api.service';
 
+// ----- LIST Response (GET /datasets/{datasetId}/api-keys/) -----
+// YAML: id, name, api_key (maskelenmiş), created_at, expires_at, is_active
 export interface ApiKey {
   id: string;
   name: string;
   api_key?: string;
   created_at: string;
+  expires_at?: string;
+  is_active: boolean;
+}
+
+// ----- CREATE Request (POST /datasets/{datasetId}/api-keys/) -----
+export interface CreateApiKeyPayload {
+  name: string;
+  ttl_days?: number;
+  target_version?: string;
+}
+
+// ----- CREATE Response (POST /datasets/{datasetId}/api-keys/) -----
+// YAML: id, key (tam değer), target_version, expires_at
+export interface CreateApiKeyResponse {
+  id: string;
+  key: string;
+  target_version?: string;
+  expires_at?: string;
+}
+
+// ----- UPDATE Request (PATCH /datasets/{datasetId}/api-keys/{keyId}) -----
+export interface UpdateApiKeyPayload {
+  name?: string;
+  ttl_days?: number;
+  is_active?: boolean;
+}
+
+// ----- UPDATE Response (PATCH /datasets/{datasetId}/api-keys/{keyId}) -----
+// YAML: id, name, is_active, expires_at
+export interface UpdateApiKeyResponse {
+  id: string;
+  name: string;
   is_active: boolean;
   expires_at?: string;
 }
 
-// 1. ADIM: Buraya veritabanından aldığın GERÇEK bir UUID'yi yapıştır. 
-// Bu, "default-dataset-id" yerine geçecek olan anahtardır.
-const VALID_UUID = "550e8400-e29b-41d4-a716-446655440000"; 
+// ----- REVEAL Response (GET /datasets/{datasetId}/api-keys/{keyId}/reveal) -----
+// YAML: id, name, api_key (tam değer), warning
+export interface RevealApiKeyResponse {
+  id: string;
+  name: string;
+  api_key: string;
+  warning?: string;
+}
 
-const MOCK_API_KEYS: ApiKey[] = [
-  { id: "key_1", name: "Production Key (Yedek Mod)", api_key: "sk_live_prod_••••••••••••••••••••", created_at: "2026-05-20T10:00:00Z", is_active: true }
-];
+export interface ApiKeyListResponse {
+  data: ApiKey[];
+  next_cursor: string | null;
+}
 
-const BACKEND_URL = 'http://localhost:8000';
-
-// 2. ADIM: Yardımcı fonksiyonumuz. 
-// Gelen datasetId'yi kontrol eder, eğer geçersizse/sabitse gerçek UUID ile değiştirir.
-const getTargetId = (datasetId: string) => {
-  return (datasetId === "default-dataset-id" || !datasetId) ? VALID_UUID : datasetId;
-};
+// ----- REVOKE ALL Response (POST /datasets/{datasetId}/api-keys/actions/revoke-all) -----
+export interface RevokeAllResponse {
+  message: string;
+  revoked_count: number;
+}
 
 export const apiKeyService = {
-  saveExternalKey: (key: string): void => localStorage.setItem('ai_api_key', key),
-  getExternalKey: (): string => localStorage.getItem('ai_api_key') || '',
-  clearExternalKey: (): void => localStorage.removeItem('ai_api_key'),
-
-  getApiKeys: async (datasetId: string): Promise<ApiKey[]> => {
-    const targetId = getTargetId(datasetId);
-    try {
-      const res = await axios.get(`${BACKEND_URL}/datasets/${targetId}/api-keys/`);
-      return res.data || res;
-    } catch (error) {
-      console.error("Backend bağlantı hatası:", error);
-      return MOCK_API_KEYS;
-    }
+  // GET /datasets/{datasetId}/api-keys
+  list: async (
+    datasetId: string,
+    params?: { limit?: number; after?: string | null }
+  ): Promise<ApiKeyListResponse> => {
+    const query = new URLSearchParams();
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.after) query.set('after', params.after);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return apiService.get(`/datasets/${datasetId}/api-keys${qs}`);
   },
 
-  createApiKey: async (datasetId: string, keyData: { name: string; expires_in_days?: number }): Promise<ApiKey> => {
-    const targetId = getTargetId(datasetId);
-    try {
-      const res = await axios.post(`${BACKEND_URL}/datasets/${targetId}/api-keys/`, keyData);
-      return res.data || res;
-    } catch (error) {
-      return { id: "mock_" + Date.now(), name: keyData.name, api_key: "sk_live_...", created_at: new Date().toISOString(), is_active: true };
-    }
+  // POST /datasets/{datasetId}/api-keys
+  create: async (datasetId: string, payload: CreateApiKeyPayload): Promise<CreateApiKeyResponse> => {
+    return apiService.post(`/datasets/${datasetId}/api-keys`, payload);
   },
 
-  revealApiKey: async (datasetId: string, keyId: string): Promise<ApiKey> => {
-    const targetId = getTargetId(datasetId);
-    try {
-      const res = await axios.get(`${BACKEND_URL}/datasets/${targetId}/api-keys/${keyId}/reveal/`);
-      return res.data || res;
-    } catch (error) {
-      return { id: keyId, name: "Revealed Key", api_key: "sk_live_actual_key...", created_at: new Date().toISOString(), is_active: true };
-    }
+  // GET /datasets/{datasetId}/api-keys/{keyId}/reveal
+  reveal: async (datasetId: string, keyId: string): Promise<RevealApiKeyResponse> => {
+    return apiService.get(`/datasets/${datasetId}/api-keys/${keyId}/reveal`);
   },
 
-  deleteApiKey: async (datasetId: string, keyId: string): Promise<void> => {
-    const targetId = getTargetId(datasetId);
-    try {
-      await axios.delete(`${BACKEND_URL}/datasets/${targetId}/api-keys/${keyId}/`);
-    } catch (error) {
-      console.error("Silme hatası:", error);
-    }
-  }
+  // PATCH /datasets/{datasetId}/api-keys/{keyId}
+  update: async (datasetId: string, keyId: string, payload: UpdateApiKeyPayload): Promise<UpdateApiKeyResponse> => {
+    return apiService.patch(`/datasets/${datasetId}/api-keys/${keyId}`, payload);
+  },
+
+  // DELETE /datasets/{datasetId}/api-keys/{keyId}
+  revoke: async (datasetId: string, keyId: string): Promise<void> => {
+    return apiService.delete(`/datasets/${datasetId}/api-keys/${keyId}`);
+  },
+
+  // POST /datasets/{datasetId}/api-keys/actions/revoke-all
+  revokeAll: async (datasetId: string): Promise<RevokeAllResponse> => {
+    return apiService.post(`/datasets/${datasetId}/api-keys/actions/revoke-all`);
+  },
 };

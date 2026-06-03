@@ -1,5 +1,6 @@
 {
   "brand": "CoLDAT",
+  "workspace_title": "CoLDAT Çalışma Alanı",
   "actions": {
     "save": "Kaydet",
     "cancel": "İptal",
@@ -21,7 +22,14 @@
     "deleting": "Siliniyor...",
     "updating": "Güncelleniyor...",
     "saving": "Kaydediliyor...",
-    "load_more": "Daha Fazla Yükle"
+    "creating": "Oluşturuluyor...",
+    "moved_to_trash": "Çöp kutusuna taşındı.",
+    "back": "Projelere Dön",
+    "cancel": "İptal",
+    "close": "Kapat",
+    "load_more": "Daha Fazla Yükle",
+    "no_results": "Sonuç bulunamadı.",
+    "action_cannot_be_undone": "Bu işlem geri alınamaz."
   },
   "error": {
     "err_reach_server": "Sunucuya erişilemedi!"
@@ -33,6 +41,7 @@
     "dark": "Karanlık",
     "system": "Sistem"
   },
+  "step_of": "Adım {{current}} / {{total}}",
   "search": {
     "placeholder": "Ara..."
   },

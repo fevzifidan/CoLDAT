@@ -3,7 +3,7 @@ import './App.css';
 import { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext.jsx';
 import { Toaster } from "@/components/ui/sonner";
 import ApiKeysPage from "./features/api-keys/ApiKeysPage";
 import SyntheticPage from "./features/synthetic/SyntheticPage";
@@ -17,6 +17,9 @@ import { GlobalKeyboardListener } from './shared/components/GlobalKeyboardListen
 // Upload Manager
 import { UploadManager } from '@/features/upload_manager';
 
+// 🎯 DÜZELTME: Named export olduğu için süslü parantez { ProfilePage } ile import ettik
+import ProfilePage from '@/features/accounts/ProfilePage.js';
+
 import DashboardLayout from '@/features/core/layouts/DashboardLayout';
 import DashboardHome from '@/features/dashboard/DashboardHome';
 import ProjectDetailPage from '@/features/projects/ProjectDetailPage';
@@ -25,7 +28,11 @@ import Login from "@/features/auth/Login/Login";
 import Register from "@/features/auth/Register/Register";
 
 import TasksPage from '@/features/tasks/TasksPage';
+import CreateTaskPage from '@/features/tasks/CreateTaskPage';
 import DatasetsPage from '@/features/datasets/DatasetsPage';
+import DatasetDetailPage from '@/features/datasets/DatasetDetailPage';
+import UserAssetsPage from '@/features/datasets/UserAssetsPage';
+import { ProjectDatasetsPage } from '@/features/projects/ProjectDatasetsPage'; 
 import ProjectsPage from '@/features/projects/ProjectsPage';
 import ViewerPage from '@/features/viewer/ViewerPage';
 import { VerificationPage } from '@/features/auth/EmailVerification/EmailVerification';
@@ -55,19 +62,32 @@ function App() {
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                   <Route path="/reset-password" element={<PasswordResetPage />} />
                   <Route path="/account-not-verified" element={<AccountNotVerifiedPage />} />
-                  <Route path="/*" element={
+                  <Route path="/*" element = {
                     <DashboardLayout>
                       <Routes>
                         <Route path="/" element={<DashboardHome />} />
 
                         {/* Ana Sayfa */}
                         <Route path="/projects" element={<ProjectsPage />} />
-                        <Route path="/projects/:projectId/datasets" element={<DatasetsPage />} />
+                        
+                        <Route path="/projects/:projectId/datasets" element={<ProjectDatasetsPage />} />
+                        
+                                                {/* Sol menü veya doğrudan erişim için genel Datasets rotası */}
+                                                <Route path="/datasets" element={<DatasetsPage />} />
+                                                <Route path="/datasets/:datasetId" element={<DatasetDetailPage />} />
+
+                                                {/* Kullanıcının tüm asset'lerini gösteren sayfa */}
+                                                <Route path="/assets" element={<UserAssetsPage />} />
+
                         <Route path="/tasks" element={<TasksPage />} />
+                        <Route path="/tasks/new" element={<CreateTaskPage />} />
                         <Route path="/api-keys" element={<ApiKeysPage />} />
                         
-                        {/* YENİ ROTAMIZ: Sol tarafta tıklandığında yüklenecek alan */}
+                        {/* Sol tarafta tıklandığında yüklenecek alan */}
                         <Route path="/synthetic" element={<SyntheticPage />} />
+
+                        {/* 🎯 HESAP AYARLARI: DashboardLayout altında çalışacak profil rotamız */}
+                        <Route path="/profile" element={<ProfilePage />} />
 
                         {/* Detay sayfası */}
                         <Route path="/projects/:id" element={<ProjectDetailPage />} />
