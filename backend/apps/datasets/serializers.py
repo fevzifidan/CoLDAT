@@ -38,6 +38,27 @@ class DatasetSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    def get_role(self, obj):
+        request = self.context.get("request")
+
+        if not request or not request.user or not request.user.is_authenticated:
+            return None
+
+        dataset_membership = DatasetMember.objects.filter(
+            dataset=obj,
+            user=request.user,
+        ).first()
+
+        if dataset_membership:
+            return dataset_membership.role
+
+        project_membership = ProjectMembership.objects.filter(
+            project=obj.project,
+            user=request.user,
+        ).first()
+
+        return project_membership.role if project_membership else None
+
 def get_role(self, obj):
         request = self.context.get("request")
         if not request or not request.user or not request.user.is_authenticated:

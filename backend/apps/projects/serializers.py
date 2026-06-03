@@ -31,6 +31,19 @@ class ProjectSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    def get_user_role(self, obj):
+        request = self.context.get("request")
+
+        if not request or not request.user or not request.user.is_authenticated:
+            return None
+
+        membership = ProjectMembership.objects.filter(
+            project=obj,
+            user=request.user,
+        ).first()
+
+        return membership.role if membership else None
+
 def get_user_role(self, obj):
         request = self.context.get("request")
         if not request or not request.user or not request.user.is_authenticated:
