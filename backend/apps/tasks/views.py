@@ -27,6 +27,7 @@ from .services import (
     delete_task,
     update_task_status,
     add_images_to_task,
+    mark_task_in_progress_on_first_interaction,
 )
 
 
@@ -64,7 +65,7 @@ class TaskListCreateView(APIView):
         task = create_task(
             dataset=dataset,
             created_by=request.user,
-            assignee_id=serializer.validated_data["assignee_id"],
+            assignee_id=serializer.validated_data["assignee_username"],
             image_ids=serializer.validated_data["image_ids"],
             note=serializer.validated_data.get("note", ""),
         )
@@ -85,6 +86,11 @@ class TaskDetailView(APIView):
     def get(self, request, task_id):
         task = get_task_for_user(
             task_id=task_id,
+            user=request.user,
+        )
+
+        task = mark_task_in_progress_on_first_interaction(
+            task=task,
             user=request.user,
         )
 
@@ -167,6 +173,11 @@ class TaskImageListView(APIView):
             user=request.user,
         )
 
+        task = mark_task_in_progress_on_first_interaction(
+            task=task,
+            user=request.user,
+        )
+
         return Response(
             {
                 "data": TaskImageSerializer(task_images, many=True).data,
@@ -174,6 +185,41 @@ class TaskImageListView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+    def post(self, request, task_id):
+        task = get_task_for_user(
+            task_id=task_id,
+            user=request.user,
+        )
+
+        self.check_object_permissions(request, task)
+
+        serializer = TaskImageAddSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        add_images_to_task(
+            task=task,
+            image_ids=serializer.validated_data["image_ids"],
+        )
+
+        task, task_images = get_task_images_for_user(
+            task_id=task_id,
+            user=request.user,
+        )
+
+        return Response(
+            {
+                "data": TaskImageSerializer(task_images, many=True).data,
+                "next_cursor": None,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [CanManageTasks()]
+
+        return super().get_permissions()
     
 
 class DatasetTaskListView(APIView):

@@ -3,10 +3,13 @@ from rest_framework.exceptions import ValidationError
 from apps.assets.models import Asset
 from apps.annotations.models import AnnotationObject, SceneGraphRelationship
 from apps.taxonomy.models import ProjectAttribute, ProjectClass, ProjectPredicate
+import hashlib
+import secrets
+from django.utils import timezone
 
 from apps.projects.models import ProjectMembership
 
-from .models import Dataset, DatasetMember, DatasetVersion
+from .models import Dataset, DatasetAPIKey, DatasetMember, DatasetVersion
 
 
 User = get_user_model()
@@ -235,3 +238,86 @@ def create_dataset_version(
         snapshot=snapshot,
         created_by=created_by,
     )
+
+def delete_dataset_version(*, version: DatasetVersion):
+    version.delete()
+
+def _hash_api_key(raw_key: str) -> str:
+    return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
+
+
+def _generate_dataset_api_key() -> str:
+    return f"cdat_{secrets.token_urlsafe(32)}"
+
+
+def create_dataset_api_key(
+    *,
+    dataset: Dataset,
+    created_by,
+    name: str,
+):
+    raw_key = _generate_dataset_api_key()
+    key_prefix = raw_key[:16]
+    hashed_key = _hash_api_key(raw_key)
+
+    api_key = DatasetAPIKey.objects.create(
+        dataset=dataset,
+        name=name,
+        key_prefix=key_prefix,
+        hashed_key=hashed_key,
+        created_by=created_by,
+        is_active=True,
+    )
+
+    return api_key, raw_key
+
+
+def update_dataset_api_key(
+    *,
+    api_key: DatasetAPIKey,
+    data: dict,
+) -> DatasetAPIKey:
+    update_fields = []
+
+    if "name" in data:
+        api_key.name = data["name"]
+        update_fields.append("name")
+
+    if "is_active" in data:
+        api_key.is_active = data["is_active"]
+        update_fields.append("is_active")
+
+        if data["is_active"] is False and api_key.revoked_at is None:
+            api_key.revoked_at = timezone.now()
+            update_fields.append("revoked_at")
+
+        if data["is_active"] is True:
+            api_key.revoked_at = None
+            update_fields.append("revoked_at")
+
+    if update_fields:
+        api_key.save(update_fields=update_fields)
+
+    return api_key
+
+
+def revoke_dataset_api_key(*, api_key: DatasetAPIKey) -> DatasetAPIKey:
+    api_key.is_active = False
+    api_key.revoked_at = timezone.now()
+    api_key.save(update_fields=["is_active", "revoked_at"])
+
+    return api_key
+
+
+def revoke_all_dataset_api_keys(*, dataset: Dataset) -> int:
+    now = timezone.now()
+
+    updated_count = DatasetAPIKey.objects.filter(
+        dataset=dataset,
+        is_active=True,
+    ).update(
+        is_active=False,
+        revoked_at=now,
+    )
+
+    return updated_count

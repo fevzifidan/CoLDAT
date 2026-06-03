@@ -19,11 +19,17 @@ def create_task(
     *,
     dataset: Dataset,
     created_by,
-    assignee_id,
+    assignee_username: str,
     image_ids: Iterable,
     note: str = "",
 ) -> Task:
-    assignee = User.objects.get(id=assignee_id)
+    assignee = User.objects.filter(
+        username=assignee_username,
+        is_active=True,
+    ).first()
+
+    if assignee is None:
+        raise ValidationError("Assignee with this username does not exist.")
 
     dataset_membership = DatasetMember.objects.filter(
         dataset=dataset,
@@ -71,6 +77,18 @@ def create_task(
             for image in images
         ]
     )
+
+    return task
+
+def mark_task_in_progress_on_first_interaction(*, task: Task, user) -> Task:
+    if task.assignee_id != user.id:
+        return task
+
+    if task.status != Task.Status.ASSIGNED:
+        return task
+
+    task.status = Task.Status.IN_PROGRESS
+    task.save(update_fields=["status", "updated_at"])
 
     return task
 

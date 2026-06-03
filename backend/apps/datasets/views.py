@@ -12,6 +12,8 @@ from .selectors import (
     get_project_datasets_for_user,
     get_dataset_version_for_user,
     get_dataset_versions_for_user,
+    get_dataset_api_key_for_user,
+    get_dataset_api_keys_for_user,
 )
 from .serializers import (
     DatasetCreateSerializer,
@@ -23,15 +25,24 @@ from .serializers import (
     DatasetVersionCreateSerializer,
     DatasetVersionListSerializer,
     DatasetVersionSerializer,
+    DatasetAPIKeyCreateResponseSerializer,
+    DatasetAPIKeyCreateSerializer,
+    DatasetAPIKeySerializer,
+    DatasetAPIKeyUpdateSerializer,
 )
 from .services import (
     add_or_update_dataset_member,
     create_dataset,
+    create_dataset_version,
     delete_dataset,
+    delete_dataset_version,
     remove_dataset_member,
     update_dataset,
     update_dataset_member_role,
-    create_dataset_version,
+    create_dataset_api_key,
+    revoke_all_dataset_api_keys,
+    revoke_dataset_api_key,
+    update_dataset_api_key,
 )
 
 
@@ -309,3 +320,160 @@ class DatasetVersionDetailView(APIView):
             DatasetVersionSerializer(version).data,
             status=status.HTTP_200_OK,
         )
+
+    def delete(self, request, dataset_id, version_tag):
+        dataset, version = get_dataset_version_for_user(
+            dataset_id=dataset_id,
+            version_tag=version_tag,
+            user=request.user,
+        )
+
+        self.check_object_permissions(request, dataset)
+
+        delete_dataset_version(version=version)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def get_permissions(self):
+        if self.request.method == "DELETE":
+            return [IsDatasetProjectAdmin()]
+
+        return super().get_permissions()
+    
+class DatasetAPIKeyListCreateView(APIView):
+    def get(self, request, dataset_id):
+        dataset, api_keys = get_dataset_api_keys_for_user(
+            dataset_id=dataset_id,
+            user=request.user,
+        )
+
+        return Response(
+            {
+                "data": DatasetAPIKeySerializer(api_keys, many=True).data,
+                "next_cursor": None,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request, dataset_id):
+        dataset = get_dataset_for_user(
+            dataset_id=dataset_id,
+            user=request.user,
+        )
+
+        self.check_object_permissions(request, dataset)
+
+        serializer = DatasetAPIKeyCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        api_key, raw_key = create_dataset_api_key(
+            dataset=dataset,
+            created_by=request.user,
+            name=serializer.validated_data["name"],
+        )
+
+        data = DatasetAPIKeyCreateResponseSerializer(api_key).data
+        data["raw_key"] = raw_key
+
+        return Response(
+            data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsDatasetProjectAdmin()]
+
+        return super().get_permissions()
+
+
+class DatasetAPIKeyDetailView(APIView):
+    def patch(self, request, dataset_id, key_id):
+        dataset, api_key = get_dataset_api_key_for_user(
+            dataset_id=dataset_id,
+            key_id=key_id,
+            user=request.user,
+        )
+
+        self.check_object_permissions(request, dataset)
+
+        serializer = DatasetAPIKeyUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        api_key = update_dataset_api_key(
+            api_key=api_key,
+            data=serializer.validated_data,
+        )
+
+        return Response(
+            DatasetAPIKeySerializer(api_key).data,
+            status=status.HTTP_200_OK,
+        )
+
+    def delete(self, request, dataset_id, key_id):
+        dataset, api_key = get_dataset_api_key_for_user(
+            dataset_id=dataset_id,
+            key_id=key_id,
+            user=request.user,
+        )
+
+        self.check_object_permissions(request, dataset)
+
+        revoke_dataset_api_key(api_key=api_key)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def get_permissions(self):
+        return [IsDatasetProjectAdmin()]
+
+
+class DatasetAPIKeyRevokeAllView(APIView):
+    def post(self, request, dataset_id):
+        dataset = get_dataset_for_user(
+            dataset_id=dataset_id,
+            user=request.user,
+        )
+
+        self.check_object_permissions(request, dataset)
+
+        revoked_count = revoke_all_dataset_api_keys(dataset=dataset)
+
+        return Response(
+            {
+                "revoked_count": revoked_count,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def get_permissions(self):
+        return [IsDatasetProjectAdmin()]
+
+
+class DatasetAPIKeyRevealView(APIView):
+    def get(self, request, dataset_id, key_id):
+        dataset, api_key = get_dataset_api_key_for_user(
+            dataset_id=dataset_id,
+            key_id=key_id,
+            user=request.user,
+        )
+
+        self.check_object_permissions(request, dataset)
+
+        return Response(
+            {
+                "id": str(api_key.id),
+                "dataset_id": str(dataset.id),
+                "name": api_key.name,
+                "key_prefix": api_key.key_prefix,
+                "is_active": api_key.is_active,
+                "raw_key": None,
+                "message": (
+                    "The full API key cannot be revealed after creation. "
+                    "Create a new key if you lost the original."
+                ),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def get_permissions(self):
+        return [IsDatasetProjectAdmin()]

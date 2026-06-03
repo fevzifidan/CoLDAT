@@ -1,10 +1,12 @@
 from .converters import (
     bbox_area,
     bbox_to_yolo,
-    object_to_bbox,
-    object_to_coco_segmentation,
     keypoints_to_bbox,
+    object_to_bbox,
+    object_to_coco_area,
+    object_to_coco_segmentation,
     polygon_to_bbox,
+    snapshot_object_to_coco_area,
 )
 from .selectors import (
     get_export_annotation_objects,
@@ -50,7 +52,9 @@ def build_coco_export(*, dataset):
                 "segmentation": object_to_coco_segmentation(
                     annotation_object=annotation_object,
                 ),
-                "area": bbox_area(bbox=bbox),
+                "area": object_to_coco_area(
+                    annotation_object=annotation_object,
+                ),
                 "iscrowd": 0,
             }
         )
@@ -284,7 +288,9 @@ def build_coco_export_from_snapshot(*, snapshot):
                     "segmentation": snapshot_object_to_coco_segmentation(
                         snapshot_object=obj,
                     ),
-                    "area": bbox_area(bbox=bbox),
+                    "area": snapshot_object_to_coco_area(
+                        snapshot_object=obj,
+                    ),
                     "iscrowd": 0,
                 }
             )

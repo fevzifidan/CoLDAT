@@ -118,3 +118,47 @@ class DatasetVersion(models.Model):
 
     def __str__(self):
         return f"{self.dataset.name} / {self.version_tag}"
+    
+class DatasetAPIKey(models.Model):
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    dataset = models.ForeignKey(
+        Dataset,
+        on_delete=models.CASCADE,
+        related_name="api_keys",
+    )
+
+    name = models.CharField(max_length=255)
+
+    key_prefix = models.CharField(
+        max_length=16,
+        help_text="Visible prefix used to identify the key.",
+    )
+
+    hashed_key = models.CharField(
+        max_length=128,
+        help_text="SHA256 hash of the full API key.",
+    )
+
+    is_active = models.BooleanField(default=True)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_dataset_api_keys",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        unique_together = [["dataset", "key_prefix"]]
+
+    def __str__(self):
+        return f"{self.dataset.name} / {self.name} / {self.key_prefix}"

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Dataset, DatasetMember, DatasetVersion
+from .models import Dataset, DatasetAPIKey, DatasetMember, DatasetVersion
 
 
 class DatasetSerializer(serializers.ModelSerializer):
@@ -133,3 +133,56 @@ class DatasetVersionCreateSerializer(serializers.Serializer):
         required=False,
         allow_blank=True,
     )
+
+class DatasetAPIKeySerializer(serializers.ModelSerializer):
+    dataset_id = serializers.UUIDField(source="dataset.id", read_only=True)
+    created_by_id = serializers.UUIDField(source="created_by.id", read_only=True)
+    created_by_username = serializers.CharField(
+        source="created_by.username",
+        read_only=True,
+    )
+
+    class Meta:
+        model = DatasetAPIKey
+        fields = [
+            "id",
+            "dataset_id",
+            "name",
+            "key_prefix",
+            "is_active",
+            "created_by_id",
+            "created_by_username",
+            "created_at",
+            "revoked_at",
+        ]
+
+
+class DatasetAPIKeyCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=255)
+
+
+class DatasetAPIKeyCreateResponseSerializer(DatasetAPIKeySerializer):
+    raw_key = serializers.CharField(read_only=True)
+
+    class Meta(DatasetAPIKeySerializer.Meta):
+        fields = DatasetAPIKeySerializer.Meta.fields + [
+            "raw_key",
+        ]
+
+
+class DatasetAPIKeyUpdateSerializer(serializers.Serializer):
+    name = serializers.CharField(
+        max_length=255,
+        required=False,
+    )
+    is_active = serializers.BooleanField(
+        required=False,
+    )
+
+    def validate(self, attrs):
+        if not attrs:
+            raise serializers.ValidationError(
+                "At least one field must be provided."
+            )
+
+        return attrs

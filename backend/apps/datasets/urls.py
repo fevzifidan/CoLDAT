@@ -13,6 +13,10 @@ from .views import (
     DatasetMemberListCreateView,
     DatasetVersionDetailView,
     DatasetVersionListCreateView,
+    DatasetAPIKeyDetailView,
+    DatasetAPIKeyListCreateView,
+    DatasetAPIKeyRevealView,
+    DatasetAPIKeyRevokeAllView,
 )
 
 
@@ -21,6 +25,26 @@ urlpatterns = [
         "",
         DatasetListView.as_view(),
         name="dataset-list",
+    ),
+        path(
+        "<uuid:dataset_id>/api-keys/",
+        DatasetAPIKeyListCreateView.as_view(),
+        name="dataset-api-key-list-create",
+    ),
+    path(
+        "<uuid:dataset_id>/api-keys/actions/revoke-all/",
+        DatasetAPIKeyRevokeAllView.as_view(),
+        name="dataset-api-key-revoke-all",
+    ),
+    path(
+        "<uuid:dataset_id>/api-keys/<uuid:key_id>/",
+        DatasetAPIKeyDetailView.as_view(),
+        name="dataset-api-key-detail",
+    ),
+    path(
+        "<uuid:dataset_id>/api-keys/<uuid:key_id>/reveal/",
+        DatasetAPIKeyRevealView.as_view(),
+        name="dataset-api-key-reveal",
     ),
     path(
         "<uuid:dataset_id>/",

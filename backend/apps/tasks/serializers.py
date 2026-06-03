@@ -60,7 +60,7 @@ class TaskSerializer(serializers.ModelSerializer):
 
 class TaskCreateSerializer(serializers.Serializer):
     dataset_id = serializers.UUIDField()
-    assignee_id = serializers.UUIDField()
+    assignee_username = serializers.CharField(max_length=150)
     image_ids = serializers.ListField(
         child=serializers.UUIDField(),
         allow_empty=False,
