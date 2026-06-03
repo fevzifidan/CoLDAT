@@ -62,7 +62,7 @@ class DatasetListView(APIView):
 
         return Response(
             {
-                "data": DatasetSerializer(datasets, many=True).data,
+                "data": DatasetSerializer(datasets, many=True, context={"request": request}).data,
                 "next_cursor": None,
             },
             status=status.HTTP_200_OK,
@@ -78,7 +78,7 @@ class ProjectDatasetListCreateView(APIView):
 
         return Response(
             {
-                "data": DatasetSerializer(datasets, many=True).data,
+                "data": DatasetSerializer(datasets, many=True, context={"request": request}).data,
                 "next_cursor": None,
             },
             status=status.HTTP_200_OK,
@@ -103,7 +103,7 @@ class ProjectDatasetListCreateView(APIView):
         )
 
         return Response(
-            DatasetSerializer(dataset).data,
+            DatasetSerializer(dataset, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -122,7 +122,7 @@ class DatasetDetailView(APIView):
         )
 
         return Response(
-            DatasetSerializer(dataset).data,
+            DatasetSerializer(dataset, context={"request": request}).data,
             status=status.HTTP_200_OK,
         )
 
@@ -147,7 +147,7 @@ class DatasetDetailView(APIView):
         )
 
         return Response(
-            DatasetSerializer(dataset).data,
+            DatasetSerializer(dataset, context={"request": request}).data,
             status=status.HTTP_200_OK,
         )
 

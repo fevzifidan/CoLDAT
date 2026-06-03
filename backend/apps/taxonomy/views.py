@@ -18,7 +18,6 @@ from .serializers import (
     ProjectClassSerializer,
     ProjectPredicateCreateUpdateSerializer,
     ProjectPredicateSerializer,
-    ProjectTaxonomyDeleteSerializer,
     ProjectTaxonomyUpdateSerializer,
     ProjectTaxonomyQuerySerializer,
 )
@@ -88,11 +87,17 @@ class ProjectTaxonomyView(APIView):
 
         self.check_object_permissions(request, project)
 
-        serializer = ProjectTaxonomyDeleteSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        # Query parametrelerinden al (frontend'den ?type=class&targetId=xxx geliyor)
+        item_type = request.query_params.get("type")
+        target_id = request.query_params.get("targetId") or request.query_params.get("target_id")
 
-        item_type = serializer.validated_data["type"]
-        target_id = serializer.validated_data["target_id"]
+        if not item_type:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("Query parameter 'type' is required.")
+
+        if not target_id:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("Query parameter 'targetId' is required.")
 
         if item_type == "class":
             project_class = get_project_class_for_user(
@@ -129,6 +134,9 @@ class ProjectTaxonomyView(APIView):
                 raise ValidationError("Attribute does not belong to this project.")
 
             delete_project_attribute(attribute=attribute)
+        else:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("Invalid type. Must be 'class', 'predicate', or 'attribute'.")
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 

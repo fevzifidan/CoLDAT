@@ -11,11 +11,14 @@ from .selectors import (
     get_task_for_user,
     get_task_images_for_user,
     get_tasks_assigned_to_user,
+    get_annotator_assignments_for_dataset,
 )
 from .serializers import (
     TaskAssignSerializer,
     TaskCreateSerializer,
     TaskImageSerializer,
+    AnnotatorAssignmentSerializer,
+    DatasetAnnotatorAssignmentsQuerySerializer,
     TaskSerializer,
     TaskStatusUpdateSerializer,
     TaskImageAddSerializer,
@@ -267,6 +270,23 @@ class ProjectTaskListView(APIView):
         return Response(
             {
                 "data": TaskSerializer(tasks, many=True).data,
+                "next_cursor": None,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class DatasetAnnotatorAssignmentsView(APIView):
+    def get(self, request, dataset_id):
+        dataset = get_dataset_for_user(
+            dataset_id=dataset_id,
+            user=request.user,
+        )
+
+        assignments = get_annotator_assignments_for_dataset(dataset=dataset)
+
+        return Response(
+            {
+                "data": AnnotatorAssignmentSerializer(assignments, many=True).data,
                 "next_cursor": None,
             },
             status=status.HTTP_200_OK,

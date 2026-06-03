@@ -4,7 +4,7 @@ from apps.assets.views import (
     DatasetAssetListCreateView,
     DatasetImageListView,
 )
-from apps.tasks.views import DatasetTaskListView
+from apps.tasks.views import DatasetTaskListView, DatasetAnnotatorAssignmentsView
 
 from .views import (
     DatasetDetailView,
@@ -85,5 +85,10 @@ urlpatterns = [
         "<uuid:dataset_id>/versions/<str:version_tag>/",
         DatasetVersionDetailView.as_view(),
         name="dataset-version-detail",
+    ),
+    path(
+        "<uuid:dataset_id>/annotator-assignments/",
+        DatasetAnnotatorAssignmentsView.as_view(),
+        name="dataset-annotator-assignments",
     ),
 ]
