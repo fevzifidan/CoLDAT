@@ -28,10 +28,10 @@ const fetchProjectsPage = async (
 ): Promise<PaginatedResponse<ExtendedProject>> => {
   const response = await projectService.getAllProjects({ limit, after: cursor });
 
-  const projects: ExtendedProject[] = (response?.data ?? []).map((p: any) => ({
+    const projects: ExtendedProject[] = (response?.data ?? []).map((p: any) => ({
     ...p,
     isDeleted: false,
-    role: (p.role || "admin").toLowerCase(),
+    role: (p.user_role || "").toLowerCase(),
   }));
 
   return {

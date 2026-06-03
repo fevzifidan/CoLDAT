@@ -6,6 +6,7 @@ from apps.datasets.selectors import get_dataset_for_user
 
 from .permissions import CanManageTasks
 from .selectors import (
+    get_annotator_assignments_for_dataset,
     get_dataset_tasks_for_user,
     get_project_tasks_for_user,
     get_task_for_user,
@@ -13,6 +14,8 @@ from .selectors import (
     get_tasks_assigned_to_user,
 )
 from .serializers import (
+    AnnotatorAssignmentSerializer,
+    DatasetAnnotatorAssignmentsQuerySerializer,
     TaskAssignSerializer,
     TaskCreateSerializer,
     TaskImageSerializer,
@@ -221,6 +224,24 @@ class ProjectTaskListView(APIView):
         return Response(
             {
                 "data": TaskSerializer(tasks, many=True).data,
+                "next_cursor": None,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class DatasetAnnotatorAssignmentsView(APIView):
+    def get(self, request, dataset_id):
+        dataset = get_dataset_for_user(
+            dataset_id=dataset_id,
+            user=request.user,
+        )
+
+        assignments = get_annotator_assignments_for_dataset(dataset=dataset)
+
+        return Response(
+            {
+                "data": AnnotatorAssignmentSerializer(assignments, many=True).data,
                 "next_cursor": None,
             },
             status=status.HTTP_200_OK,

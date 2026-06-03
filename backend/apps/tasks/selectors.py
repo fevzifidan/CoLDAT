@@ -114,3 +114,37 @@ def get_task_images_for_user(*, task_id, user):
     )
 
     return task, task_images
+
+
+def get_annotator_assignments_for_dataset(*, dataset):
+    """
+    Returns a list of { asset_id, assignee_username } for all
+    tasks with status 'assigned' or 'in_progress' in the given dataset.
+    Deduplicates by asset_id (first assignment wins).
+    """
+    tasks = (
+        Task.objects.filter(
+            dataset=dataset,
+            status__in=[Task.Status.ASSIGNED, Task.Status.IN_PROGRESS],
+            is_deleted=False,
+        )
+        .select_related("assignee")
+        .prefetch_related("task_images")
+        .order_by("-created_at")
+    )
+
+    assignments = []
+    seen_asset_ids = set()
+
+    for task in tasks:
+        username = task.assignee.username if task.assignee else "unknown"
+        for task_image in task.task_images.all():
+            asset_id = str(task_image.image_id)
+            if asset_id not in seen_asset_ids:
+                seen_asset_ids.add(asset_id)
+                assignments.append({
+                    "asset_id": asset_id,
+                    "assignee_username": username,
+                })
+
+    return assignments

@@ -91,7 +91,7 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
     }
   };
 
-        const saveEdit = (type: 'class' | 'pred', id: string | number) => {
+                                const saveEdit = async (type: 'class' | 'pred', id: string | number) => {
         if (!isAdmin) {
       notificationService.error(t("common:status.error", "Sadece admin rolü düzenleme yapabilir."));
       return;
@@ -108,21 +108,6 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
         isActive: tempIsActive,
         includeInExport: tempIncludeInExport
       } : c);
-      setClasses(nextClasses);
-
-      // 🔁 Backend'e tekil PATCH isteği
-      if (projectId) {
-        projectService.updateClass(projectId, id, {
-          name: tempName,
-          color: selectedColor,
-          isActive: tempIsActive,
-          includeInExport: tempIncludeInExport,
-        }).catch((err) => {
-          console.error("Class PATCH hatası:", err);
-          // Hata durumunda eski state'e dön
-          setClasses(classes);
-        });
-      }
     } else {
       nextPredicates = predicates.map(p => p.id === id ? { 
         ...p, 
@@ -130,23 +115,12 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
         isActive: tempIsActive,
         includeInExport: tempIncludeInExport
       } : p);
-      setPredicates(nextPredicates);
-
-      // 🔁 Backend'e tekil PATCH isteği
-      if (projectId) {
-        projectService.updatePredicate(projectId, id, {
-          name: tempName,
-          isActive: tempIsActive,
-          includeInExport: tempIncludeInExport,
-        }).catch((err) => {
-          console.error("Predicate PATCH hatası:", err);
-          setPredicates(predicates);
-        });
-      }
     }
     
     setEditingId(null);
-    updateParent(nextClasses, nextPredicates);
+    
+    // Backend'e tüm listeyi topluca kaydet (PUT /taxonomy/)
+    await saveTaxonomyToBackend(nextClasses, nextPredicates);
   };
 
     const deleteItem = async (type: 'class' | 'pred', id: string | number) => {
@@ -192,11 +166,79 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
     }
   };
 
-  const addClass = () => {
+    // Backend'e tüm taxonomy'yi kaydetmek için yardımcı fonksiyon
+  const saveTaxonomyToBackend = async (updatedClasses: ClassItem[], updatedPredicates: PredicateItem[]) => {
+    if (!projectId) return;
+
+    try {
+      // ID'si geçici (string) olanları backend oluşturacağı için id'siz gönder, 
+      // var olanları id'li gönder.
+      // NOT: Backend'deki bulk upsert, id'si olmayan öğeleri yeni oluşturur.
+      const classPayload = updatedClasses.map(c => ({
+        ...(typeof c.id === 'number' || (typeof c.id === 'string' && !c.id.startsWith('temp-')) ? { id: c.id } : {}),
+        name: c.name,
+        color: c.color,
+        index: typeof c.id === 'number' ? c.id : updatedClasses.indexOf(c),
+        is_active: c.isActive,
+        include_in_export: c.includeInExport,
+      }));
+
+      const predicatePayload = updatedPredicates.map(p => ({
+        ...(typeof p.id === 'number' || (typeof p.id === 'string' && !p.id.startsWith('temp-')) ? { id: p.id } : {}),
+        name: p.name,
+        is_active: p.isActive,
+        include_in_export: p.includeInExport,
+      }));
+
+      const response = await projectService.updateProjectTaxonomy(projectId, {
+        classes: classPayload,
+        predicates: predicatePayload,
+      });
+
+      // Backend'den dönen gerçek verilerle state'i güncelle
+      const responseData = response?.data || response || {};
+      const serverClasses = (Array.isArray(responseData.classes) ? responseData.classes : []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        color: c.color || COLOR_PALETTE[0],
+        isActive: c.is_active ?? true,
+        includeInExport: c.include_in_export ?? true,
+      }));
+      const serverPredicates = (Array.isArray(responseData.predicates) ? responseData.predicates : []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        isActive: p.is_active ?? true,
+        includeInExport: p.include_in_export ?? true,
+      }));
+
+      setClasses(serverClasses);
+      setPredicates(serverPredicates);
+      updateParent(serverClasses, serverPredicates);
+    } catch (err: any) {
+      console.error("Taxonomy kaydedilirken hata:", err);
+      notificationService.error(
+        err?.response?.data?.message || t("common:status.error_general", "An error occurred while saving taxonomy.")
+      );
+      // Hata durumunda eski state'e geri dönmek için veriyi yeniden yükle
+      const res = await projectService.getProjectTaxonomy(projectId);
+      const data = res?.data || res || {};
+      const reloadedClasses = (Array.isArray(data.classes) ? data.classes : []).map((c: any) => ({
+        ...c, isActive: c.isActive ?? true, includeInExport: c.includeInExport ?? true
+      }));
+      const reloadedPredicates = (Array.isArray(data.predicates) ? data.predicates : []).map((p: any) => ({
+        ...p, isActive: p.isActive ?? true, includeInExport: p.includeInExport ?? true
+      }));
+      setClasses(reloadedClasses);
+      setPredicates(reloadedPredicates);
+    }
+  };
+
+  const addClass = async () => {
     if (!isAdmin) return;
     const randomColor = COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
+    const tempId = `temp-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString()}`;
     const newCls: ClassItem = { 
-      id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(), 
+      id: tempId,
       name: t("taxonomy.default_new_class", "New Class"), 
       color: randomColor,
       isActive: true,
@@ -204,20 +246,23 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
     };
     const nextClasses = [...classes, newCls];
     setClasses(nextClasses);
-    updateParent(nextClasses, predicates);
+    // Backend'e kaydet (beklemeden göster, backend'e async kaydet)
+    await saveTaxonomyToBackend(nextClasses, predicates);
   };
 
-  const addPredicate = () => {
+  const addPredicate = async () => {
     if (!isAdmin) return;
+    const tempId = `temp-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString()}`;
     const newPred: PredicateItem = { 
-      id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(), 
+      id: tempId,
       name: t("taxonomy.default_new_relation", "new_relation"),
       isActive: true,
       includeInExport: true
     };
     const nextPredicates = [...predicates, newPred];
     setPredicates(nextPredicates);
-    updateParent(classes, nextPredicates);
+    // Backend'e kaydet
+    await saveTaxonomyToBackend(classes, nextPredicates);
   };
 
   const startEdit = (type: 'class' | 'pred', item: any) => {

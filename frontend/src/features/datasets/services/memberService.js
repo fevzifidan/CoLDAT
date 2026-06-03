@@ -11,7 +11,7 @@ export const memberService = {
   },
 
   // POST /datasets/{datasetId}/members/
-  // API spec body: { username: string, role: "annotator" | "viewer" }
+  // API spec body: { username: string, role: "admin" | "annotator" | "viewer" }
   addMember: async (datasetId, userData) => {
       const response = await apiService.post(`/datasets/${datasetId}/members/`, userData);
       return response?.data || response;

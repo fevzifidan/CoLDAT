@@ -5,6 +5,7 @@
         "forbidden": "Bu işlemi gerçekleştirmek için yetkiniz bulunmuyor.",
         "not_found": "İstediğiniz bilgiye ulaşılamadı (404).",
         "internal_server": "Sunucu tarafında bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
-        "network": "İnternet bağlantınızı kontrol edin."
+        "network": "İnternet bağlantınızı kontrol edin.",
+        "session_expired": "Oturum süreniz doldu. Lütfen tekrar giriş yapın."
     }
 }

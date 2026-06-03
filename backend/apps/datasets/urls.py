@@ -4,7 +4,7 @@ from apps.assets.views import (
     DatasetAssetListCreateView,
     DatasetImageListView,
 )
-from apps.tasks.views import DatasetTaskListView
+from apps.tasks.views import DatasetAnnotatorAssignmentsView, DatasetTaskListView
 
 from .views import (
     DatasetDetailView,
@@ -45,9 +45,14 @@ urlpatterns = [
         DatasetAssetListCreateView.as_view(),
         name="dataset-asset-list-create",
     ),
-    path(
+        path(
         "<uuid:dataset_id>/images/",
         DatasetImageListView.as_view(),
         name="dataset-images",
+    ),
+    path(
+        "<uuid:dataset_id>/annotator-assignments/",
+        DatasetAnnotatorAssignmentsView.as_view(),
+        name="dataset-annotator-assignments",
     ),
 ]

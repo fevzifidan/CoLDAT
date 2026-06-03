@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -16,22 +16,50 @@ const DashboardHome = () => {
   const navigate = useNavigate();
   const { t } = useTranslation(['dashboard', 'common']);
 
-  // --- PROJECTS PAGINATION (limit=4, accumulate mode) ---
-  const {
-    items: projectsList,
-    loading: projectsLoading,
-    error: projectsError,
-    hasNext: projectsHasNext,
-    loadMore: loadMoreProjects,
-    loadPage: reloadProjects,
-  } = useCursorPagination({
-    fetchFn: async (cursor, limit) => {
-      const res = await projectService.getAllProjects({ limit, after: cursor });
-      return res as PaginatedResponse<any>;
-    },
-    limit: 4,
-    mode: 'accumulate',
-  });
+  // --- PROJECTS (simple fetch, all at once) ---
+  const [projectsList, setProjectsList] = useState<any[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectsError, setProjectsError] = useState<string | null>(null);
+
+  const fetchProjects = () => {
+    setProjectsLoading(true);
+    setProjectsError(null);
+
+    projectService.getAllProjects({ limit: 100 })
+      .then((res: any) => {
+        // Backend now returns { data: [...], next_cursor: null }
+        const data = Array.isArray(res) ? res : (res?.data ?? []);
+        setProjectsList(data);
+      })
+      .catch((err: any) => {
+        setProjectsError(err?.message || 'Failed to load projects');
+      })
+      .finally(() => {
+        setProjectsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setProjectsLoading(true);
+    projectService.getAllProjects({ limit: 100 })
+      .then((res: any) => {
+        if (cancelled) return;
+        const data = Array.isArray(res) ? res : (res?.data ?? []);
+        setProjectsList(data);
+      })
+      .catch((err: any) => {
+        if (cancelled) return;
+        setProjectsError(err?.message || 'Failed to load projects');
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setProjectsLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, []);
 
   // --- TASKS PAGINATION (limit=4, accumulate mode) ---
   const {
@@ -94,12 +122,13 @@ const DashboardHome = () => {
     [datasetsList]
   );
 
-  const mappedProjects = useMemo(() =>
+    const mappedProjects = useMemo(() =>
     projectsList.map(p => ({
       id: p.id,
       name: p.name || 'Standard Project',
       status: p.status || '',
       description: p.description || 'Ecosystem managed project workspace.',
+      role: p.user_role,
     })),
     [projectsList]
   );
@@ -114,7 +143,7 @@ const DashboardHome = () => {
     );
   }
 
-  if (hasGlobalError && projectsList.length === 0 && tasksList.length === 0 && datasetsList.length === 0) {
+    if (hasGlobalError && projectsList.length === 0 && tasksList.length === 0 && datasetsList.length === 0) {
     return (
       <div className="h-[50vh] flex items-center justify-center p-4">
         <div className="p-5 rounded-2xl border border-destructive/20 bg-destructive/5 text-center space-y-3 max-w-sm shadow-sm">
@@ -123,7 +152,7 @@ const DashboardHome = () => {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => { reloadProjects(null, false); }}
+            onClick={fetchProjects}
             className="text-xs h-8"
           >
             {t('dashboard:retry_button')}
@@ -260,7 +289,7 @@ const DashboardHome = () => {
         )}
       </section>
 
-      {/* RECENT PROJECTS SECTION */}
+            {/* RECENT PROJECTS SECTION */}
       <section className="space-y-4">
         <div className="flex justify-between items-end px-1">
           <div>
@@ -270,17 +299,6 @@ const DashboardHome = () => {
             <p className="text-xs text-muted-foreground italic">{t('dashboard:sections.projects_description')}</p>
           </div>
           <div className="flex items-center gap-2">
-            {projectsHasNext && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={loadMoreProjects}
-                disabled={projectsLoading}
-                className="text-primary font-bold text-[10px] hover:bg-primary/10 uppercase tracking-wider"
-              >
-                {t('dashboard:load_more')}
-              </Button>
-            )}
             {mappedProjects.length > 0 && (
               <Button
                 variant="ghost"
@@ -303,7 +321,7 @@ const DashboardHome = () => {
 
         {mappedProjects.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {mappedProjects.map((project) => (
+            {mappedProjects.slice(0, 4).map((project) => (
               <ProjectCard key={project.id} project={project} cardType="project" />
             ))}
           </div>

@@ -6,6 +6,7 @@ from .models import Project, ProjectMembership
 class ProjectSerializer(serializers.ModelSerializer):
     owner_id = serializers.UUIDField(source="owner.id", read_only=True)
     owner_username = serializers.CharField(source="owner.username", read_only=True)
+    user_role = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -15,6 +16,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "owner_username",
             "name",
             "description",
+            "user_role",
             "is_archived",
             "created_at",
             "updated_at",
@@ -23,10 +25,21 @@ class ProjectSerializer(serializers.ModelSerializer):
             "id",
             "owner_id",
             "owner_username",
+            "user_role",
             "is_archived",
             "created_at",
             "updated_at",
         ]
+
+    def get_user_role(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user or not request.user.is_authenticated:
+            return None
+        membership = ProjectMembership.objects.filter(
+            project=obj,
+            user=request.user,
+        ).first()
+        return membership.role if membership else None
 
 
 class ProjectCreateSerializer(serializers.Serializer):

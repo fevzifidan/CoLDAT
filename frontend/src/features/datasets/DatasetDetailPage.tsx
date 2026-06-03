@@ -1,4 +1,4 @@
-// src/features/datasets/DatasetDetailPage.tsx
+      // src/features/datasets/DatasetDetailPage.tsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { datasetService } from './services/datasetService';
+import DatasetMemberManager from './components/DatasetMemberManager';
 
 interface DatasetDetail {
   id: string;
@@ -222,8 +223,15 @@ const DatasetDetailPage = () => {
           </CardContent>
         </Card>
       </div>
+
+            {/* Team Members Section */}
+      <DatasetMemberManager
+        datasetId={dataset.id}
+        currentUserRole={dataset.role}
+      />
     </div>
   );
 };
 
 export default DatasetDetailPage;
+

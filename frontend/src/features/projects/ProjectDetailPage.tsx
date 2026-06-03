@@ -1,7 +1,7 @@
 // frontend/src/features/projects/ProjectDetailPage.tsx
 
 import { useParams, useNavigate } from 'react-router-dom';
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tag, Database, ArrowLeft, ListTodo, Settings } from "lucide-react";
 import TaxonomyManager from '@/features/datasets/taxonomy/TaxonomyManager';
@@ -16,10 +16,15 @@ const ProjectDetailPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation(['pages', 'common']);
   const [activeTab, setActiveTab] = useState('datasets');
-  const [project, setProject] = useState<{ id: string; name: string; description?: string } | null>(null);
+  const [project, setProject] = useState<{ id: string; name: string; description?: string; user_role?: string } | null>(null);
   const [loadingProject, setLoadingProject] = useState(true);
 
   const projectId = id || '';
+
+  // Kullanıcının bu projedeki rolünü hesapla
+  const isAdmin = useMemo(() => {
+    return project?.user_role === 'admin';
+  }, [project?.user_role]);
 
   // Proje detayını backend'den çek
   const fetchProject = useCallback(async () => {
@@ -135,13 +140,14 @@ const ProjectDetailPage = () => {
               )
             )}
 
-            {activeTab === 'datasets' && (
-              <ProjectDatasetsPage />
+                        {activeTab === 'datasets' && (
+              <ProjectDatasetsPage projectId={projectId} />
             )}
 
             {activeTab === 'taxonomy' && (
               <TaxonomyManager 
                 projectId={projectId}
+                isAdmin={isAdmin}
               />
             )}
 

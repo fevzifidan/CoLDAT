@@ -1,3 +1,5 @@
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
@@ -34,7 +36,12 @@ class ProjectListCreateView(APIView):
         projects = get_projects_for_user(user=request.user)
 
         return Response(
-            ProjectSerializer(projects, many=True).data,
+            {
+                "data": ProjectSerializer(
+                    projects, many=True, context={"request": request}
+                ).data,
+                "next_cursor": None,
+            },
             status=status.HTTP_200_OK,
         )
 
@@ -49,30 +56,33 @@ class ProjectListCreateView(APIView):
         )
 
         return Response(
-            ProjectSerializer(project).data,
+            ProjectSerializer(project, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
         )
 
 
 class ProjectDetailView(APIView):
-    def get_project(self, request, project_id):
-        return get_object_or_404(
-            Project,
-            id=project_id,
-            memberships__user=request.user,
-            is_archived=False,
-        )
+    def get_project(self, project_id):
+        try:
+            return Project.objects.get(id=project_id, is_archived=False)
+        except Project.DoesNotExist:
+            raise Http404("Project not found.")
 
     def get(self, request, project_id):
-        project = self.get_project(request, project_id)
+        project = self.get_project(project_id)
+
+        if not project.memberships.filter(user=request.user).exists():
+            raise PermissionDenied(
+                "You do not have permission to view this project."
+            )
 
         return Response(
-            ProjectSerializer(project).data,
+            ProjectSerializer(project, context={"request": request}).data,
             status=status.HTTP_200_OK,
         )
 
     def patch(self, request, project_id):
-        project = self.get_project(request, project_id)
+        project = self.get_project(project_id)
 
         self.check_object_permissions(request, project)
 
@@ -85,12 +95,12 @@ class ProjectDetailView(APIView):
         )
 
         return Response(
-            ProjectSerializer(project).data,
+            ProjectSerializer(project, context={"request": request}).data,
             status=status.HTTP_200_OK,
         )
 
     def delete(self, request, project_id):
-        project = self.get_project(request, project_id)
+        project = self.get_project(project_id)
 
         self.check_object_permissions(request, project)
 
@@ -103,6 +113,7 @@ class ProjectDetailView(APIView):
             return [IsProjectAdmin()]
 
         return super().get_permissions()
+    
     
 class ProjectMemberListCreateView(APIView):
     def get(self, request, project_id):

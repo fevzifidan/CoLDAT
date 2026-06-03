@@ -29,9 +29,10 @@ export const AuthProvider = ({ children }) => {
           const response = await apiService.get("/account/me/"); 
           const responseData = response?.data || response;
           setUser(normalizeUser(responseData));
-        } catch (error) {
+                } catch (error) {
           console.error("Token geçersiz, temizleniyor...");
           localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
           setUser(null);
         }
       }
@@ -56,13 +57,17 @@ export const AuthProvider = ({ children }) => {
       // Çalışan tam backend URL'iniz (http://localhost:8000/auth/login/)
       const response = await apiService.post("/auth/login/", djangoPayload, config);
       
-      console.log("Backend'den gelen yanıt:", response);
+            console.log("Backend'den gelen yanıt:", response);
 
       const token = response?.access || response?.token || response?.access_token || response?.data?.access;
+      const refreshToken = response?.refresh || response?.refresh_token || response?.data?.refresh;
       const userData = response?.user || response;
 
       if (token) {
         localStorage.setItem("access_token", token);
+        if (refreshToken) {
+          localStorage.setItem("refresh_token", refreshToken);
+        }
         setUser(normalizeUser(userData));
       }
       
@@ -73,9 +78,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // 3. Logout Fonksiyonu
+  const refresh_token = async (refresh_token, config = {}) => {
+    try {
+      const response = await apiService.post("/auth/refresh/", { refresh_token: refresh_token }, config);
+      return response;
+    }
+    catch (error) {
+      console.error("Token yenileme hatası:", error.response?.data || error);
+      throw error;
+    }
+  };
+
+    // 3. Logout Fonksiyonu
   const logout = useCallback(() => {
     localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
     setUser(null);
   }, []);
 

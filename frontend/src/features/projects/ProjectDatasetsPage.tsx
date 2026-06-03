@@ -9,8 +9,13 @@ import { datasetService } from '../datasets/services/datasetService';
 import { CreateDatasetModal } from '../datasets/components/CreateDatasetModal';
 import notificationService from '@/shared/services/notification/notification.service';
 
-export const ProjectDatasetsPage = () => {
-  const { projectId } = useParams<{ projectId: string }>();
+interface ProjectDatasetsPageProps {
+  projectId?: string;
+}
+
+export const ProjectDatasetsPage: React.FC<ProjectDatasetsPageProps> = ({ projectId: propProjectId }) => {
+  const { projectId: paramProjectId } = useParams<{ projectId: string }>();
+  const projectId = propProjectId || paramProjectId || '';
   const navigate = useNavigate();
   const { t } = useTranslation(['pages', 'common', 'datasets']);
   
@@ -133,8 +138,12 @@ export const ProjectDatasetsPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              projectDatasets.map((ds: any) => (
-                <Card key={ds.id} className="rounded-[1.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                            projectDatasets.map((ds: any) => (
+                <Card
+                  key={ds.id}
+                  className="rounded-[1.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden cursor-pointer transition-all hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-800"
+                  onClick={() => navigate(`/datasets/${ds.id}`)}
+                >
                                     <CardHeader className="p-5 pb-3 flex flex-row items-center justify-between space-y-0">
                     <div>
                       <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100">
@@ -224,3 +233,5 @@ export const ProjectDatasetsPage = () => {
     </div>
   );
 };
+
+export default ProjectDatasetsPage;

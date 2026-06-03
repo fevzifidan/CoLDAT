@@ -56,7 +56,7 @@ const fetchAdminProjects = async (
 
   // Filter to admin-only projects
   const adminProjects = rawProjects.filter(
-    (p: any) => (p.role ?? "").toUpperCase() === "ADMIN"
+    (p: any) => (p.user_role ?? "").toUpperCase() === "ADMIN"
   );
 
   return {
@@ -281,16 +281,16 @@ export const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
               </div>
             </div>
 
-            {/* Dataset Name */}
+                        {/* Dataset Name */}
             <div className="space-y-1">
               <label className="text-xs font-bold text-card-foreground">
-                {t("pages:project_general.project_name", "Dataset Name")}
+                {t("datasets:project_page.dataset_name_label", "Dataset Name")}
               </label>
               <Input
                 value={datasetName}
                 onChange={(e) => setDatasetName(e.target.value)}
                 placeholder={t(
-                  "pages:project_general.placeholder_name",
+                  "datasets:project_page.placeholder_name",
                   "E.g. Autonomous Driving Dataset"
                 )}
                 required

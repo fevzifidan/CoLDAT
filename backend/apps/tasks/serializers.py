@@ -103,3 +103,15 @@ class TaskListQuerySerializer(serializers.Serializer):
         required=False,
         allow_blank=False,
     )
+
+
+class DatasetAnnotatorAssignmentsQuerySerializer(serializers.Serializer):
+    limit = serializers.IntegerField(
+        default=100, min_value=1, max_value=1000, required=False,
+    )
+    after = serializers.UUIDField(required=False)
+
+
+class AnnotatorAssignmentSerializer(serializers.Serializer):
+    asset_id = serializers.UUIDField()
+    assignee_username = serializers.CharField()

@@ -51,7 +51,7 @@ const DatasetSelectionStep = ({ onSelect, selectedDataset }: DatasetSelectionSte
       setLoading(true);
       setError(null);
       try {
-        const result = await datasetService.getAllDatasets(null, { limit: 100 });
+        const result = await datasetService.fetchAllDatasets({ limit: 100 });
         const data: DatasetResult[] = result?.data ?? result ?? [];
         setDatasets(data);
       } catch (err: any) {
