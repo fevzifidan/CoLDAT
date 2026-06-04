@@ -5,9 +5,10 @@ import { useAppStore } from '@/store/hooks/useAppStore';
 
 interface DatasetQueueHeaderProps {
   totalImages: number;
+  activeImageIndex: number;
 }
 
-export default function DatasetQueueHeader({ totalImages }: DatasetQueueHeaderProps) {
+export default function DatasetQueueHeader({ totalImages, activeImageIndex }: DatasetQueueHeaderProps) {
   const { t } = useTranslation('annotation');
   const isReadOnly = useAppStore(state => state.isReadOnly);
 
@@ -18,7 +19,7 @@ export default function DatasetQueueHeader({ totalImages }: DatasetQueueHeaderPr
           {isReadOnly ? t('leftPanel.datasetQueue') : t('leftPanel.taskQueue')}
         </h2>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          {t('leftPanel.imagesCount', { current: 42, total: totalImages.toLocaleString() })}
+          {t('leftPanel.imagesCount', { current: activeImageIndex + 1, total: totalImages.toLocaleString() })}
         </p>
       </div>
       <Button 

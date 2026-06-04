@@ -7,7 +7,11 @@ from .models import AnnotationObject, SceneGraphRelationship
 
 class AnnotationObjectInputSerializer(serializers.Serializer):
     id = serializers.UUIDField()
-    class_id = serializers.UUIDField()
+    class_id = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+    )
     type = serializers.ChoiceField(
         choices=AnnotationObject.GeometryType.choices,
     )
@@ -15,6 +19,17 @@ class AnnotationObjectInputSerializer(serializers.Serializer):
         child=serializers.FloatField(),
         allow_empty=False,
     )
+
+    def validate_class_id(self, value):
+        if not value:
+            return None
+        # Validate that it's a proper UUID string
+        try:
+            from uuid import UUID
+            UUID(value)
+        except (ValueError, TypeError):
+            raise serializers.ValidationError("Must be a valid UUID.")
+        return value
 
 
 class SceneGraphRelationshipInputSerializer(serializers.Serializer):

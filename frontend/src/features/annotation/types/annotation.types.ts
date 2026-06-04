@@ -108,6 +108,33 @@ export interface TaskImagesResponse {
 }
 
 export type TaskStatus = 'open' | 'in_progress' | 'approval_pending' | 'completed' | 'rejected';
+
+export interface TaxonomyResponse {
+  classes: Array<{
+    id: string;
+    name: string;
+    color: string;
+    /** YOLO/COCO export'ta sınıf indeksini belirler; spec'teki ClassItem.index alanı. */
+    index: number;
+    /** false ise sınıf pasiftir ve annotation UI'da gösterilmez. */
+    is_active: boolean;
+    /** false ise bu sınıfa ait annotation'lar export'a dahil edilmez. */
+    include_in_export: boolean;
+  }>;
+  predicates: Array<{
+    id: string;
+    name: string;
+    is_active: boolean;
+    include_in_export: boolean;
+  }>;
+  /** Gelecekte nişaan (attribute) tabanlı filtreleme için rezerve edilmiştir. */
+  attributes: Array<{
+    id: string;
+    name: string;
+    is_active: boolean;
+    include_in_export: boolean;
+  }>;
+}
 export type UserRole = 'Annotator' | 'Viewer';
 
 export interface Task {
@@ -118,33 +145,6 @@ export interface Task {
   status: TaskStatus;
   rejection_note: string | null;
   image_count: number;
-}
-
-export interface TaxonomyResponse {
-  classes: Array<{
-    id: string;
-    name: string;
-    color: string;
-    /** YOLO/COCO export'ta sınıf indeksini belirler; spec'teki ClassItem.index alanı. */
-    index: number;
-    /** false ise sınıf pasiftir ve annotation UI'da gösterilmez. */
-    isActive: boolean;
-    /** false ise bu sınıfa ait annotation'lar export'a dahil edilmez. */
-    includeInExport: boolean;
-  }>;
-  predicates: Array<{
-    id: string;
-    name: string;
-    isActive: boolean;
-    includeInExport: boolean;
-  }>;
-  /** Gelecekte nişaan (attribute) tabanlı filtreleme için rezerve edilmiştir. */
-  attributes: Array<{
-    id: string;
-    name: string;
-    isActive: boolean;
-    includeInExport: boolean;
-  }>;
 }
 
 export interface DatasetDetails {

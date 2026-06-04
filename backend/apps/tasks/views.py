@@ -1,6 +1,10 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from datetime import timedelta
+
+from django.utils import timezone
+from django.conf import settings
 
 from apps.datasets.selectors import get_dataset_for_user
 
@@ -181,9 +185,19 @@ class TaskImageListView(APIView):
             user=request.user,
         )
 
+        read_url_expiry_at = timezone.now() + timedelta(
+            seconds=settings.ASSET_READ_URL_EXPIRES_IN_SECONDS
+        )
+
         return Response(
             {
-                "data": TaskImageSerializer(task_images, many=True).data,
+                "data": TaskImageSerializer(
+                    task_images,
+                    many=True,
+                    context={
+                        "read_url_expiry_at": read_url_expiry_at,
+                    },
+                ).data,
                 "next_cursor": None,
             },
             status=status.HTTP_200_OK,
@@ -210,9 +224,19 @@ class TaskImageListView(APIView):
             user=request.user,
         )
 
+        read_url_expiry_at = timezone.now() + timedelta(
+            seconds=settings.ASSET_READ_URL_EXPIRES_IN_SECONDS
+        )
+
         return Response(
             {
-                "data": TaskImageSerializer(task_images, many=True).data,
+                "data": TaskImageSerializer(
+                    task_images,
+                    many=True,
+                    context={
+                        "read_url_expiry_at": read_url_expiry_at,
+                    },
+                ).data,
                 "next_cursor": None,
             },
             status=status.HTTP_200_OK,

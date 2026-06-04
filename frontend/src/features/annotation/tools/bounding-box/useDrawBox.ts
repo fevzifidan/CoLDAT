@@ -79,13 +79,14 @@ export const useDrawBox = (draftNodeRef: React.RefObject<Konva.Rect | null>) => 
         [x, y, w, h] = clampBox(x, y, w, h, imgDims.width, imgDims.height);
       }
 
-      // Add to store
-      const { annotatedObjects, setAnnotatedObjects } = useAppStore.getState();
+            // Add to store
+      const { annotatedObjects, setAnnotatedObjects, taxonomy } = useAppStore.getState();
+      const firstClassId = taxonomy.classes.length > 0 ? taxonomy.classes[0].id : '';
       setAnnotatedObjects([
         ...annotatedObjects,
         {
-          id: `bbox-${Date.now()}`,
-          classId: 'temp',
+          id: crypto.randomUUID(),
+          classId: firstClassId,
           label: 'New Object',
           type: 'bbox',
           color: '#22c55e',

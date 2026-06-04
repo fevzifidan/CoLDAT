@@ -41,6 +41,9 @@ import { PasswordResetPage } from '@/features/auth/ResetPassword/ResetPassword';
 import AccountNotVerifiedPage from '@/features/auth/AccountNotVerified/AccountNotVerified';
 import { LandingPage } from '@/features/landing/LandingPage';
 
+import ProtectedRoute from './components/custom/ProtectedRoute/ProtectedRoute.jsx';
+import GuestRoute from './components/custom/GuestRoute/GuestRoute.tsx';
+
 function App() {
   return (
     <>
@@ -55,48 +58,54 @@ function App() {
                 <AxiosInterceptorSetup />
                 <Toaster position="top-right" richColors />
                 <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/annotate/:taskId/:imageId?" element={<AnnotationPage />} />
-                  <Route path="/view/:taskId/:imageId?" element={<ViewerPage />} />
-                  <Route path="/verify-email" element={<VerificationPage />} />
-                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                  <Route path="/reset-password" element={<PasswordResetPage />} />
-                  <Route path="/account-not-verified" element={<AccountNotVerifiedPage />} />
-                  <Route path="/landing" element={<LandingPage />} />
-                  <Route path="/*" element = {
-                    <DashboardLayout>
-                      <Routes>
-                        <Route path="/" element={<DashboardHome />} />
+                  <Route element={<GuestRoute/>}>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/verify-email" element={<VerificationPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/reset-password" element={<PasswordResetPage />} />
+                    <Route path="/account-not-verified" element={<AccountNotVerifiedPage />} />
+                  </Route>
+                  <Route element={<ProtectedRoute/>}>
+                    <Route path="/annotate/:taskId/:imageId?" element={<AnnotationPage />} />
+                    <Route path="/view/:taskId/:imageId?" element={<ViewerPage />} />
+                    
+                    
+                    <Route path="/*" element = {
+                      <DashboardLayout>
+                        <Routes>
+                          <Route path="/dashboard" element={<DashboardHome />} />
 
-                        {/* Ana Sayfa */}
-                        <Route path="/projects" element={<ProjectsPage />} />
-                        
-                        <Route path="/projects/:projectId/datasets" element={<ProjectDatasetsPage />} />
-                        
-                        {/* Sol menü veya doğrudan erişim için genel Datasets rotası */}
-                        <Route path="/datasets" element={<DatasetsPage />} />
-                        <Route path="/datasets/:datasetId" element={<DatasetDetailPage />} />
+                          {/* Ana Sayfa */}
+                          <Route path="/projects" element={<ProjectsPage />} />
+                          
+                          <Route path="/projects/:projectId/datasets" element={<ProjectDatasetsPage />} />
+                          
+                          {/* Sol menü veya doğrudan erişim için genel Datasets rotası */}
+                          <Route path="/datasets" element={<DatasetsPage />} />
+                          <Route path="/datasets/:datasetId" element={<DatasetDetailPage />} />
 
-                        {/* Kullanıcının tüm asset'lerini gösteren sayfa */}
-                        <Route path="/assets" element={<UserAssetsPage />} />
+                          {/* Kullanıcının tüm asset'lerini gösteren sayfa */}
+                          <Route path="/assets" element={<UserAssetsPage />} />
 
-                        <Route path="/tasks" element={<TasksPage />} />
-                        <Route path="/tasks/new" element={<CreateTaskPage />} />
-                        <Route path="/api-keys" element={<ApiKeysPage />} />
-                        
-                        {/* Sol tarafta tıklandığında yüklenecek alan */}
-                        <Route path="/synthetic" element={<SyntheticPage />} />
+                          <Route path="/tasks" element={<TasksPage />} />
+                          <Route path="/tasks/new" element={<CreateTaskPage />} />
+                          <Route path="/api-keys" element={<ApiKeysPage />} />
+                          
+                          {/* Sol tarafta tıklandığında yüklenecek alan */}
+                          <Route path="/synthetic" element={<SyntheticPage />} />
 
-                        {/* 🎯 HESAP AYARLARI: DashboardLayout altında çalışacak profil rotamız */}
-                        <Route path="/profile" element={<ProfilePage />} />
+                          {/* 🎯 HESAP AYARLARI: DashboardLayout altında çalışacak profil rotamız */}
+                          <Route path="/profile" element={<ProfilePage />} />
 
-                        {/* Detay sayfası */}
-                        <Route path="/projects/:id" element={<ProjectDetailPage />} />
-                        <Route path="*" element={<div className="p-8 text-center font-mono text-white">404 | Page Not Found</div>} />
-                      </Routes>
-                    </DashboardLayout>
-                  } />
+                          {/* Detay sayfası */}
+                          <Route path="/projects/:id" element={<ProjectDetailPage />} />
+                          <Route path="*" element={<div className="p-8 text-center font-mono text-white">404 | Page Not Found</div>} />
+                        </Routes>
+                      </DashboardLayout>
+                    } />
+                  </Route>
                 </Routes>
               </AuthProvider>
             </ConfirmProvider>

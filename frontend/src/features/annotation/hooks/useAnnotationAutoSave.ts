@@ -24,7 +24,7 @@ function buildAnnotationPayload(
   return {
     objects: objects.map(obj => ({
       id: obj.id,
-      class_id: obj.classId,
+      class_id: obj.classId || null,
       type: obj.type,
       coordinates: obj.coordinates,
     })),

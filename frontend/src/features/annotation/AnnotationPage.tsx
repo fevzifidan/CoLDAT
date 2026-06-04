@@ -24,6 +24,7 @@ export default function AnnotationPage() {
   const taskImages = useAppStore(state => state.taskImages);
   const currentImage = useAppStore(state => state.currentImage);
   const setCurrentImage = useAppStore(state => state.setCurrentImage);
+  const setCurrentImageIndex = useAppStore(state => state.setCurrentImageIndex);
   const currentTask = useAppStore(state => state.currentTask);
   
   useUndoRedo();
@@ -86,7 +87,7 @@ export default function AnnotationPage() {
     }
   }, [isSamReady, imageId]);
 
-  // ─── Sync activeImageId when URL imageId changes ─────────────────────────
+    // ─── Sync activeImageId when URL imageId changes ─────────────────────────
   useEffect(() => {
     if (imageId) {
       setActiveImageId(imageId);
@@ -94,13 +95,18 @@ export default function AnnotationPage() {
       const imgMeta = taskImages.find(img => img.asset_id === imageId);
       if (imgMeta) {
         setCurrentImage(imgMeta);
+        // Update currentImageIndex for toolbar / queue display
+        const index = taskImages.findIndex(img => img.asset_id === imageId);
+        if (index >= 0) {
+          setCurrentImageIndex(index);
+        }
       } else {
         // Fallback or fetch if not found
         // Since it's not found, we don't have the URL yet.
         // We could fetch it here if we had a single image details API.
       }
     }
-  }, [imageId, taskImages, setCurrentImage]);
+  }, [imageId, taskImages, setCurrentImage, setCurrentImageIndex]);
 
   const handleImageSelect = (id: string) => {
     setActiveImageId(id);

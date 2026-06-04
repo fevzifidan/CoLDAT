@@ -49,12 +49,13 @@ function mapApiRelationToUI(
 const IS_TEST_MODE = import.meta.env.VITE_TEST_MODE === 'true';
 
 export function useAnnotationData(taskId: string, imageId: string) {
-  const {
+    const {
     setAnnotatedObjects,
     setObjectRelations,
     setTaxonomy,
     setTaskContext,
     setReadOnly,
+    setTotalImages,
     taxonomy
   } = useAppStore(
     useShallow((state) => ({
@@ -63,6 +64,7 @@ export function useAnnotationData(taskId: string, imageId: string) {
       setTaxonomy: state.setTaxonomy,
       setTaskContext: state.setTaskContext,
       setReadOnly: state.setReadOnly,
+      setTotalImages: state.setTotalImages,
       taxonomy: state.taxonomy,
     }))
   );
@@ -87,6 +89,7 @@ export function useAnnotationData(taskId: string, imageId: string) {
         const task = await api.getTaskDetails(taskId);
         if (cancelled) return;
         setTaskContext(task);
+        setTotalImages(task.image_count);
         
         // Handle Role
         setReadOnly(task.role === 'Viewer');
@@ -98,28 +101,28 @@ export function useAnnotationData(taskId: string, imageId: string) {
         const taxonomyData = await api.getProjectTaxonomy(dataset.project_id);
         if (cancelled) return;
 
-        // Map and Set Taxonomy
+                // Map and Set Taxonomy
         // O-1: isActive=false olanlar filtrelenir; sınıflar YOLO/COCO indeks sırasına göre dizilir.
         const mappedClasses: ClassDef[] = taxonomyData.classes
-          .filter(c => c.isActive)
+          .filter(c => c.is_active)
           .sort((a, b) => a.index - b.index)
           .map(c => ({
             id: c.id,
             name: c.name,
             color: c.color,
             index: c.index,
-            isActive: c.isActive,
-            includeInExport: c.includeInExport,
+            isActive: c.is_active,
+            includeInExport: c.include_in_export,
             count: 0,
           }));
 
         const mappedRelations: RelationType[] = taxonomyData.predicates
-          .filter(p => p.isActive)
+          .filter(p => p.is_active)
           .map(p => ({
             id: p.id,
             name: p.name,
-            isActive: p.isActive,
-            includeInExport: p.includeInExport,
+            isActive: p.is_active,
+            includeInExport: p.include_in_export,
             directed: true, // Default to true as per Visual Genome/Scene Graph style
           }));
 

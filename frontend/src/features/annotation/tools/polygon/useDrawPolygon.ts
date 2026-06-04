@@ -30,21 +30,22 @@ export const useDrawPolygon = (
       // Hit radius for closing
       if (dist < 10) {
         // Close and save
-        const { annotatedObjects, setAnnotatedObjects } = useAppStore.getState();
-        setAnnotatedObjects([
-          ...annotatedObjects,
-          {
-            id: `poly-${Date.now()}`,
-            classId: 'temp',
-            label: 'New Polygon',
-            type: 'polygon',
-            color: '#22c55e',
-            coordinates: [...points],
-            zIndex: annotatedObjects.length,
-            visible: true,
-            locked: false
-          }
-        ]);
+          const { annotatedObjects, setAnnotatedObjects, taxonomy } = useAppStore.getState();
+          const firstClassId = taxonomy.classes.length > 0 ? taxonomy.classes[0].id : '';
+          setAnnotatedObjects([
+            ...annotatedObjects,
+            {
+              id: crypto.randomUUID(),
+              classId: firstClassId,
+              label: 'New Polygon',
+              type: 'polygon',
+              color: '#22c55e',
+              coordinates: [...points],
+              zIndex: annotatedObjects.length,
+              visible: true,
+              locked: false
+            }
+          ]);
         setPoints([]);
         if (draftLineRef.current) draftLineRef.current.points([]);
         return;

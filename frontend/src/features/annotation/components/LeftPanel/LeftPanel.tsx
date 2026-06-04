@@ -6,6 +6,7 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAppStore } from '@/store/hooks/useAppStore';
 import DatasetQueueHeader from './DatasetQueueHeader';
 import ImageQueueItem from './ImageQueueItem';
 import QueuePagination from './QueuePagination';
@@ -25,6 +26,7 @@ export default function LeftPanel({
   onImageSelect,
 }: LeftPanelProps) {
   const { t } = useTranslation('annotation');
+  const currentImageIndex = useAppStore(state => state.currentImageIndex);
   const [search, setSearch] = useState('');
 
   const {
@@ -42,7 +44,7 @@ export default function LeftPanel({
 
   return (
     <div className="flex flex-col h-full bg-background border-r">
-      <DatasetQueueHeader totalImages={totalImages} />
+      <DatasetQueueHeader totalImages={totalImages} activeImageIndex={currentImageIndex} />
 
       {/* Search */}
       <div className="px-3 py-2 border-b shrink-0">

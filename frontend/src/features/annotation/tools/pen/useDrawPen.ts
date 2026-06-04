@@ -61,12 +61,13 @@ export const useDrawPen = (
       return;
     }
 
-    const { annotatedObjects, setAnnotatedObjects } = useAppStore.getState();
+        const { annotatedObjects, setAnnotatedObjects, taxonomy } = useAppStore.getState();
+    const firstClassId = taxonomy.classes.length > 0 ? taxonomy.classes[0].id : '';
     setAnnotatedObjects([
       ...annotatedObjects,
       {
-        id: `pen-${Date.now()}`,
-        classId: 'temp',
+        id: crypto.randomUUID(),
+        classId: firstClassId,
         label: 'New Path',
         type: 'polygon', // We treat freehand as a polygon for now
         color: '#22c55e',

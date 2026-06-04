@@ -14,7 +14,7 @@ export default function ViewerPage() {
   const { taskId, imageId } = useParams<{ taskId: string; imageId: string }>();
   const navigate = useNavigate();
 
-  const {
+    const {
     currentImageIndex,
     totalImages,
     setReadOnly,
@@ -22,6 +22,7 @@ export default function ViewerPage() {
     taskImages,
     currentImage,
     setCurrentImage,
+    setCurrentImageIndex,
   } = useAppStore(
     useShallow((state) => ({
       currentImageIndex: state.currentImageIndex,
@@ -31,6 +32,7 @@ export default function ViewerPage() {
       taskImages: state.taskImages,
       currentImage: state.currentImage,
       setCurrentImage: state.setCurrentImage,
+      setCurrentImageIndex: state.setCurrentImageIndex,
     }))
   );
 
@@ -47,7 +49,7 @@ export default function ViewerPage() {
 
   const [activeImageId, setActiveImageId] = useState(imageId ?? '');
 
-  // Sync activeImageId and currentImage when URL imageId changes
+    // Sync activeImageId and currentImage when URL imageId changes
   useEffect(() => {
     if (imageId) {
       setActiveImageId(imageId);
@@ -55,9 +57,14 @@ export default function ViewerPage() {
       const imgMeta = taskImages.find(img => img.asset_id === imageId);
       if (imgMeta) {
         setCurrentImage(imgMeta);
+        // Update currentImageIndex for toolbar / queue display
+        const index = taskImages.findIndex(img => img.asset_id === imageId);
+        if (index >= 0) {
+          setCurrentImageIndex(index);
+        }
       }
     }
-  }, [imageId, taskImages, setCurrentImage]);
+  }, [imageId, taskImages, setCurrentImage, setCurrentImageIndex]);
 
   const handleImageSelect = (id: string) => {
     setActiveImageId(id);

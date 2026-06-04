@@ -40,7 +40,7 @@ def replace_image_annotations(*, image, data: dict, user):
     created_objects_by_id = {}
 
     for obj_data in objects_data:
-        class_id = obj_data["class_id"]
+        class_id = obj_data.get("class_id")
         geometry_type = obj_data["type"]
         coordinates = obj_data["coordinates"]
 
@@ -49,11 +49,17 @@ def replace_image_annotations(*, image, data: dict, user):
             coordinates=coordinates,
         )
 
-        annotation_class = ProjectClass.objects.filter(
-            id=class_id,
-            project=project,
-            is_active=True,
-        ).first()
+        if class_id is not None:
+            annotation_class = ProjectClass.objects.filter(
+                id=class_id,
+                project=project,
+                is_active=True,
+            ).first()
+        else:
+            annotation_class = ProjectClass.objects.filter(
+                project=project,
+                is_active=True,
+            ).order_by("index").first()
 
         if annotation_class is None:
             raise ValidationError(

@@ -1,5 +1,8 @@
 from rest_framework import serializers
+from django.conf import settings
 
+from apps.assets.storage import create_presigned_download_url
+from apps.assets.models import Asset
 from .models import Task, TaskImage
 
 
@@ -10,7 +13,12 @@ class TaskImageSerializer(serializers.ModelSerializer):
     mime_type = serializers.CharField(source="image.mime_type", read_only=True)
     width = serializers.IntegerField(source="image.width", read_only=True)
     height = serializers.IntegerField(source="image.height", read_only=True)
-    status = serializers.CharField(source="image.status", read_only=True)
+    status = serializers.SerializerMethodField()
+    embedding_status = serializers.SerializerMethodField()
+    asset_url = serializers.SerializerMethodField()
+    asset_url_expiry_at = serializers.SerializerMethodField()
+    sam_embedding_url = serializers.SerializerMethodField()
+    sam_embedding_url_expiry_at = serializers.SerializerMethodField()
 
     class Meta:
         model = TaskImage
@@ -23,8 +31,49 @@ class TaskImageSerializer(serializers.ModelSerializer):
             "width",
             "height",
             "status",
+            "embedding_status",
+            "asset_url",
+            "asset_url_expiry_at",
+            "sam_embedding_url",
+            "sam_embedding_url_expiry_at",
             "added_at",
         ]
+
+    def get_status(self, obj):
+        return obj.image.status.upper()
+
+    def get_embedding_status(self, obj):
+        if obj.image.embedding_status == Asset.EmbeddingStatus.NOT_REQUESTED:
+            return None
+        return obj.image.embedding_status.upper()
+
+    def get_asset_url(self, obj):
+        if obj.image.status != Asset.UploadStatus.UPLOADED:
+            return None
+        return create_presigned_download_url(
+            storage_key=obj.image.storage_key,
+            expires_in=settings.ASSET_READ_URL_EXPIRES_IN_SECONDS,
+        )
+
+    def get_asset_url_expiry_at(self, obj):
+        if obj.image.status != Asset.UploadStatus.UPLOADED:
+            return None
+        return self.context["read_url_expiry_at"]
+
+    def get_sam_embedding_url(self, obj):
+        if obj.image.embedding_status != Asset.EmbeddingStatus.UPLOADED:
+            return None
+        if not obj.image.embedding_storage_key:
+            return None
+        return create_presigned_download_url(
+            storage_key=obj.image.embedding_storage_key,
+            expires_in=settings.ASSET_READ_URL_EXPIRES_IN_SECONDS,
+        )
+
+    def get_sam_embedding_url_expiry_at(self, obj):
+        if obj.image.embedding_status != Asset.EmbeddingStatus.UPLOADED:
+            return None
+        return self.context["read_url_expiry_at"]
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -84,8 +133,6 @@ class TaskImageAddSerializer(serializers.Serializer):
             )
 
         return unique_ids
-
-
 class TaskStatusUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Task.Status.choices)
     note = serializers.CharField(required=False, allow_blank=True)

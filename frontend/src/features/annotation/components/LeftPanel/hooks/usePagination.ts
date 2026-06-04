@@ -60,13 +60,15 @@ export function useImagePagination(taskId: string, limit: number = 50) {
 
                     if (fetchId !== lastFetchId.current) return;
 
-                    // API'den gelen TaskImage verilerini IImages formatına (IndexedDB uyumlu) çevir
+                                        // API'den gelen TaskImage verilerini IImages formatına (IndexedDB uyumlu) çevir
                     const itemsForStorage = result.data.map(img => ({
                         ...img,
                         id: img.asset_id,
                         task_id: taskId,
                         // String tarihleri timestamp (number) formatına çeviriyoruz
-                        asset_url_expiry_at: new Date(img.asset_url_expiry_at).getTime(),
+                        asset_url_expiry_at: img.asset_url_expiry_at
+                            ? new Date(img.asset_url_expiry_at).getTime()
+                            : undefined,
                         sam_embedding_url_expiry_at: img.sam_embedding_url_expiry_at
                             ? new Date(img.sam_embedding_url_expiry_at).getTime()
                             : undefined

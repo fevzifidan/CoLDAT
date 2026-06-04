@@ -256,10 +256,13 @@ export const useLivewire = (previewLineRefs: React.RefObject<Konva.Line | null>[
       simplifiedCoords.push(pt.x, pt.y);
     }
 
+        const taxonomy = useAppStore.getState().taxonomy;
+    const firstClassId = taxonomy.classes.length > 0 ? taxonomy.classes[0].id : '';
+
     const newObject = {
       id: crypto.randomUUID(),
       label: `Polygon_${annotatedObjects.length + 1}`,
-      classId: '', 
+      classId: firstClassId, 
       type: 'polygon' as const,
       coordinates: simplifiedCoords,
       color: '#22c55e',

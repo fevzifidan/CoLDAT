@@ -67,7 +67,7 @@ export const GlobalKeyboardListener = () => {
 
                 const taxonomy = currentState.taxonomy;
                 const activeClass = taxonomy?.classes?.find((c: { isActive: boolean }) => c.isActive);
-                const classId = activeClass?.id ?? 'default';
+                                const classId = activeClass?.id ?? '';
                 const className = activeClass?.name ?? 'Object';
 
                 // Bounding box format: [xMin, yMin, width, height]
@@ -137,7 +137,7 @@ export const GlobalKeyboardListener = () => {
                 
                 const taxonomy = currentState.taxonomy;
                 const activeClass = taxonomy?.classes?.find((c: { isActive: boolean }) => c.isActive);
-                const classId = activeClass?.id ?? 'default';
+                                const classId = activeClass?.id ?? '';
                 const className = activeClass?.name ?? 'Object';
                 
                 const newObject = {
