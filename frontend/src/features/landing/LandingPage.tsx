@@ -1,5 +1,6 @@
 // src/features/landing/LandingPage.tsx
 import React from 'react';
+import { Link } from 'react-router-dom'; // 🎯 Yönlendirme için eklendi
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { ThreeDViewport } from './components/ThreeDViewport';
@@ -141,9 +142,13 @@ export const LandingPage: React.FC = () => {
           <p className="text-neutral-500 dark:text-zinc-400 max-w-xl mx-auto text-sm leading-relaxed mb-8">
             Join over 500+ engineering teams building the next generation of autonomous vehicles, drones, and medical AI.
           </p>
-          <button className="bg-red-700 hover:bg-red-800 text-white font-semibold text-sm px-8 py-4 rounded-xl shadow-lg shadow-red-700/10 transition-colors">
+          {/* 🎯 ÇÖZÜM: Create Free Workspace butonu /register sayfasına yönlendirildi */}
+          <Link 
+            to="/register" 
+            className="inline-block bg-red-700 hover:bg-red-800 text-white font-semibold text-sm px-8 py-4 rounded-xl shadow-lg shadow-red-700/10 transition-colors"
+          >
             Create Free Workspace
-          </button>
+          </Link>
         </div>
       </section>
 

@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
+import { useAuth } from "@/context/AuthContext";
 import { SIDEBAR_ITEMS } from "./SidebarConfig";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,7 @@ export function AppSidebar() {
   const { t, i18n } = useTranslation(["sidebar", "common"]);
   const { toggleSidebar } = useSidebar();
   const { theme, setTheme } = useTheme();
+  const { logout } = useAuth();
 
   const toggleLanguage = () => {
     const nextLang = i18n.language.startsWith('tr') ? 'en' : 'tr';
@@ -162,11 +164,11 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          <SidebarMenuItem>
+                    <SidebarMenuItem>
             <SidebarMenuButton 
               tooltip={t("common:logout", "Logout")} 
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => navigate('/login')}
+              onClick={logout}
             >
               <LogOut size={20} className="shrink-0" />
               <span className="ml-2 font-medium">{t("common:logout", "Logout")}</span>

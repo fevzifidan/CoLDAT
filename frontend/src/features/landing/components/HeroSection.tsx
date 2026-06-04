@@ -1,5 +1,6 @@
 // src/features/landing/components/HeroSection.tsx
 import React from 'react';
+import { Link } from 'react-router-dom'; // 🎯 Yönlendirme için eklendi
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
 
@@ -21,9 +22,13 @@ export const HeroSection: React.FC = () => {
 
       {/* CTAs */}
       <div className="flex flex-col sm:flex-row items-center gap-4 mb-16">
-        <Button className="w-full sm:w-auto bg-red-700 hover:bg-red-800 text-white font-semibold py-6 px-8 rounded-lg shadow-lg shadow-red-700/10 transition-all">
-          Start Annotating
-        </Button>
+        {/* 🎯 DÜZELTME: Start Annotating butonu -> /register sayfasına yönlendirildi */}
+        <Link to="/register" className="w-full sm:w-auto">
+          <Button className="w-full bg-red-700 hover:bg-red-800 text-white font-semibold py-6 px-8 rounded-lg shadow-lg shadow-red-700/10 transition-all">
+            Start Annotating
+          </Button>
+        </Link>
+        
         <Button variant="outline" className="w-full sm:w-auto border-neutral-300 dark:border-zinc-800 text-neutral-800 dark:text-zinc-200 hover:bg-neutral-50 dark:hover:bg-zinc-900 py-6 px-8 rounded-lg gap-2">
           <Play className="h-4 w-4 fill-current" /> Watch Demo
         </Button>

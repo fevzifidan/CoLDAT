@@ -1,10 +1,11 @@
 // src/features/landing/components/Navbar.tsx
 import React from 'react';
+import { Link } from 'react-router-dom'; // 🎯 Yönlendirmeler için eklendi
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 
 export const Navbar: React.FC = () => {
-  const {t} = useTranslation(["common"])
+  const { t } = useTranslation(["common"]);
   return (
     <nav className="border-b border-neutral-100 dark:border-zinc-900 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-md sticky top-0 z-50 transition-colors">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -13,7 +14,8 @@ export const Navbar: React.FC = () => {
             <span className="text-red-600 font-extrabold">{t("common:brand")}</span>
           </span>
           <div className="hidden md:flex items-center gap-6">
-            {['Platform', 'Features', 'Integrations'].map((link) => (
+            {/* 🎯 DÜZELTME: Features ve Integrations tableri silindi, sadece Platform kaldı */}
+            {['Platform'].map((link) => (
               <a 
                 key={link} 
                 href={`#${link.toLowerCase()}`} 
@@ -25,12 +27,20 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <button className="text-sm font-semibold text-neutral-700 hover:text-neutral-900 dark:text-zinc-300 dark:hover:text-white">
+          {/* 🎯 DÜZELTME: Sign In butonu -> /login sayfasına yönlendirildi */}
+          <Link 
+            to="/login" 
+            className="text-sm font-semibold text-neutral-700 hover:text-neutral-900 dark:text-zinc-300 dark:hover:text-white"
+          >
             Sign In
-          </button>
-          <Button className="bg-red-700 hover:bg-red-800 text-white rounded-md text-sm px-4 py-2 font-medium">
-            Get Started
-          </Button>
+          </Link>
+          
+          {/* 🎯 DÜZELTME: Get Started butonu -> /register sayfasına yönlendirildi */}
+          <Link to="/register">
+            <Button className="bg-red-700 hover:bg-red-800 text-white rounded-md text-sm px-4 py-2 font-medium">
+              Get Started
+            </Button>
+          </Link>
         </div>
       </div>
     </nav>

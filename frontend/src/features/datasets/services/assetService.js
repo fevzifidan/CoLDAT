@@ -3,6 +3,20 @@ import apiService from "@/shared/services/api/api.service";
 
 export const assetService = {
   /**
+   * GET /users/assets
+   * Kullanıcının yüklediği tüm asset'leri cursor-based pagination ile listeler.
+   * @param {Object} params - { status?, dataset_name?, dataset_id?, limit?, after? }
+   */
+  getUserAssets: async (params = {}) => {
+    const response = await apiService.get('/users/assets', { params });
+    const data = response?.data ?? response ?? [];
+    return {
+      data: Array.isArray(data) ? data : [],
+      next_cursor: response?.next_cursor ?? null,
+    };
+  },
+
+  /**
    * POST /assets/bulk-update-status
    * İstemcide tamamlanan (başarılı/başarısız) yüklemeleri topluca backend'e bildirir.
    * @param {Array} updates - [{ asset_id: string, upload_type: string, success: boolean }]
@@ -19,7 +33,7 @@ export const assetService = {
    */
   bulkRefreshUrls: async (assetIds) => {
     const response = await apiService.post('/assets/bulk-refresh-urls', { asset_ids: assetIds });
-    return response.data || response; // İçerisinde refreshed_assets listesi döner
+    return response.data || response;
   },
 
   /**
@@ -28,7 +42,7 @@ export const assetService = {
    */
   checkDangling: async () => {
     const response = await apiService.post('/assets/check-dangling');
-    return response.data || response; // processed_count, updated_to_uploaded, updated_to_failed değerlerini döner
+    return response.data || response;
   },
 
   /**
@@ -39,6 +53,6 @@ export const assetService = {
    */
   retryUpload: async (assetId, payload) => {
     const response = await apiService.post(`/assets/${assetId}/retry-upload`, payload);
-    return response.data || response; // Yeni üretilen presigned URL nesnesini döner
+    return response.data || response;
   }
 };

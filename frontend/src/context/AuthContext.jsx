@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import apiService from "@/shared/services/api/api.service";
 
 /**
@@ -18,6 +19,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   // 1. Uygulama ilk açıldığında token kontrolü
   useEffect(() => {
@@ -94,6 +96,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     setUser(null);
+    navigate("/login");
   }, []);
 
   return (

@@ -31,7 +31,6 @@
 import React from 'react';
 import MiniIsland from './components/MiniIsland';
 import ExpandedPanel from './components/ExpandedPanel';
-import UploadManagerDevTools from './components/UploadManagerDevTools';
 import { useBeforeUnload } from '@/shared/services/s3upload/useBeforeUnload';
 
 const UploadManager: React.FC = () => {
@@ -42,7 +41,6 @@ const UploadManager: React.FC = () => {
     <>
       <MiniIsland />
       <ExpandedPanel />
-      <UploadManagerDevTools />
     </>
   );
 };
