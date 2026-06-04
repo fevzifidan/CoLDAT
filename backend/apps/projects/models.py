@@ -36,7 +36,6 @@ class ProjectMembership(models.Model):
     class Role(models.TextChoices):
         ADMIN = "admin", "Admin"
         ANNOTATOR = "annotator", "Annotator"
-        REVIEWER = "reviewer", "Reviewer"
         VIEWER = "viewer", "Viewer"
 
     id = models.UUIDField(

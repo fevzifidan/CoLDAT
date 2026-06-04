@@ -38,7 +38,12 @@ const STATUS_CONFIG: Record<
 export default function ImageQueueItem({ image, isActive, onClick }: ImageQueueItemProps) {
   const { t } = useTranslation('annotation');
   const isReadOnly = useAppStore(state => state.isReadOnly);
-  const config = STATUS_CONFIG[image.status];
+  const statusKey = image.status?.toUpperCase() as AnnotationStatus;
+  const config = STATUS_CONFIG[statusKey] || {
+    key: 'unknown',
+    dotClass: 'bg-gray-400',
+    badgeVariant: 'outline' as const,
+  };
 
   return (
     <button
@@ -74,3 +79,4 @@ export default function ImageQueueItem({ image, isActive, onClick }: ImageQueueI
     </button>
   );
 }
+

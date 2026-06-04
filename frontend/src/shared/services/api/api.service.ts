@@ -75,6 +75,18 @@ apiClient.interceptors.request.use(
       config.headers['Accept-Language'] = i18n.language?.substring(0, 2) || 'en';
     }
 
+    if (config.url) {
+      // İstek URL'ini varsa sorgu parametrelerinden (?) ayırıyoruz
+      const [path, queryString] = config.url.split('?');
+
+      // Eğer yol kısmı boş değilse, halihazırda slash ile bitmiyorsa 
+      // ve dosya uzantısı (örn: .json, .png, .pdf) içermiyorsa sonuna slash ekliyoruz
+      const isFile = path.match(/\.[a-zA-Z0-9]+$/);
+      if (path && !path.endsWith('/') && !isFile) {
+        config.url = `${path}/${queryString ? `?${queryString}` : ''}`;
+      }
+    }
+
     return config;
   },
   (error) => {

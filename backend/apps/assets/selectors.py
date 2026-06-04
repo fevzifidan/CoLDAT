@@ -33,14 +33,14 @@ def get_asset_for_user(*, asset_id, user):
 
 
 def user_can_manage_dataset_assets(*, dataset: Dataset, user) -> bool:
-    return (
+        return (
         dataset.project.memberships.filter(
             user=user,
-            role__in=["admin", "reviewer"],
+            role__in=["admin"],
         ).exists()
         or dataset.memberships.filter(
             user=user,
-            role__in=["admin", "reviewer"],
+            role__in=["admin"],
         ).exists()
     )
 

@@ -12,7 +12,6 @@ class CanEditImageAnnotations(BasePermission):
             user=request.user,
             role__in=[
                 ProjectMembership.Role.ADMIN,
-                ProjectMembership.Role.REVIEWER,
                 ProjectMembership.Role.ANNOTATOR,
             ],
         ).exists()
@@ -21,7 +20,6 @@ class CanEditImageAnnotations(BasePermission):
             user=request.user,
             role__in=[
                 DatasetMember.Role.ADMIN,
-                DatasetMember.Role.REVIEWER,
                 DatasetMember.Role.ANNOTATOR,
             ],
         ).exists()

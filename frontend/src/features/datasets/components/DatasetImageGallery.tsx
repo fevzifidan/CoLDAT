@@ -98,7 +98,7 @@ const DatasetImageGallery: React.FC<DatasetImageGalleryProps> = ({
     if (!confirmed) return;
 
     try {
-      await apiService.delete(`/images/${imageId}`);
+      await apiService.delete(`/assets/${imageId}`);
       notificationService.success(
         t('datasets:gallery.delete_success', {
           filename,

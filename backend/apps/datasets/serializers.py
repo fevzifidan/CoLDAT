@@ -59,24 +59,6 @@ class DatasetSerializer(serializers.ModelSerializer):
 
         return project_membership.role if project_membership else None
 
-def get_role(self, obj):
-        request = self.context.get("request")
-        if not request or not request.user or not request.user.is_authenticated:
-            return None
-        # Önce dataset'in kendi membership'ine bak
-        membership = DatasetMember.objects.filter(
-            dataset=obj,
-            user=request.user,
-        ).first()
-        if membership:
-            return membership.role
-        # Yoksa proje membership'ine bak (proje admin'i = dataset admin'i)
-        project_membership = ProjectMembership.objects.filter(
-            project=obj.project,
-            user=request.user,
-        ).first()
-        return project_membership.role if project_membership else None
-
 class DatasetCreateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
     description = serializers.CharField(required=False, allow_blank=True)

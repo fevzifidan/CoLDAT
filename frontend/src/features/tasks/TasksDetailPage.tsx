@@ -68,13 +68,10 @@ interface TaskDetailData {
  * CoLDAT API Design.yaml Image schema'sı ile birebir uyumludur.
  */
 interface TaskImage {
-  asset_id: string;
+  id: string;
+  image_id: string;
   filename: string;
   mime_type: string;
-  asset_url: string;
-  asset_url_expiry_at: string;
-  sam_embedding_url: string | null;
-  sam_embedding_url_expiry_at: string | null;
   status: string;
   embedding_status: string | null;
 }
@@ -502,13 +499,13 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
                 </TableHeader>
                                 <TableBody>
                                   {images.map((img) => (
-                                    <ContextMenu key={img.asset_id}>
+                                    <ContextMenu key={img.image_id}>
                                       <ContextMenuTrigger
-                                        onClick={() => handleAssetClick(img.asset_id)}
+                                        onClick={() => handleAssetClick(img.image_id)}
                                         className="cursor-pointer [&:has([role=menuitem])]:bg-muted/50"
                                       >
-                                        <TableRow>
-                                          <TableCell className="py-2.5" onClick={() => handleAssetClick(img.asset_id)}>
+                                                                                <TableRow>
+                                          <TableCell className="py-2.5">
                                             <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
                                               {img.mime_type?.startsWith('image/') ? (
                                                 <FileImage size={14} />
@@ -517,10 +514,10 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
                                               )}
                                             </div>
                                           </TableCell>
-                                          <TableCell className="py-2.5 font-medium max-w-[180px] truncate" onClick={() => handleAssetClick(img.asset_id)}>
+                                          <TableCell className="py-2.5 font-medium max-w-[180px] truncate">
                                             <span className="text-sm">{img.filename || t('tasks:detail.untitled', 'Untitled')}</span>
                                             <p className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">
-                                              {img.asset_id}
+                                              {img.image_id}
                                             </p>
                                           </TableCell>
                                           <TableCell className="hidden sm:table-cell py-2.5 text-xs text-muted-foreground">
@@ -552,18 +549,18 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
                                       </ContextMenuTrigger>
 
                       <ContextMenuContent className="w-56 rounded-xl">
-                        <ContextMenuItem onClick={() => handleOpenInAnnotator(img.asset_id)} className="cursor-pointer gap-2 text-xs font-medium">
+                        <ContextMenuItem onClick={() => handleOpenInAnnotator(img.image_id)} className="cursor-pointer gap-2 text-xs font-medium">
                           <PenLine size={14} />
                           {t('tasks:detail.open_annotator', 'Open in Annotator')}
                           <ContextMenuShortcut>Annotator</ContextMenuShortcut>
                         </ContextMenuItem>
-                        <ContextMenuItem onClick={() => handleOpenInViewer(img.asset_id)} className="cursor-pointer gap-2 text-xs font-medium">
+                        <ContextMenuItem onClick={() => handleOpenInViewer(img.image_id)} className="cursor-pointer gap-2 text-xs font-medium">
                           <ExternalLink size={14} />
                           {t('tasks:detail.open_viewer', 'Open in Viewer')}
                           <ContextMenuShortcut>Read-only</ContextMenuShortcut>
                         </ContextMenuItem>
                         <ContextMenuSeparator />
-                        <ContextMenuItem onClick={() => handleCopyAssetId(img.asset_id)} className="cursor-pointer gap-2 text-xs font-medium">
+                        <ContextMenuItem onClick={() => handleCopyAssetId(img.image_id)} className="cursor-pointer gap-2 text-xs font-medium">
                           <Copy size={14} />
                           {t('tasks:detail.copy_asset_id', 'Copy Asset ID')}
                         </ContextMenuItem>

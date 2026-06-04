@@ -68,7 +68,7 @@ class TaskListCreateView(APIView):
         task = create_task(
             dataset=dataset,
             created_by=request.user,
-            assignee_id=serializer.validated_data["assignee_username"],
+            assignee_username=serializer.validated_data["assignee_username"],
             image_ids=serializer.validated_data["image_ids"],
             note=serializer.validated_data.get("note", ""),
         )

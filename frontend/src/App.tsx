@@ -39,6 +39,7 @@ import { VerificationPage } from '@/features/auth/EmailVerification/EmailVerific
 import { ForgotPasswordPage } from '@/features/auth/ForgotPassword/ForgotPassword';
 import { PasswordResetPage } from '@/features/auth/ResetPassword/ResetPassword';
 import AccountNotVerifiedPage from '@/features/auth/AccountNotVerified/AccountNotVerified';
+import { LandingPage } from '@/features/landing/LandingPage';
 
 function App() {
   return (
@@ -62,6 +63,7 @@ function App() {
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                   <Route path="/reset-password" element={<PasswordResetPage />} />
                   <Route path="/account-not-verified" element={<AccountNotVerifiedPage />} />
+                  <Route path="/landing" element={<LandingPage />} />
                   <Route path="/*" element = {
                     <DashboardLayout>
                       <Routes>
@@ -72,12 +74,12 @@ function App() {
                         
                         <Route path="/projects/:projectId/datasets" element={<ProjectDatasetsPage />} />
                         
-                                                {/* Sol menü veya doğrudan erişim için genel Datasets rotası */}
-                                                <Route path="/datasets" element={<DatasetsPage />} />
-                                                <Route path="/datasets/:datasetId" element={<DatasetDetailPage />} />
+                        {/* Sol menü veya doğrudan erişim için genel Datasets rotası */}
+                        <Route path="/datasets" element={<DatasetsPage />} />
+                        <Route path="/datasets/:datasetId" element={<DatasetDetailPage />} />
 
-                                                {/* Kullanıcının tüm asset'lerini gösteren sayfa */}
-                                                <Route path="/assets" element={<UserAssetsPage />} />
+                        {/* Kullanıcının tüm asset'lerini gösteren sayfa */}
+                        <Route path="/assets" element={<UserAssetsPage />} />
 
                         <Route path="/tasks" element={<TasksPage />} />
                         <Route path="/tasks/new" element={<CreateTaskPage />} />

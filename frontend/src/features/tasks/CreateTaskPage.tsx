@@ -186,9 +186,9 @@ const CreateTaskPage = () => {
 
     setIsSubmitting(true);
     try {
-      await taskService.createTask({
+            await taskService.createTask({
         dataset_id: selectedDataset.id,
-        assignee_id: selectedMember.user_id,
+        assignee_username: selectedMember.username,
         role: selectedRole,
         image_ids: Array.from(selectedAssetIds),
         note: note.trim() || undefined,

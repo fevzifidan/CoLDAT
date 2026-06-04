@@ -5,6 +5,7 @@ from .models import Task, TaskImage
 
 class TaskImageSerializer(serializers.ModelSerializer):
     image_id = serializers.UUIDField(source="image.id", read_only=True)
+    asset_id = serializers.UUIDField(source="image.id", read_only=True)
     filename = serializers.CharField(source="image.filename", read_only=True)
     mime_type = serializers.CharField(source="image.mime_type", read_only=True)
     width = serializers.IntegerField(source="image.width", read_only=True)
@@ -16,6 +17,7 @@ class TaskImageSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "image_id",
+            "asset_id",
             "filename",
             "mime_type",
             "width",

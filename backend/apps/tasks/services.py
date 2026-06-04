@@ -41,7 +41,6 @@ def create_task(
 
     if dataset_membership.role not in [
         DatasetMember.Role.ANNOTATOR,
-        DatasetMember.Role.REVIEWER,
         DatasetMember.Role.ADMIN,
     ]:
         raise ValidationError("Assignee does not have a valid dataset role.")
@@ -137,7 +136,6 @@ def user_can_manage_task(*, task: Task, user) -> bool:
         user=user,
         role__in=[
             ProjectMembership.Role.ADMIN,
-            ProjectMembership.Role.REVIEWER,
         ],
     ).exists()
 
@@ -194,7 +192,7 @@ def update_task_status(
                 f"Assignee cannot change task status from {current_status} to {new_status}."
             )
 
-    # Reviewer/Admin flow
+        # Admin flow
     elif is_manager:
         allowed_manager_transitions = {
             Task.Status.APPROVAL_PENDING: [
@@ -210,7 +208,7 @@ def update_task_status(
 
         if new_status not in allowed_next_statuses:
             raise ValidationError(
-                f"Reviewer/Admin cannot change task status from {current_status} to {new_status}."
+                f"Admin cannot change task status from {current_status} to {new_status}."
             )
 
         if new_status == Task.Status.COMPLETED:
@@ -255,7 +253,6 @@ def assign_task(
 
     if dataset_membership.role not in [
         DatasetMember.Role.ANNOTATOR,
-        DatasetMember.Role.REVIEWER,
         DatasetMember.Role.ADMIN,
     ]:
         raise ValidationError("Assignee does not have a valid dataset role.")

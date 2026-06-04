@@ -13,7 +13,5 @@ class CanManageTaxonomy(BasePermission):
         return project.memberships.filter(
             user=request.user,
             role__in=[
-                ProjectMembership.Role.ADMIN,
-                ProjectMembership.Role.REVIEWER,
-            ],
+                ProjectMembership.Role.ADMIN,]
         ).exists()

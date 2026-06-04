@@ -1,10 +1,11 @@
+from django.db.models import Q
 from .models import Project, ProjectMembership
 from django.shortcuts import get_object_or_404
 
 
 def get_projects_for_user(*, user):
     return Project.objects.filter(
-        memberships__user=user,
+        Q(memberships__user=user) | Q(datasets__memberships__user=user),
         is_archived=False,
     ).distinct()
 

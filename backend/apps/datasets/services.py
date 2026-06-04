@@ -35,7 +35,7 @@ def create_dataset(
         DatasetMember(
             dataset=dataset,
             user=membership.user,
-            role=membership.role,
+            role=_map_project_role_to_dataset_role(membership.role),
         )
         for membership in project_memberships
     ]
@@ -43,6 +43,20 @@ def create_dataset(
     DatasetMember.objects.bulk_create(dataset_members)
 
     return dataset
+
+
+def _map_project_role_to_dataset_role(project_role: str) -> str:
+    """Map ProjectMembership roles to DatasetMember roles.
+    
+    ProjectMembership had a REVIEWER role which does not exist in DatasetMember.
+    REVIEWER is mapped to ANNOTATOR for backward compatibility.
+    """
+    role_mapping = {
+        ProjectMembership.Role.ADMIN: DatasetMember.Role.ADMIN,
+        ProjectMembership.Role.ANNOTATOR: DatasetMember.Role.ANNOTATOR,
+        ProjectMembership.Role.VIEWER: DatasetMember.Role.VIEWER,
+    }
+    return role_mapping.get(project_role, DatasetMember.Role.VIEWER)
 
 
 def update_dataset(

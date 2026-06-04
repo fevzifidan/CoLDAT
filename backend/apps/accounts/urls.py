@@ -13,7 +13,7 @@ from .views import (
 # This handles auth-related endpoints
 
 urlpatterns = [
-    path("register", RegisterView.as_view(), name="register"),
+    path("register/", RegisterView.as_view(), name="register"),
     path("login/", LoginView.as_view(), name="login"),
     path("refresh/", RefreshTokenView.as_view(), name="refresh-token"),
     path("verify-email/", VerifyEmailView.as_view(), name="verify-email"),

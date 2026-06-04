@@ -346,6 +346,11 @@ class UploadService {
 
     // --- S3'e Yükleme (Önceki İle Benzer) ---
     private uploadToS3(task: UploadTask): Promise<void> {
+        function hexToBase64(hex: string): string {
+            const bytes = new Uint8Array(hex.match(/.{1,2}/g)!.map(b => parseInt(b, 16)));
+            const binary = String.fromCharCode(...bytes);
+            return btoa(binary);
+        }
         if (this.useMock) {
             return new Promise((resolve, reject) => {
                 let progress = 0;
@@ -356,15 +361,15 @@ class UploadService {
                         return;
                     }
 
-                                        progress += Math.floor(Math.random() * 15) + 5;
-                                        if (progress >= 100) {
-                                            progress = 100;
-                                            clearInterval(interval);
-                                            this.updateTaskStatus(task.upload_id, 'UPLOADING', 100);
-                                            resolve();
-                                        } else {
-                                            this.updateTaskStatus(task.upload_id, 'UPLOADING', progress);
-                                        }
+                    progress += Math.floor(Math.random() * 15) + 5;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(interval);
+                        this.updateTaskStatus(task.upload_id, 'UPLOADING', 100);
+                        resolve();
+                    } else {
+                        this.updateTaskStatus(task.upload_id, 'UPLOADING', progress);
+                    }
                 }, 300);
             });
         }
@@ -391,7 +396,7 @@ class UploadService {
             xhr.onabort = () => reject(new DOMException('Aborted', 'AbortError'));
 
             xhr.open('PUT', task.upload_url);
-            xhr.setRequestHeader('x-amz-content-sha256', task.hash);
+            xhr.setRequestHeader('x-amz-checksum-sha256', hexToBase64(task.hash));
             xhr.setRequestHeader('Content-Type', task.file.type || 'application/octet-stream');
             xhr.send(task.file);
         });
