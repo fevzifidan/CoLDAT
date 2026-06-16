@@ -1,4 +1,4 @@
-      // src/features/datasets/DatasetDetailPage.tsx
+// src/features/datasets/DatasetDetailPage.tsx
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -36,7 +36,7 @@ const DatasetDetailPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation(['pages', 'common', 'datasets']);
 
-    const [dataset, setDataset] = useState<DatasetDetail | null>(null);
+  const [dataset, setDataset] = useState<DatasetDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // Refresh key — her upload/görsel değişiminde artırılarak galeri ve istatistiklerin yenilenmesi sağlanır
@@ -66,7 +66,7 @@ const DatasetDetailPage = () => {
         } else {
           setError(
             err?.response?.data?.message ||
-              t('common:status.error', 'An error occurred while loading dataset details.')
+            t('common:status.error', 'An error occurred while loading dataset details.')
           );
         }
       })
@@ -147,7 +147,7 @@ const DatasetDetailPage = () => {
                   datasetService
                     .deleteDataset(dataset.id)
                     .then(() => navigate('/datasets'))
-                    .catch(() => {});
+                    .catch(() => { });
                 }
               }}
             >
@@ -161,7 +161,7 @@ const DatasetDetailPage = () => {
       {/* Content */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Main Info Card */}
-        <Card className="md:col-span-2 shadow-sm border-border">
+        <Card className="md:col-span-2 shadow-sm border-border hover:shadow-md transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base font-bold">
               <Database size={18} className="text-primary" />
@@ -173,14 +173,14 @@ const DatasetDetailPage = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex flex-wrap gap-3 text-xs font-semibold text-muted-foreground">
-              <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-lg">
-                <Layers size={13} className="text-indigo-500" />
+              <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-lg border border-border/50 hover:bg-muted/80 transition-colors">
+                <Layers size={13} className="text-primary/70" />
                 <span>
                   {t('datasets:card.version_label', 'Version')}:{' '}
                   <span className="text-foreground font-bold">{dataset.current_version || 'v1.0'}</span>
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-lg">
+              <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-lg border border-border/50 hover:bg-muted/80 transition-colors">
                 <UserCheck size={13} className="text-primary" />
                 <span>
                   {t('datasets:detail.role_label', 'Role')}:{' '}
@@ -192,7 +192,7 @@ const DatasetDetailPage = () => {
         </Card>
 
         {/* Stats Card */}
-        <Card className="shadow-sm border-border">
+        <Card className="shadow-sm border-border hover:shadow-md transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="text-sm font-bold">
               {t('datasets:detail.statistics', 'Statistics')}
@@ -200,62 +200,66 @@ const DatasetDetailPage = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <ImageIcon size={16} className="text-sky-500" />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground group">
+                <div className="p-1.5 rounded-md bg-muted group-hover:bg-primary/10 transition-colors">
+                  <ImageIcon size={16} className="text-foreground/70 group-hover:text-primary transition-colors" />
+                </div>
                 {t('datasets:detail.total_images', 'Total Images')}
               </div>
               <span className="font-bold text-foreground text-lg">{dataset.total_images ?? 0}</span>
             </div>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle size={16} className="text-emerald-500" />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground group">
+                <div className="p-1.5 rounded-md bg-muted group-hover:bg-primary/10 transition-colors">
+                  <CheckCircle size={16} className="text-primary/80 group-hover:text-primary transition-colors" />
+                </div>
                 {t('datasets:detail.annotated', 'Annotated')}
               </div>
               <span className="font-bold text-foreground text-lg">{dataset.annotated_images ?? 0}</span>
             </div>
             <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all"
+                className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full transition-all duration-500 ease-out"
                 style={{
-                  width: `${
-                    dataset.total_images && dataset.total_images > 0
+                  width: `${dataset.total_images && dataset.total_images > 0
                       ? Math.round(((dataset.annotated_images ?? 0) / dataset.total_images) * 100)
                       : 0
-                  }%`,
+                    }%`,
                 }}
               />
             </div>
             <p className="text-[10px] text-muted-foreground text-center">
               {dataset.total_images && dataset.total_images > 0
                 ? `${Math.round(((dataset.annotated_images ?? 0) / dataset.total_images) * 100)}% ${t(
-                    'datasets:detail.complete',
-                    'complete'
-                  )}`
+                  'datasets:detail.complete',
+                  'complete'
+                )}`
                 : t('datasets:detail.no_data', 'No data')}
             </p>
           </CardContent>
         </Card>
       </div>
+      {/* Upload Images Section */}
+      {dataset.role?.toLowerCase() === 'admin' && (
+        <DatasetImageUploader
+          datasetId={dataset.id}
+          currentUserRole={dataset.role}
+          onUploadComplete={handleImagesChanged}
+        />
+      )}
 
-            {/* Upload Images Section */}
-            <DatasetImageUploader
-              datasetId={dataset.id}
-              currentUserRole={dataset.role}
-              onUploadComplete={handleImagesChanged}
-            />
+      {/* Image Gallery Section */}
+      <DatasetImageGallery
+        datasetId={dataset.id}
+        currentUserRole={dataset.role}
+        onImagesChanged={handleImagesChanged}
+      />
 
-            {/* Image Gallery Section */}
-            <DatasetImageGallery
-              datasetId={dataset.id}
-              currentUserRole={dataset.role}
-              onImagesChanged={handleImagesChanged}
-            />
-
-            {/* Team Members Section */}
-            <DatasetMemberManager
-              datasetId={dataset.id}
-              currentUserRole={dataset.role}
-            />
+      {/* Team Members Section */}
+      <DatasetMemberManager
+        datasetId={dataset.id}
+        currentUserRole={dataset.role}
+      />
     </div>
   );
 };

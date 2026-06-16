@@ -279,7 +279,7 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20 text-slate-500 font-mono gap-2">
-        <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
         {t("common:status.loading", "Loading taxonomy...")}
       </div>
     );
@@ -304,12 +304,12 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
         <Card className="shadow-sm border-slate-200 dark:border-slate-800">
           <CardContent className="p-5">
             <div className="flex justify-between items-center mb-4 border-b pb-2">
-              <div className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300">
-                <Tag size={18} className="text-orange-500" /> {t("taxonomy.object_classes", "Object Classes")}
+              <div className="flex items-center gap-2 font-bold text-foreground">
+                <Tag size={18} className="text-primary" /> {t("taxonomy.object_classes", "Object Classes")}
               </div>
               {isAdmin && (
-                <Button variant="ghost" size="icon" onClick={addClass}>
-                  <Plus size={18} className="text-indigo-600" />
+                <Button variant="ghost" size="icon" onClick={addClass} className="hover:bg-primary/10 hover:text-primary">
+                  <Plus size={18} className="text-primary" />
                 </Button>
               )}
             </div>
@@ -318,22 +318,22 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
                 <p className="text-xs text-center py-6 text-muted-foreground">{t("taxonomy.no_classes", "No classes defined yet.")}</p>
               )}
               {classes.map((cls) => (
-                <div key={cls.id} className="flex flex-col p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl group gap-2">
+                <div key={cls.id} className="flex flex-col p-3 bg-card border border-border rounded-xl group gap-2 hover:shadow-md hover:border-primary/30 transition-all duration-300">
                   {editingId === `class-${cls.id}` ? (
                     <div className="space-y-3 w-full">
                       <div className="flex gap-2 w-full">
                         <Input value={tempName} onChange={(e) => setTempName(e.target.value)} className="h-8 text-sm" autoFocus />
-                        <Button size="icon" className="h-8 w-8 bg-green-500 text-white" onClick={() => saveEdit('class', cls.id)}><Check size={14}/></Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500" onClick={() => setEditingId(null)}><X size={14}/></Button>
+                        <Button size="icon" className="h-8 w-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm" onClick={() => saveEdit('class', cls.id)}><Check size={14}/></Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setEditingId(null)}><X size={14}/></Button>
                       </div>
                       
                       <div className="flex gap-4 bg-white dark:bg-slate-950 p-2 rounded-lg border dark:border-slate-800 text-xs">
                         <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-400 font-medium">
-                          <input type="checkbox" checked={tempIsActive} onChange={(e) => setTempIsActive(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
+                          <input type="checkbox" checked={tempIsActive} onChange={(e) => setTempIsActive(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-primary focus:ring-primary" />
                                                     {t("taxonomy:active_label", "Active")}
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-400 font-medium">
-                          <input type="checkbox" checked={tempIncludeInExport} onChange={(e) => setTempIncludeInExport(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
+                          <input type="checkbox" checked={tempIncludeInExport} onChange={(e) => setTempIncludeInExport(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-primary focus:ring-primary" />
                           {t("taxonomy:include_export_label", "Include in Export")}
                         </label>
                       </div>
@@ -345,7 +345,7 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
                             <button
                               key={color}
                               type="button"
-                              className={`h-5 w-full rounded transition-transform ${selectedColor === color ? 'ring-2 ring-indigo-600 ring-offset-2 dark:ring-offset-slate-950 scale-105' : 'hover:scale-105'}`}
+                              className={`h-5 w-full rounded transition-transform ${selectedColor === color ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-slate-950 scale-105' : 'hover:scale-105 hover:ring-2 hover:ring-primary/50 hover:ring-offset-1'}`}
                               style={{ backgroundColor: color }}
                               onClick={() => setSelectedColor(color)}
                             />
@@ -361,8 +361,8 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
                           <span className={`text-sm font-semibold ${cls.isActive ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 line-through'}`}>{cls.name}</span>
                         </div>
                         <div className="flex gap-1 ml-1 sm:ml-4 scale-90 origin-left">
-                          {!cls.isActive && <span className="bg-amber-100 text-amber-700 text-[9px] px-1.5 py-0.5 rounded font-bold">{t("taxonomy:passive_badge", "Passive")}</span>}
-                          {cls.includeInExport && <span className="bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-[9px] px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5"><ShieldCheck size={10}/>{t("taxonomy:exportable_badge", "Exportable")}</span>}
+                          {!cls.isActive && <span className="bg-muted text-muted-foreground border border-border text-[9px] px-1.5 py-0.5 rounded font-bold">{t("taxonomy:passive_badge", "Passive")}</span>}
+                          {cls.includeInExport && <span className="bg-primary/10 text-primary border border-primary/20 text-[9px] px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5"><ShieldCheck size={10}/>{t("taxonomy:exportable_badge", "Exportable")}</span>}
                         </div>
                       </div>
                       {isAdmin && (
@@ -387,12 +387,12 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
         <Card className="shadow-sm border-slate-200 dark:border-slate-800">
           <CardContent className="p-5">
             <div className="flex justify-between items-center mb-4 border-b pb-2">
-              <div className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300">
-                <LinkIcon size={18} className="text-blue-500" /> {t("taxonomy.predicates", "Predicates (Relations)")}
+              <div className="flex items-center gap-2 font-bold text-foreground">
+                <LinkIcon size={18} className="text-primary" /> {t("taxonomy.predicates", "Predicates (Relations)")}
               </div>
               {isAdmin && (
-                <Button variant="ghost" size="icon" onClick={addPredicate}>
-                  <Plus size={18} className="text-indigo-600" />
+                <Button variant="ghost" size="icon" onClick={addPredicate} className="hover:bg-primary/10 hover:text-primary">
+                  <Plus size={18} className="text-primary" />
                 </Button>
               )}
             </div>
@@ -401,22 +401,22 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
                 <p className="text-xs text-center py-6 text-muted-foreground">{t("taxonomy.no_predicates", "No predicates defined yet.")}</p>
               )}
               {predicates.map((pred) => (
-                <div key={pred.id} className="flex flex-col p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl group gap-2">
+                <div key={pred.id} className="flex flex-col p-3 bg-card border border-border rounded-xl group gap-2 hover:shadow-md hover:border-primary/30 transition-all duration-300">
                   {editingId === `pred-${pred.id}` ? (
                     <div className="space-y-3 w-full">
                       <div className="flex gap-2 w-full">
                         <Input value={tempName} onChange={(e) => setTempName(e.target.value)} className="h-8 text-sm font-mono" autoFocus />
-                        <Button size="icon" className="h-8 w-8 bg-green-500 text-white" onClick={() => saveEdit('pred', pred.id)}><Check size={14}/></Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500" onClick={() => setEditingId(null)}><X size={14}/></Button>
+                        <Button size="icon" className="h-8 w-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm" onClick={() => saveEdit('pred', pred.id)}><Check size={14}/></Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setEditingId(null)}><X size={14}/></Button>
                       </div>
                       
                       <div className="flex gap-4 bg-white dark:bg-slate-950 p-2 rounded-lg border dark:border-slate-800 text-xs">
                         <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-400 font-medium">
-                          <input type="checkbox" checked={tempIsActive} onChange={(e) => setTempIsActive(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
+                          <input type="checkbox" checked={tempIsActive} onChange={(e) => setTempIsActive(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-primary focus:ring-primary" />
                                                     {t("taxonomy:active_label", "Active")}
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-400 font-medium">
-                          <input type="checkbox" checked={tempIncludeInExport} onChange={(e) => setTempIncludeInExport(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
+                          <input type="checkbox" checked={tempIncludeInExport} onChange={(e) => setTempIncludeInExport(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-primary focus:ring-primary" />
                           {t("taxonomy:include_export_label", "Include in Export")}
                         </label>
                       </div>
@@ -426,8 +426,8 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                         <span className={`text-sm font-mono italic ${pred.isActive ? 'text-slate-600 dark:text-slate-400' : 'text-slate-400 line-through'}`}>{pred.name}</span>
                         <div className="flex gap-1 ml-1 sm:ml-4 scale-90 origin-left">
-                          {!pred.isActive && <span className="bg-amber-100 text-amber-700 text-[9px] px-1.5 py-0.5 rounded font-bold">{t("taxonomy:passive_badge", "Passive")}</span>}
-                          {pred.includeInExport && <span className="bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-[9px] px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5"><ShieldCheck size={10}/>{t("taxonomy:exportable_badge", "Exportable")}</span>}
+                          {!pred.isActive && <span className="bg-muted text-muted-foreground border border-border text-[9px] px-1.5 py-0.5 rounded font-bold">{t("taxonomy:passive_badge", "Passive")}</span>}
+                          {pred.includeInExport && <span className="bg-primary/10 text-primary border border-primary/20 text-[9px] px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5"><ShieldCheck size={10}/>{t("taxonomy:exportable_badge", "Exportable")}</span>}
                         </div>
                       </div>
                       

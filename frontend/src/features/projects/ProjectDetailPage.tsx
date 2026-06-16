@@ -76,19 +76,18 @@ const ProjectDetailPage = () => {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 shadow-sm">
+      <div className="flex items-center justify-between px-6 py-8 border-b border-border bg-background">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/projects')} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
-            <ArrowLeft className="h-4 w-4" />
+          <button onClick={() => navigate('/projects')} className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-5 w-5" />
           </button>
-          <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2" />
           <div>
-            <h2 className="text-xl font-bold tracking-tight">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">
               {project ? project.name : t('pages:project_detail.page_title', 'Project Details')}
             </h2>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+            <p className="text-sm text-muted-foreground mt-1">
               {t('pages:project_detail.subtitle', 'Manage Datasets, Taxonomy & Tasks')}
             </p>
           </div>
@@ -98,7 +97,7 @@ const ProjectDetailPage = () => {
       <div className="p-6 max-w-7xl mx-auto w-full">
         <div className="space-y-8">
           {/* Tab Navigation */}
-          <div className="flex gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl w-fit border border-slate-200/50 dark:border-slate-800 shadow-inner">
+          <div className="flex gap-6 border-b border-border w-full">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.value;
@@ -106,14 +105,17 @@ const ProjectDetailPage = () => {
                 <button
                   key={tab.value}
                   onClick={() => setActiveTab(tab.value)}
-                  className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                  className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all relative ${
                     isActive
-                      ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-black/5'
-                      : 'text-slate-500 hover:text-slate-800 hover:bg-white/50 dark:hover:bg-slate-800/50'
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <Icon size={16} /> 
                   {tab.label}
+                  {isActive && (
+                    <span className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+                  )}
                 </button>
               );
             })}
@@ -130,6 +132,7 @@ const ProjectDetailPage = () => {
               ) : project ? (
                 <GeneralSettings
                   project={project}
+                  isAdmin={isAdmin}
                   onUpdate={handleProjectUpdate}
                   onDelete={handleProjectDelete}
                 />
@@ -141,7 +144,7 @@ const ProjectDetailPage = () => {
             )}
 
                         {activeTab === 'datasets' && (
-              <ProjectDatasetsPage projectId={projectId} />
+              <ProjectDatasetsPage projectId={projectId} isAdmin={isAdmin} />
             )}
 
             {activeTab === 'taxonomy' && (

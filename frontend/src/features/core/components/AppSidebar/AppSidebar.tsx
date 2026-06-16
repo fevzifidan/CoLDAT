@@ -9,7 +9,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
   useSidebar
 } from "@/components/ui/sidebar";
 import {
@@ -49,7 +48,7 @@ export function AppSidebar() {
     <Sidebar 
       variant="inset" 
       collapsible="icon"
-      className="border-r shadow-sm"
+      className="z-40"
     >
       {/* Header Bölümü */}
       <SidebarHeader className="h-14 flex flex-row items-center justify-between border-b px-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center overflow-hidden transition-all duration-500 ease-in-out">
@@ -176,7 +175,6 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   );
 }

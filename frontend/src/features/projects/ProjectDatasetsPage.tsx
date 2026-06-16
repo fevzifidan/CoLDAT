@@ -11,9 +11,10 @@ import notificationService from '@/shared/services/notification/notification.ser
 
 interface ProjectDatasetsPageProps {
   projectId?: string;
+  isAdmin?: boolean;
 }
 
-export const ProjectDatasetsPage: React.FC<ProjectDatasetsPageProps> = ({ projectId: propProjectId }) => {
+export const ProjectDatasetsPage: React.FC<ProjectDatasetsPageProps> = ({ projectId: propProjectId, isAdmin = false }) => {
   const { projectId: paramProjectId } = useParams<{ projectId: string }>();
   const projectId = propProjectId || paramProjectId || '';
   const navigate = useNavigate();
@@ -93,14 +94,14 @@ export const ProjectDatasetsPage: React.FC<ProjectDatasetsPageProps> = ({ projec
           <p className="text-sm">{t('datasets:project_page.loading_configs', 'Loading dataset configurations...')}</p>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-3">
-          {/* Sol Taraf: Projeye Bağlı Datasetlerin Listesi */}
-          <div className="md:col-span-2 space-y-4">
+        <div className="space-y-6">
+          {/* Projeye Bağlı Datasetlerin Listesi */}
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 📂 {t('datasets:project_page.active_datasets', 'Active Datasets')} ({projectDatasets.length})
               </h3>
-                            {projectDatasets.length > 0 && (
+                            {isAdmin && projectDatasets.length > 0 && (
                 <div className="flex gap-2">
                   <Button 
                     size="sm" 
@@ -126,6 +127,7 @@ export const ProjectDatasetsPage: React.FC<ProjectDatasetsPageProps> = ({ projec
                     </p>
                   </div>
                   
+                                    {isAdmin && (
                                     <div className="flex justify-center gap-3 mt-4">
                     <Button 
                       size="sm" 
@@ -135,15 +137,17 @@ export const ProjectDatasetsPage: React.FC<ProjectDatasetsPageProps> = ({ projec
                       <Plus size={14} className="mr-1" /> {t("datasets:project_page.create_from_scratch", "Sıfırdan Dataset Oluştur")}
                     </Button>
                   </div>
+                  )}
                 </CardContent>
               </Card>
             ) : (
-                            projectDatasets.map((ds: any) => (
-                <Card
-                  key={ds.id}
-                  className="rounded-[1.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden cursor-pointer transition-all hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-800"
-                  onClick={() => navigate(`/datasets/${ds.id}`)}
-                >
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {projectDatasets.map((ds: any) => (
+                  <Card
+                    key={ds.id}
+                    className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden cursor-pointer transition-all hover:shadow-md hover:border-primary/50"
+                    onClick={() => navigate(`/datasets/${ds.id}`)}
+                  >
                                     <CardHeader className="p-5 pb-3 flex flex-row items-center justify-between space-y-0">
                     <div>
                       <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100">
@@ -185,39 +189,9 @@ export const ProjectDatasetsPage: React.FC<ProjectDatasetsPageProps> = ({ projec
                     </div>
                   </CardContent>
                 </Card>
-              ))
+                ))}
+              </div>
             )}
-          </div>
-
-          {/* Sağ Taraf: Pipeline Status */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              ℹ️ {t('datasets:project_page.pipeline_status', 'Pipeline Status')}
-            </h3>
-            <Card className="rounded-[1.5rem] border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30">
-              <CardHeader className="p-5 pb-2">
-                <CardTitle className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                  {t('datasets:project_page.requirements', 'Requirements Link')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-5 pt-0 space-y-3 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                                <p>{t("datasets:project_page.pipeline_info", "Projenin ana kontrol paneline (MANAGE) erişebilmek için en az 1 adet doğrulanmış veri setinin yukarıdaki listeye eklenmesi gerekmektedir.")}</p>
-                <div className="p-3 bg-white dark:bg-slate-900 border rounded-xl dark:border-slate-800 space-y-1.5">
-                  <div className="flex justify-between font-bold">
-                                        <span>{t("datasets:project_page.dataset_connection", "Dataset Connection")}:</span>
-                    <span className={projectDatasets.length > 0 ? "text-emerald-600" : "text-rose-500"}>
-                      {projectDatasets.length > 0 ? t("datasets:project_page.passed", "PASSED") : t("datasets:project_page.required_label", "REQUIRED")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between font-bold">
-                    <span>{t("datasets:project_page.manager_access", "Manager Access")}:</span>
-                    <span className={projectDatasets.length > 0 ? "text-emerald-600" : "text-amber-500"}>
-                      {projectDatasets.length > 0 ? t("datasets:project_page.unlocked", "UNLOCKED") : t("datasets:project_page.locked", "LOCKED")}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       )}

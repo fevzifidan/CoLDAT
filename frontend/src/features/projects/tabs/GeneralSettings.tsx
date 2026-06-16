@@ -12,11 +12,12 @@ interface GeneralSettingsProps {
     name: string;
     description?: string;
   };
+  isAdmin?: boolean;
   onUpdate: (data: any) => void;
   onDelete?: () => void;
 }
 
-const GeneralSettings = ({ project, onUpdate, onDelete }: GeneralSettingsProps) => {
+const GeneralSettings = ({ project, isAdmin = false, onUpdate, onDelete }: GeneralSettingsProps) => {
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
@@ -85,7 +86,9 @@ const GeneralSettings = ({ project, onUpdate, onDelete }: GeneralSettingsProps) 
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                onBlur={handleBlur}
+                onBlur={isAdmin ? handleBlur : undefined}
+                readOnly={!isAdmin}
+                className={!isAdmin ? "bg-muted cursor-not-allowed" : ""}
               />
             </div>
 
@@ -98,14 +101,16 @@ const GeneralSettings = ({ project, onUpdate, onDelete }: GeneralSettingsProps) 
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
-                onBlur={handleBlur}
-                className="min-h-[100px]"
+                onBlur={isAdmin ? handleBlur : undefined}
+                readOnly={!isAdmin}
+                className={`min-h-[100px] ${!isAdmin ? "bg-muted cursor-not-allowed" : ""}`}
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {isAdmin && (
       <Card className="border-red-100 bg-red-50/30 dark:bg-red-950/10">
         <CardContent className="p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -141,6 +146,7 @@ const GeneralSettings = ({ project, onUpdate, onDelete }: GeneralSettingsProps) 
           </Button>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 };

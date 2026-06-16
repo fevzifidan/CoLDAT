@@ -31,7 +31,7 @@ const fetchProjectsPage = async (
     const projects: ExtendedProject[] = (response?.data ?? []).map((p: any) => ({
     ...p,
     isDeleted: false,
-    role: (p.user_role || "").toLowerCase(),
+    role: (p.user_role || "viewer").toLowerCase(),
   }));
 
   return {
@@ -82,7 +82,7 @@ const ProjectsPage = () => {
   const filteredProjects = projectList.filter(project => {
     const projectName = project.name ? String(project.name) : "";
     const matchesSearch = projectName.toLowerCase().includes(searchQuery.toLowerCase());
-    const projectRole = (project.role || "admin").toLowerCase();
+    const projectRole = project.role || "viewer";
     const matchesRole = roleFilter === "ALL" || projectRole === roleFilter;
     return matchesSearch && matchesRole;
   });

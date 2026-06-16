@@ -13,13 +13,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     <div className="fixed inset-0 h-screen w-screen overflow-hidden bg-background antialiased">
       <SidebarProvider defaultOpen={false} className="h-full w-full items-stretch">
         
-        {/* Sol Menü (Sidebar)
-            z-40 vererek ve border'ını belirginleştirerek 
-            sağdaki header'ın kesinlikle ÖNÜNDE (üstünde) kalmasını sağlıyoruz.
-        */}
-        <div className="relative z-40 h-full shrink-0 border-r bg-sidebar">
-          <AppSidebar />
-        </div>
+        {/* Sol Menü (Sidebar) */}
+        <AppSidebar />
         
         {/* Sağ Ana Gövde */}
         <SidebarInset className="flex flex-col h-full min-w-0 flex-1 overflow-hidden bg-background">
