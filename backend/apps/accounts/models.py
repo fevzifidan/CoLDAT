@@ -1,7 +1,7 @@
-import uuid
-
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
+from apps.common.ids import uuid7
 
 # Create your models here.
 
@@ -12,7 +12,7 @@ class User(AbstractUser):
         
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid7,
         editable=False,
     )
 

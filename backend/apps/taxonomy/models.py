@@ -1,14 +1,13 @@
-import uuid
-
 from django.db import models
 
+from apps.common.ids import uuid7
 from apps.projects.models import Project
 
 
 class ProjectClass(models.Model):
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid7,
         editable=False,
     )
 
@@ -52,7 +51,7 @@ class ProjectClass(models.Model):
 class ProjectPredicate(models.Model):
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid7,
         editable=False,
     )
 
@@ -89,7 +88,7 @@ class ProjectAttribute(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid7,
         editable=False,
     )
 

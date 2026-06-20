@@ -5,6 +5,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.common.pagination import UUIDv7PaginatedAPIViewMixin
+
 from .models import Project
 from .permissions import IsProjectAdmin
 from .selectors import (
@@ -31,18 +33,17 @@ from .services import (
 )
 
 
-class ProjectListCreateView(APIView):
+class ProjectListCreateView(UUIDv7PaginatedAPIViewMixin, APIView):
     def get(self, request):
         projects = get_projects_for_user(user=request.user)
+        page = self.paginate_queryset(projects)
 
-        return Response(
-            {
-                "data": ProjectSerializer(
-                    projects, many=True, context={"request": request}
-                ).data,
-                "next_cursor": None,
-            },
-            status=status.HTTP_200_OK,
+        return self.get_paginated_response(
+            ProjectSerializer(
+                page,
+                many=True,
+                context={"request": request},
+            ).data
         )
 
     def post(self, request):

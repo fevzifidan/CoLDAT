@@ -1,9 +1,8 @@
-import uuid
-
 from django.conf import settings
 from django.db import models
 
 from apps.assets.models import Asset
+from apps.common.ids import uuid7
 from apps.datasets.models import Dataset
 
 
@@ -17,7 +16,7 @@ class Task(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid7,
         editable=False,
     )
 
@@ -64,7 +63,7 @@ class Task(models.Model):
 class TaskImage(models.Model):
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid7,
         editable=False,
     )
 

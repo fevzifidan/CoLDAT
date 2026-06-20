@@ -27,9 +27,6 @@ WORKDIR /app
 # NOT: Runtime'da ./apps volume bind ile mount edilecek
 COPY . .
 
-# Volume mount noktasını bildir
-VOLUME ["/app/apps"]
-
 EXPOSE 8000
 
 CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000 --noreload"]

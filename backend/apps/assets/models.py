@@ -1,7 +1,6 @@
-import uuid
-
 from django.conf import settings
 from django.db import models
+from apps.common.ids import uuid7
 from apps.datasets.models import Dataset
 
 
@@ -21,7 +20,7 @@ class Asset(models.Model):
 
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid7,
         editable=False,
     )
 

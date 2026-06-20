@@ -1,15 +1,14 @@
-import uuid
-
 from django.conf import settings
 from django.db import models
 
+from apps.common.ids import uuid7
 from apps.projects.models import Project
 
 
 class Dataset(models.Model):
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid7,
         editable=False,
     )
 
@@ -49,7 +48,7 @@ class DatasetMember(models.Model):
         VIEWER = "viewer", "Viewer"
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid7,
         editable=False,
     )
 
@@ -82,7 +81,7 @@ class DatasetMember(models.Model):
 class DatasetVersion(models.Model):
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid7,
         editable=False,
     )
 
@@ -120,7 +119,7 @@ class DatasetVersion(models.Model):
 class DatasetAPIKey(models.Model):
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid7,
         editable=False,
     )
 

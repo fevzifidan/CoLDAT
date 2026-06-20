@@ -8,6 +8,8 @@ from datetime import timedelta
 
 from django.utils import timezone
 
+from apps.common.pagination import UUIDv7PaginatedAPIViewMixin
+
 from .storage import (
     create_presigned_upload_url,
     generate_asset_storage_key,
@@ -316,7 +318,7 @@ class AssetRetryUploadView(APIView):
     def get_permissions(self):
         return [CanManageDatasetAssets()]
     
-class DatasetImageListView(APIView):
+class DatasetImageListView(UUIDv7PaginatedAPIViewMixin, APIView):
     def get(self, request, dataset_id):
         search = request.query_params.get("search")
 
@@ -325,23 +327,20 @@ class DatasetImageListView(APIView):
             user=request.user,
             search=search,
         )
+        page = self.paginate_queryset(images)
 
         read_url_expiry_at = timezone.now() + timedelta(
             seconds=settings.ASSET_READ_URL_EXPIRES_IN_SECONDS
         )
 
-        return Response(
-            {
-                "data": ImageSerializer(
-                    images,
-                    many=True,
-                    context={
-                        "read_url_expiry_at": read_url_expiry_at,
-                    },
-                ).data,
-                "next_cursor": None,
-            },
-            status=status.HTTP_200_OK,
+        return self.get_paginated_response(
+            ImageSerializer(
+                page,
+                many=True,
+                context={
+                    "read_url_expiry_at": read_url_expiry_at,
+                },
+            ).data
         )
 class UserAssetListView(APIView):
     def get(self, request):

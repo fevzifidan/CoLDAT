@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
+from apps.common.pagination import UUIDv7PaginatedAPIViewMixin
+
 from .permissions import IsDatasetProjectAdmin
 from .selectors import (
     get_dataset_for_user,
@@ -46,7 +48,7 @@ from .services import (
 )
 
 
-class DatasetListView(APIView):
+class DatasetListView(UUIDv7PaginatedAPIViewMixin, APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -59,29 +61,31 @@ class DatasetListView(APIView):
             user=request.user,
             search=query_serializer.validated_data.get("search"),
         )
+        page = self.paginate_queryset(datasets)
 
-        return Response(
-            {
-                "data": DatasetSerializer(datasets, many=True, context={"request": request}).data,
-                "next_cursor": None,
-            },
-            status=status.HTTP_200_OK,
+        return self.get_paginated_response(
+            DatasetSerializer(
+                page,
+                many=True,
+                context={"request": request},
+            ).data
         )
 
 
-class ProjectDatasetListCreateView(APIView):
+class ProjectDatasetListCreateView(UUIDv7PaginatedAPIViewMixin, APIView):
     def get(self, request, project_id):
         project, datasets = get_project_datasets_for_user(
             project_id=project_id,
             user=request.user,
         )
+        page = self.paginate_queryset(datasets)
 
-        return Response(
-            {
-                "data": DatasetSerializer(datasets, many=True, context={"request": request}).data,
-                "next_cursor": None,
-            },
-            status=status.HTTP_200_OK,
+        return self.get_paginated_response(
+            DatasetSerializer(
+                page,
+                many=True,
+                context={"request": request},
+            ).data
         )
 
     def post(self, request, project_id):
@@ -170,7 +174,7 @@ class DatasetDetailView(APIView):
         return super().get_permissions()
 
 
-class DatasetMemberListCreateView(APIView):
+class DatasetMemberListCreateView(UUIDv7PaginatedAPIViewMixin, APIView):
     def get(self, request, dataset_id):
         dataset = get_dataset_for_user(
             dataset_id=dataset_id,
@@ -178,13 +182,10 @@ class DatasetMemberListCreateView(APIView):
         )
 
         members = get_dataset_members(dataset=dataset)
+        page = self.paginate_queryset(members)
 
-        return Response(
-            {
-                "data": DatasetMemberSerializer(members, many=True).data,
-                "next_cursor": None,
-            },
-            status=status.HTTP_200_OK,
+        return self.get_paginated_response(
+            DatasetMemberSerializer(page, many=True).data
         )
 
     def post(self, request, dataset_id):
@@ -340,19 +341,16 @@ class DatasetVersionDetailView(APIView):
 
         return super().get_permissions()
     
-class DatasetAPIKeyListCreateView(APIView):
+class DatasetAPIKeyListCreateView(UUIDv7PaginatedAPIViewMixin, APIView):
     def get(self, request, dataset_id):
         dataset, api_keys = get_dataset_api_keys_for_user(
             dataset_id=dataset_id,
             user=request.user,
         )
+        page = self.paginate_queryset(api_keys)
 
-        return Response(
-            {
-                "data": DatasetAPIKeySerializer(api_keys, many=True).data,
-                "next_cursor": None,
-            },
-            status=status.HTTP_200_OK,
+        return self.get_paginated_response(
+            DatasetAPIKeySerializer(page, many=True).data
         )
 
     def post(self, request, dataset_id):
