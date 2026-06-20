@@ -8,6 +8,9 @@ import { Search, Trash2, RotateCcw, X, Trash, Plus, LogIn, Layers, Shield, Pen, 
 import { SelectFilter } from '@/shared/components/SelectFilter';
 import { useCursorPagination } from '@/shared/hooks/useCursorPagination';
 import type { PaginatedResponse } from '@/shared/hooks/useCursorPagination';
+import { RoleProvider, usePermission } from '@/context/PermissionContext';
+import { type BackendRole } from '@/shared/roles';
+import { Guard } from '@/shared/components/Guard';
 import { ProjectCard } from './components/ProjectCard';
 import { projectService } from './services/projectService';
 import { useNavigate } from 'react-router-dom';
@@ -224,22 +227,26 @@ const ProjectsPage = () => {
               {t('projects:no_projects', 'No active projects found matching criteria.')}
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {filteredProjects.map(item => (
-                <div 
+                <RoleProvider key={item.id} role={(item.role as BackendRole) || null}>
+                                <div 
                   key={item.id} 
                   className="relative group transition-transform hover:scale-[1.01]"
                 >
                   <ProjectCard project={item} cardType="project" />
                   
+                  <Guard permission="project:delete">
                   <button
                     onClick={(e) => handleDeleteProject(item.id, e)}
-                    className="absolute bottom-4 right-4 p-2 rounded-lg bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 border border-destructive/20 shadow-sm z-10"
+                    className="absolute bottom-14 right-4 p-2 rounded-lg bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 border border-destructive/20 shadow-sm z-10"
                     title={t('pages:trash.permanent_delete', 'Delete')}
                   >
                     <Trash2 size={14} />
                   </button>
+                  </Guard>
                 </div>
+                </RoleProvider>
               ))}
             </div>
           )}

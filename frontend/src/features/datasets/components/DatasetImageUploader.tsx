@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Guard } from '@/shared/components/Guard';
+import { usePermission } from '@/context/PermissionContext';
 import { uploadService } from '@/shared/services/s3upload';
 import { useDatasetUploads } from '../hooks/useDatasetUploads';
 import type { UploadTask } from '@/shared/services/s3upload/types';
@@ -46,7 +48,7 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
   currentUserRole,
   onUploadComplete,
 }) => {
-  const { t } = useTranslation(['datasets', 'common']);
+    const { t } = useTranslation(['datasets', 'common']);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -54,11 +56,6 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
 
   // Bu dataset'e ait upload task'lerini dinle
   const uploadTasks = useDatasetUploads(datasetId);
-
-  // Upload'ın görünür olduğu durumlar (admin veya annotator)
-  const canUpload =
-    currentUserRole?.toLowerCase() === 'admin' ||
-    currentUserRole?.toLowerCase() === 'annotator';
 
   // Seçili dosyalardan hangileri terminal durumda (başarılı/başarısız)
   const completedUploadIds = new Set(
@@ -307,8 +304,8 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
           </div>
         )}
 
-        {/* Drop Zone */}
-        {canUpload && (
+                {/* Drop Zone */}
+        <Guard permission="asset:add">
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -353,8 +350,8 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
                 )}
               </p>
             </div>
-          </div>
-        )}
+                    </div>
+        </Guard>
 
         {/* Selected Files List */}
         {selectedFiles.length > 0 && (
@@ -446,8 +443,9 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
               })}
             </div>
 
-            {/* Upload All Button */}
-            {canUpload && !allSelectedUploaded && (
+                        {/* Upload All Button */}
+            <Guard permission="asset:add">
+              {!allSelectedUploaded && (
               <Button
                 onClick={handleUploadAll}
                 disabled={hasActiveUploads || selectedFiles.length === 0}
@@ -465,7 +463,8 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
                       defaultValue: `Upload {{count}} file(s) to Dataset`,
                     })}
               </Button>
-            )}
+              )}
+            </Guard>
 
             {/* All Uploaded Success Message */}
             {allSelectedUploaded && (
@@ -482,8 +481,8 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
           </div>
         )}
 
-        {/* No permission warning */}
-        {!canUpload && (
+                {/* No permission warning - fallback shown when Guard hides the dropzone */}
+        <Guard permission="asset:add" fallback={
           <div className="p-4 rounded-xl border border-muted bg-muted/30 text-center">
             <p className="text-sm text-muted-foreground">
               {t(
@@ -492,7 +491,9 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
               )}
             </p>
           </div>
-        )}
+        }>
+          {/* DropZone ve Upload butonları yukarıda render edilir */}
+        </Guard>
       </CardContent>
     </Card>
   );

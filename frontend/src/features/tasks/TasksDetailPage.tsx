@@ -41,7 +41,9 @@ import {
   FileText
 } from "lucide-react";
 
-// taskService bağımlılığını ekliyoruz
+import { RoleProvider, usePermission } from '@/context/PermissionContext';
+import { type BackendRole } from '@/shared/roles';
+import { Guard } from '@/shared/components/Guard';
 import { taskService } from '@/features/tasks/services/taskService';
 import notificationService from '@/shared/services/notification/notification.service';
 import { useCursorPagination } from '@/shared/hooks/useCursorPagination';
@@ -82,6 +84,7 @@ const ASSETS_PAGE_LIMIT = 50;
 const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
   const { t } = useTranslation(['tasks', 'common']);
   const navigate = useNavigate();
+    const { hasPermission } = usePermission();
   
   // --- STATE YÖNETİMİ ---
   const [task, setTask] = useState<TaskDetailData | null>(null);
@@ -228,8 +231,8 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
   };
 
   // --- ASSET YÖNLENDİRME HANDLER'LARI ---
-  const handleAssetClick = (assetId: string) => {
-    if (isAdmin) {
+    const handleAssetClick = (assetId: string) => {
+    if (hasPermission('task:view-all')) {
       navigate(`/view/${taskId}/${assetId}`);
     } else if (task?.role === 'Annotator') {
       navigate(`/annotate/${taskId}/${assetId}`);
@@ -294,10 +297,11 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     );
   }
 
-  const isAdmin = task.role?.toLowerCase() === "admin";
+    const taskRole = (task.role?.toLowerCase() as BackendRole) || null;
 
   return (
-        <div className="p-6 space-y-6 max-w-7xl mx-auto animate-in fade-in duration-200">
+    <RoleProvider role={taskRole}>
+    <div className="p-6 space-y-6 max-w-7xl mx-auto animate-in fade-in duration-200">
       
       {/* Üst Bar / Geri Dönüş ve Aksiyonlar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-5 border-border">
@@ -321,8 +325,8 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
           </div>
         </div>
 
-        {/* Yönetici Hızlı Aksiyonları */}
-        {isAdmin && (
+                {/* Yönetici Hızlı Aksiyonları */}
+        <Guard permission="task:delete">
           <Button 
             variant="outline" 
             disabled={isSubmitting}
@@ -332,7 +336,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
                         <Trash2 size={14} />
             {t('tasks:detail.revoke_button', 'Revoke Task')}
           </Button>
-        )}
+        </Guard>
       </div>
 
       {/* İki Sütunlu Grid Detay Alanı */}
@@ -371,8 +375,8 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
               )}
             </div>
 
-            {/* Admin Atama Değiştirme Butonu */}
-            {isAdmin && (
+                        {/* Admin Atama Değiştirme Butonu */}
+            <Guard permission="task:reassign">
               <Button 
                 onClick={() => setIsAssignModalOpen(true)}
                 variant="outline" 
@@ -380,7 +384,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
               >
                 <UserPlus size={14} /> {t('tasks:detail.reassign_button', 'Reassign Task')}
               </Button>
-            )}
+            </Guard>
           </div>
 
           {/* İş Akışı Durum Değiştirme Paneli */}
@@ -410,8 +414,9 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
                               </Button>
                             )}
 
-                            {/* Admin Rolü için Onay/Red Mekanizmaları */}
-                                          {isAdmin && task.status?.toLowerCase() === "submitted" && (
+                                                        {/* Admin Rolü için Onay/Red Mekanizmaları */}
+                                          <Guard permission="task:approve-reject">
+                              {task.status?.toLowerCase() === "submitted" && (
                               <div className="flex gap-2">
                                 <Button 
                                   disabled={isSubmitting}
@@ -429,7 +434,8 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
                                   <XCircle size={14} /> {t('tasks:detail.reject', 'Reject')}
                                 </Button>
                               </div>
-                            )}
+                              )}
+                          </Guard>
 
               {/* Reset mekanizması */}
               {(["approved", "rejected", "assigned"] as string[]).includes(task.status?.toLowerCase() ?? "") && (
@@ -459,8 +465,9 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
               )}
             </div>
             
-            {/* Yeni Asset Ekleme Butonu */}
-            {isAdmin && (["assigned", "in_progress"].includes(task.status?.toLowerCase() ?? "")) && (
+                        {/* Yeni Asset Ekleme Butonu */}
+            <Guard permission="task:add-asset">
+              {(["assigned", "in_progress"].includes(task.status?.toLowerCase() ?? "")) && (
               <Button 
                 onClick={() => setIsAddAssetModalOpen(true)}
                 size="sm" 
@@ -468,7 +475,8 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
               >
                 <Plus size={14} /> {t('tasks:detail.add_asset_button', 'Add Asset')}
               </Button>
-            )}
+              )}
+            </Guard>
           </div>
 
           {/* Görsel Listesi — Shadcn Table + ContextMenu sağ tık, sol tık direkt yönlendirme */}
@@ -673,9 +681,10 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
             </form>
           </div>
         </div>
-      )}
+            )}
 
     </div>
+    </RoleProvider>
   );
 };
 

@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Trash2, RotateCcw, X, Plus, Trash, ArrowLeft, Layers, Shield, Users } from "lucide-react";
 import { SelectFilter } from '@/shared/components/SelectFilter';
+import { RoleProvider } from '@/context/PermissionContext';
+import { type BackendRole } from '@/shared/roles';
+import { Guard } from '@/shared/components/Guard';
 import { DatasetCard } from './components/DatasetCard';
 import { useNavigate, useParams } from 'react-router-dom';
 import notificationService from '@/shared/services/notification/notification.service';
@@ -248,14 +251,16 @@ const DatasetsPage = () => {
           <p>{t('pages:datasets.empty_list', "No datasets found matching the criteria.")}</p>
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 text-left">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 text-left">
           {filteredDatasets.map((dataset) => (
-            <div
+            <RoleProvider key={dataset.id} role={(dataset.role as BackendRole) || null}>
+                        <div
               key={dataset.id}
               onClick={() => navigate(`/datasets/${dataset.id}`)}
               className="cursor-pointer transition-transform hover:scale-[1.02] relative group"
             >
               <DatasetCard dataset={dataset} />
+              <Guard permission="dataset:delete">
               <button
                 onClick={(e) => handleDeleteDataset(dataset.id, e)}
                 className="absolute bottom-4 right-4 p-2 rounded-lg bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 border border-destructive/20 shadow-sm"
@@ -263,7 +268,9 @@ const DatasetsPage = () => {
               >
                 <Trash2 size={15} />
               </button>
+              </Guard>
             </div>
+            </RoleProvider>
           ))}
         </div>
       )}

@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Eye, FileText, User, PenLine, ChevronDown, ExternalLink } from "lucide-react";
+import { usePermission } from '@/context/PermissionContext';
 
 // Tipi backend'den null gelebilecek şekilde güncelledik
 interface TaskItem {
@@ -29,20 +30,16 @@ interface TaskCardProps {
 
 export const TaskCard = ({ task, onViewDetail, onAnnotate, onView }: TaskCardProps) => {
   const { t } = useTranslation(['tasks']);
+  const { hasPermission } = usePermission();
 
-        const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "assigned": return "bg-primary/10 text-primary border-primary/20";
-      case "in_progress": return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-      case "submitted": return "bg-muted text-muted-foreground border-border";
-      case "approved": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
-      case "rejected": return "bg-destructive/10 text-destructive border-destructive/20";
-      default: return "bg-muted text-muted-foreground border-border";
-    }
-  };
+  const canViewAll = hasPermission('task:view-all');
+  const canAnnotate = hasPermission('task:submit-approval');
+  const canViewAssigned = hasPermission('task:view-assigned');
 
-  const isAnnotator = task.role === 'Annotator';
-  const isViewer = task.role === 'Viewer';
+  // RoleProvider'ın sağladığı role göre buton metnini belirle
+  const isAdmin = canViewAll;
+  const isAnnotator = !canViewAll && canAnnotate;
+  const isViewer = !canViewAll && !canAnnotate && canViewAssigned;
 
   return (
     <div className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col justify-between h-[180px] hover:shadow-md transition-shadow">

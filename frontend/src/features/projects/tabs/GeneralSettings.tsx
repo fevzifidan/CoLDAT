@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Settings, Trash2, AlertCircle } from "lucide-react";
+import { Guard } from '@/shared/components/Guard';
+import { usePermission } from '@/context/PermissionContext';
 
 interface GeneralSettingsProps {
   project: {
@@ -12,13 +14,13 @@ interface GeneralSettingsProps {
     name: string;
     description?: string;
   };
-  isAdmin?: boolean;
   onUpdate: (data: any) => void;
   onDelete?: () => void;
 }
 
-const GeneralSettings = ({ project, isAdmin = false, onUpdate, onDelete }: GeneralSettingsProps) => {
+const GeneralSettings = ({ project, onUpdate, onDelete }: GeneralSettingsProps) => {
   const { t } = useTranslation();
+  const { hasPermission } = usePermission();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -82,13 +84,13 @@ const GeneralSettings = ({ project, isAdmin = false, onUpdate, onDelete }: Gener
                 {t('project_general.project_name', 'Project Name')}
               </label>
 
-              <Input
+                            <Input
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                onBlur={isAdmin ? handleBlur : undefined}
-                readOnly={!isAdmin}
-                className={!isAdmin ? "bg-muted cursor-not-allowed" : ""}
+                onBlur={hasPermission('project:update') ? handleBlur : undefined}
+                readOnly={!hasPermission('project:update')}
+                className={!hasPermission('project:update') ? "bg-muted cursor-not-allowed" : ""}
               />
             </div>
 
@@ -97,20 +99,20 @@ const GeneralSettings = ({ project, isAdmin = false, onUpdate, onDelete }: Gener
                 {t('project_general.description', 'Description')}
               </label>
 
-              <Textarea
+                            <Textarea
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
-                onBlur={isAdmin ? handleBlur : undefined}
-                readOnly={!isAdmin}
-                className={`min-h-[100px] ${!isAdmin ? "bg-muted cursor-not-allowed" : ""}`}
+                onBlur={hasPermission('project:update') ? handleBlur : undefined}
+                readOnly={!hasPermission('project:update')}
+                className={`min-h-[100px] ${!hasPermission('project:update') ? "bg-muted cursor-not-allowed" : ""}`}
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {isAdmin && (
+            <Guard permission="project:delete">
       <Card className="border-red-100 bg-red-50/30 dark:bg-red-950/10">
         <CardContent className="p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -146,7 +148,7 @@ const GeneralSettings = ({ project, isAdmin = false, onUpdate, onDelete }: Gener
           </Button>
         </CardContent>
       </Card>
-      )}
+      </Guard>
     </div>
   );
 };

@@ -16,6 +16,8 @@ import {
   Database,
   Calendar
 } from "lucide-react";
+import { Guard } from '@/shared/components/Guard';
+import { usePermission } from '@/context/PermissionContext';
 
 interface CardProject {
   id: string;
@@ -42,8 +44,7 @@ export const ProjectCard = ({
 }: ProjectCardProps) => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation(['projects']);
-
-  const rawRole = project.role?.toLowerCase() || 'viewer';
+  const { hasPermission } = usePermission();
 
     const handleManageNavigate = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -67,8 +68,9 @@ export const ProjectCard = ({
     navigate(`/projects/${project.id}/datasets`);
   };
 
-  const getButtonConfig = () => {
-    if (rawRole === 'admin') {
+    const getButtonConfig = () => {
+
+    if (hasPermission('project:update')) {
       return {
         text: t('projects:buttons.manage', 'MANAGE'),
         icon: <Settings className="ml-1 w-3 h-3" />
@@ -115,7 +117,7 @@ export const ProjectCard = ({
     .toLowerCase()
     .replace(/ /g, '_');
 
-  const roleKey = rawRole.replace(/ /g, '_');
+  const roleKey = (project.role?.toLowerCase() || 'viewer').replace(/ /g, '_');
 
   return (
     <Card className="group relative overflow-hidden rounded-[2rem] bg-card shadow-sm hover:shadow-xl dark:hover:shadow-black/40 transition-all duration-300 border border-border">
@@ -184,8 +186,9 @@ export const ProjectCard = ({
         )}
       </CardContent>
 
-      <CardFooter className="p-5 pt-2 gap-2">
-        {cardType === 'project' && rawRole === 'admin' ? (
+            <CardFooter className="p-5 pt-2 gap-2">
+        <Guard permission="project:update">
+        {cardType === 'project' ? (
           <>
             <Button
               className="flex-1 rounded-xl h-9 font-bold text-[10px] transition-all border-none bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground cursor-pointer"
@@ -212,6 +215,7 @@ export const ProjectCard = ({
             {buttonConfig.icon}
           </Button>
         )}
+        </Guard>
       </CardFooter>
     </Card>
   );

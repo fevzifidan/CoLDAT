@@ -1,9 +1,11 @@
 // frontend/src/features/projects/ProjectDetailPage.tsx
 
 import { useParams, useNavigate } from 'react-router-dom';
-import { useCallback, useState, useEffect, useMemo } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tag, Database, ArrowLeft, ListTodo, Settings } from "lucide-react";
+import { RoleProvider } from '@/context/PermissionContext';
+import { type BackendRole } from '@/shared/roles';
 import TaxonomyManager from '@/features/datasets/taxonomy/TaxonomyManager';
 import ProjectDatasetsPage from './ProjectDatasetsPage';
 import { ProjectTasksTab } from './tabs/ProjectTasksTab';
@@ -21,10 +23,8 @@ const ProjectDetailPage = () => {
 
   const projectId = id || '';
 
-  // Kullanıcının bu projedeki rolünü hesapla
-  const isAdmin = useMemo(() => {
-    return project?.user_role === 'admin';
-  }, [project?.user_role]);
+  // Proje rolünü BackendRole tipine cast et
+  const projectRole = (project?.user_role as BackendRole) || null;
 
   // Proje detayını backend'den çek
   const fetchProject = useCallback(async () => {
@@ -76,6 +76,7 @@ const ProjectDetailPage = () => {
   ];
 
   return (
+    <RoleProvider role={projectRole}>
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-8 border-b border-border bg-background">
@@ -131,11 +132,10 @@ const ProjectDetailPage = () => {
                 </div>
               ) : project ? (
                 <GeneralSettings
-                  project={project}
-                  isAdmin={isAdmin}
-                  onUpdate={handleProjectUpdate}
-                  onDelete={handleProjectDelete}
-                />
+                          project={project}
+                          onUpdate={handleProjectUpdate}
+                          onDelete={handleProjectDelete}
+                        />
               ) : (
                 <div className="text-center py-24 text-muted-foreground">
                   {t('pages:project_detail.not_found', 'Project Not Found.')}
@@ -143,14 +143,13 @@ const ProjectDetailPage = () => {
               )
             )}
 
-                        {activeTab === 'datasets' && (
-              <ProjectDatasetsPage projectId={projectId} isAdmin={isAdmin} />
+                                                {activeTab === 'datasets' && (
+              <ProjectDatasetsPage projectId={projectId} />
             )}
 
             {activeTab === 'taxonomy' && (
-              <TaxonomyManager 
+                            <TaxonomyManager 
                 projectId={projectId}
-                isAdmin={isAdmin}
               />
             )}
 
@@ -160,7 +159,8 @@ const ProjectDetailPage = () => {
           </div>
         </div>
       </div>
-    </div>
+        </div>
+    </RoleProvider>
   );
 };
 

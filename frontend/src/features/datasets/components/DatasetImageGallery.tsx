@@ -29,6 +29,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Guard } from '@/shared/components/Guard';
+import { usePermission } from '@/context/PermissionContext';
 import { useDatasetImages, type DatasetImage } from '../hooks/useDatasetImages';
 import apiService from '@/shared/services/api/api.service';
 import notificationService from '@/shared/services/notification/notification.service';
@@ -70,13 +72,12 @@ const DatasetImageGallery: React.FC<DatasetImageGalleryProps> = ({
   currentUserRole,
   onImagesChanged,
 }) => {
-  const { t } = useTranslation(['datasets', 'common']);
+    const { t } = useTranslation(['datasets', 'common']);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const isAdmin = currentUserRole?.toLowerCase() === 'admin';
   const { confirm } = useConfirm();
 
   const {
@@ -329,8 +330,9 @@ const DatasetImageGallery: React.FC<DatasetImageGalleryProps> = ({
             ]}
           />
 
-          {/* Bulk delete (admin, table mode) */}
-          {isAdmin && viewMode === 'table' && selectedIds.size > 0 && (
+                    {/* Bulk delete (admin, table mode) */}
+          <Guard permission="asset:remove">
+          {viewMode === 'table' && selectedIds.size > 0 && (
             <Button
               size="sm"
               variant="destructive"
@@ -344,6 +346,7 @@ const DatasetImageGallery: React.FC<DatasetImageGalleryProps> = ({
               })}
             </Button>
           )}
+          </Guard>
         </div>
 
         {/* Error State */}
@@ -375,7 +378,7 @@ const DatasetImageGallery: React.FC<DatasetImageGalleryProps> = ({
             <Table>
               <TableHeader>
                 <TableRow>
-                  {isAdmin && (
+                                    <Guard permission="asset:remove">
                     <TableHead className="w-10 px-3">
                       <button
                         onClick={toggleSelectAll}
@@ -391,7 +394,7 @@ const DatasetImageGallery: React.FC<DatasetImageGalleryProps> = ({
                         )}
                       </button>
                     </TableHead>
-                  )}
+                  </Guard>
                   <TableHead className="w-12"></TableHead>
                   <TableHead>{t('datasets:gallery.col_filename', 'Filename')}</TableHead>
                   <TableHead className="w-28">{t('datasets:gallery.col_status', 'Status')}</TableHead>
@@ -415,8 +418,8 @@ const DatasetImageGallery: React.FC<DatasetImageGalleryProps> = ({
                       key={img.asset_id}
                       className={isSelected ? 'bg-primary/5 dark:bg-primary/10' : ''}
                     >
-                      {/* Checkbox */}
-                      {isAdmin && (
+                                            {/* Checkbox */}
+                      <Guard permission="asset:remove">
                         <TableCell className="px-3">
                           <button
                             onClick={() => toggleSelect(img.asset_id)}
@@ -429,7 +432,7 @@ const DatasetImageGallery: React.FC<DatasetImageGalleryProps> = ({
                             )}
                           </button>
                         </TableCell>
-                      )}
+                      </Guard>
 
                       {/* Thumbnail */}
                       <TableCell className="py-2 px-3">
@@ -493,7 +496,7 @@ const DatasetImageGallery: React.FC<DatasetImageGalleryProps> = ({
                               <ExternalLink size={14} />
                             </a>
                           )}
-                          {isAdmin && (
+                                                    <Guard permission="asset:remove">
                             <button
                               onClick={() => handleDeleteImage(img.asset_id, img.filename)}
                               className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
@@ -501,7 +504,7 @@ const DatasetImageGallery: React.FC<DatasetImageGalleryProps> = ({
                             >
                               <Trash2 size={14} />
                             </button>
-                          )}
+                          </Guard>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -552,7 +555,7 @@ const DatasetImageGallery: React.FC<DatasetImageGalleryProps> = ({
                         <ExternalLink size={14} />
                       </a>
                     )}
-                    {isAdmin && (
+                                        <Guard permission="asset:remove">
                       <button
                         onClick={() => handleDeleteImage(img.asset_id, img.filename)}
                         className="p-1.5 rounded-lg bg-destructive/60 hover:bg-destructive text-white transition-colors"
@@ -560,7 +563,7 @@ const DatasetImageGallery: React.FC<DatasetImageGalleryProps> = ({
                       >
                         <Trash2 size={14} />
                       </button>
-                    )}
+                    </Guard>
                   </div>
                 </div>
 

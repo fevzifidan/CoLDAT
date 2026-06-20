@@ -5,20 +5,21 @@ import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Database, Plus, RefreshCw, Layers, FileSpreadsheet, Image, CheckCircle, Tag } from "lucide-react";  
+import { Guard } from '@/shared/components/Guard';
+import { usePermission } from '@/context/PermissionContext';
 import { datasetService } from '../datasets/services/datasetService'; 
 import { CreateDatasetModal } from '../datasets/components/CreateDatasetModal';
 import notificationService from '@/shared/services/notification/notification.service';
 
 interface ProjectDatasetsPageProps {
   projectId?: string;
-  isAdmin?: boolean;
 }
 
-export const ProjectDatasetsPage: React.FC<ProjectDatasetsPageProps> = ({ projectId: propProjectId, isAdmin = false }) => {
+export const ProjectDatasetsPage: React.FC<ProjectDatasetsPageProps> = ({ projectId: propProjectId }) => {
   const { projectId: paramProjectId } = useParams<{ projectId: string }>();
   const projectId = propProjectId || paramProjectId || '';
   const navigate = useNavigate();
-  const { t } = useTranslation(['pages', 'common', 'datasets']);
+    const { t } = useTranslation(['pages', 'common', 'datasets']);
   
   const [loading, setLoading] = useState(true);
   const [projectDatasets, setProjectDatasets] = useState<any[]>([]); 
@@ -101,17 +102,17 @@ export const ProjectDatasetsPage: React.FC<ProjectDatasetsPageProps> = ({ projec
               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 📂 {t('datasets:project_page.active_datasets', 'Active Datasets')} ({projectDatasets.length})
               </h3>
-                            {isAdmin && projectDatasets.length > 0 && (
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-8 text-xs gap-1"
-                  >
-                    <Plus size={12} /> {t("datasets:project_page.create_new_dataset", "Yeni Oluştur")}
-                  </Button>
-                </div>
-              )}
+                            <Guard permission="dataset:create">
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => setIsCreateModalOpen(true)}
+                                  className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-8 text-xs gap-1"
+                                >
+                                  <Plus size={12} /> {t("datasets:project_page.create_new_dataset", "Yeni Oluştur")}
+                                </Button>
+                              </div>
+                            </Guard>
             </div>
 
             {projectDatasets.length === 0 ? (
@@ -127,17 +128,17 @@ export const ProjectDatasetsPage: React.FC<ProjectDatasetsPageProps> = ({ projec
                     </p>
                   </div>
                   
-                                    {isAdmin && (
+                                    <Guard permission="dataset:create">
                                     <div className="flex justify-center gap-3 mt-4">
-                    <Button 
-                      size="sm" 
-                      onClick={() => setIsCreateModalOpen(true)}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium"
-                    >
-                      <Plus size={14} className="mr-1" /> {t("datasets:project_page.create_from_scratch", "Sıfırdan Dataset Oluştur")}
-                    </Button>
-                  </div>
-                  )}
+                                      <Button 
+                                        size="sm" 
+                                        onClick={() => setIsCreateModalOpen(true)}
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium"
+                                      >
+                                        <Plus size={14} className="mr-1" /> {t("datasets:project_page.create_from_scratch", "Sıfırdan Dataset Oluştur")}
+                                      </Button>
+                                    </div>
+                                    </Guard>
                 </CardContent>
               </Card>
             ) : (

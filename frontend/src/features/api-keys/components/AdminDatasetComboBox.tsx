@@ -41,7 +41,7 @@ export const AdminDatasetComboBox: React.FC<AdminDatasetComboBoxProps> = ({ valu
     manualFirstPage: false,
   });
 
-  // Sadece role === 'admin' olan dataset'leri filtrele (backend'den role artık doğru geliyor)
+    // Guard ile kontrol edilen admin dataset'leri (backend'den sadece admin olunan dataset'ler döner)
   const adminDatasets = allDatasets.filter(ds => ds.role === 'admin');
 
   // Client-side arama

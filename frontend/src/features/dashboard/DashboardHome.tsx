@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 // Bileşen ve Servis Entegrasyonları
+import { RoleProvider } from '@/context/PermissionContext';
+import { type BackendRole } from '@/shared/roles';
 import { ProjectCard } from '@/features/projects/components/ProjectCard';
 import { projectService } from '@/features/projects/services/projectService';
 import { taskService } from '@/features/tasks/services/taskService';
@@ -113,11 +115,12 @@ const DashboardHome = () => {
     [tasksList]
   );
 
-  const mappedDatasets = useMemo(() =>
+    const mappedDatasets = useMemo(() =>
     datasetsList.map(d => ({
       id: d.id,
       name: d.name || 'Unnamed Dataset',
       description: d.description || 'Project dataset repository.',
+      role: d.role,
     })),
     [datasetsList]
   );
@@ -218,9 +221,11 @@ const DashboardHome = () => {
         )}
 
         {mappedTasks.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {mappedTasks.map((task) => (
+              <RoleProvider key={task.id} role={(task.role?.toLowerCase() as BackendRole) || null}>
               <ProjectCard key={task.id} project={task} cardType="task" />
+              </RoleProvider>
             ))}
           </div>
         ) : (
@@ -276,10 +281,12 @@ const DashboardHome = () => {
           </div>
         )}
 
-        {mappedDatasets.length > 0 ? (
+                {mappedDatasets.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {mappedDatasets.map((dataset) => (
+              <RoleProvider key={dataset.id} role={(dataset.role as BackendRole) || null}>
               <ProjectCard key={dataset.id} project={dataset} cardType="dataset" />
+              </RoleProvider>
             ))}
           </div>
         ) : (
@@ -320,9 +327,11 @@ const DashboardHome = () => {
         )}
 
         {mappedProjects.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {mappedProjects.slice(0, 4).map((project) => (
+              <RoleProvider key={project.id} role={(project.role as BackendRole) || null}>
               <ProjectCard key={project.id} project={project} cardType="project" />
+              </RoleProvider>
             ))}
           </div>
         ) : (

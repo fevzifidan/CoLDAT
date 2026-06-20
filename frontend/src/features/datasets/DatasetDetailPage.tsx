@@ -15,6 +15,9 @@ import {
   AlertCircle,
   Trash2,
 } from 'lucide-react';
+import { RoleProvider } from '@/context/PermissionContext';
+import { type BackendRole } from '@/shared/roles';
+import { Guard } from '@/shared/components/Guard';
 import { datasetService } from './services/datasetService';
 import DatasetMemberManager from './components/DatasetMemberManager';
 import DatasetImageUploader from './components/DatasetImageUploader';
@@ -28,7 +31,7 @@ interface DatasetDetail {
   current_version?: string;
   total_images?: number;
   annotated_images?: number;
-  role?: string;
+  role?: BackendRole;
 }
 
 const DatasetDetailPage = () => {
@@ -107,11 +110,14 @@ const DatasetDetailPage = () => {
     );
   }
 
-  if (!dataset) {
+    if (!dataset) {
     return null;
   }
 
+  const datasetRole = dataset.role || null;
+
   return (
+    <RoleProvider role={datasetRole}>
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between border-b pb-4 border-border">
@@ -132,8 +138,8 @@ const DatasetDetailPage = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {dataset.role?.toLowerCase() === 'admin' && (
+                <div className="flex items-center gap-2">
+          <Guard permission="dataset:delete">
             <Button
               variant="outline"
               size="sm"
@@ -154,7 +160,7 @@ const DatasetDetailPage = () => {
               <Trash2 size={14} />
               {t('common:actions.delete', 'Delete')}
             </Button>
-          )}
+          </Guard>
         </div>
       </div>
 
@@ -239,14 +245,14 @@ const DatasetDetailPage = () => {
           </CardContent>
         </Card>
       </div>
-      {/* Upload Images Section */}
-      {dataset.role?.toLowerCase() === 'admin' && (
+            {/* Upload Images Section */}
+      <Guard permission="asset:add">
         <DatasetImageUploader
           datasetId={dataset.id}
           currentUserRole={dataset.role}
           onUploadComplete={handleImagesChanged}
         />
-      )}
+      </Guard>
 
       {/* Image Gallery Section */}
       <DatasetImageGallery
@@ -255,12 +261,13 @@ const DatasetDetailPage = () => {
         onImagesChanged={handleImagesChanged}
       />
 
-      {/* Team Members Section */}
+            {/* Team Members Section */}
       <DatasetMemberManager
         datasetId={dataset.id}
         currentUserRole={dataset.role}
       />
     </div>
+    </RoleProvider>
   );
 };
 

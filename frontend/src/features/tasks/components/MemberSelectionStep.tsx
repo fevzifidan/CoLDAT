@@ -46,7 +46,7 @@ import { datasetMemberService, userLookupService } from '@/features/tasks/servic
 export interface DatasetMember {
   user_id: string;
   username: string;
-  role: 'annotator' | 'viewer' | 'admin' | 'owner';
+  role: 'annotator' | 'viewer' | 'admin';
 }
 
 interface MemberSelectionStepProps {
@@ -382,17 +382,15 @@ const MemberSelectionStep = ({ datasetId, onSelect, selectedMember }: MemberSele
                     <TableCell>
                                             <Badge
                         variant="outline"
-                        className={`text-[10px] uppercase ${
-                          member.role === 'owner' || member.role === 'admin'
+                                                className={`text-[10px] uppercase ${
+                          member.role === 'admin'
                             ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-400'
                             : member.role === 'annotator'
                             ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/20 dark:text-sky-400'
                             : 'border-muted-foreground/20'
                         }`}
                       >
-                        {member.role === 'owner'
-                          ? t('tasks:create.member_role_owner', 'Owner')
-                          : member.role === 'admin'
+                        {member.role === 'admin'
                           ? t('tasks:create.member_role_admin', 'Admin')
                           : member.role === 'annotator'
                           ? t('tasks:create.role.annotator', 'Annotator')
@@ -406,7 +404,7 @@ const MemberSelectionStep = ({ datasetId, onSelect, selectedMember }: MemberSele
                           variant={isSelected ? 'secondary' : 'outline'}
                           onClick={() => onSelect(member)}
                           className="h-8 min-w-[68px] text-xs"
-                          disabled={member.role === 'owner' || member.role === 'admin'}
+                                                    disabled={member.role === 'admin'}
                         >
                           {isSelected ? (
                             <>
@@ -417,7 +415,7 @@ const MemberSelectionStep = ({ datasetId, onSelect, selectedMember }: MemberSele
                             t('tasks:create.user_table.select', 'Select')
                           )}
                         </Button>
-                        {member.role !== 'owner' && member.role !== 'admin' && (
+                                                {member.role !== 'admin' && (
                           <Button
                             variant="ghost"
                             size="sm"

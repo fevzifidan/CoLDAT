@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Edit2, Check, X, Link as LinkIcon, Tag, Loader2, Trash2, ShieldCheck, Lock } from "lucide-react";
+import { Guard } from '@/shared/components/Guard';
+import { usePermission } from '@/context/PermissionContext';
 import { projectService } from '../../projects/services/projectService';
 import notificationService from '@/shared/services/notification/notification.service';
 
@@ -14,7 +16,6 @@ import notificationService from '@/shared/services/notification/notification.ser
 interface TaxonomyManagerProps {
   projectId: string | undefined;
   onUpdate?: (data: { classes: ClassItem[]; predicates: PredicateItem[]; attributes: string[] }) => void;
-  isAdmin?: boolean; // 👑 Üst bileşenden gelen yetki kontrolü eklendi
 }
 
 interface ClassItem {
@@ -38,8 +39,9 @@ const COLOR_PALETTE = [
   '#64748b', '#10b981', '#6366f1', '#d946ef'
 ];
 
-const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, isAdmin = false }) => {
+const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate }) => {
   const { t } = useTranslation(['pages', 'common', 'taxonomy']);
+  const { hasPermission } = usePermission();
 
   const [loading, setLoading] = useState<boolean>(false);
   const [classes, setClasses] = useState<ClassItem[]>([]);
@@ -92,7 +94,7 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
   };
 
                                 const saveEdit = async (type: 'class' | 'pred', id: string | number) => {
-        if (!isAdmin) {
+            if (!hasPermission('project:update')) {
       notificationService.error(t("common:status.error", "Sadece admin rolü düzenleme yapabilir."));
       return;
     }
@@ -124,7 +126,7 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
   };
 
     const deleteItem = async (type: 'class' | 'pred', id: string | number) => {
-    if (!isAdmin) {
+    if (!hasPermission('project:update')) {
       notificationService.error(t("taxonomy:delete_error", "Sadece yetkili admin bu öğeyi silebilir."));
       return;
     }
@@ -233,8 +235,10 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
     }
   };
 
-  const addClass = async () => {
-    if (!isAdmin) return;
+
+
+    const addClass = async () => {
+  if (!hasPermission('project:update')) return;
     const randomColor = COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
     const tempId = `temp-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString()}`;
     const newCls: ClassItem = { 
@@ -250,8 +254,10 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
     await saveTaxonomyToBackend(nextClasses, predicates);
   };
 
-  const addPredicate = async () => {
-    if (!isAdmin) return;
+
+
+    const addPredicate = async () => {
+    if (!hasPermission('project:update')) return;
     const tempId = `temp-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString()}`;
     const newPred: PredicateItem = { 
       id: tempId,
@@ -266,7 +272,7 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
   };
 
   const startEdit = (type: 'class' | 'pred', item: any) => {
-    if (!isAdmin) return; 
+        if (!hasPermission('project:update')) return; 
     setEditingId(`${type}-${item.id}`);
     setTempName(item.name);
     setTempIsActive(item.isActive ?? true);
@@ -285,17 +291,14 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
     );
   }
 
-  return (
+    return (
     <div className="space-y-6">
       <div className="flex justify-between items-start">
         <div>
           <h3 className="text-xl font-bold flex items-center gap-2">
-            {t("taxonomy.title", "Project Taxonomy")}
-            {!isAdmin && <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full flex items-center gap-1 font-normal"><Lock size={12}/> {t("taxonomy.view_only", "Salt Okunur")}</span>}
+              {t("taxonomy.title", "Project Taxonomy")}
+              {!hasPermission('project:update') && <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full flex items-center gap-1 font-normal"><Lock size={12}/> {t("taxonomy.view_only", "Salt Okunur")}</span>}
           </h3>
-          <p className="text-sm text-muted-foreground">
-            {t("taxonomy.description", "Manage labels, object classes, and predicates for this project.")}
-          </p>
         </div>
       </div>
 
@@ -307,11 +310,11 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
               <div className="flex items-center gap-2 font-bold text-foreground">
                 <Tag size={18} className="text-primary" /> {t("taxonomy.object_classes", "Object Classes")}
               </div>
-              {isAdmin && (
+                            <Guard permission="project:update">
                 <Button variant="ghost" size="icon" onClick={addClass} className="hover:bg-primary/10 hover:text-primary">
                   <Plus size={18} className="text-primary" />
                 </Button>
-              )}
+              </Guard>
             </div>
             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
               {classes.length === 0 && (
@@ -365,7 +368,7 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
                           {cls.includeInExport && <span className="bg-primary/10 text-primary border border-primary/20 text-[9px] px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5"><ShieldCheck size={10}/>{t("taxonomy:exportable_badge", "Exportable")}</span>}
                         </div>
                       </div>
-                      {isAdmin && (
+                                            <Guard permission="project:update">
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit('class', cls)}>
                             <Edit2 size={14} className="text-slate-400" />
@@ -374,7 +377,7 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
                             <Trash2 size={14} />
                           </Button>
                         </div>
-                      )}
+                      </Guard>
                     </div>
                   )}
                 </div>
@@ -390,11 +393,11 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
               <div className="flex items-center gap-2 font-bold text-foreground">
                 <LinkIcon size={18} className="text-primary" /> {t("taxonomy.predicates", "Predicates (Relations)")}
               </div>
-              {isAdmin && (
+                            <Guard permission="project:update">
                 <Button variant="ghost" size="icon" onClick={addPredicate} className="hover:bg-primary/10 hover:text-primary">
                   <Plus size={18} className="text-primary" />
                 </Button>
-              )}
+              </Guard>
             </div>
             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
               {predicates.length === 0 && (
@@ -431,7 +434,7 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
                         </div>
                       </div>
                       
-                      {isAdmin && (
+                                            <Guard permission="project:update">
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit('pred', pred)}>
                             <Edit2 size={14} className="text-slate-400" />
@@ -440,7 +443,7 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate, 
                             <Trash2 size={14} />
                           </Button>
                         </div>
-                      )}
+                      </Guard>
                     </div>
                   )}
                 </div>

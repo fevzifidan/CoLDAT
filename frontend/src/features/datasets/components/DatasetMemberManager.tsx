@@ -36,6 +36,8 @@ import {
   AlertCircle,
   X,
 } from 'lucide-react';
+import { Guard } from '@/shared/components/Guard';
+import { usePermission } from '@/context/PermissionContext';
 import { datasetService } from '@/features/datasets/services/datasetService';
 import notificationService from '@/shared/services/notification/notification.service';
 
@@ -63,7 +65,7 @@ const ROLE_OPTIONS = [
 
 const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManagerProps) => {
   const { t } = useTranslation(['datasets', 'common']);
-  const isAdmin = currentUserRole?.toLowerCase() === 'admin';
+  const { hasPermission } = usePermission();
 
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -178,7 +180,7 @@ const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManag
             {t('datasets:member_manager.description', 'Manage who has access to this dataset')}
           </CardDescription>
         </div>
-        {isAdmin && (
+                <Guard permission="member:add">
           <Button
             size="sm"
             onClick={() => setAddModalOpen(true)}
@@ -187,7 +189,7 @@ const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManag
             <UserPlus size={13} />
             {t('datasets:member_manager.add_member', 'Add Member')}
           </Button>
-        )}
+        </Guard>
       </CardHeader>
 
       <CardContent className="space-y-1">
@@ -223,11 +225,11 @@ const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManag
           <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
             <Users size={28} className="text-muted-foreground/40" />
                         <p className="text-sm font-medium">{t('datasets:member_manager.no_members', 'No members yet.')}</p>
-            {isAdmin && (
+                        <Guard permission="member:add">
               <p className="text-xs text-muted-foreground">
                 {t('datasets:member_manager.no_members_hint', 'Click "Add Member" to invite someone.')}
               </p>
-            )}
+            </Guard>
           </div>
         )}
 
@@ -259,7 +261,7 @@ const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManag
                     </p>
                   </div>
 
-                  {isAdmin ? (
+                  {hasPermission('member:update-role') ? (
                     <div className="flex items-center gap-1.5">
                       <Select
                         value={member.role}
