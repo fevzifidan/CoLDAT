@@ -273,7 +273,6 @@ export function cropAndScaleMask(
 
   if (positiveCount === 0) {
     // All logits negative — no mask detected
-    console.log(`[SAM Coords] All logits negative. No mask detected.`);
     return {
       maskData: new Uint8Array(originalWidth * originalHeight),
       maskWidth: originalWidth,
@@ -472,7 +471,7 @@ export function maskToPolygon(
   let currentX = startX;
   let currentY = startY;
   let prevDir = 6; // Start searching from direction 6 (up)
-  
+
   // Helper: check if a pixel is foreground (in bounds)
   const isForeground = (px: number, py: number): boolean => {
     if (px < 0 || px >= width || py < 0 || py >= height) return false;
@@ -485,13 +484,13 @@ export function maskToPolygon(
     // Search for the next boundary pixel starting from prevDir+1 (counter-clockwise)
     let found = false;
     let startSearchDir = (prevDir + 1) % 8;
-    
+
     for (let i = 0; i < 8; i++) {
       const dirIdx = (startSearchDir + i) % 8;
       const [dx, dy] = DIRS[dirIdx];
       const nx = currentX + dx;
       const ny = currentY + dy;
-      
+
       if (isForeground(nx, ny)) {
         // Move to the next boundary pixel
         currentX = nx;

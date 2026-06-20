@@ -25,13 +25,13 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem("access_token");
-      
+
       if (token) {
         try {
-          const response = await apiService.get("/account/me/"); 
+          const response = await apiService.get("/account/me/");
           const responseData = response?.data || response;
           setUser(normalizeUser(responseData));
-                } catch (error) {
+        } catch (error) {
           console.error("Token geçersiz, temizleniyor...");
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");
@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-// 2. Login Fonksiyonu
+  // 2. Login Fonksiyonu
   const login = async (credentials, config = {}) => {
     try {
       // Ekranda kullanıcı ne yazdıysa (ister email kutusu, ister username) 
@@ -54,12 +54,8 @@ export const AuthProvider = ({ children }) => {
         password: credentials.password
       };
 
-      console.log("Çalışan URL'e giden paket:", djangoPayload);
-
       // Çalışan tam backend URL'iniz (http://localhost:8000/auth/login/)
       const response = await apiService.post("/auth/login/", djangoPayload, config);
-      
-            console.log("Backend'den gelen yanıt:", response);
 
       const token = response?.access || response?.token || response?.access_token || response?.data?.access;
       const refreshToken = response?.refresh || response?.refresh_token || response?.data?.refresh;
@@ -72,7 +68,7 @@ export const AuthProvider = ({ children }) => {
         }
         setUser(normalizeUser(userData));
       }
-      
+
       return response;
     } catch (error) {
       console.error("Giriş hatası:", error.response?.data || error);
@@ -91,7 +87,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-    // 3. Logout Fonksiyonu
+  // 3. Logout Fonksiyonu
   const logout = useCallback(() => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
@@ -101,7 +97,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading, isAuthenticated: !!user }}>
-        {children}
+      {children}
     </AuthContext.Provider>
   );
 };

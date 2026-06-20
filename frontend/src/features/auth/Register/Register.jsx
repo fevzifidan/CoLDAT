@@ -29,7 +29,7 @@ const RegisterPage = () => {
     defaultValues: { name: "", surname: "", username: "", email: "", password: "", confirmPassword: "" },
   });
 
-const onSubmit = async (data) => {
+  const onSubmit = async (data) => {
     setLoading(true);
     try {
       const djangoPayload = {
@@ -39,17 +39,14 @@ const onSubmit = async (data) => {
         email: data.email,
         password: data.password,
       };
-
-      console.log("Kayıt isteği gönderiliyor...");
       await apiService.post("/auth/register", djangoPayload);
-      console.log("Kayıt veritabanına başarıyla eklendi!");
-      
+
       // KULLANICIYA BİLGİ VERİYORUZ:
       alert("Kayıt işleminiz başarılı! Hesabınızı aktifleştirmek için lütfen e-posta kutunuza gönderilen doğrulama linkine tıklayın.");
-      
+
       // Doğrulamayı tamamlayıp geri gelmesi için login sayfasına paslıyoruz
-      navigate("/login"); 
-      
+      navigate("/login");
+
     } catch (error) {
       console.error("Kayıt hatası:", error.response?.data || error);
       const backendError = error.response?.data?.message || "Kayıt sırasında bir sorun oluştu.";
@@ -218,8 +215,8 @@ const onSubmit = async (data) => {
           {/* Footer */}
           <div className="pt-6 border-t border-border flex justify-between items-center px-2">
             <span className="text-muted-foreground font-medium">{t("auth:register.hasAccount")}</span>
-            <Button 
-              onClick={() => navigate("/login")} 
+            <Button
+              onClick={() => navigate("/login")}
               variant="link"
               className="text-primary font-bold p-0 text-lg hover:no-underline"
             >

@@ -71,7 +71,6 @@ class UploadService {
 
             if (isActive) {
                 hasChanges = true;
-                console.log(`[UploadService] Active task ${persisted.upload_id} (${persisted.fileName}) marked as FAILED due to page reload`);
             }
         });
 
@@ -82,12 +81,10 @@ class UploadService {
 
         this.persistenceReady = true;
         this.notify();
-        console.log(`[UploadService] Initialized with ${this.activeUploads.size} persisted tasks`);
     }
 
     public setMockMode(enabled: boolean) {
         this.useMock = enabled;
-        console.log(`[UploadService] Mock mode ${enabled ? 'ENABLED' : 'DISABLED'}`);
     }
 
     public subscribe(listener: Listener) {
@@ -105,18 +102,18 @@ class UploadService {
         return Array.from(this.activeUploads.values());
     }
 
-        private notify() {
-            const visibleTasks = new Map<string, UploadTask>();
-            this.activeUploads.forEach((task, id) => {
-                if (!task.hidden) {
-                    visibleTasks.set(id, task);
-                }
-            });
-            this.listeners.forEach(listener => listener(visibleTasks));
+    private notify() {
+        const visibleTasks = new Map<string, UploadTask>();
+        this.activeUploads.forEach((task, id) => {
+            if (!task.hidden) {
+                visibleTasks.set(id, task);
+            }
+        });
+        this.listeners.forEach(listener => listener(visibleTasks));
 
-            // Her notify'da persistence'ı debounce ile güncelle
-            this.schedulePersistenceSave();
-        }
+        // Her notify'da persistence'ı debounce ile güncelle
+        this.schedulePersistenceSave();
+    }
 
     /**
      * Her state değişiminde persistence'ı hemen değil,
@@ -193,7 +190,7 @@ class UploadService {
 
             this.updateTaskStatus(task.upload_id, 'REQUESTING_URL');
 
-                        // Sadece isRetry=true olan (FAILED → retryUpload çağrılmış) task'lar Retry-Upload API'sine gider.
+            // Sadece isRetry=true olan (FAILED → retryUpload çağrılmış) task'lar Retry-Upload API'sine gider.
             // İlk yükleme (asset veya embedding fark etmez) her zaman Presigned URL alır.
             if (task.isRetry && task.asset_id) {
                 await this.fetchRetryUrl(task);
@@ -278,7 +275,7 @@ class UploadService {
         task.expiry_at = data.url.expiry_at;
     }
 
-        // API Tasarımı ile Tam Uyumlu Retry ( /assets/{asset_id}/retry-upload )
+    // API Tasarımı ile Tam Uyumlu Retry ( /assets/{asset_id}/retry-upload )
     public async retryUpload(upload_id: string) {
         const task = this.activeUploads.get(upload_id);
         if (!task || task.status !== 'FAILED' || !task.asset_id) return;
@@ -317,7 +314,6 @@ class UploadService {
         this.statusUpdateBuffer.push({ asset_id, upload_type, success });
 
         if (this.useMock) {
-            console.log(`[Mock] Status buffered for ${upload_type} (asset ${asset_id}): ${success ? 'SUCCESS' : 'FAILED'}`);
         }
 
         if (!this.statusUpdateTimer) {
@@ -333,7 +329,6 @@ class UploadService {
         this.statusUpdateTimer = null;
 
         if (this.useMock) {
-            console.log('[Mock] Flushing status updates to backend:', updates);
             return;
         }
 
@@ -402,7 +397,7 @@ class UploadService {
         });
     }
 
-        // --- İptal Etme ---
+    // --- İptal Etme ---
     public cancelUpload(upload_id: string) {
         const task = this.activeUploads.get(upload_id);
         if (!task) return;
@@ -419,7 +414,7 @@ class UploadService {
      * Terminal durumdaki (SUCCESS/FAILED/CANCELLED) bir task'i UI'dan kaldırır.
      * Task hidden=true yapılır, notify tetiklenir, UI'dan kaybolur.
      */
-        public async dismissUpload(upload_id: string) {
+    public async dismissUpload(upload_id: string) {
         const task = this.activeUploads.get(upload_id);
         if (!task) return;
         if (!['SUCCESS', 'FAILED', 'CANCELLED'].includes(task.status)) return;
@@ -429,10 +424,10 @@ class UploadService {
         this.notify();
     }
 
-        /**
-     * Tüm terminal durumdaki task'leri UI'dan kaldırır ve kalıcı depoyu temizler.
-     * Close/X butonu için — başarılı, hatalı ve iptal edilmiş dosyaları temizler.
-     */
+    /**
+ * Tüm terminal durumdaki task'leri UI'dan kaldırır ve kalıcı depoyu temizler.
+ * Close/X butonu için — başarılı, hatalı ve iptal edilmiş dosyaları temizler.
+ */
     public async dismissAllCompleted() {
         this.activeUploads.forEach((task, id) => {
             if (!task.hidden && ['SUCCESS', 'FAILED', 'CANCELLED'].includes(task.status)) {

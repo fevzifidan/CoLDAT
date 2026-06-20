@@ -300,7 +300,6 @@ function cropAndScaleMaskImpl(
 // ─── Message Handler ─────────────────────────────────────────────────────────
 
 // Worker hazır olduğunda kendini bildir
-console.log('[SAM Polygon Worker] Worker initialized and ready');
 
 self.onmessage = async (e: MessageEvent) => {
   const { type, data, requestId } = e.data;
@@ -320,8 +319,6 @@ self.onmessage = async (e: MessageEvent) => {
           epsilon: number;
         };
 
-        console.log('[SAM Polygon Worker] MASK_TO_POLYGON started', { width, height, maskDataLength: maskData?.byteLength });
-
         if (!maskData || !width || !height || maskData.byteLength === 0) {
           self.postMessage({
             type: 'ERROR',
@@ -332,8 +329,6 @@ self.onmessage = async (e: MessageEvent) => {
         }
 
         const coordinates = maskToPolygonImpl(maskData, width, height, epsilon);
-
-        console.log('[SAM Polygon Worker] MASK_TO_POLYGON completed', { coordinateCount: coordinates.length });
 
         self.postMessage({
           type: 'POLYGON_RESULT',

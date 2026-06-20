@@ -31,14 +31,14 @@ export const GlobalKeyboardListener = () => {
 
       // ── SAM Tool Shortcuts ────────────────────────────────────────────
       if (!isInput) {
-                const state = useAppStore.getState();
+        const state = useAppStore.getState();
         const activeTool = state.activeTool;
         const samMaskData = state.samMaskData;
         const samLogitData = state.samLogitData;
         const samMaskBlobUrl = state.samMaskBlobUrl;
         const samPromptCount = state.samPromptCount;
 
-                if (activeTool === 'sam') {
+        if (activeTool === 'sam') {
           // Backspace → Clear SAM session (prompts + mask + bbox)
           if (e.key === 'Backspace' && (samPromptCount > 0 || state.samBboxPrompt)) {
             e.preventDefault();
@@ -67,7 +67,7 @@ export const GlobalKeyboardListener = () => {
 
                 const taxonomy = currentState.taxonomy;
                 const activeClass = taxonomy?.classes?.find((c: { isActive: boolean }) => c.isActive);
-                                const classId = activeClass?.id ?? '';
+                const classId = activeClass?.id ?? '';
                 const className = activeClass?.name ?? 'Object';
 
                 // Bounding box format: [xMin, yMin, width, height]
@@ -107,17 +107,17 @@ export const GlobalKeyboardListener = () => {
             }
           }
 
-                    // Q → Convert mask to polygon using d3-contour + simplify-js
+          // Q → Convert mask to polygon using d3-contour + simplify-js
           // Uses logit data (low_res_masks from the decoder) for sub-pixel contour detection.
           if (e.key.toLowerCase() === 'q' && state.samLogitData && samMaskBlobUrl) {
             e.preventDefault();
-            
+
             if (isConvertingRef.current) return;
             isConvertingRef.current = true;
-            
-                        try {
+
+            try {
               const { logits, width, height, originalWidth, originalHeight, padX, padY, scaleRatio } = state.samLogitData;
-              
+
               // Run contour detection (main thread — d3-contour is fast on 256x256 grid)
               const coordinates = logitsToPolygon(
                 logits,
@@ -130,16 +130,16 @@ export const GlobalKeyboardListener = () => {
                 scaleRatio,
                 2.0 // epsilon in image pixels for simplify-js
               );
-              
+
               if (coordinates && coordinates.length >= 6) {
                 const currentState = useAppStore.getState();
                 const newId = crypto.randomUUID?.() ?? `sam-poly-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-                
+
                 const taxonomy = currentState.taxonomy;
                 const activeClass = taxonomy?.classes?.find((c: { isActive: boolean }) => c.isActive);
-                                const classId = activeClass?.id ?? '';
+                const classId = activeClass?.id ?? '';
                 const className = activeClass?.name ?? 'Object';
-                
+
                 const newObject = {
                   id: newId,
                   label: `${className}_${(currentState.annotatedObjects?.length ?? 0) + 1}`,
@@ -151,15 +151,14 @@ export const GlobalKeyboardListener = () => {
                   visible: true,
                   locked: false,
                 };
-                
+
                 const currentObjects = currentState.annotatedObjects ?? [];
                 currentState.setAnnotatedObjects([...currentObjects, newObject]);
-                console.log('[SAM] Polygon annotation created with', coordinates.length / 2, 'points');
               } else {
                 console.warn('[SAM] No valid polygon contour found');
                 notificationService.warning('No valid polygon contour found. Try adding more prompts.');
               }
-              
+
               // Clear SAM session for the next annotation
               useAppStore.getState().clearSamSession();
             } catch (err) {

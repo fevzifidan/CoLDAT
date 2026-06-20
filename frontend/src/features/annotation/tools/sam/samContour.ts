@@ -133,7 +133,6 @@ export function logitsToPolygon(
 
   // ── Step 2: Select the best contour ─────────────────────────────────
   if (!results || results.length === 0) {
-    console.log('[SAM Contour] No contours found at threshold=0.0');
     return null;
   }
 
@@ -142,7 +141,6 @@ export function logitsToPolygon(
   const multiPolygon = feature.coordinates as number[][][][];
 
   if (!multiPolygon || multiPolygon.length === 0) {
-    console.log('[SAM Contour] Empty MultiPolygon geometry');
     return null;
   }
 
@@ -172,7 +170,6 @@ export function logitsToPolygon(
   }
 
   if (!largestOuterRing) {
-    console.log('[SAM Contour] No valid outer rings found');
     return null;
   }
 

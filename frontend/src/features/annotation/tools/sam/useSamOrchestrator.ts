@@ -315,7 +315,7 @@ export function useSamOrchestrator(
   // generateMask checks this ref before sending GENERATE_MASK to the worker.
   const modelsReadyRef = useRef(false);
 
-    // Track whether the component is still mounted to avoid state updates after unmount
+  // Track whether the component is still mounted to avoid state updates after unmount
   const isMountedRef = useRef(true);
   // Track enabled value separately to avoid stale closure issues
   const enabledRef = useRef(enabled);
@@ -323,7 +323,7 @@ export function useSamOrchestrator(
 
   // ─── Initialize Embedding ─────────────────────────────────────────────────
 
-    const initializeEmbedding = useCallback(async () => {
+  const initializeEmbedding = useCallback(async () => {
     if (!imageId || !taskImage) return;
 
     // ── enabled kontrolü ──────────────────────────────────────────────────
@@ -350,7 +350,7 @@ export function useSamOrchestrator(
         setSamStatus('checking_cache');
       }
 
-                  const cachedEmbedding = await getEmbedding(imageId);
+      const cachedEmbedding = await getEmbedding(imageId);
 
       if (cachedEmbedding && !abortController.signal.aborted) {
         console.info('[SAM Orchestrator] Cache HIT for', imageId);
@@ -405,7 +405,7 @@ export function useSamOrchestrator(
 
       // Compute the embedding in the worker
       const embeddingBuffer = await computeEmbeddingInWorker(
-        
+
         workerRef.current!,
         imageData,
         origW,
@@ -426,7 +426,7 @@ export function useSamOrchestrator(
 
       setSamEmbeddingReady(true);
       setSamStatus('ready');
-        } catch (err) {
+    } catch (err) {
       if (!abortController.signal.aborted) {
         console.error('[SAM Orchestrator] Initialization failed:', err);
         notificationService.error('SAM initialization failed. Please refresh the page or try again.');
@@ -452,7 +452,6 @@ export function useSamOrchestrator(
     worker.addEventListener('message', (e: MessageEvent) => {
       const msg = e.data;
       if (msg.type === 'LOG') {
-        console.log('[SAM Worker Log]', ...(msg.data?.args ?? []));
       } else if (msg.type === 'ERROR') {
         console.error('[SAM Worker] Reported error:', msg.data?.message);
         // Show error to user for non-recoverable errors
@@ -485,7 +484,7 @@ export function useSamOrchestrator(
         reject(new Error('Worker model initialization timed out (180s)'));
       }, 180_000);
 
-            const handler = (e: MessageEvent) => {
+      const handler = (e: MessageEvent) => {
         const msg = e.data;
         if (msg.type === 'MODELS_READY') {
           clearTimeout(timeout);
@@ -505,7 +504,7 @@ export function useSamOrchestrator(
     return worker;
   }, [setSamStatus]);
 
-      // ─── Lifecycle: Mount + Image Changes ─────────────────────────────────────
+  // ─── Lifecycle: Mount + Image Changes ─────────────────────────────────────
   //
   // When imageId changes → full reset + bootstrapWorker.
   //
@@ -516,7 +515,7 @@ export function useSamOrchestrator(
   // re-fires, but WITHOUT re-bootstrapping the worker (which would re-download
   // the ONNX models and cause a "Encoder not initialized" race).
 
-    useEffect(() => {
+  useEffect(() => {
     isMountedRef.current = true;
     imageIdRef.current = imageId;
 
@@ -578,65 +577,64 @@ export function useSamOrchestrator(
 
   // ─── Generate Mask (called after prompts change) ─────────────────────────
 
-                const generateMask = useCallback(
-      async (prompts: SAMPrompt[], bbox?: SAMBboxPrompt | null): Promise<void> => {
-        if (!workerRef.current || !enabledRef.current) {
-          clearSamMask();
+  const generateMask = useCallback(
+    async (prompts: SAMPrompt[], bbox?: SAMBboxPrompt | null): Promise<void> => {
+      if (!workerRef.current || !enabledRef.current) {
+        clearSamMask();
+        return;
+      }
+
+      // Require at least one prompt or bbox
+      const hasPoints = prompts && prompts.length > 0;
+      const hasBbox = !!bbox;
+      if (!hasPoints && !hasBbox) {
+        clearSamMask();
+        return;
+      }
+
+      // Wait for models to be ready before generating mask
+      if (!modelsReadyRef.current) {
+        try {
+          await new Promise<void>((resolve, reject) => {
+            // Same timeout as bootstrapWorker
+            const timeout = setTimeout(() => reject(new Error('Models initialization timed out')), 180_000);
+            const handler = (e: MessageEvent) => {
+              const msg = e.data;
+              if (msg.type === 'MODELS_READY') {
+                clearTimeout(timeout);
+                workerRef.current?.removeEventListener('message', handler);
+                resolve();
+              } else if (msg.type === 'ERROR') {
+                clearTimeout(timeout);
+                workerRef.current?.removeEventListener('message', handler);
+                reject(new Error(msg.data?.message || 'Worker error'));
+              }
+            };
+            workerRef.current?.addEventListener('message', handler);
+          });
+        } catch (err) {
+          console.error('[SAM Orchestrator] Model readiness check failed:', err);
           return;
         }
-
-        // Require at least one prompt or bbox
-        const hasPoints = prompts && prompts.length > 0;
-        const hasBbox = !!bbox;
-        if (!hasPoints && !hasBbox) {
-          clearSamMask();
-          return;
-        }
-
-        // Wait for models to be ready before generating mask
-        if (!modelsReadyRef.current) {
-          console.log('[SAM Orchestrator] Waiting for models to be ready before generating mask...');
-          try {
-            await new Promise<void>((resolve, reject) => {
-              // Same timeout as bootstrapWorker
-              const timeout = setTimeout(() => reject(new Error('Models initialization timed out')), 180_000);
-              const handler = (e: MessageEvent) => {
-                const msg = e.data;
-                if (msg.type === 'MODELS_READY') {
-                  clearTimeout(timeout);
-                  workerRef.current?.removeEventListener('message', handler);
-                  resolve();
-                } else if (msg.type === 'ERROR') {
-                  clearTimeout(timeout);
-                  workerRef.current?.removeEventListener('message', handler);
-                  reject(new Error(msg.data?.message || 'Worker error'));
-                }
-              };
-              workerRef.current?.addEventListener('message', handler);
-            });
-          } catch (err) {
-            console.error('[SAM Orchestrator] Model readiness check failed:', err);
-            return;
-          }
-        }
+      }
 
       const origW = imgDimensions?.width ?? 1024;
       const origH = imgDimensions?.height ?? 1024;
 
-            try {
+      try {
         // Convert prompts from image coordinates to model (1024×1024) coordinates
         const modelPrompts = hasPoints
           ? prompts
-              .map((p) => {
-                const coords = mapClickToModel(p.x, p.y, origW, origH, SAM_TENSOR_SIZE);
-                if (!coords) return null;
-                return {
-                  x: coords.x,
-                  y: coords.y,
-                  type: p.type,
-                };
-              })
-              .filter((p): p is { x: number; y: number; type: 'positive' | 'negative' } => p !== null)
+            .map((p) => {
+              const coords = mapClickToModel(p.x, p.y, origW, origH, SAM_TENSOR_SIZE);
+              if (!coords) return null;
+              return {
+                x: coords.x,
+                y: coords.y,
+                type: p.type,
+              };
+            })
+            .filter((p): p is { x: number; y: number; type: 'positive' | 'negative' } => p !== null)
           : [];
 
         // Convert bbox to model coordinates
@@ -650,29 +648,29 @@ export function useSamOrchestrator(
           if (mapped) modelBox = mapped;
         }
 
-                if (modelPrompts.length === 0 && !modelBox) {
+        if (modelPrompts.length === 0 && !modelBox) {
           clearSamMask();
           return;
         }
 
-                // Send GENERATE_MASK to worker
-                const maskResult = await new Promise<{
-                  mask: ArrayBuffer;
-                  width: number;
-                  height: number;
-                  lowResMask: ArrayBuffer;
-                  lowResWidth: number;
-                  lowResHeight: number;
-                }>((resolve, reject) => {
-                                    // Mask generation timeout: 30s should be enough for 256x256 output
-                  let timedOut = false;
-                  const timeout = setTimeout(() => {
-                    timedOut = true;
-                    if (workerRef.current) {
-                      workerRef.current.removeEventListener('message', handler);
-                    }
-                    reject(new Error('Mask generation timed out (30s) — decoder may be stuck or model not responding'));
-                  }, 30_000);
+        // Send GENERATE_MASK to worker
+        const maskResult = await new Promise<{
+          mask: ArrayBuffer;
+          width: number;
+          height: number;
+          lowResMask: ArrayBuffer;
+          lowResWidth: number;
+          lowResHeight: number;
+        }>((resolve, reject) => {
+          // Mask generation timeout: 30s should be enough for 256x256 output
+          let timedOut = false;
+          const timeout = setTimeout(() => {
+            timedOut = true;
+            if (workerRef.current) {
+              workerRef.current.removeEventListener('message', handler);
+            }
+            reject(new Error('Mask generation timed out (30s) — decoder may be stuck or model not responding'));
+          }, 30_000);
 
           const handler = (e: MessageEvent) => {
             if (timedOut) return; // Ignore messages after timeout
@@ -680,8 +678,7 @@ export function useSamOrchestrator(
             if (msg.type === 'MASK_GENERATED') {
               clearTimeout(timeout);
               workerRef.current?.removeEventListener('message', handler);
-              console.log('[SAM Orchestrator] MASK_GENERATED received');
-                            resolve({
+              resolve({
                 mask: msg.data.mask as ArrayBuffer,
                 width: msg.data.width as number,
                 height: msg.data.height as number,
@@ -696,13 +693,12 @@ export function useSamOrchestrator(
               reject(new Error(`Mask generation error: ${msg.data?.message ?? 'Unknown error'}`));
             } else if (msg.type === 'LOG') {
               // Log messages for debugging but don't remove handler
-              console.log('[SAM Worker]', ...(msg.data?.args ?? []));
             }
           };
 
           workerRef.current!.addEventListener('message', handler);
 
-                    console.error('[SAM Orchestrator DEBUG] Sending GENERATE_MASK to worker. prompts:', modelPrompts.length, 'box:', !!modelBox, 'origW:', origW, 'origH:', origH); // CRITICAL DEBUG
+          console.error('[SAM Orchestrator DEBUG] Sending GENERATE_MASK to worker. prompts:', modelPrompts.length, 'box:', !!modelBox, 'origW:', origW, 'origH:', origH); // CRITICAL DEBUG
           workerRef.current!.postMessage({
             type: 'GENERATE_MASK',
             data: {
@@ -715,9 +711,6 @@ export function useSamOrchestrator(
           console.error('[SAM Orchestrator DEBUG] GENERATE_MASK sent!'); // CRITICAL DEBUG
         });
 
-        console.log('[SAM Orchestrator] Mask buffer received, size:', maskResult.mask?.byteLength);
-        console.log('[SAM Orchestrator] Mask metadata:', { width: maskResult.width, height: maskResult.height });
-
         if (!maskResult.mask || maskResult.mask.byteLength === 0) {
           clearSamMask();
           return;
@@ -726,18 +719,14 @@ export function useSamOrchestrator(
         // Get the mask width/height from the worker response
         const maskWidthFromWorker = maskResult.width;
         const maskHeightFromWorker = maskResult.height;
-        console.log('[SAM Orchestrator] Mask resolution from worker:', maskWidthFromWorker, 'x', maskHeightFromWorker);
 
-                                // cropAndScaleMask handles:
+        // cropAndScaleMask handles:
         //   1. Tensor dimension detection (always 1024×1024 from worker)
         //   2. Padding cropping → extracts ONLY the scaled image region
         //   3. Threshold at logit > 0.0 (sigmoid-equivalent, no min/max normalization)
         //   4. Nearest-neighbor scaling to original image dimensions
         const tensorData = new Float32Array(maskResult.mask);
         const tensorSize = Math.max(maskWidthFromWorker, maskHeightFromWorker);
-        console.log('[SAM Orchestrator] Tensor data length:', tensorData.length, 'Float32 elements');
-        console.log('[SAM Orchestrator] Original image dims:', origW, 'x', origH);
-        console.log('[SAM Orchestrator] Using cropAndScaleMask with tensorSize:', tensorSize);
 
         const { maskData, maskWidth, maskHeight } = cropAndScaleMask(
           tensorData,
@@ -748,15 +737,14 @@ export function useSamOrchestrator(
         );
 
         const nonZeroCount = maskData.reduce((sum, v) => sum + (v > 0 ? 1 : 0), 0);
-        console.log('[SAM Orchestrator] Mask data stats:', { 
-          maskWidth, 
-          maskHeight, 
+        console.log('[SAM Orchestrator] Mask data stats:', {
+          maskWidth,
+          maskHeight,
           maskDataLength: maskData.length,
           nonZeroCount
         });
 
-                if (nonZeroCount === 0) {
-          console.log('[SAM Orchestrator] No mask detected. Triggering warning.');
+        if (nonZeroCount === 0) {
           clearSamMask();
           const { setSamWarning, removeSamPrompt, samPrompts, samBboxPrompt } = useAppStore.getState();
           setSamWarning('sam.noMaskFound');
@@ -782,14 +770,14 @@ export function useSamOrchestrator(
         // Convert the mask to a renderable PNG blob (offloaded to worker)
         const maskBlobUrl = await offloadMaskToBlobUrl(maskData, maskWidth, maskHeight);
 
-                if (isMountedRef.current && imageIdRef.current === imageId) {
+        if (isMountedRef.current && imageIdRef.current === imageId) {
           // Revoke previous mask URL
           clearSamMask();
           // Store raw mask data for polygon conversion
           setSamMaskData({ maskData, width: maskWidth, height: maskHeight });
           setSamMaskBlobUrl(maskBlobUrl);
 
-                    // Store low-res logit data for d3-contour polygon conversion
+          // Store low-res logit data for d3-contour polygon conversion
           // lowResMask is [1, 1, H, W] where H=W=256 — extract first channel
           const lowResBuffer = maskResult.lowResMask;
           if (lowResBuffer && lowResBuffer.byteLength > 0) {
@@ -818,12 +806,9 @@ export function useSamOrchestrator(
               scaleRatio,
             };
             setSamLogitData(logitData);
-            console.log('[SAM Orchestrator] Low-res logit data stored:', lowResWidth, 'x', lowResHeight, 'padX:', padX, 'padY:', padY, 'scaleRatio:', scaleRatio);
           } else {
             console.warn('[SAM Orchestrator] No low-res mask data available from worker');
           }
-
-          console.log('[SAM Orchestrator] Mask blob URL set');
         }
       } catch (err) {
         console.error('[SAM Orchestrator] Mask generation failed:', err);
@@ -835,7 +820,7 @@ export function useSamOrchestrator(
 
   // ─── Reset Session ────────────────────────────────────────────────────────
 
-    const resetSession = useCallback(() => {
+  const resetSession = useCallback(() => {
     abortControllerRef.current?.abort();
     workerRef.current?.terminate();
     workerRef.current = null;
@@ -878,7 +863,7 @@ export function useSamOrchestrator(
 
   // ─── Return ───────────────────────────────────────────────────────────────
 
-    return {
+  return {
     status: samStatus,
     isReady: enabled && samStatus === 'ready' && useAppStore.getState().samEmbeddingReady,
     generateMask,
@@ -894,7 +879,7 @@ function waitForWorkerResponse(
   signal: AbortSignal
 ): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
-        const timeout = setTimeout(() => {
+    const timeout = setTimeout(() => {
       worker.removeEventListener('message', handler);
       resolve(false);
     }, 30_000);
@@ -1033,10 +1018,10 @@ async function computeEmbeddingInWorker(
   signal: AbortSignal
 ): Promise<ArrayBuffer | null> {
   return new Promise<ArrayBuffer | null>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          worker.removeEventListener('message', handler);
-          reject(new Error('Embedding computation timed out (60s)'));
-        }, 60_000);
+    const timeout = setTimeout(() => {
+      worker.removeEventListener('message', handler);
+      reject(new Error('Embedding computation timed out (60s)'));
+    }, 60_000);
 
     const handler = (e: MessageEvent) => {
       if (signal.aborted) {

@@ -19,7 +19,6 @@ const loggerImpl: LoggerImpl = (f, name) => (set, get, store) => {
   const loggedSet: any = (...a: any[]) => {
     (set as any)(...a);
     if (import.meta.env?.DEV) {
-      console.log(...(name ? [`${name}:`] : []), get());
     }
   };
   store.setState = loggedSet;

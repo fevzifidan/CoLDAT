@@ -25,7 +25,6 @@ export default function AssetBulkManager({ datasetId = "default-dataset-123" }: 
     try {
       notificationService.info(t('bulkManager.toast.step1'));
       const uploadUrls = await mockAssetService.getUploadUrls(datasetId, selectedFiles);
-      console.log("Mock URL'ler:", uploadUrls);
 
       notificationService.info(t('bulkManager.toast.step2'));
       notificationService.success(t('bulkManager.toast.success', { count: uploadUrls.length }));
@@ -41,8 +40,8 @@ export default function AssetBulkManager({ datasetId = "default-dataset-123" }: 
     try {
       const fakeAssetIds = ["ast_9123", "ast_4412", "ast_8812"];
       const response = await mockAssetService.bulkUpdateStatus(fakeAssetIds, status);
-      
-            if (response.success) {
+
+      if (response.success) {
         notificationService.success(t('bulkManager.toast.success', { count: fakeAssetIds.length }));
       }
     } catch (error) {
