@@ -7,6 +7,11 @@ from apps.datasets.models import Dataset
 
 
 class Task(models.Model):
+    class Role(models.TextChoices):
+        ADMIN = "admin", "Admin"
+        ANNOTATOR = "annotator", "Annotator"
+        VIEWER = "viewer", "Viewer"
+
     class Status(models.TextChoices):
         ASSIGNED = "assigned", "Assigned"
         IN_PROGRESS = "in_progress", "In Progress"
@@ -37,6 +42,13 @@ class Task(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name="assigned_tasks",
+    )
+
+    role = models.CharField(
+        max_length=20,
+        choices=Role.choices,
+        default=Role.ANNOTATOR,
+        db_index=True,
     )
 
     created_by = models.ForeignKey(

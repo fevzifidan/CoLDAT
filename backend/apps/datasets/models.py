@@ -143,6 +143,15 @@ class DatasetAPIKey(models.Model):
 
     is_active = models.BooleanField(default=True)
 
+    target_version = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text="Optional dataset version tag this key is restricted to.",
+    )
+
+    expires_at = models.DateTimeField(null=True, blank=True)
+
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

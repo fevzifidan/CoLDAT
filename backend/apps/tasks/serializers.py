@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from apps.assets.storage import create_presigned_download_url
 from apps.assets.models import Asset
+from apps.datasets.models import DatasetMember
 from .models import Task, TaskImage
 
 
@@ -88,6 +89,7 @@ class TaskSerializer(serializers.ModelSerializer):
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)
 
     image_count = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -97,6 +99,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "project_id",
             "assignee_id",
             "assignee_username",
+            "role",
             "created_by_id",
             "created_by_username",
             "name",
@@ -115,10 +118,33 @@ class TaskSerializer(serializers.ModelSerializer):
     def get_image_count(self, obj):
         return obj.task_images.count()
 
+    def get_role(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return obj.role
+
+        if obj.dataset.project.owner_id == request.user.id:
+            return Task.Role.ADMIN
+
+        if obj.assignee_id == request.user.id:
+            return obj.role
+
+        dataset_role = DatasetMember.objects.filter(
+            dataset=obj.dataset,
+            user=request.user,
+        ).values_list("role", flat=True).first()
+
+        return dataset_role
+
 
 class TaskCreateSerializer(serializers.Serializer):
     dataset_id = serializers.UUIDField()
     assignee_username = serializers.CharField(max_length=150)
+    role = serializers.ChoiceField(
+        choices=Task.Role.choices,
+        required=False,
+        default=Task.Role.ANNOTATOR,
+    )
     image_ids = serializers.ListField(
         child=serializers.UUIDField(),
         allow_empty=False,
@@ -188,6 +214,7 @@ class TaskStatusUpdateSerializer(serializers.Serializer):
 
 class TaskAssignSerializer(serializers.Serializer):
     assignee_username = serializers.CharField(max_length=150)
+    role = serializers.ChoiceField(choices=Task.Role.choices)
 
 class TaskListQuerySerializer(serializers.Serializer):
     status = serializers.ChoiceField(

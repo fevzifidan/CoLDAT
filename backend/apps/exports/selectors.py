@@ -1,6 +1,7 @@
 from apps.annotations.models import AnnotationObject, SceneGraphRelationship
 from apps.assets.models import Asset
 from apps.datasets.selectors import get_dataset_for_user
+from apps.datasets.models import DatasetVersion
 from apps.taxonomy.models import ProjectClass, ProjectPredicate
 
 
@@ -71,3 +72,12 @@ def get_export_relationships(*, images):
         )
         .order_by("created_at")
     )
+
+
+def get_dataset_version_for_api_key(*, api_key):
+    versions = DatasetVersion.objects.filter(dataset=api_key.dataset)
+
+    if api_key.target_version:
+        return versions.filter(version_tag=api_key.target_version).first()
+
+    return versions.order_by("-created_at").first()

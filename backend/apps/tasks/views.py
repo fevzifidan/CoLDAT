@@ -53,7 +53,11 @@ class TaskListCreateView(UUIDv7PaginatedAPIViewMixin, APIView):
         page = self.paginate_queryset(tasks)
 
         return self.get_paginated_response(
-            TaskSerializer(page, many=True).data
+            TaskSerializer(
+                page,
+                many=True,
+                context={"request": request},
+            ).data
         )
 
     def post(self, request):
@@ -71,6 +75,7 @@ class TaskListCreateView(UUIDv7PaginatedAPIViewMixin, APIView):
             dataset=dataset,
             created_by=request.user,
             assignee_username=serializer.validated_data["assignee_username"],
+            role=serializer.validated_data["role"],
             image_ids=serializer.validated_data["image_ids"],
             name=serializer.validated_data["name"],
             description=serializer.validated_data["description"],
@@ -79,7 +84,7 @@ class TaskListCreateView(UUIDv7PaginatedAPIViewMixin, APIView):
         )
 
         return Response(
-            TaskSerializer(task).data,
+            TaskSerializer(task, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -103,7 +108,7 @@ class TaskDetailView(APIView):
         )
 
         return Response(
-            TaskSerializer(task).data,
+            TaskSerializer(task, context={"request": request}).data,
             status=status.HTTP_200_OK,
         )
 
@@ -144,7 +149,7 @@ class TaskStatusUpdateView(APIView):
         )
 
         return Response(
-            TaskSerializer(task).data,
+            TaskSerializer(task, context={"request": request}).data,
             status=status.HTTP_200_OK,
         )
 
@@ -163,10 +168,11 @@ class TaskAssignView(APIView):
         task = assign_task(
             task=task,
             assignee_username=serializer.validated_data["assignee_username"],
+            role=serializer.validated_data["role"],
         )
 
         return Response(
-            TaskSerializer(task).data,
+            TaskSerializer(task, context={"request": request}).data,
             status=status.HTTP_200_OK,
         )
 
@@ -263,7 +269,11 @@ class DatasetTaskListView(UUIDv7PaginatedAPIViewMixin, APIView):
         page = self.paginate_queryset(tasks)
 
         return self.get_paginated_response(
-            TaskSerializer(page, many=True).data
+            TaskSerializer(
+                page,
+                many=True,
+                context={"request": request},
+            ).data
         )
 
     def get_permissions(self):
@@ -288,7 +298,11 @@ class ProjectTaskListView(UUIDv7PaginatedAPIViewMixin, APIView):
         page = self.paginate_queryset(tasks)
 
         return self.get_paginated_response(
-            TaskSerializer(page, many=True).data
+            TaskSerializer(
+                page,
+                many=True,
+                context={"request": request},
+            ).data
         )
 
 class DatasetAnnotatorAssignmentsView(APIView):

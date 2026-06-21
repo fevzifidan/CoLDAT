@@ -1,26 +1,28 @@
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
+from apps.common.geometry import validate_geometry_coordinates
 from apps.taxonomy.models import ProjectClass, ProjectPredicate
 
 from .models import AnnotationObject, SceneGraphRelationship
 
 
-def validate_coordinates(*, geometry_type: str, coordinates: list):
-    if geometry_type == AnnotationObject.GeometryType.BBOX:
-        if len(coordinates) != 4:
-            raise ValidationError("bbox coordinates must be [x, y, w, h].")
-
-    elif geometry_type == AnnotationObject.GeometryType.POLYGON:
-        if len(coordinates) < 6 or len(coordinates) % 2 != 0:
-            raise ValidationError("polygon coordinates must contain even x/y pairs.")
-
-    elif geometry_type == AnnotationObject.GeometryType.KEYPOINT:
-        if len(coordinates) < 2 or len(coordinates) % 2 != 0:
-            raise ValidationError("keypoint coordinates must contain x/y pairs.")
-
-    else:
-        raise ValidationError("Invalid annotation geometry type.")
+def validate_coordinates(
+    *,
+    geometry_type: str,
+    coordinates: list,
+    image_width,
+    image_height,
+):
+    try:
+        validate_geometry_coordinates(
+            geometry_type=geometry_type,
+            coordinates=coordinates,
+            image_width=image_width,
+            image_height=image_height,
+        )
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
 
 
 @transaction.atomic
@@ -47,6 +49,8 @@ def replace_image_annotations(*, image, data: dict, user):
         validate_coordinates(
             geometry_type=geometry_type,
             coordinates=coordinates,
+            image_width=image.width,
+            image_height=image.height,
         )
 
         if class_id is not None:

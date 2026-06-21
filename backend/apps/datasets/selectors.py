@@ -1,4 +1,5 @@
 from django.db.models import Q
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 
 from apps.projects.models import ProjectMembership
@@ -60,11 +61,7 @@ def get_dataset_members(*, dataset):
 
 
 def user_is_project_admin(*, project, user) -> bool:
-    return ProjectMembership.objects.filter(
-        project=project,
-        user=user,
-        role=ProjectMembership.Role.ADMIN,
-    ).exists()
+    return project.owner_id == user.id
 
 
 def get_dataset_member_by_id(*, dataset, member_id):
@@ -100,6 +97,24 @@ def get_dataset_version_for_user(*, dataset_id, version_tag, user):
         dataset=dataset,
         version_tag=version_tag,
     )
+
+    return dataset, version
+
+
+def get_latest_dataset_version_for_user(*, dataset_id, user):
+    dataset = get_dataset_for_user(
+        dataset_id=dataset_id,
+        user=user,
+    )
+
+    version = (
+        DatasetVersion.objects.select_related("dataset", "created_by")
+        .filter(dataset=dataset)
+        .order_by("-created_at")
+        .first()
+    )
+    if version is None:
+        raise Http404("This dataset does not have an exportable version.")
 
     return dataset, version
 

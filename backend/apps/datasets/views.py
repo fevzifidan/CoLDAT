@@ -368,6 +368,8 @@ class DatasetAPIKeyListCreateView(UUIDv7PaginatedAPIViewMixin, APIView):
             dataset=dataset,
             created_by=request.user,
             name=serializer.validated_data["name"],
+            ttl_days=serializer.validated_data.get("ttl_days"),
+            target_version=serializer.validated_data.get("target_version"),
         )
 
         data = DatasetAPIKeyCreateResponseSerializer(api_key).data
@@ -464,6 +466,8 @@ class DatasetAPIKeyRevealView(APIView):
                 "name": api_key.name,
                 "key_prefix": api_key.key_prefix,
                 "is_active": api_key.is_active,
+                "target_version": api_key.target_version,
+                "expires_at": api_key.expires_at,
                 "raw_key": None,
                 "message": (
                     "The full API key cannot be revealed after creation. "

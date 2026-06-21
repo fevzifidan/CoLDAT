@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 
 from apps.common.ids import uuid7
 
-from .models import Project
+from .models import Project, ProjectMembership
 from .services import create_project
 
 
@@ -113,3 +113,99 @@ class ProjectUUIDv7PaginationTests(TestCase):
         response = self.client.get(self.endpoint, {"limit": 101})
 
         self.assertEqual(response.status_code, 400)
+
+
+class RolelessProjectMembershipAPITests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="project-owner",
+            email="project-owner@example.com",
+            password="test-password-123",
+        )
+        self.member = User.objects.create_user(
+            username="project-member",
+            email="project-member@example.com",
+            password="test-password-123",
+        )
+        self.project = create_project(
+            owner=self.owner,
+            name="Roleless project",
+        )
+        self.endpoint = f"/api/v1/projects/{self.project.id}/members/"
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.owner)
+
+    def test_owner_adds_member_without_role(self):
+        response = self.client.post(
+            self.endpoint,
+            {"user_id": str(self.member.id)},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertNotIn("role", response.data)
+        self.assertTrue(
+            ProjectMembership.objects.filter(
+                project=self.project,
+                user=self.member,
+            ).exists()
+        )
+
+    def test_project_response_uses_role_not_user_role(self):
+        response = self.client.get(f"/api/v1/projects/{self.project.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["role"], "admin")
+        self.assertNotIn("user_role", response.data)
+
+    def test_project_member_creation_rejects_role(self):
+        response = self.client.post(
+            self.endpoint,
+            {
+                "user_id": str(self.member.id),
+                "role": "annotator",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(
+            ProjectMembership.objects.filter(
+                project=self.project,
+                user=self.member,
+            ).exists()
+        )
+
+    def test_project_membership_role_cannot_be_patched(self):
+        membership = ProjectMembership.objects.create(
+            project=self.project,
+            user=self.member,
+        )
+
+        response = self.client.patch(
+            f"{self.endpoint}{membership.id}/",
+            {"role": "admin"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 405)
+
+    def test_non_owner_cannot_add_project_members(self):
+        ProjectMembership.objects.create(
+            project=self.project,
+            user=self.member,
+        )
+        another_user = User.objects.create_user(
+            username="another-member",
+            email="another-member@example.com",
+            password="test-password-123",
+        )
+        self.client.force_authenticate(user=self.member)
+
+        response = self.client.post(
+            self.endpoint,
+            {"user_id": str(another_user.id)},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)

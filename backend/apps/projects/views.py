@@ -19,7 +19,6 @@ from .serializers import (
     ProjectCreateSerializer,
     ProjectMembershipCreateSerializer,
     ProjectMembershipSerializer,
-    ProjectMembershipUpdateSerializer,
     ProjectSerializer,
     ProjectUpdateSerializer,
 )
@@ -29,7 +28,6 @@ from .services import (
     create_project,
     remove_project_member,
     update_project,
-    update_project_member_role,
 )
 
 
@@ -144,7 +142,6 @@ class ProjectMemberListCreateView(APIView):
         membership = add_project_member(
             project=project,
             user_id=serializer.validated_data["user_id"],
-            role=serializer.validated_data["role"],
         )
 
         return Response(
@@ -160,32 +157,6 @@ class ProjectMemberListCreateView(APIView):
 
 
 class ProjectMemberDetailView(APIView):
-    def patch(self, request, project_id, membership_id):
-        project = get_project_for_user(
-            project_id=project_id,
-            user=request.user,
-        )
-
-        self.check_object_permissions(request, project)
-
-        membership = get_project_membership_by_id(
-            project=project,
-            membership_id=membership_id,
-        )
-
-        serializer = ProjectMembershipUpdateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        membership = update_project_member_role(
-            membership=membership,
-            role=serializer.validated_data["role"],
-        )
-
-        return Response(
-            ProjectMembershipSerializer(membership).data,
-            status=status.HTTP_200_OK,
-        )
-
     def delete(self, request, project_id, membership_id):
         project = get_project_for_user(
             project_id=project_id,

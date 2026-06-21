@@ -131,6 +131,10 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 REST_FRAMEWORK = {
+    # The API contract uses `format` as the dataset export format. Disable
+    # DRF's optional `?format=json` renderer override so it does not consume
+    # values such as `coco`, `yolo`, and `visual_genome` before the view runs.
+    "URL_FORMAT_OVERRIDE": None,
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
@@ -169,6 +173,9 @@ MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin123")
 MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "coldat-assets")
 MINIO_REGION = os.getenv("MINIO_REGION", "us-east-1")
 MINIO_USE_SSL = os.getenv("MINIO_USE_SSL", "False") == "True"
+EXPORT_DOWNLOAD_URL_EXPIRES_IN_SECONDS = int(
+    os.getenv("EXPORT_DOWNLOAD_URL_EXPIRES_IN_SECONDS", "900")
+)
 
 ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS = int(
     os.getenv("ASSET_UPLOAD_URL_EXPIRES_IN_SECONDS", "900")

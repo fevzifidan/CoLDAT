@@ -33,7 +33,6 @@ class ProjectMembershipAdmin(admin.ModelAdmin):
     list_display = (
         "project",
         "user",
-        "role",
         "joined_at",
     )
     search_fields = (
@@ -42,6 +41,5 @@ class ProjectMembershipAdmin(admin.ModelAdmin):
         "user__email",
     )
     list_filter = (
-        "role",
         "joined_at",
     )

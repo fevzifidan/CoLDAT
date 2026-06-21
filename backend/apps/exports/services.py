@@ -1,3 +1,10 @@
+from rest_framework.exceptions import ValidationError
+
+from apps.common.geometry import (
+    validate_geometry_coordinates,
+    validate_image_dimensions,
+)
+
 from .converters import (
     bbox_area,
     bbox_to_yolo,
@@ -251,6 +258,32 @@ def get_export_snapshot_classes(*, snapshot):
     ]
 
 
+def validate_snapshot_object(*, asset, snapshot_object):
+    try:
+        validate_geometry_coordinates(
+            geometry_type=snapshot_object.get("type"),
+            coordinates=snapshot_object.get("coordinates", []),
+            image_width=asset.get("width"),
+            image_height=asset.get("height"),
+        )
+    except ValueError as exc:
+        raise ValidationError(
+            f"Asset {asset.get('asset_id')} has invalid export geometry: {exc}"
+        ) from exc
+
+
+def validate_snapshot_asset(*, asset):
+    try:
+        validate_image_dimensions(
+            image_width=asset.get("width"),
+            image_height=asset.get("height"),
+        )
+    except ValueError as exc:
+        raise ValidationError(
+            f"Asset {asset.get('asset_id')} cannot be exported: {exc}"
+        ) from exc
+
+
 def build_coco_export_from_snapshot(*, snapshot):
     assets = snapshot.get("assets", [])
     classes = get_export_snapshot_classes(snapshot=snapshot)
@@ -269,6 +302,7 @@ def build_coco_export_from_snapshot(*, snapshot):
     annotation_index = 1
 
     for asset in assets:
+        validate_snapshot_asset(asset=asset)
         image_id = str(asset["asset_id"])
 
         for obj in asset.get("objects", []):
@@ -276,6 +310,8 @@ def build_coco_export_from_snapshot(*, snapshot):
 
             if class_id not in class_to_category_id:
                 continue
+
+            validate_snapshot_object(asset=asset, snapshot_object=obj)
 
             bbox = snapshot_object_to_bbox(snapshot_object=obj)
 
@@ -338,37 +374,39 @@ def build_yolo_export_from_snapshot(*, snapshot):
     files = []
 
     for asset in assets:
+        validate_snapshot_asset(asset=asset)
         image_id = str(asset["asset_id"])
         image_width = asset.get("width")
         image_height = asset.get("height")
 
         lines = []
 
-        if image_width and image_height:
-            for obj in asset.get("objects", []):
-                class_id = str(obj["class_id"])
+        for obj in asset.get("objects", []):
+            class_id = str(obj["class_id"])
 
-                if class_id not in class_id_to_yolo_index:
-                    continue
+            if class_id not in class_id_to_yolo_index:
+                continue
 
-                bbox = snapshot_object_to_bbox(snapshot_object=obj)
+            validate_snapshot_object(asset=asset, snapshot_object=obj)
 
-                yolo_bbox = bbox_to_yolo(
-                    bbox=bbox,
-                    image_width=image_width,
-                    image_height=image_height,
+            bbox = snapshot_object_to_bbox(snapshot_object=obj)
+
+            yolo_bbox = bbox_to_yolo(
+                bbox=bbox,
+                image_width=image_width,
+                image_height=image_height,
+            )
+
+            class_index = class_id_to_yolo_index[class_id]
+
+            lines.append(
+                " ".join(
+                    [
+                        str(class_index),
+                        *[str(round(value, 6)) for value in yolo_bbox],
+                    ]
                 )
-
-                class_index = class_id_to_yolo_index[class_id]
-
-                lines.append(
-                    " ".join(
-                        [
-                            str(class_index),
-                            *[str(round(value, 6)) for value in yolo_bbox],
-                        ]
-                    )
-                )
+            )
 
         files.append(
             {
@@ -396,40 +434,70 @@ def build_yolo_export_from_snapshot(*, snapshot):
 
 def build_visual_genome_export_from_snapshot(*, snapshot):
     assets = snapshot.get("assets", [])
+    included_class_ids = {
+        str(item["id"])
+        for item in get_export_snapshot_classes(snapshot=snapshot)
+    }
+    included_predicate_ids = {
+        str(item["id"])
+        for item in snapshot.get("taxonomy", {}).get("predicates", [])
+        if item.get("include_in_export", True)
+    }
 
-    return {
-        "format": "visual_genome",
-        "images": [
+    images = []
+
+    for asset in assets:
+        validate_snapshot_asset(asset=asset)
+        objects = []
+        included_object_ids = set()
+
+        for obj in asset.get("objects", []):
+            if str(obj["class_id"]) not in included_class_ids:
+                continue
+
+            validate_snapshot_object(asset=asset, snapshot_object=obj)
+
+            bbox = snapshot_object_to_bbox(snapshot_object=obj)
+            object_id = str(obj["id"])
+            included_object_ids.add(object_id)
+            objects.append(
+                {
+                    "object_id": object_id,
+                    "names": [obj["class_name"]],
+                    "x": bbox[0],
+                    "y": bbox[1],
+                    "w": bbox[2],
+                    "h": bbox[3],
+                }
+            )
+
+        relationships = [
+            {
+                "relationship_id": str(rel["id"]),
+                "subject_id": str(rel["subject_id"]),
+                "object_id": str(rel["object_id"]),
+                "predicate": rel["predicate"],
+            }
+            for rel in asset.get("relationships", [])
+            if str(rel["predicate_id"]) in included_predicate_ids
+            and str(rel["subject_id"]) in included_object_ids
+            and str(rel["object_id"]) in included_object_ids
+        ]
+
+        images.append(
             {
                 "image_id": str(asset["asset_id"]),
                 "filename": asset["filename"],
                 "width": asset["width"],
                 "height": asset["height"],
-                "objects": [
-                    {
-                        "object_id": str(obj["id"]),
-                        "names": [
-                            obj["class_name"],
-                        ],
-                        "x": snapshot_object_to_bbox(snapshot_object=obj)[0],
-                        "y": snapshot_object_to_bbox(snapshot_object=obj)[1],
-                        "w": snapshot_object_to_bbox(snapshot_object=obj)[2],
-                        "h": snapshot_object_to_bbox(snapshot_object=obj)[3],
-                    }
-                    for obj in asset.get("objects", [])
-                ],
-                "relationships": [
-                    {
-                        "relationship_id": str(rel["id"]),
-                        "subject_id": str(rel["subject_id"]),
-                        "object_id": str(rel["object_id"]),
-                        "predicate": rel["predicate"],
-                    }
-                    for rel in asset.get("relationships", [])
-                ],
+                "objects": objects,
+                "relationships": relationships,
             }
-            for asset in assets
-        ],
+        )
+
+    return {
+        "format": "visual_genome",
+        "images": images,
     }
 
 

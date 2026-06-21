@@ -1,14 +1,13 @@
-from typing import Iterable, Optional
+from typing import Iterable
 
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.annotations.models import AnnotationObject
-from apps.projects.models import ProjectMembership
 from apps.assets.models import Asset
 from apps.datasets.models import Dataset
-from apps.datasets.models import DatasetMember
+from apps.projects.models import ProjectMembership
 
 from .models import Task, TaskImage
 
@@ -22,6 +21,7 @@ def create_task(
     created_by,
     assignee_username: str,
     image_ids: Iterable,
+    role: str = Task.Role.ANNOTATOR,
     name: str = "Untitled Task",
     description: str = "",
     priority: str = Task.Priority.MEDIUM,
@@ -35,19 +35,16 @@ def create_task(
     if assignee is None:
         raise ValidationError("Assignee with this username does not exist.")
 
-    dataset_membership = DatasetMember.objects.filter(
-        dataset=dataset,
+    if role not in Task.Role.values:
+        raise ValidationError("Invalid task role.")
+
+    is_project_member = ProjectMembership.objects.filter(
+        project=dataset.project,
         user=assignee,
-    ).first()
+    ).exists()
 
-    if dataset_membership is None:
-        raise ValidationError("Assignee must be a dataset member.")
-
-    if dataset_membership.role not in [
-        DatasetMember.Role.ANNOTATOR,
-        DatasetMember.Role.ADMIN,
-    ]:
-        raise ValidationError("Assignee does not have a valid dataset role.")
+    if not is_project_member:
+        raise ValidationError("Assignee must be a project member.")
 
     unique_image_ids = list(set(image_ids))
 
@@ -69,6 +66,7 @@ def create_task(
     task = Task.objects.create(
         dataset=dataset,
         assignee=assignee,
+        role=role,
         created_by=created_by,
         name=name,
         description=description,
@@ -91,6 +89,9 @@ def mark_task_in_progress_on_first_interaction(*, task: Task, user) -> Task:
         return task
 
     if task.status != Task.Status.ASSIGNED:
+        return task
+
+    if task.role == Task.Role.VIEWER:
         return task
 
     task.status = Task.Status.IN_PROGRESS
@@ -146,12 +147,7 @@ def add_images_to_task(
 
 
 def user_can_manage_task(*, task: Task, user) -> bool:
-    return task.dataset.project.memberships.filter(
-        user=user,
-        role__in=[
-            ProjectMembership.Role.ADMIN,
-        ],
-    ).exists()
+    return task.dataset.project.owner_id == user.id
 
 
 def task_has_images(*, task: Task) -> bool:
@@ -184,6 +180,9 @@ def update_task_status(
 
     is_assignee = task.assignee_id == user.id
     is_manager = user_can_manage_task(task=task, user=user)
+
+    if is_assignee and task.role == Task.Role.VIEWER:
+        raise ValidationError("Viewer task assignees cannot update task status.")
 
     if not task_has_images(task=task):
         raise ValidationError("Task must have at least one image.")
@@ -259,6 +258,7 @@ def assign_task(
     *,
     task: Task,
     assignee_username: str,
+    role: str,
 ) -> Task:
     assignee = User.objects.filter(
         username=assignee_username,
@@ -268,22 +268,20 @@ def assign_task(
     if assignee is None:
         raise ValidationError("Assignee with this username does not exist.")
 
-    dataset_membership = DatasetMember.objects.filter(
-        dataset=task.dataset,
+    if role not in Task.Role.values:
+        raise ValidationError("Invalid task role.")
+
+    is_project_member = ProjectMembership.objects.filter(
+        project=task.dataset.project,
         user=assignee,
-    ).first()
+    ).exists()
 
-    if dataset_membership is None:
-        raise ValidationError("Assignee must be a dataset member.")
-
-    if dataset_membership.role not in [
-        DatasetMember.Role.ANNOTATOR,
-        DatasetMember.Role.ADMIN,
-    ]:
-        raise ValidationError("Assignee does not have a valid dataset role.")
+    if not is_project_member:
+        raise ValidationError("Assignee must be a project member.")
 
     task.assignee = assignee
-    task.save(update_fields=["assignee", "updated_at"])
+    task.role = role
+    task.save(update_fields=["assignee", "role", "updated_at"])
 
     return task
 

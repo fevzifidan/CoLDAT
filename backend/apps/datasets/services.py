@@ -5,6 +5,7 @@ from apps.annotations.models import AnnotationObject, SceneGraphRelationship
 from apps.taxonomy.models import ProjectAttribute, ProjectClass, ProjectPredicate
 import hashlib
 import secrets
+from datetime import timedelta
 from django.utils import timezone
 
 from apps.projects.models import ProjectMembership
@@ -35,7 +36,11 @@ def create_dataset(
         DatasetMember(
             dataset=dataset,
             user=membership.user,
-            role=_map_project_role_to_dataset_role(membership.role),
+            role=(
+                DatasetMember.Role.ADMIN
+                if membership.user_id == project.owner_id
+                else DatasetMember.Role.VIEWER
+            ),
         )
         for membership in project_memberships
     ]
@@ -43,20 +48,6 @@ def create_dataset(
     DatasetMember.objects.bulk_create(dataset_members)
 
     return dataset
-
-
-def _map_project_role_to_dataset_role(project_role: str) -> str:
-    """Map ProjectMembership roles to DatasetMember roles.
-    
-    ProjectMembership had a REVIEWER role which does not exist in DatasetMember.
-    REVIEWER is mapped to ANNOTATOR for backward compatibility.
-    """
-    role_mapping = {
-        ProjectMembership.Role.ADMIN: DatasetMember.Role.ADMIN,
-        ProjectMembership.Role.ANNOTATOR: DatasetMember.Role.ANNOTATOR,
-        ProjectMembership.Role.VIEWER: DatasetMember.Role.VIEWER,
-    }
-    return role_mapping.get(project_role, DatasetMember.Role.VIEWER)
 
 
 def update_dataset(
@@ -269,7 +260,17 @@ def create_dataset_api_key(
     dataset: Dataset,
     created_by,
     name: str,
+    ttl_days: int | None = None,
+    target_version: str | None = None,
 ):
+    if target_version and not DatasetVersion.objects.filter(
+        dataset=dataset,
+        version_tag=target_version,
+    ).exists():
+        raise ValidationError(
+            "The target version does not exist in this dataset."
+        )
+
     raw_key = _generate_dataset_api_key()
     key_prefix = raw_key[:16]
     hashed_key = _hash_api_key(raw_key)
@@ -281,6 +282,12 @@ def create_dataset_api_key(
         hashed_key=hashed_key,
         created_by=created_by,
         is_active=True,
+        target_version=target_version,
+        expires_at=(
+            timezone.now() + timedelta(days=ttl_days)
+            if ttl_days is not None
+            else None
+        ),
     )
 
     return api_key, raw_key
@@ -308,6 +315,12 @@ def update_dataset_api_key(
         if data["is_active"] is True:
             api_key.revoked_at = None
             update_fields.append("revoked_at")
+
+    if "ttl_days" in data:
+        api_key.expires_at = timezone.now() + timedelta(
+            days=data["ttl_days"]
+        )
+        update_fields.append("expires_at")
 
     if update_fields:
         api_key.save(update_fields=update_fields)
