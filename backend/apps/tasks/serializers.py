@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.conf import settings
+from django.utils import timezone
 
 from apps.assets.storage import create_presigned_download_url
 from apps.assets.models import Asset
@@ -98,8 +99,14 @@ class TaskSerializer(serializers.ModelSerializer):
             "assignee_username",
             "created_by_id",
             "created_by_username",
+            "name",
+            "description",
+            "priority",
+            "deadline",
             "status",
             "note",
+            "started_at",
+            "completed_at",
             "image_count",
             "created_at",
             "updated_at",
@@ -116,7 +123,48 @@ class TaskCreateSerializer(serializers.Serializer):
         child=serializers.UUIDField(),
         allow_empty=False,
     )
-    note = serializers.CharField(required=False, allow_blank=True)
+    name = serializers.CharField(
+        max_length=255,
+        required=False,
+        default="Untitled Task",
+        allow_blank=False,
+    )
+    description = serializers.CharField(
+        required=False,
+        default="",
+        allow_blank=True,
+    )
+    priority = serializers.ChoiceField(
+        choices=Task.Priority.choices,
+        required=False,
+        default=Task.Priority.MEDIUM,
+    )
+    deadline = serializers.DateTimeField(
+        required=False,
+        allow_null=True,
+    )
+    note = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        write_only=True,
+        help_text="Deprecated create alias for description.",
+    )
+
+    def validate_deadline(self, value):
+        if value is not None and value <= timezone.now():
+            raise serializers.ValidationError(
+                "Deadline must be in the future."
+            )
+
+        return value
+
+    def validate(self, attrs):
+        legacy_note = attrs.pop("note", None)
+
+        if legacy_note is not None and not attrs.get("description"):
+            attrs["description"] = legacy_note
+
+        return attrs
 
 class TaskImageAddSerializer(serializers.Serializer):
     image_ids = serializers.ListField(

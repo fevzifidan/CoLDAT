@@ -72,7 +72,10 @@ class TaskListCreateView(UUIDv7PaginatedAPIViewMixin, APIView):
             created_by=request.user,
             assignee_username=serializer.validated_data["assignee_username"],
             image_ids=serializer.validated_data["image_ids"],
-            note=serializer.validated_data.get("note", ""),
+            name=serializer.validated_data["name"],
+            description=serializer.validated_data["description"],
+            priority=serializer.validated_data["priority"],
+            deadline=serializer.validated_data.get("deadline"),
         )
 
         return Response(

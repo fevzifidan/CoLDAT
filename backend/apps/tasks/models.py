@@ -14,6 +14,12 @@ class Task(models.Model):
         COMPLETED = "completed", "Completed"
         REJECTED = "rejected", "Rejected"
 
+    class Priority(models.TextChoices):
+        LOW = "low", "Low"
+        MEDIUM = "medium", "Medium"
+        HIGH = "high", "High"
+        URGENT = "urgent", "Urgent"
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid7,
@@ -40,6 +46,26 @@ class Task(models.Model):
         related_name="created_tasks",
     )
 
+    name = models.CharField(
+        max_length=255,
+        default="Untitled Task",
+    )
+
+    description = models.TextField(blank=True)
+
+    priority = models.CharField(
+        max_length=20,
+        choices=Priority.choices,
+        default=Priority.MEDIUM,
+        db_index=True,
+    )
+
+    deadline = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
     status = models.CharField(
         max_length=30,
         choices=Status.choices,
@@ -47,6 +73,18 @@ class Task(models.Model):
     )
 
     note = models.TextField(blank=True)
+
+    started_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
     is_deleted = models.BooleanField(default=False)
 
@@ -57,7 +95,7 @@ class Task(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Task {self.id} - {self.assignee}"
+        return f"{self.name} - {self.assignee}"
 
 
 class TaskImage(models.Model):

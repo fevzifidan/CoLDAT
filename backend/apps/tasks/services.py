@@ -1,6 +1,7 @@
 from typing import Iterable, Optional
 
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.annotations.models import AnnotationObject
@@ -21,7 +22,10 @@ def create_task(
     created_by,
     assignee_username: str,
     image_ids: Iterable,
-    note: str = "",
+    name: str = "Untitled Task",
+    description: str = "",
+    priority: str = Task.Priority.MEDIUM,
+    deadline=None,
 ) -> Task:
     assignee = User.objects.filter(
         username=assignee_username,
@@ -66,7 +70,10 @@ def create_task(
         dataset=dataset,
         assignee=assignee,
         created_by=created_by,
-        note=note,
+        name=name,
+        description=description,
+        priority=priority,
+        deadline=deadline,
         status=Task.Status.ASSIGNED,
     )
 
@@ -87,7 +94,14 @@ def mark_task_in_progress_on_first_interaction(*, task: Task, user) -> Task:
         return task
 
     task.status = Task.Status.IN_PROGRESS
-    task.save(update_fields=["status", "updated_at"])
+
+    update_fields = ["status", "updated_at"]
+
+    if task.started_at is None:
+        task.started_at = timezone.now()
+        update_fields.append("started_at")
+
+    task.save(update_fields=update_fields)
 
     return task
 
@@ -222,10 +236,21 @@ def update_task_status(
 
     task.status = new_status
 
+    update_fields = ["status", "updated_at"]
+
     if note is not None:
         task.note = note
+        update_fields.append("note")
 
-    task.save(update_fields=["status", "note", "updated_at"])
+    if new_status == Task.Status.IN_PROGRESS and task.started_at is None:
+        task.started_at = timezone.now()
+        update_fields.append("started_at")
+
+    if new_status == Task.Status.COMPLETED and task.completed_at is None:
+        task.completed_at = timezone.now()
+        update_fields.append("completed_at")
+
+    task.save(update_fields=update_fields)
 
     return task
 

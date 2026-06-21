@@ -141,6 +141,26 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "config.settings.base.custom_exception_handler",
 }
 
+MSAL_CLIENT_ID = os.getenv("MSAL_CLIENT_ID", "").strip()
+MSAL_TENANT_ID = os.getenv("MSAL_TENANT_ID", "").strip()
+MSAL_ISSUER = os.getenv(
+    "MSAL_ISSUER",
+    (
+        f"https://login.microsoftonline.com/{MSAL_TENANT_ID}/v2.0"
+        if MSAL_TENANT_ID
+        else ""
+    ),
+).strip()
+MSAL_JWKS_URL = os.getenv(
+    "MSAL_JWKS_URL",
+    (
+        "https://login.microsoftonline.com/"
+        f"{MSAL_TENANT_ID}/discovery/v2.0/keys"
+        if MSAL_TENANT_ID
+        else ""
+    ),
+).strip()
+
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://localhost:9000")
 MINIO_INTERNAL_ENDPOINT = os.getenv("MINIO_INTERNAL_ENDPOINT", MINIO_ENDPOINT)
 

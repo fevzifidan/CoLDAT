@@ -8,12 +8,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import (
     AccountUpdateSerializer,
     LoginSerializer,
+    MSALLoginSerializer,
     RefreshTokenSerializer,
     RegisterSerializer,
     UserLookupSerializer,
     UserSerializer,
 )
-from .services import update_user_account
+from .msal import validate_msal_token
+from .services import get_or_create_msal_user, update_user_account
 from .selectors import user_lookup
 from apps.common.mail_service import (
     send_verification_email,
@@ -120,6 +122,29 @@ class LoginView(APIView):
             {
                 "access_token": str(refresh.access_token),
                 "refresh_token": str(refresh),
+                "user": UserSerializer(user).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class MSALLoginView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        serializer = MSALLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        identity = validate_msal_token(
+            serializer.validated_data["msal_token"]
+        )
+        user = get_or_create_msal_user(identity=identity)
+        access_token = RefreshToken.for_user(user).access_token
+
+        return Response(
+            {
+                "access_token": str(access_token),
                 "user": UserSerializer(user).data,
             },
             status=status.HTTP_200_OK,
