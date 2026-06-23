@@ -40,8 +40,17 @@ export function useAnnotationAutoSave(imageId: string) {
   const [isSaving, setIsSaving] = useState(false);
   const isSavingRef = useRef(false);
 
-  const doSave = useCallback(async (silent: boolean) => {
+    const doSave = useCallback(async (silent: boolean) => {
     if (!imageId || isSavingRef.current) return;
+
+    // Read-only modda save işlemini engelle (approval_pending, completed veya Viewer rolü)
+    const { isReadOnly } = useAppStore.getState();
+    if (isReadOnly) {
+      if (!silent) {
+        console.warn('[AutoSave] Save blocked: task is in read-only mode.');
+      }
+      return;
+    }
 
     isSavingRef.current = true;
     setIsSaving(true);
@@ -63,9 +72,13 @@ export function useAnnotationAutoSave(imageId: string) {
     }
   }, [imageId]);
 
-  // ─── Periyodik auto-save (sessiz) ───────────────────────────────────────────
+    // ─── Periyodik auto-save (sessiz) ───────────────────────────────────────────
   useEffect(() => {
     if (!imageId) return;
+
+    // Read-only modda auto-save interval'ı başlatma
+    const { isReadOnly } = useAppStore.getState();
+    if (isReadOnly) return;
 
     const intervalId = setInterval(() => {
       doSave(true /* silent */);

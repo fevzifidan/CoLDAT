@@ -17,6 +17,14 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         warning: "bg-orange-500/10 text-orange-600 dark:text-orange-500",
         success: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-500",
+
+        // 🆕 Tema uyumlu yeni variant'lar
+        "outline-destructive":
+          "border border-destructive/30 text-destructive hover:bg-destructive/10",
+        ghostDanger:
+          "text-destructive hover:bg-destructive/10",
+        subtle:
+          "bg-muted/50 text-muted-foreground hover:bg-muted",
       },
       size: {
         default: "h-9 px-4 py-2",

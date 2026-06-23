@@ -1,5 +1,5 @@
 // src/features/datasets/services/memberService.js
-import apiService from '@/shared/services/api/apiClient';
+import apiService from '@/shared/services/api/api.service';
 
 export const memberService = {
   // GET /datasets/{datasetId}/members/

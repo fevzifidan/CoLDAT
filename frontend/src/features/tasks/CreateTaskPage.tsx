@@ -16,7 +16,8 @@ import {
 } from 'lucide-react';
 import { useConfirm } from '@/shared/services/confirmation/useConfirm';
 import notificationService from '@/shared/services/notification/notification.service';
-import { taskService, datasetTaskService } from '@/features/tasks/services/taskService';
+import { taskService } from '@/features/tasks/services/taskService';
+import { datasetTaskService } from '@/features/datasets/services/datasetTaskService';
 import DatasetSelectionStep, { type DatasetResult } from '@/features/tasks/components/DatasetSelectionStep';
 import MemberSelectionStep, { type DatasetMember } from '@/features/tasks/components/MemberSelectionStep';
 import RoleSelectionStep from '@/features/tasks/components/RoleSelectionStep';

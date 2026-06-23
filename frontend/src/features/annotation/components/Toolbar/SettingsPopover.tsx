@@ -40,7 +40,7 @@ import { useAppStore } from '@/store/hooks/useAppStore';
 import { useConfirm } from '@/shared/services/confirmation/useConfirm';
 import { clearCache, getCacheSize } from '@/features/annotation/tools/sam/embeddingCache';
 import { notificationService } from '@/shared/services/notification/notification.service';
-import LanguageSelector from '@/components/custom/LanguageSelector/LanguageSelector';
+import LanguageSelector from '@/shared/components/LanguageSelector/LanguageSelector';
 
 type SettingsPage = 'main' | 'view' | 'sam' | 'livewire';
 

@@ -18,7 +18,7 @@ import {
   AlertCircle,
   ImageIcon,
 } from 'lucide-react';
-import { datasetTaskService } from '@/features/tasks/services/taskService';
+import { datasetTaskService } from '@/features/datasets/services/datasetTaskService';
 import AssetTableRow from './AssetTableRow';
 
 export interface AssetItem {

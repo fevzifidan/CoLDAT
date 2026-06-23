@@ -8,10 +8,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Eye, FileText, User, PenLine, ChevronDown, ExternalLink } from "lucide-react";
+import { Eye, FileText, User, PenLine, ChevronDown, ExternalLink, Trash2 } from "lucide-react";
 import { usePermission } from '@/context/PermissionContext';
 
-// Tipi backend'den null gelebilecek şekilde güncelledik
+// Status badge renklerini belirleyen yardımcı fonksiyon
+const getStatusColor = (status: string): string => {
+  switch (status?.toLowerCase()) {
+    case 'assigned':
+      return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800';
+    case 'in_progress':
+      return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800';
+        case 'approval_pending':
+      return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800';
+    case 'completed':
+      return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800';
+    case 'rejected':
+      return 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800';
+    default:
+      return 'bg-muted text-muted-foreground border-border';
+  }
+};
+
 interface TaskItem {
   id: string;
   name: string;
@@ -26,29 +43,49 @@ interface TaskCardProps {
   onViewDetail: (id: string) => void;
   onAnnotate?: (id: string) => void;
   onView?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-export const TaskCard = ({ task, onViewDetail, onAnnotate, onView }: TaskCardProps) => {
+export const TaskCard = ({ task, onViewDetail, onAnnotate, onView, onDelete }: TaskCardProps) => {
   const { t } = useTranslation(['tasks']);
   const { hasPermission } = usePermission();
 
-  const canViewAll = hasPermission('task:view-all');
+    const canViewAll = hasPermission('task:view-all');
   const canAnnotate = hasPermission('task:submit-approval');
   const canViewAssigned = hasPermission('task:view-assigned');
+  const canDelete = hasPermission('task:delete');
 
   // RoleProvider'ın sağladığı role göre buton metnini belirle
   const isAdmin = canViewAll;
   const isAnnotator = !canViewAll && canAnnotate;
   const isViewer = !canViewAll && !canAnnotate && canViewAssigned;
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onDelete?.(task.id);
+  };
+
   return (
-    <div className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col justify-between h-[180px] hover:shadow-md transition-shadow">
+    <div className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col justify-between h-[180px] hover:shadow-md transition-shadow relative group">
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-bold text-base text-card-foreground line-clamp-1">{task.name}</h3>
-          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded border uppercase tracking-wider ${getStatusColor(task.status)}`}>
-            {task.status}
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded border uppercase tracking-wider ${getStatusColor(task.status)}`}>
+              {task.status}
+            </span>
+            {/* Sadece admin (task:delete yetkisi olan) delete butonunu görebilir */}
+            {canDelete && onDelete && (
+              <button
+                onClick={handleDelete}
+                className="p-1.5 rounded-lg bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 border border-destructive/20 shadow-sm"
+                title="Revoke Task"
+              >
+                <Trash2 size={13} />
+              </button>
+            )}
+          </div>
         </div>
         
         <div className="flex flex-col gap-1 text-xs text-muted-foreground">

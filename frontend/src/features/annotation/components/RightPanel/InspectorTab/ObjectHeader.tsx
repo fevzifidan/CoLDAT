@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Trash2, Pencil, Check, X } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { AnnotatedObject } from '../../../types/annotation.types';
-import { ConfirmAction } from '@/components/custom/Confirm/ConfirmAction';
+import { ConfirmAction } from '@/shared/components/Confirm/ConfirmAction';
 import { ObjectMenu } from './ObjectMenu';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/hooks/useAppStore';

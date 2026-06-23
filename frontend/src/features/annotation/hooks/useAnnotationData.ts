@@ -91,8 +91,11 @@ export function useAnnotationData(taskId: string, imageId: string) {
         setTaskContext(task);
         setTotalImages(task.image_count);
         
-        // Handle Role
-        setReadOnly(task.role === 'Viewer');
+                // Handle Role + Task Status
+        // Read-only mode: Viewer rolü, approval_pending (onaya gönderilmiş) veya completed (tamamlanmış) task'larda
+        const isReadOnly = task.role === 'Viewer' ||
+          (task.role !== 'admin' && (task.status === 'approval_pending' || task.status === 'completed'));
+        setReadOnly(isReadOnly);
 
         // Fetch Dataset -> Project to get Taxonomy
         const dataset = await api.getDatasetDetails(task.dataset_id);

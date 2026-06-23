@@ -42,8 +42,8 @@ import {
 } from "lucide-react";
 
 import { RoleProvider, usePermission } from '@/context/PermissionContext';
-import { type BackendRole } from '@/shared/roles';
 import { Guard } from '@/shared/components/Guard';
+import { type BackendRole } from '@/shared/roles';
 import { taskService } from '@/features/tasks/services/taskService';
 import notificationService from '@/shared/services/notification/notification.service';
 import { useCursorPagination } from '@/shared/hooks/useCursorPagination';
@@ -81,16 +81,19 @@ interface TaskImage {
 /** Sayfa başına gösterilecek asset sayısı (API limit değeri ile aynı) */
 const ASSETS_PAGE_LIMIT = 50;
 
+// ──────────────────────────────────────────────────────────────
+// Dış sarmalayıcı: state & handler'ları yönetir, RoleProvider'ı kurar.
+// usePermission çağrısı RoleProvider children'ı olan iç bileşene bırakılır.
+// ──────────────────────────────────────────────────────────────
 const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
   const { t } = useTranslation(['tasks', 'common']);
   const navigate = useNavigate();
-    const { hasPermission } = usePermission();
   
   // --- STATE YÖNETİMİ ---
   const [task, setTask] = useState<TaskDetailData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // Buton kitleme kontrolü
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
   // Modal ve Form State'leri
   const [isAssignModalOpen, setIsAssignModalOpen] = useState<boolean>(false);
@@ -135,7 +138,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
       
       setTask({
         ...data,
-        role: data.role || 'Viewer'
+        role: data.role || null
       });
     } catch (err: any) {
       console.error("Error fetching task details:", err);
@@ -145,7 +148,6 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     }
   };
 
-  // Sayfa yüklendiğinde veya taskId değiştiğinde tetikle
   useEffect(() => {
     if (taskId) {
       fetchTaskDetails();
@@ -157,10 +159,8 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     if (!task) return;
     try {
       setIsSubmitting(true);
-            await taskService.updateTaskStatus(taskId, { status: newStatus, note: note });
+      await taskService.updateTaskStatus(taskId, { status: newStatus, note: note });
       
-            // Local state'i zenginleştir: rejection_note'u API'den gelecek response'dan da alabiliriz,
-      // ancak optimistik olarak reject edildiğinde notu hemen yansıtalım
       if (newStatus === "rejected" && note.trim()) {
         setTask(prev => prev ? { ...prev, status: newStatus, rejection_note: note } : null);
       } else {
@@ -198,11 +198,10 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     e.preventDefault();
     if (!newAssetId.trim() || !task) return;
 
-        try {
+    try {
       setIsSubmitting(true);
       await taskService.addAssetsToTask(taskId, { asset_ids: [newAssetId] });
       
-      // Asset eklendikten sonra task detaylarını ve görsel listesini yenile
       await fetchTaskDetails();
       await refreshImages(null, false);
       setIsAddAssetModalOpen(false);
@@ -214,7 +213,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     }
   };
 
-    // --- API EVENT HANDLERS (DELETE /tasks/{taskId}) ---
+  // --- API EVENT HANDLERS (DELETE /tasks/{taskId}) ---
   const handleDeleteTask = async () => {
     if (!task) return;
     if (window.confirm(t('tasks:detail.confirm_delete', "Are you sure you want to revoke/delete this task assignment?"))) {
@@ -230,8 +229,126 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     }
   };
 
-  // --- ASSET YÖNLENDİRME HANDLER'LARI ---
-    const handleAssetClick = (assetId: string) => {
+  // --- Badge renk dinamikleri ---
+  const getStatusBadge = (status: string) => {
+    switch (status?.toUpperCase()) {
+      case "ASSIGNED": return "bg-primary/10 text-primary border-primary/20";
+      case "IN_PROGRESS": return "bg-amber-500/10 text-amber-500 border-amber-500/20";
+      case "APPROVAL_PENDING": return "bg-muted text-muted-foreground border-border";
+      case "COMPLETED": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+      case "REJECTED": return "bg-destructive/10 text-destructive border-destructive/20";
+      default: return "bg-muted text-muted-foreground border-border";
+    }
+  };
+
+  // --- KORUMA VE YÜKLENİYOR EKRANLARI ---
+  if (isLoading) {
+    return (
+      <div className="h-[60vh] w-full flex flex-col items-center justify-center gap-3 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm font-medium">{t('tasks:detail.loading', 'Loading task details from server...')}</p>
+      </div>
+    );
+  }
+
+  if (error || !task) {
+    return (
+      <div className="h-[60vh] w-full flex flex-col items-center justify-center gap-4 max-w-md mx-auto text-center">
+        <div className="p-3 bg-destructive/10 text-destructive rounded-full">
+          <AlertCircle size={32} />
+        </div>
+        <div className="space-y-1">
+          <h3 className="font-bold text-lg">{t('tasks:detail.error_title', 'An Error Occurred')}</h3>
+          <p className="text-sm text-muted-foreground">{error || t('tasks:detail.error_task_not_found', 'Task not found.')}</p>
+        </div>
+        <Button onClick={onBack} variant="outline" className="gap-2">
+          <ArrowLeft size={16} /> {t('tasks:detail.back', 'Back to Tasks Workspace')}
+        </Button>
+      </div>
+    );
+  }
+
+  // Backend'den gelen user_role bilgisini RoleProvider'a aktarıyoruz.
+  // Örn: "admin" → tüm yönetici butonları (Approve/Reject, Reassign, Add Asset, Revoke) görünür.
+  // Örn: "annotator" → sadece "Submit for Approval" butonu görünür.
+  // Örn: null/undefined → hiçbir yönetici butonu görünmez (güvenli varsayılan).
+  const taskRole = (task.role?.toLowerCase() as BackendRole) || null;
+
+  // İç bileşene passthrough edilecek ortak değerler
+  const innerCommon = {
+    t, navigate, taskId, onBack, task, getStatusBadge,
+    images, imagesLoading, imagesError, hasNext, hasPrev, currentPage,
+    isSubmitting, isAssignModalOpen, newAssignee, isAddAssetModalOpen, newAssetId, note,
+    onUpdateStatus: handleUpdateStatus,
+    onReassignTask: handleReassignTask,
+    onAddAsset: handleAddAsset,
+    onDeleteTask: handleDeleteTask,
+    onSetIsAssignModalOpen: setIsAssignModalOpen,
+    onSetNewAssignee: setNewAssignee,
+    onSetIsAddAssetModalOpen: setIsAddAssetModalOpen,
+    onSetNewAssetId: setNewAssetId,
+    onSetNote: setNote,
+    onRefreshImages: refreshImages,
+    goNext, goPrev,
+  };
+
+  return (
+    <RoleProvider role={taskRole}>
+      <TasksDetailPageInner {...innerCommon} />
+    </RoleProvider>
+  );
+};
+
+// ──────────────────────────────────────────────────────────────
+// İç bileşen: RoleProvider children'ı → usePermission güvenle kullanılabilir.
+// Asset yönlendirme handler'ları (hasPermission kullanan) burada tanımlanır.
+// ──────────────────────────────────────────────────────────────
+interface TasksDetailPageInnerProps {
+  t: any;
+  navigate: any;
+  taskId: string;
+  onBack?: () => void;
+  task: TaskDetailData;
+  getStatusBadge: (status: string) => string;
+  images: TaskImage[];
+  imagesLoading: boolean;
+  imagesError: string | null;
+  hasNext: boolean;
+  hasPrev: boolean;
+  currentPage: number;
+  isSubmitting: boolean;
+  isAssignModalOpen: boolean;
+  newAssignee: string;
+  isAddAssetModalOpen: boolean;
+  newAssetId: string;
+  note: string;
+  onUpdateStatus: (newStatus: string) => Promise<void>;
+  onReassignTask: (e: React.FormEvent) => Promise<void>;
+  onAddAsset: (e: React.FormEvent) => Promise<void>;
+  onDeleteTask: () => Promise<void>;
+  onSetIsAssignModalOpen: (open: boolean) => void;
+  onSetNewAssignee: (val: string) => void;
+  onSetIsAddAssetModalOpen: (open: boolean) => void;
+  onSetNewAssetId: (val: string) => void;
+  onSetNote: (val: string) => void;
+  onRefreshImages: (cursor?: string | null, useCache?: boolean) => void;
+  goNext: () => void;
+  goPrev: () => void;
+}
+
+const TasksDetailPageInner = ({
+  t, navigate, taskId, onBack, task, getStatusBadge,
+  images, imagesLoading, imagesError, hasNext, hasPrev, currentPage,
+  isSubmitting, isAssignModalOpen, newAssignee, isAddAssetModalOpen, newAssetId, note,
+  onUpdateStatus, onReassignTask, onAddAsset, onDeleteTask,
+  onSetIsAssignModalOpen, onSetNewAssignee,
+  onSetIsAddAssetModalOpen, onSetNewAssetId, onSetNote,
+  onRefreshImages, goNext, goPrev,
+}: TasksDetailPageInnerProps) => {
+  
+  const { hasPermission } = usePermission(); // ✅ Artık RoleProvider children'ı içinde
+
+  const handleAssetClick = (assetId: string) => {
     if (hasPermission('task:view-all')) {
       navigate(`/view/${taskId}/${assetId}`);
     } else if (task?.role === 'Annotator') {
@@ -258,49 +375,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     }
   };
 
-    // Badge renk dinamikleri
-    const getStatusBadge = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case "ASSIGNED": return "bg-primary/10 text-primary border-primary/20";
-      case "IN_PROGRESS": return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-            case "SUBMITTED": return "bg-muted text-muted-foreground border-border";
-      case "APPROVED": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
-      case "REJECTED": return "bg-destructive/10 text-destructive border-destructive/20";
-      default: return "bg-muted text-muted-foreground border-border";
-    }
-  };
-
-  // --- KORUMA VE YÜKLENİYOR EKRANLARI ---
-  if (isLoading) {
-    return (
-            <div className="h-[60vh] w-full flex flex-col items-center justify-center gap-3 text-muted-foreground">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm font-medium">{t('tasks:detail.loading', 'Loading task details from server...')}</p>
-      </div>
-    );
-  }
-
-  if (error || !task) {
-    return (
-      <div className="h-[60vh] w-full flex flex-col items-center justify-center gap-4 max-w-md mx-auto text-center">
-                <div className="p-3 bg-destructive/10 text-destructive rounded-full">
-          <AlertCircle size={32} />
-        </div>
-        <div className="space-y-1">
-                    <h3 className="font-bold text-lg">{t('tasks:detail.error_title', 'An Error Occurred')}</h3>
-          <p className="text-sm text-muted-foreground">{error || t('tasks:detail.error_task_not_found', 'Task not found.')}</p>
-        </div>
-        <Button onClick={onBack} variant="outline" className="gap-2">
-          <ArrowLeft size={16} /> {t('tasks:detail.back', 'Back to Tasks Workspace')}
-        </Button>
-      </div>
-    );
-  }
-
-    const taskRole = (task.role?.toLowerCase() as BackendRole) || null;
-
   return (
-    <RoleProvider role={taskRole}>
     <div className="p-6 space-y-6 max-w-7xl mx-auto animate-in fade-in duration-200">
       
       {/* Üst Bar / Geri Dönüş ve Aksiyonlar */}
@@ -325,15 +400,15 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
           </div>
         </div>
 
-                {/* Yönetici Hızlı Aksiyonları */}
+        {/* Yönetici Hızlı Aksiyonları */}
         <Guard permission="task:delete">
           <Button 
             variant="outline" 
             disabled={isSubmitting}
-            onClick={handleDeleteTask}
+            onClick={onDeleteTask}
             className="h-9 border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/10 gap-1.5 text-xs font-bold"
           >
-                        <Trash2 size={14} />
+            <Trash2 size={14} />
             {t('tasks:detail.revoke_button', 'Revoke Task')}
           </Button>
         </Guard>
@@ -344,10 +419,10 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
         
         {/* Sol Panel: Meta Bilgiler & İş Akışı Yönetimi */}
         <div className="md:col-span-1 space-y-4">
-                    <div className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
+          <div className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
             <h3 className="font-bold text-sm tracking-wide text-muted-foreground uppercase">{t('tasks:detail.info_section', 'Task Information')}</h3>
             
-                        <div className="space-y-3 text-sm">
+            <div className="space-y-3 text-sm">
               <div className="flex justify-between border-b pb-2 border-border">
                 <span className="text-muted-foreground">{t('tasks:detail.assignee', 'Assignee:')}</span>
                 <span className="font-semibold text-primary">
@@ -359,7 +434,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
                 <span className="font-bold">{task.image_count || 0}{t('tasks:detail.files_suffix', ' files')}</span>
               </div>
 
-                            {/* Rejection Note */}
+              {/* Rejection Note */}
               {task.status?.toLowerCase() === "rejected" && task.rejection_note && (
                 <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-3 space-y-1.5 mt-2">
                   <div className="flex items-center gap-1.5 text-destructive">
@@ -375,10 +450,10 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
               )}
             </div>
 
-                        {/* Admin Atama Değiştirme Butonu */}
+            {/* Admin Atama Değiştirme Butonu */}
             <Guard permission="task:reassign">
               <Button 
-                onClick={() => setIsAssignModalOpen(true)}
+                onClick={() => onSetIsAssignModalOpen(true)}
                 variant="outline" 
                 className="w-full h-9 text-xs gap-2 font-medium"
               >
@@ -388,7 +463,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
           </div>
 
           {/* İş Akışı Durum Değiştirme Paneli */}
-                    <div className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
+          <div className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
             <h3 className="font-bold text-sm tracking-wide text-muted-foreground uppercase">{t('tasks:detail.workflow_section', 'Workflow Actions')}</h3>
             
             {/* Note Input */}
@@ -397,51 +472,51 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
               <Input 
                 placeholder={t('tasks:detail.note_placeholder', 'Write a note for validation...')} 
                 value={note}
-                onChange={(e) => setNote(e.target.value)}
+                onChange={(e) => onSetNote(e.target.value)}
                 className="h-9 bg-muted border-border text-xs"
               />
             </div>
 
             <div className="grid gap-2">
-                            {/* Annotator Rolü için Gönderme Mekanizması */}
-                            {task.status?.toLowerCase() === "in_progress" && (
-                              <Button 
-                                disabled={isSubmitting}
-                                onClick={() => handleUpdateStatus("submitted")}
-                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs h-9 gap-1.5"
-                              >
-                                <Send size={14} /> {t('tasks:detail.submit_for_approval', 'Submit for Approval')}
-                              </Button>
-                            )}
-
-                                                        {/* Admin Rolü için Onay/Red Mekanizmaları */}
-                                          <Guard permission="task:approve-reject">
-                              {task.status?.toLowerCase() === "submitted" && (
-                              <div className="flex gap-2">
-                                <Button 
-                                  disabled={isSubmitting}
-                                  onClick={() => handleUpdateStatus("approved")}
-                                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs h-9 gap-1.5"
-                                >
-                                  <CheckCircle2 size={14} /> {t('tasks:detail.approve', 'Approve')}
-                                </Button>
-                                <Button 
-                                  disabled={isSubmitting}
-                                  onClick={() => handleUpdateStatus("rejected")}
-                                  variant="destructive"
-                                  className="flex-1 font-medium text-xs h-9 gap-1.5"
-                                >
-                                  <XCircle size={14} /> {t('tasks:detail.reject', 'Reject')}
-                                </Button>
-                              </div>
-                              )}
-                          </Guard>
-
-              {/* Reset mekanizması */}
-              {(["approved", "rejected", "assigned"] as string[]).includes(task.status?.toLowerCase() ?? "") && (
+              {/* Annotator Rolü için Gönderme Mekanizması */}
+              {task.status?.toLowerCase() === "in_progress" && (
                 <Button 
                   disabled={isSubmitting}
-                  onClick={() => handleUpdateStatus("in_progress")}
+                  onClick={() => onUpdateStatus("approval_pending")}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs h-9 gap-1.5"
+                >
+                  <Send size={14} /> {t('tasks:detail.submit_for_approval', 'Submit for Approval')}
+                </Button>
+              )}
+
+              {/* Admin Rolü için Onay/Red Mekanizmaları */}
+              <Guard permission="task:approve-reject">
+                {task.status?.toLowerCase() === "approval_pending" && (
+                  <div className="flex gap-2">
+                    <Button 
+                      disabled={isSubmitting}
+                      onClick={() => onUpdateStatus("completed")}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs h-9 gap-1.5"
+                    >
+                      <CheckCircle2 size={14} /> {t('tasks:detail.approve', 'Approve')}
+                    </Button>
+                    <Button 
+                      disabled={isSubmitting}
+                      onClick={() => onUpdateStatus("rejected")}
+                      variant="destructive"
+                      className="flex-1 font-medium text-xs h-9 gap-1.5"
+                    >
+                      <XCircle size={14} /> {t('tasks:detail.reject', 'Reject')}
+                    </Button>
+                  </div>
+                )}
+              </Guard>
+
+              {/* Reset mekanizması */}
+              {(["completed", "rejected", "assigned"] as string[]).includes(task.status?.toLowerCase() ?? "") && (
+                <Button 
+                  disabled={isSubmitting}
+                  onClick={() => onUpdateStatus("in_progress")}
                   variant="outline"
                   className="w-full text-xs h-9"
                 >
@@ -452,8 +527,8 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
           </div>
         </div>
 
-                {/* Sağ Panel: Atanan Görseller / Asset Listesi (Shadcn Table) */}
-                <div className="md:col-span-2 bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
+        {/* Sağ Panel: Atanan Görseller / Asset Listesi (Shadcn Table) */}
+        <div className="md:col-span-2 bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ImageIcon size={18} className="text-muted-foreground" />
@@ -465,16 +540,16 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
               )}
             </div>
             
-                        {/* Yeni Asset Ekleme Butonu */}
+            {/* Yeni Asset Ekleme Butonu */}
             <Guard permission="task:add-asset">
               {(["assigned", "in_progress"].includes(task.status?.toLowerCase() ?? "")) && (
-              <Button 
-                onClick={() => setIsAddAssetModalOpen(true)}
-                size="sm" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground h-8 text-xs font-medium gap-1"
-              >
-                <Plus size={14} /> {t('tasks:detail.add_asset_button', 'Add Asset')}
-              </Button>
+                <Button 
+                  onClick={() => onSetIsAddAssetModalOpen(true)}
+                  size="sm" 
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground h-8 text-xs font-medium gap-1"
+                >
+                  <Plus size={14} /> {t('tasks:detail.add_asset_button', 'Add Asset')}
+                </Button>
               )}
             </Guard>
           </div>
@@ -489,7 +564,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
             <div className="flex flex-col items-center justify-center py-12 text-destructive gap-2">
               <AlertCircle size={20} />
               <p className="text-xs">{imagesError}</p>
-              <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => refreshImages(null, false)}>
+              <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => onRefreshImages(null, false)}>
                 {t('tasks:detail.retry', 'Retry')}
               </Button>
             </div>
@@ -505,56 +580,56 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
                     <TableHead className="hidden md:table-cell text-xs">{t('tasks:table.embedding', 'Embedding')}</TableHead>
                   </TableRow>
                 </TableHeader>
-                                <TableBody>
-                                  {images.map((img) => (
-                                    <ContextMenu key={img.image_id}>
-                                      <ContextMenuTrigger
-                                        onClick={() => handleAssetClick(img.image_id)}
-                                        className="cursor-pointer [&:has([role=menuitem])]:bg-muted/50"
-                                      >
-                                                                                <TableRow>
-                                          <TableCell className="py-2.5">
-                                            <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
-                                              {img.mime_type?.startsWith('image/') ? (
-                                                <FileImage size={14} />
-                                              ) : (
-                                                <FileText size={14} />
-                                              )}
-                                            </div>
-                                          </TableCell>
-                                          <TableCell className="py-2.5 font-medium max-w-[180px] truncate">
-                                            <span className="text-sm">{img.filename || t('tasks:detail.untitled', 'Untitled')}</span>
-                                            <p className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">
-                                              {img.image_id}
-                                            </p>
-                                          </TableCell>
-                                          <TableCell className="hidden sm:table-cell py-2.5 text-xs text-muted-foreground">
-                                            {img.mime_type || '—'}
-                                          </TableCell>
-                                          <TableCell className="py-2.5">
-                                            <span className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
-                                              img.status === 'UPLOADED' || img.status === 'COMPLETED'
-                                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                                                : img.status === 'PENDING'
-                                                  ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                                                  : img.status === 'FAILED' || img.status === 'VERIFICATION_FAILED'
-                                                    ? 'bg-destructive/10 text-destructive border-destructive/20'
-                                                    : 'bg-muted text-muted-foreground border-border'
-                                            }`}>
-                                              {img.status || 'UNKNOWN'}
-                                            </span>
-                                          </TableCell>
-                                          <TableCell className="hidden md:table-cell py-2.5">
-                                            <span className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
-                                              img.embedding_status === 'UPLOADED'
-                                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                                                : 'bg-muted text-muted-foreground border-border'
-                                            }`}>
-                                              {img.embedding_status || '—'}
-                                            </span>
-                                          </TableCell>
-                                        </TableRow>
-                                      </ContextMenuTrigger>
+                <TableBody>
+                  {images.map((img) => (
+                    <ContextMenu key={img.image_id}>
+                      <ContextMenuTrigger
+                        onClick={() => handleAssetClick(img.image_id)}
+                        className="cursor-pointer [&:has([role=menuitem])]:bg-muted/50"
+                      >
+                        <TableRow>
+                          <TableCell className="py-2.5">
+                            <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
+                              {img.mime_type?.startsWith('image/') ? (
+                                <FileImage size={14} />
+                              ) : (
+                                <FileText size={14} />
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-2.5 font-medium max-w-[180px] truncate">
+                            <span className="text-sm">{img.filename || t('tasks:detail.untitled', 'Untitled')}</span>
+                            <p className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">
+                              {img.image_id}
+                            </p>
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell py-2.5 text-xs text-muted-foreground">
+                            {img.mime_type || '—'}
+                          </TableCell>
+                          <TableCell className="py-2.5">
+                            <span className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
+                              img.status === 'UPLOADED' || img.status === 'COMPLETED'
+                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                                : img.status === 'PENDING'
+                                  ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                                  : img.status === 'FAILED' || img.status === 'VERIFICATION_FAILED'
+                                    ? 'bg-destructive/10 text-destructive border-destructive/20'
+                                    : 'bg-muted text-muted-foreground border-border'
+                            }`}>
+                              {img.status || 'UNKNOWN'}
+                            </span>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell py-2.5">
+                            <span className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
+                              img.embedding_status === 'UPLOADED'
+                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                                : 'bg-muted text-muted-foreground border-border'
+                            }`}>
+                              {img.embedding_status || '—'}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      </ContextMenuTrigger>
 
                       <ContextMenuContent className="w-56 rounded-xl">
                         <ContextMenuItem onClick={() => handleOpenInAnnotator(img.image_id)} className="cursor-pointer gap-2 text-xs font-medium">
@@ -620,13 +695,13 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
       </div>
 
       {/* ================= REASSIGN USER MODAL ================= */}
-            {isAssignModalOpen && (
+      {isAssignModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-card text-card-foreground rounded-xl border border-border w-full max-w-md overflow-hidden shadow-2xl">
             <div className="p-4 border-b border-border flex items-center justify-between bg-muted">
-                            <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">{t('tasks:modal.reassign_title', 'Reassign Task Assignee')}</h3>
+              <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">{t('tasks:modal.reassign_title', 'Reassign Task Assignee')}</h3>
             </div>
-            <form onSubmit={handleReassignTask} className="p-4 space-y-4">
+            <form onSubmit={onReassignTask} className="p-4 space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">{t('tasks:modal.reassign_username_label', 'Target Username')}</label>
                 <Input 
@@ -634,12 +709,12 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
                   disabled={isSubmitting}
                   placeholder={t('tasks:modal.reassign_username_placeholder', 'e.g. janesmith (Must be annotator role)')}
                   value={newAssignee}
-                  onChange={(e) => setNewAssignee(e.target.value)}
+                  onChange={(e) => onSetNewAssignee(e.target.value)}
                   className="bg-background text-sm"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsAssignModalOpen(false)}>{t('common:actions.cancel', 'Cancel')}</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => onSetIsAssignModalOpen(false)}>{t('common:actions.cancel', 'Cancel')}</Button>
                 <Button type="submit" size="sm" disabled={isSubmitting} className="bg-primary text-primary-foreground hover:bg-primary/90">
                   {isSubmitting ? t('tasks:modal.assigning', 'Assigning...') : t('tasks:modal.assign', 'Assign')}
                 </Button>
@@ -650,13 +725,13 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
       )}
 
       {/* ================= ADD ASSET MODAL ================= */}
-            {isAddAssetModalOpen && (
+      {isAddAssetModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-card text-card-foreground rounded-xl border border-border w-full max-w-md overflow-hidden shadow-2xl">
             <div className="p-4 border-b border-border flex items-center justify-between bg-muted">
-                            <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">{t('tasks:modal.add_asset_title', 'Add New Asset to Task')}</h3>
+              <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">{t('tasks:modal.add_asset_title', 'Add New Asset to Task')}</h3>
             </div>
-            <form onSubmit={handleAddAsset} className="p-4 space-y-4">
+            <form onSubmit={onAddAsset} className="p-4 space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">{t('tasks:modal.asset_id_label', 'Asset UUID / ID')}</label>
                 <Input 
@@ -664,7 +739,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
                   disabled={isSubmitting}
                   placeholder={t('tasks:modal.asset_id_placeholder', 'Enter unassigned asset string ID')}
                   value={newAssetId}
-                  onChange={(e) => setNewAssetId(e.target.value)}
+                  onChange={(e) => onSetNewAssetId(e.target.value)}
                   className="bg-background text-sm"
                 />
                 <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 text-[11px] bg-amber-50 dark:bg-amber-950/20 p-2 rounded-lg mt-1">
@@ -673,7 +748,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsAddAssetModalOpen(false)}>{t('common:actions.cancel', 'Cancel')}</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => onSetIsAddAssetModalOpen(false)}>{t('common:actions.cancel', 'Cancel')}</Button>
                 <Button type="submit" size="sm" disabled={isSubmitting} className="bg-primary text-primary-foreground hover:bg-primary/90">
                   {isSubmitting ? t('tasks:modal.adding', 'Adding...') : t('tasks:modal.add', 'Add Asset')}
                 </Button>
@@ -681,10 +756,9 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
             </form>
           </div>
         </div>
-            )}
+      )}
 
     </div>
-    </RoleProvider>
   );
 };
 

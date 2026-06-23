@@ -262,11 +262,11 @@ export default function AnnotationToolbar({
               {t('toolbar.save')}
             </Button>
 
-            <Button
+                        <Button
               size="sm"
               className="h-8 gap-1.5 text-xs bg-primary hover:bg-primary/90"
               onClick={onSubmit}
-              disabled={isSubmitting || (currentTask?.status === 'approval_pending')}
+              disabled={isSubmitting || isReadOnly || currentTask?.status === 'approval_pending' || currentTask?.status === 'completed'}
               title={t('toolbar.submitTooltip')}
             >
               {isSubmitting

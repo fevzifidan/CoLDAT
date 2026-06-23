@@ -1,5 +1,5 @@
 // src/features/synthetic/services/syntheticService.ts
-import apiService from '@/shared/services/api/apiClient';
+import apiService from '@/shared/services/api/api.service';
 
 // Sayfadaki hataları çözecek kritik tip tanımı (Interface)
 export interface SyntheticTask {

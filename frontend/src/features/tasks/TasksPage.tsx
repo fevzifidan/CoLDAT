@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Trash2, Plus, Loader2, AlertCircle, Layers, CircleDot, Play, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Search, Plus, Loader2, AlertCircle, Layers, CircleDot, Play, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { SelectFilter, type SelectFilterOption } from '@/shared/components/SelectFilter';
 
 // Bileşen ve Servis Entegrasyonları
 import { TaskCard } from '@/features/tasks/components/TaskCard';
 import TasksDetailPage from './TasksDetailPage';
 import { taskService } from '@/features/tasks/services/taskService';
+import { RoleProvider } from '@/context/PermissionContext';
+import { type BackendRole } from '@/shared/roles';
 
 // Backend TaskSerializer şemasına tam uyumlu tip tanımı
 interface TaskItem {
@@ -31,6 +33,7 @@ interface TaskItem {
 const TasksPage = () => {
   const { t } = useTranslation(['tasks', 'common']);
   const navigate = useNavigate();
+  const { taskId: urlTaskId } = useParams<{ taskId: string }>();
   
   // --- API STATE YÖNETİMİ ---
   const [tasks, setTasks] = useState<TaskItem[]>([]);
@@ -43,7 +46,7 @@ const TasksPage = () => {
   const [displayLimit, setDisplayLimit] = useState(4);
 
   // --- DETAY STATE'İ ---
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(urlTaskId || null);
 
 // --- DATA FETCHING (GET /tasks/) ---
 // API spec: { data: Task[], next_cursor: string | null }
@@ -74,9 +77,8 @@ const fetchTasks = async () => {
     fetchTasks();
   }, []);
 
-  // --- API EVENT HANDLERS (DELETE /tasks/{id}/) ---
-  const handleDeleteTask = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Kart tıklama tetiklenmesin diye durduruyoruz
+    // --- API EVENT HANDLERS (DELETE /tasks/{id}/) ---
+  const handleDeleteTask = async (id: string) => {
     if (!window.confirm("Are you sure you want to revoke/delete this task?")) return;
 
     try {
@@ -88,13 +90,14 @@ const fetchTasks = async () => {
     }
   };
 
-  // --- GÖREV DETAYDAN GERİ DÖNÜŞ PANELİ ---
+    // --- GÖREV DETAYDAN GERİ DÖNÜŞ PANELİ ---
   if (selectedTaskId) {
     return (
       <TasksDetailPage 
         taskId={selectedTaskId} 
         onBack={() => {
           setSelectedTaskId(null);
+          navigate('/tasks'); // URL'yi de temizle
           fetchTasks(); // Detay sayfasındaki değişiklikleri yansıtmak için listeyi yeniliyoruz
         }} 
       />
@@ -107,7 +110,7 @@ const fetchTasks = async () => {
     const searchTarget = `${task.id} ${task.dataset_id} ${task.assignee_username || ''}`.toLowerCase();
     const matchesSearch = searchTarget.includes(searchQuery.toLowerCase());
     
-        // API'den gelen statüler (lowercase: assigned, in_progress, submitted, approved, rejected)
+        // API'den gelen statüler (lowercase: assigned, in_progress, approval_pending, completed, rejected)
         const taskStatus = task.status?.toLowerCase() ?? "";
     const matchesProgress = progressFilter === "ALL" || taskStatus === progressFilter;
     
@@ -158,8 +161,8 @@ const fetchTasks = async () => {
                         { value: 'ALL', label: t('tasks:filter.all_progress', 'All Statuses'), icon: <Layers className="h-3.5 w-3.5" /> },
                         { value: 'assigned', label: t('tasks:filter.status.assigned', 'ASSIGNED'), icon: <CircleDot className="h-3.5 w-3.5" /> },
                         { value: 'in_progress', label: t('tasks:filter.status.in_progress', 'IN PROGRESS'), icon: <Play className="h-3.5 w-3.5" /> },
-                        { value: 'submitted', label: t('tasks:filter.status.submitted', 'SUBMITTED'), icon: <Clock className="h-3.5 w-3.5" /> },
-                        { value: 'approved', label: t('tasks:filter.status.approved', 'APPROVED'), icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+                                                { value: 'approval_pending', label: t('tasks:filter.status.approval_pending', 'PENDING APPROVAL'), icon: <Clock className="h-3.5 w-3.5" /> },
+                        { value: 'completed', label: t('tasks:filter.status.completed', 'COMPLETED'), icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
                         { value: 'rejected', label: t('tasks:filter.status.rejected', 'REJECTED'), icon: <XCircle className="h-3.5 w-3.5" /> },
                       ]}
                     />
@@ -185,8 +188,9 @@ const fetchTasks = async () => {
       ) : (
                 /* Görev Kartları Grid Yapısı */
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {visibleTasks.map(item => (
-            <div key={item.id} className="relative group transition-transform hover:scale-[1.01]">
+                                        {visibleTasks.map(item => (
+            <div key={item.id} className="transition-transform hover:scale-[1.01]">
+              <RoleProvider role={(item.role?.toLowerCase() as BackendRole) ?? null}>
               <TaskCard 
                 task={{
                   ...item,
@@ -198,16 +202,9 @@ const fetchTasks = async () => {
                 onViewDetail={(id) => setSelectedTaskId(id)}
                 onAnnotate={(id) => navigate(`/annotate/${id}`)}
                 onView={(id) => navigate(`/view/${id}`)}
+                onDelete={handleDeleteTask}
               />
-              
-                            {/* Kart Üstü Hızlı Silme / Revoke Aksiyonu */}
-              <button
-                onClick={(e) => handleDeleteTask(item.id, e)}
-                className="absolute top-4 right-4 p-1.5 rounded-lg bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 border border-destructive/20 shadow-sm z-10"
-                title={t('tasks:detail.revoke_button', 'Revoke Task')}
-              >
-                <Trash2 size={13} />
-              </button>
+              </RoleProvider>
             </div>
           ))}
         </div>

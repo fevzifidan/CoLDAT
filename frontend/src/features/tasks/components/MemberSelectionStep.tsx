@@ -41,7 +41,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import notificationService from '@/shared/services/notification/notification.service';
-import { datasetMemberService, userLookupService } from '@/features/tasks/services/taskService';
+import { datasetMemberService } from '@/features/datasets/services/datasetMemberService';
+import { userLookupService } from '@/features/tasks/services/userLookupService';
 
 export interface DatasetMember {
   user_id: string;

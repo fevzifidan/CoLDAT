@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Loader2, ListTodo, AlertCircle } from 'lucide-react';
 import { useCursorPagination } from '@/shared/hooks/useCursorPagination';
 import { taskService } from '@/features/tasks/services/taskService';
+import { RoleProvider } from '@/context/PermissionContext';
+import { type BackendRole } from '@/shared/roles';
+import { useConfirm } from '@/shared/services/confirmation/useConfirm';
+import notificationService from '@/shared/services/notification/notification.service';
 
 interface TaskItem {
   id: string;
@@ -25,14 +29,36 @@ const STATUS_OPTIONS = [
   { value: 'ALL', label: 'All Statuses', icon: <ListTodo className="h-3.5 w-3.5" /> },
   { value: 'assigned', label: 'Open' },
   { value: 'in_progress', label: 'In Progress' },
-  { value: 'submitted', label: 'Submitted' },
-  { value: 'approved', label: 'Completed' },
+    { value: 'approval_pending', label: 'Pending Approval' },
+  { value: 'completed', label: 'Completed' },
   { value: 'rejected', label: 'Rejected' },
 ];
 
 export const ProjectTasksTab = ({ projectId }: ProjectTasksTabProps) => {
   const { t } = useTranslation(['pages', 'common', 'tasks']);
   const navigate = useNavigate();
+  const { confirm } = useConfirm();
+
+  // --- API EVENT HANDLERS (DELETE /tasks/{id}/) ---
+  const handleDeleteTask = async (id: string) => {
+    const confirmed = await confirm({
+      title: t('tasks:detail.confirm_delete', 'Revoke Task'),
+      message: t('tasks:detail.confirm_delete_message', 'Are you sure you want to revoke/delete this task assignment?'),
+      confirmText: t('common:actions.confirm', 'Yes, Revoke'),
+      cancelText: t('common:actions.cancel', 'Cancel'),
+      variant: 'destructive',
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await taskService.deleteTask(id);
+      notificationService.success(t('tasks:detail.delete_success', 'Task has been revoked successfully.'));
+      reset();
+    } catch (err: any) {
+      notificationService.error(err?.response?.data?.message || t('tasks:detail.delete_error', 'Failed to delete task.'));
+    }
+  };
 
   const {
     items: tasks,
@@ -93,15 +119,17 @@ export const ProjectTasksTab = ({ projectId }: ProjectTasksTabProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tasks.map((task) => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            onViewDetail={(id) => navigate(`/tasks/${id}`)}
-            onAnnotate={(id) => navigate(`/annotate/${id}`)}
-            onView={(id) => navigate(`/view/${id}`)}
-          />
+                    <RoleProvider key={task.id} role={(task.role?.toLowerCase() as BackendRole) ?? null}>
+            <TaskCard
+              task={task}
+              onViewDetail={(id) => navigate(`/tasks/${id}`)}
+              onAnnotate={(id) => navigate(`/annotate/${id}`)}
+              onView={(id) => navigate(`/view/${id}`)}
+              onDelete={handleDeleteTask}
+            />
+          </RoleProvider>
         ))}
       </div>
 
@@ -122,3 +150,4 @@ export const ProjectTasksTab = ({ projectId }: ProjectTasksTabProps) => {
     </div>
   );
 };
+

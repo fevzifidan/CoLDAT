@@ -124,6 +124,12 @@ export async function updateTaskStatus(
   status: string, 
   note?: string
 ): Promise<void> {
+  // Hard block if in read-only mode
+  if (useAppStore.getState().isReadOnly) {
+    console.warn('[API Block] Attempted to update task status in read-only mode.');
+    return;
+  }
+
   await apiService.patch(`/tasks/${taskId}/status`, { status, note });
 }
 

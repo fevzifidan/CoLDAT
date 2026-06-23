@@ -8,10 +8,10 @@ import { Toaster } from "@/components/ui/sonner";
 import ApiKeysPage from "./features/api-keys/ApiKeysPage";
 import SyntheticPage from "./features/synthetic/SyntheticPage";
 
-import AxiosInterceptorSetup from './components/custom/AxiosInterceptorSetup/AxiosInterceptorSetup.jsx';
+import AxiosInterceptorSetup from './shared/components/AxiosInterceptorSetup/AxiosInterceptorSetup.jsx';
 import { ConfirmProvider } from './shared/services/confirmation/ConfirmContext.js';
-import { BannerProvider } from './components/custom/GlobalBanner/BannerContext.js';
-import { GlobalBanner } from './components/custom/GlobalBanner/GlobalBanner.js';
+import { BannerProvider } from './shared/components/GlobalBanner/BannerContext.js';
+import { GlobalBanner } from './shared/components/GlobalBanner/GlobalBanner.js';
 import { GlobalKeyboardListener } from './shared/components/GlobalKeyboardListener';
 
 // Upload Manager
@@ -24,8 +24,8 @@ import DashboardLayout from '@/features/core/layouts/DashboardLayout';
 import DashboardHome from '@/features/dashboard/DashboardHome';
 import ProjectDetailPage from '@/features/projects/ProjectDetailPage';
 import AnnotationPage from '@/features/annotation/AnnotationPage';
-import Login from "@/features/auth/Login/Login";
-import Register from "@/features/auth/Register/Register";
+import Login from "@/features/auth/LoginPage";
+import Register from "@/features/auth/RegisterPage";
 
 import TasksPage from '@/features/tasks/TasksPage';
 import CreateTaskPage from '@/features/tasks/CreateTaskPage';
@@ -35,14 +35,14 @@ import UserAssetsPage from '@/features/datasets/UserAssetsPage';
 import { ProjectDatasetsPage } from '@/features/projects/ProjectDatasetsPage'; 
 import ProjectsPage from '@/features/projects/ProjectsPage';
 import ViewerPage from '@/features/viewer/ViewerPage';
-import { VerificationPage } from '@/features/auth/EmailVerification/EmailVerification';
-import { ForgotPasswordPage } from '@/features/auth/ForgotPassword/ForgotPassword';
-import { PasswordResetPage } from '@/features/auth/ResetPassword/ResetPassword';
-import AccountNotVerifiedPage from '@/features/auth/AccountNotVerified/AccountNotVerified';
+import { VerificationPage } from '@/features/auth/EmailVerificationPage';
+import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage';
+import { PasswordResetPage } from '@/features/auth/ResetPasswordPage';
+import AccountNotVerifiedPage from '@/features/auth/AccountNotVerifiedPage';
 import { LandingPage } from '@/features/landing/LandingPage';
 
-import ProtectedRoute from './components/custom/ProtectedRoute/ProtectedRoute.jsx';
-import GuestRoute from './components/custom/GuestRoute/GuestRoute.tsx';
+import ProtectedRoute from './shared/components/ProtectedRoute/ProtectedRoute.jsx';
+import GuestRoute from './shared/components/GuestRoute/GuestRoute.tsx';
 
 function App() {
   return (
@@ -90,6 +90,7 @@ function App() {
                           <Route path="/assets" element={<UserAssetsPage />} />
 
                           <Route path="/tasks" element={<TasksPage />} />
+                          <Route path="/tasks/:taskId" element={<TasksPage />} />
                           <Route path="/tasks/new" element={<CreateTaskPage />} />
                           <Route path="/api-keys" element={<ApiKeysPage />} />
                           
