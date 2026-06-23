@@ -1,8 +1,5 @@
 from rest_framework.permissions import BasePermission
 
-from apps.projects.models import ProjectMembership
-
-
 class CanManageTaxonomy(BasePermission):
     def has_object_permission(self, request, view, obj):
         if hasattr(obj, "project"):
@@ -10,8 +7,4 @@ class CanManageTaxonomy(BasePermission):
         else:
             project = obj
 
-        return project.memberships.filter(
-            user=request.user,
-            role__in=[
-                ProjectMembership.Role.ADMIN,]
-        ).exists()
+        return project.owner_id == request.user.id

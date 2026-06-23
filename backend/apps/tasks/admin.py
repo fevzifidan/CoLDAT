@@ -14,6 +14,7 @@ class TaskAdmin(admin.ModelAdmin):
         "id",
         "dataset",
         "assignee",
+        "role",
         "status",
         "created_by",
         "created_at",
@@ -26,6 +27,7 @@ class TaskAdmin(admin.ModelAdmin):
     )
     list_filter = (
         "status",
+        "role",
         "created_at",
     )
     inlines = [TaskImageInline]

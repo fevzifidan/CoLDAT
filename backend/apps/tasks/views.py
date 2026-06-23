@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.conf import settings
 
 from apps.datasets.selectors import get_dataset_for_user
+from apps.common.pagination import UUIDv7PaginatedAPIViewMixin
 
 from .permissions import CanManageTasks
 from .selectors import (
@@ -38,7 +39,7 @@ from .services import (
 )
 
 
-class TaskListCreateView(APIView):
+class TaskListCreateView(UUIDv7PaginatedAPIViewMixin, APIView):
     def get(self, request):
         query_serializer = TaskListQuerySerializer(
             data=request.query_params
@@ -49,13 +50,14 @@ class TaskListCreateView(APIView):
             user=request.user,
             status=query_serializer.validated_data.get("status"),
         )
+        page = self.paginate_queryset(tasks)
 
-        return Response(
-            {
-                "data": TaskSerializer(tasks, many=True).data,
-                "next_cursor": None,
-            },
-            status=status.HTTP_200_OK,
+        return self.get_paginated_response(
+            TaskSerializer(
+                page,
+                many=True,
+                context={"request": request},
+            ).data
         )
 
     def post(self, request):
@@ -73,12 +75,16 @@ class TaskListCreateView(APIView):
             dataset=dataset,
             created_by=request.user,
             assignee_username=serializer.validated_data["assignee_username"],
+            role=serializer.validated_data["role"],
             image_ids=serializer.validated_data["image_ids"],
-            note=serializer.validated_data.get("note", ""),
+            name=serializer.validated_data["name"],
+            description=serializer.validated_data["description"],
+            priority=serializer.validated_data["priority"],
+            deadline=serializer.validated_data.get("deadline"),
         )
 
         return Response(
-            TaskSerializer(task).data,
+            TaskSerializer(task, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -102,7 +108,7 @@ class TaskDetailView(APIView):
         )
 
         return Response(
-            TaskSerializer(task).data,
+            TaskSerializer(task, context={"request": request}).data,
             status=status.HTTP_200_OK,
         )
 
@@ -143,7 +149,7 @@ class TaskStatusUpdateView(APIView):
         )
 
         return Response(
-            TaskSerializer(task).data,
+            TaskSerializer(task, context={"request": request}).data,
             status=status.HTTP_200_OK,
         )
 
@@ -162,10 +168,11 @@ class TaskAssignView(APIView):
         task = assign_task(
             task=task,
             assignee_username=serializer.validated_data["assignee_username"],
+            role=serializer.validated_data["role"],
         )
 
         return Response(
-            TaskSerializer(task).data,
+            TaskSerializer(task, context={"request": request}).data,
             status=status.HTTP_200_OK,
         )
 
@@ -173,7 +180,7 @@ class TaskAssignView(APIView):
         return [CanManageTasks()]
 
 
-class TaskImageListView(APIView):
+class TaskImageListView(UUIDv7PaginatedAPIViewMixin, APIView):
     def get(self, request, task_id):
         task, task_images = get_task_images_for_user(
             task_id=task_id,
@@ -184,23 +191,20 @@ class TaskImageListView(APIView):
             task=task,
             user=request.user,
         )
+        page = self.paginate_queryset(task_images)
 
         read_url_expiry_at = timezone.now() + timedelta(
             seconds=settings.ASSET_READ_URL_EXPIRES_IN_SECONDS
         )
 
-        return Response(
-            {
-                "data": TaskImageSerializer(
-                    task_images,
-                    many=True,
-                    context={
-                        "read_url_expiry_at": read_url_expiry_at,
-                    },
-                ).data,
-                "next_cursor": None,
-            },
-            status=status.HTTP_200_OK,
+        return self.get_paginated_response(
+            TaskImageSerializer(
+                page,
+                many=True,
+                context={
+                    "read_url_expiry_at": read_url_expiry_at,
+                },
+            ).data
         )
 
     def post(self, request, task_id):
@@ -249,7 +253,7 @@ class TaskImageListView(APIView):
         return super().get_permissions()
     
 
-class DatasetTaskListView(APIView):
+class DatasetTaskListView(UUIDv7PaginatedAPIViewMixin, APIView):
     def get(self, request, dataset_id):
         query_serializer = TaskListQuerySerializer(
             data=request.query_params
@@ -262,13 +266,14 @@ class DatasetTaskListView(APIView):
             status=query_serializer.validated_data.get("status"),
             assignee_username=query_serializer.validated_data.get("assignee_username"),
         )
+        page = self.paginate_queryset(tasks)
 
-        return Response(
-            {
-                "data": TaskSerializer(tasks, many=True).data,
-                "next_cursor": None,
-            },
-            status=status.HTTP_200_OK,
+        return self.get_paginated_response(
+            TaskSerializer(
+                page,
+                many=True,
+                context={"request": request},
+            ).data
         )
 
     def get_permissions(self):
@@ -278,7 +283,7 @@ class DatasetTaskListView(APIView):
         return super().get_permissions()
 
 
-class ProjectTaskListView(APIView):
+class ProjectTaskListView(UUIDv7PaginatedAPIViewMixin, APIView):
     def get(self, request, project_id):
         query_serializer = TaskListQuerySerializer(
             data=request.query_params
@@ -290,13 +295,14 @@ class ProjectTaskListView(APIView):
             user=request.user,
             status=query_serializer.validated_data.get("status"),
         )
+        page = self.paginate_queryset(tasks)
 
-        return Response(
-            {
-                "data": TaskSerializer(tasks, many=True).data,
-                "next_cursor": None,
-            },
-            status=status.HTTP_200_OK,
+        return self.get_paginated_response(
+            TaskSerializer(
+                page,
+                many=True,
+                context={"request": request},
+            ).data
         )
 
 class DatasetAnnotatorAssignmentsView(APIView):

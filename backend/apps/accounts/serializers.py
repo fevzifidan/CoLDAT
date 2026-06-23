@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from django.contrib.auth import get_user_model
 from .services import create_user
 from config.exceptions import Conflict
 
@@ -54,6 +53,14 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+
+
+class MSALLoginSerializer(serializers.Serializer):
+    msal_token = serializers.CharField(
+        allow_blank=False,
+        trim_whitespace=False,
+        write_only=True,
+    )
     
 class AccountUpdateSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150, required=False)

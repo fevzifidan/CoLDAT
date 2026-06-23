@@ -1,13 +1,13 @@
-import uuid
-
 from django.conf import settings
 from django.db import models
+
+from apps.common.ids import uuid7
 
 
 class Project(models.Model):
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid7,
         editable=False,
     )
 
@@ -33,14 +33,9 @@ class Project(models.Model):
 
 
 class ProjectMembership(models.Model):
-    class Role(models.TextChoices):
-        ADMIN = "admin", "Admin"
-        ANNOTATOR = "annotator", "Annotator"
-        VIEWER = "viewer", "Viewer"
-
     id = models.UUIDField(
         primary_key=True,
-        default=uuid.uuid4,
+        default=uuid7,
         editable=False,
     )
 
@@ -56,11 +51,6 @@ class ProjectMembership(models.Model):
         related_name="project_memberships",
     )
 
-    role = models.CharField(
-        max_length=20,
-        choices=Role.choices,
-    )
-
     joined_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -68,4 +58,4 @@ class ProjectMembership(models.Model):
         ordering = ["project", "user"]
 
     def __str__(self):
-        return f"{self.user} - {self.project} ({self.role})"
+        return f"{self.user} - {self.project}"

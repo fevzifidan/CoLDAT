@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from .models import Dataset, DatasetAPIKey, DatasetMember, DatasetVersion
-from apps.projects.models import ProjectMembership
 
 
 class DatasetSerializer(serializers.ModelSerializer):
@@ -52,12 +51,10 @@ class DatasetSerializer(serializers.ModelSerializer):
         if dataset_membership:
             return dataset_membership.role
 
-        project_membership = ProjectMembership.objects.filter(
-            project=obj.project,
-            user=request.user,
-        ).first()
+        if obj.project.owner_id == request.user.id:
+            return "admin"
 
-        return project_membership.role if project_membership else None
+        return None
 
 class DatasetCreateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
@@ -174,6 +171,8 @@ class DatasetAPIKeySerializer(serializers.ModelSerializer):
             "name",
             "key_prefix",
             "is_active",
+            "target_version",
+            "expires_at",
             "created_by_id",
             "created_by_username",
             "created_at",
@@ -183,6 +182,16 @@ class DatasetAPIKeySerializer(serializers.ModelSerializer):
 
 class DatasetAPIKeyCreateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
+    ttl_days = serializers.IntegerField(
+        required=False,
+        min_value=1,
+        max_value=3650,
+    )
+    target_version = serializers.CharField(
+        required=False,
+        allow_blank=False,
+        max_length=100,
+    )
 
 
 class DatasetAPIKeyCreateResponseSerializer(DatasetAPIKeySerializer):
@@ -201,6 +210,11 @@ class DatasetAPIKeyUpdateSerializer(serializers.Serializer):
     )
     is_active = serializers.BooleanField(
         required=False,
+    )
+    ttl_days = serializers.IntegerField(
+        required=False,
+        min_value=1,
+        max_value=3650,
     )
 
     def validate(self, attrs):

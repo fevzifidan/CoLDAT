@@ -1,8 +1,5 @@
 from rest_framework.permissions import BasePermission
 
-from apps.projects.models import ProjectMembership
-
-
 class CanManageTasks(BasePermission):
     def has_object_permission(self, request, view, obj):
         if hasattr(obj, "dataset"):
@@ -10,8 +7,4 @@ class CanManageTasks(BasePermission):
         else:
             dataset = obj
 
-        return dataset.project.memberships.filter(
-            user=request.user,
-            role__in=[
-                ProjectMembership.Role.ADMIN,]
-        ).exists()
+        return dataset.project.owner_id == request.user.id

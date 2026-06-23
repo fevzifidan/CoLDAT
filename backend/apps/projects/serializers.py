@@ -6,7 +6,7 @@ from .models import Project, ProjectMembership
 class ProjectSerializer(serializers.ModelSerializer):
     owner_id = serializers.UUIDField(source="owner.id", read_only=True)
     owner_username = serializers.CharField(source="owner.username", read_only=True)
-    user_role = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -16,7 +16,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "owner_username",
             "name",
             "description",
-            "user_role",
+            "role",
             "is_archived",
             "created_at",
             "updated_at",
@@ -25,34 +25,19 @@ class ProjectSerializer(serializers.ModelSerializer):
             "id",
             "owner_id",
             "owner_username",
-            "user_role",
+            "role",
             "is_archived",
             "created_at",
             "updated_at",
         ]
 
-    def get_user_role(self, obj):
+    def get_role(self, obj):
         request = self.context.get("request")
 
         if not request or not request.user or not request.user.is_authenticated:
             return None
 
-        membership = ProjectMembership.objects.filter(
-            project=obj,
-            user=request.user,
-        ).first()
-
-        return membership.role if membership else None
-
-def get_user_role(self, obj):
-        request = self.context.get("request")
-        if not request or not request.user or not request.user.is_authenticated:
-            return None
-        membership = ProjectMembership.objects.filter(
-            project=obj,
-            user=request.user,
-        ).first()
-        return membership.role if membership else None
+        return "admin" if obj.owner_id == request.user.id else None
 
 class ProjectCreateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
@@ -79,7 +64,6 @@ class ProjectMembershipSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
-            "role",
             "joined_at",
         ]
         read_only_fields = [
@@ -95,8 +79,10 @@ class ProjectMembershipSerializer(serializers.ModelSerializer):
 
 class ProjectMembershipCreateSerializer(serializers.Serializer):
     user_id = serializers.UUIDField()
-    role = serializers.ChoiceField(choices=ProjectMembership.Role.choices)
 
-
-class ProjectMembershipUpdateSerializer(serializers.Serializer):
-    role = serializers.ChoiceField(choices=ProjectMembership.Role.choices)
+    def validate(self, attrs):
+        if "role" in self.initial_data:
+            raise serializers.ValidationError(
+                {"role": "Project memberships do not have roles."}
+            )
+        return attrs

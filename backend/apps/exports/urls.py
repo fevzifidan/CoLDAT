@@ -5,8 +5,13 @@ from .views import DatasetExportView
 
 urlpatterns = [
     path(
-        "<uuid:dataset_id>/export/",
+        "<uuid:dataset_id>/export",
         DatasetExportView.as_view(),
         name="dataset-export",
+    ),
+    path(
+        "<uuid:dataset_id>/export/",
+        DatasetExportView.as_view(),
+        name="dataset-export-legacy",
     ),
 ]
