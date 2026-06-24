@@ -13,6 +13,11 @@ import {
   UserCheck,
   Trash2,
   AlertTriangle,
+  Lock,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 
 interface ProfileForm {
@@ -35,6 +40,29 @@ const ProfilePage: React.FC = () => {
   });
 
   const [loading, setLoading] = useState(false);
+
+    // Password change states
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  // Password criteria
+  const passwordCriteria = {
+    length: passwordForm.newPassword.length >= 8,
+    uppercase: /[A-Z]/.test(passwordForm.newPassword),
+    number: /[0-9]/.test(passwordForm.newPassword),
+    match: passwordForm.newPassword === passwordForm.confirmPassword && passwordForm.confirmPassword.length > 0,
+  };
+  const isPasswordValid = passwordCriteria.length && passwordCriteria.uppercase && passwordCriteria.number && passwordCriteria.match;
 
   // Delete modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -134,6 +162,69 @@ const ProfilePage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+    /* ------------------------------------------------ */
+  /* PASSWORD CHANGE HANDLERS                         */
+  /* ------------------------------------------------ */
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const togglePasswordVisibility = (field: 'current' | 'new' | 'confirm') => {
+    setShowPasswords((prev) => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
+  };
+
+  const handleChangePassword = async () => {
+    if (!isPasswordValid || !passwordForm.currentPassword) return;
+
+    setChangingPassword(true);
+    try {
+      const payload = {
+        old_password: passwordForm.currentPassword,
+        new_password: passwordForm.newPassword,
+      };
+
+      await notificationService.promise(
+        apiService.patch('account/change-password/', payload),
+        {
+          loading: t('accounts:profile.passwordChange.buttons.changing'),
+          success: t('accounts:profile.passwordChange.notifications.success'),
+          error: (error: any) =>
+            error?.response?.data?.message ||
+            t('accounts:profile.passwordChange.notifications.error'),
+        }
+      );
+
+      // Reset form
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setShowPasswordForm(false);
+    } catch (error: any) {
+      console.error('Password change error:', error);
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleCancelPasswordChange = () => {
+    setShowPasswordForm(false);
+    setPasswordForm({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    });
   };
 
   /* ------------------------------------------------ */
@@ -308,6 +399,189 @@ const ProfilePage: React.FC = () => {
           </Button>
         </div>
       </form>
+
+            {/* PASSWORD CHANGE SECTION */}
+      {!isMsalUser && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+            <h3 className="text-base font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+              <Lock size={18} className="text-slate-400" />
+              {t('accounts:profile.passwordChange.title')}
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              {t('accounts:profile.passwordChange.description')}
+            </p>
+          </div>
+
+          <div className="p-6">
+            {!showPasswordForm ? (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  onClick={() => setShowPasswordForm(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
+                >
+                  <Lock size={14} />
+                  {t('accounts:profile.passwordChange.changeButton')}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* CURRENT PASSWORD */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-slate-500">
+                    {t('accounts:profile.passwordChange.fields.currentPassword')}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPasswords.current ? 'text' : 'password'}
+                      name="currentPassword"
+                      value={passwordForm.currentPassword}
+                      onChange={handlePasswordChange}
+                      className="w-full h-10 pl-9 pr-10 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder={t('accounts:profile.passwordChange.fields.currentPasswordPlaceholder')}
+                    />
+                    <Lock size={14} className="absolute left-3 top-3.5 text-slate-400" />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('current')}
+                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                    >
+                      {showPasswords.current ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* NEW PASSWORD */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-slate-500">
+                    {t('accounts:profile.passwordChange.fields.newPassword')}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPasswords.new ? 'text' : 'password'}
+                      name="newPassword"
+                      value={passwordForm.newPassword}
+                      onChange={handlePasswordChange}
+                      className="w-full h-10 pl-9 pr-10 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder={t('accounts:profile.passwordChange.fields.newPasswordPlaceholder')}
+                    />
+                    <Lock size={14} className="absolute left-3 top-3.5 text-slate-400" />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('new')}
+                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                    >
+                      {showPasswords.new ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* CONFIRM NEW PASSWORD */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-slate-500">
+                    {t('accounts:profile.passwordChange.fields.confirmPassword')}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPasswords.confirm ? 'text' : 'password'}
+                      name="confirmPassword"
+                      value={passwordForm.confirmPassword}
+                      onChange={handlePasswordChange}
+                      className="w-full h-10 pl-9 pr-10 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                      placeholder={t('accounts:profile.passwordChange.fields.confirmPasswordPlaceholder')}
+                    />
+                    <Lock size={14} className="absolute left-3 top-3.5 text-slate-400" />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('confirm')}
+                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                    >
+                      {showPasswords.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* PASSWORD CRITERIA */}
+                <div className="space-y-1.5 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center gap-2 text-xs">
+                    {passwordCriteria.length ? (
+                      <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                    ) : (
+                      <XCircle size={14} className="text-slate-300 dark:text-slate-600 shrink-0" />
+                    )}
+                    <span className={passwordCriteria.length ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-400'}>
+                      {t('accounts:profile.passwordChange.criteria.length')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    {passwordCriteria.uppercase ? (
+                      <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                    ) : (
+                      <XCircle size={14} className="text-slate-300 dark:text-slate-600 shrink-0" />
+                    )}
+                    <span className={passwordCriteria.uppercase ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-400'}>
+                      {t('accounts:profile.passwordChange.criteria.uppercase')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    {passwordCriteria.number ? (
+                      <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                    ) : (
+                      <XCircle size={14} className="text-slate-300 dark:text-slate-600 shrink-0" />
+                    )}
+                    <span className={passwordCriteria.number ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-400'}>
+                      {t('accounts:profile.passwordChange.criteria.number')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    {passwordCriteria.match ? (
+                      <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                    ) : (
+                      <XCircle size={14} className="text-slate-300 dark:text-slate-600 shrink-0" />
+                    )}
+                    <span className={passwordCriteria.match ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-400'}>
+                      {t('accounts:profile.passwordChange.criteria.match')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* ACTION BUTTONS */}
+                <div className="flex gap-2 justify-end pt-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCancelPasswordChange}
+                    disabled={changingPassword}
+                    className="h-9 px-4 text-xs font-bold rounded-xl"
+                  >
+                    {t('accounts:profile.passwordChange.cancelButton')}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleChangePassword}
+                    disabled={changingPassword || !isPasswordValid || !passwordForm.currentPassword}
+                    className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all disabled:opacity-50 shadow-sm cursor-pointer"
+                  >
+                    {changingPassword ? (
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    ) : (
+                      <Save size={14} />
+                    )}
+                    {changingPassword
+                      ? t('accounts:profile.passwordChange.buttons.changing')
+                      : t('accounts:profile.passwordChange.buttons.change')}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* DANGER ZONE */}
       <div className="bg-red-50/50 dark:bg-red-950/10 border border-red-200 dark:border-red-900/50 rounded-3xl p-6 space-y-4">

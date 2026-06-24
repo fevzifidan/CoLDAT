@@ -1,10 +1,27 @@
 // src/features/datasets/UserAssetsPage.tsx
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { SelectFilter } from '@/shared/components/SelectFilter';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { assetService, type UserAsset } from './services/assetService';
+import { useCursorPagination } from '@/shared/hooks/useCursorPagination';
 import {
   ImageIcon,
   Loader2,
@@ -20,6 +37,11 @@ import {
   Hourglass,
   XCircle,
   AlertTriangle,
+  List,
+  FileImage,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 // ─── Constants ──────────────────────────────────────────────
@@ -30,6 +52,10 @@ const STATUS_OPTIONS = [
   { value: 'VERIFICATION_FAILED', label: 'Verification Failed' },
   { value: 'FAILED', label: 'Failed' },
 ];
+
+const PAGE_SIZE_OPTIONS = [20, 50, 100];
+
+type ViewMode = 'grid' | 'table';
 
 // ─── Helpers ─────────────────────────────────────────────────
 const getStatusBadge = (status: string) => {
@@ -199,62 +225,121 @@ const AssetCard = ({ asset }: AssetCardProps) => {
   );
 };
 
+// ─── AssetTableRow Component ─────────────────────────────────
+interface AssetTableRowProps {
+  asset: UserAsset;
+}
+
+const AssetTableRow = ({ asset }: AssetTableRowProps) => {
+  const statusInfo = getStatusBadge(asset.status);
+  const StatusIcon = statusInfo.icon;
+
+  return (
+    <TableRow className="cursor-pointer hover:bg-muted/50 transition-colors">
+      <TableCell className="py-3">
+        <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
+          {asset.mime_type?.startsWith('image/') ? (
+            <FileImage size={14} />
+          ) : (
+            <FileText size={14} />
+          )}
+        </div>
+      </TableCell>
+      <TableCell className="py-3 font-medium max-w-[220px]">
+        <span className="text-sm truncate block" title={asset.filename}>
+          {asset.filename}
+        </span>
+        <p className="text-[10px] text-muted-foreground/50 font-mono truncate mt-0.5">
+          {asset.id}
+        </p>
+      </TableCell>
+      <TableCell className="py-3 text-xs text-muted-foreground hidden sm:table-cell">
+        {asset.width != null && asset.height != null
+          ? `${asset.width} × ${asset.height}`
+          : '—'}
+      </TableCell>
+      <TableCell className="py-3 text-xs text-muted-foreground hidden md:table-cell">
+        {asset.mime_type?.split('/').pop()?.toUpperCase() || '—'}
+      </TableCell>
+      <TableCell className="py-3">
+        <span
+          className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border shadow-sm ${statusInfo.className}`}
+        >
+          <StatusIcon size={10} />
+          <span>{statusInfo.label}</span>
+        </span>
+      </TableCell>
+      <TableCell className="py-3 text-xs text-muted-foreground/60 whitespace-nowrap hidden lg:table-cell">
+        {getTimeAgo(asset.created_at)}
+      </TableCell>
+    </TableRow>
+  );
+};
+
 // ─── Main Page Component ─────────────────────────────────────
 const UserAssetsPage = () => {
   const { t } = useTranslation(['pages', 'common', 'datasets']);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [assets, setAssets] = useState<UserAsset[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [pageSize, setPageSize] = useState(50);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchAssets = useCallback(async (search?: string, status?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params: Record<string, string> = {};
-      if (status && status !== 'ALL') params.status = status;
-      if (search?.trim()) params.search = search.trim();
+  // ── Cursor-based pagination ──
+  const {
+    items: paginatedAssets,
+    loading,
+    error,
+    hasNext,
+    hasPrev,
+    currentPage,
+    goNext,
+    goPrev,
+    reset,
+    initialLoading,
+  } = useCursorPagination<UserAsset>({
+    fetchFn: async (cursor, limit) => {
+      const params: Record<string, any> = {};
+      if (statusFilter !== 'ALL') params.status = statusFilter;
+      if (searchQuery.trim()) params.search = searchQuery.trim();
+      if (limit) params.limit = limit;
+      if (cursor) params.after = cursor;
+      return await assetService.getUserAssets(params);
+    },
+    limit: pageSize,
+    mode: 'paginated',
+    enabled: true,
+  });
 
-      const result = await assetService.getUserAssets(params);
-      setAssets(result.data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load assets');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Initial load
-  useEffect(() => {
-    fetchAssets();
-  }, [fetchAssets]);
-
-  // Debounced search/filter
+  // Debounced search/filter -> reset pagination
   useEffect(() => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     searchTimerRef.current = setTimeout(() => {
-      fetchAssets(searchQuery, statusFilter);
+      reset();
     }, 300);
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     };
-  }, [searchQuery, statusFilter, fetchAssets]);
+  }, [searchQuery, statusFilter, reset]);
+
+  // Reset when page size changes
+  useEffect(() => {
+    reset();
+  }, [pageSize, reset]);
 
   const handleRefresh = () => {
-    fetchAssets(searchQuery, statusFilter);
+    reset();
   };
 
-  // Stats
-  const totalCount = assets.length;
-  const uploadedCount = assets.filter(
+  // Stats (paginated assets üzerinden değil — tüm veri gelmediği için sadece mevcut sayfadaki)
+  const totalCount = paginatedAssets.length;
+  const uploadedCount = paginatedAssets.filter(
     (a) => a.status?.toUpperCase() === 'UPLOADED'
   ).length;
-  const pendingCount = assets.filter(
+  const pendingCount = paginatedAssets.filter(
     (a) => a.status?.toUpperCase() === 'PENDING'
   ).length;
-  const failedCount = assets.filter((a) =>
+  const failedCount = paginatedAssets.filter((a) =>
     ['FAILED', 'VERIFICATION_FAILED'].includes(a.status?.toUpperCase())
   ).length;
 
@@ -294,7 +379,7 @@ const UserAssetsPage = () => {
                   'pages:user_assets.search_placeholder',
                   'Search by filename...'
                 )}
-                className="pl-10 h-10 w-56 bg-background/50 border-border/50 text-foreground placeholder:text-muted-foreground/40 rounded-xl focus:border-primary/40 focus:bg-background/80 transition-all text-sm"
+                className="pl-10 h-10 w-48 lg:w-56 bg-background/50 border-border/50 text-foreground placeholder:text-muted-foreground/40 rounded-xl focus:border-primary/40 focus:bg-background/80 transition-all text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -303,12 +388,52 @@ const UserAssetsPage = () => {
             <SelectFilter
               value={statusFilter}
               onChange={(v) => setStatusFilter(v)}
-              triggerClassName="w-40 h-10 rounded-xl bg-background/50 border-border/50"
+              triggerClassName="w-36 lg:w-40 h-10 rounded-xl bg-background/50 border-border/50"
               options={STATUS_OPTIONS.map((opt) => ({
                 value: opt.value,
                 label: opt.label,
               }))}
             />
+
+            {/* View Mode Toggle */}
+            <ToggleGroup
+              type="single"
+              value={viewMode}
+              onValueChange={(v) => v && setViewMode(v as ViewMode)}
+              className="hidden sm:flex border border-border/50 rounded-xl bg-background/50"
+            >
+              <ToggleGroupItem
+                value="grid"
+                aria-label="Grid view"
+                className="h-10 w-10 rounded-xl data-[state=on]:bg-accent/80 data-[state=on]:text-accent-foreground"
+              >
+                <LayoutGrid size={14} />
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="table"
+                aria-label="Table view"
+                className="h-10 w-10 rounded-xl data-[state=on]:bg-accent/80 data-[state=on]:text-accent-foreground"
+              >
+                <List size={14} />
+              </ToggleGroupItem>
+            </ToggleGroup>
+
+            {/* Page Size Selector */}
+            <Select
+              value={String(pageSize)}
+              onValueChange={(v) => setPageSize(Number(v))}
+            >
+              <SelectTrigger className="hidden sm:flex h-10 w-[72px] rounded-xl bg-background/50 border-border/50 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <SelectItem key={size} value={String(size)} className="text-xs">
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <Button
               variant="outline"
@@ -355,8 +480,8 @@ const UserAssetsPage = () => {
         </div>
       )}
 
-      {/* ═══════ LOADING ═══════ */}
-      {loading && !error && assets.length === 0 && (
+      {/* ═══════ LOADING (initial) ═══════ */}
+      {initialLoading && (
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-muted-foreground">
           <div className="relative">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -369,10 +494,10 @@ const UserAssetsPage = () => {
       )}
 
       {/* ═══════ STATS CARDS ═══════ */}
-      {!loading && !error && assets.length > 0 && (
+      {!initialLoading && !error && paginatedAssets.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
-            label="Total"
+            label="This Page"
             value={totalCount}
             icon={Box}
             color="text-primary"
@@ -403,7 +528,7 @@ const UserAssetsPage = () => {
       )}
 
       {/* ═══════ EMPTY ═══════ */}
-      {!loading && !error && assets.length === 0 && (
+      {!initialLoading && !error && paginatedAssets.length === 0 && (
         <div className="relative overflow-hidden rounded-2xl border border-border/30 bg-gradient-to-b from-card/30 to-card/10 p-16 sm:p-20 text-center">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/3 rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10 flex flex-col items-center gap-5">
@@ -452,22 +577,106 @@ const UserAssetsPage = () => {
         </div>
       )}
 
-      {/* ═══════ ASSET GRID ═══════ */}
-      {!loading && !error && assets.length > 0 && (
+      {/* ═══════ ASSETS: GRID VIEW ═══════ */}
+      {!initialLoading && !error && paginatedAssets.length > 0 && viewMode === 'grid' && (
         <>
           <div className="flex items-center justify-between text-xs text-muted-foreground/50 px-1">
             <span className="font-medium">
-              Showing {assets.length} asset
-              {assets.length !== 1 ? 's' : ''}
+              Page {currentPage} · {paginatedAssets.length} asset{paginatedAssets.length !== 1 ? 's' : ''}
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {assets.map((asset) => (
+            {paginatedAssets.map((asset) => (
               <AssetCard key={asset.id} asset={asset} />
             ))}
           </div>
+
+          {/* Grid Pagination */}
+          <div className="flex items-center justify-between px-1 py-3 border-t border-border/40">
+            <span className="text-[11px] text-muted-foreground/50">
+              {paginatedAssets.length} items
+              {!hasNext && ` · Last page`}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!hasPrev || loading}
+                onClick={goPrev}
+                className="h-8 w-8 p-0 rounded-lg"
+              >
+                <ChevronLeft size={14} />
+              </Button>
+              <span className="text-xs font-medium text-muted-foreground min-w-[40px] text-center tabular-nums">
+                {currentPage}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!hasNext || loading}
+                onClick={goNext}
+                className="h-8 w-8 p-0 rounded-lg"
+              >
+                <ChevronRight size={14} />
+              </Button>
+            </div>
+          </div>
         </>
+      )}
+
+      {/* ═══════ ASSETS: TABLE VIEW ═══════ */}
+      {!initialLoading && !error && paginatedAssets.length > 0 && viewMode === 'table' && (
+        <div className="border border-border/40 rounded-xl overflow-hidden bg-card shadow-sm">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50px] text-xs">Type</TableHead>
+                <TableHead className="text-xs">Filename</TableHead>
+                <TableHead className="hidden sm:table-cell text-xs">Dimensions</TableHead>
+                <TableHead className="hidden md:table-cell text-xs">Format</TableHead>
+                <TableHead className="text-xs">Status</TableHead>
+                <TableHead className="hidden lg:table-cell text-xs">Uploaded</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedAssets.map((asset) => (
+                <AssetTableRow key={asset.id} asset={asset} />
+              ))}
+            </TableBody>
+          </Table>
+
+          {/* Table Pagination */}
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border/40 bg-muted/30">
+            <span className="text-[11px] text-muted-foreground">
+              Page {currentPage} · {paginatedAssets.length} items
+              {!hasNext && ` · Last page`}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!hasPrev || loading}
+                onClick={goPrev}
+                className="h-8 w-8 p-0 rounded-lg"
+              >
+                <ChevronLeft size={14} />
+              </Button>
+              <span className="text-xs font-medium text-muted-foreground min-w-[40px] text-center tabular-nums">
+                {currentPage}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!hasNext || loading}
+                onClick={goNext}
+                className="h-8 w-8 p-0 rounded-lg"
+              >
+                <ChevronRight size={14} />
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

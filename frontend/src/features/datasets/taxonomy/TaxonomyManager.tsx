@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Edit2, Check, X, Link as LinkIcon, Tag, Loader2, Trash2, ShieldCheck, Lock } from "lucide-react";
+import Sketch from '@uiw/react-color-sketch';
 import { Guard } from '@/shared/components/Guard';
 import { usePermission } from '@/context/PermissionContext';
 import { projectService } from '../../projects/services/projectService';
@@ -36,7 +37,8 @@ interface PredicateItem {
 const COLOR_PALETTE = [
   '#ff4d4d', '#33ff77', '#3b82f6', '#eab308', 
   '#a855f7', '#ec4899', '#14b8a6', '#f97316',
-  '#64748b', '#10b981', '#6366f1', '#d946ef'
+  '#64748b', '#10b981', '#6366f1', '#d946ef',
+  '#f472b6', '#8b5cf6', '#06b6d4', '#84cc16'
 ];
 
 const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate }) => {
@@ -341,18 +343,16 @@ const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({ projectId, onUpdate }
                         </label>
                       </div>
 
-                      <div className="space-y-1">
+                                            <div className="space-y-1">
                         <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{t("taxonomy:class_color_label", "Class Color:")}</span>
-                        <div className="grid grid-cols-6 gap-1 p-1.5 bg-white dark:bg-slate-950 rounded-lg border dark:border-slate-800">
-                          {COLOR_PALETTE.map((color) => (
-                            <button
-                              key={color}
-                              type="button"
-                              className={`h-5 w-full rounded transition-transform ${selectedColor === color ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-slate-950 scale-105' : 'hover:scale-105 hover:ring-2 hover:ring-primary/50 hover:ring-offset-1'}`}
-                              style={{ backgroundColor: color }}
-                              onClick={() => setSelectedColor(color)}
+                        <div className="flex justify-center pt-1">
+                          <div className="[&>div]:!shadow-sm [&>div>div]:!rounded-lg dark:[&>div]:!bg-slate-900 dark:[&>div]:!border-slate-700">
+                            <Sketch
+                              color={selectedColor}
+                              onChange={(color) => setSelectedColor(color.hex)}
+                              presetColors={COLOR_PALETTE}
                             />
-                          ))}
+                          </div>
                         </div>
                       </div>
                     </div>

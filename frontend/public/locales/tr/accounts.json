@@ -6,6 +6,35 @@
       "title": "Kişisel Kimlik Bilgileri",
       "description": "Bu bilgiler atandığınız projelerde ve takımlarda diğer kullanıcılara gösterilecektir."
     },
+    "passwordChange": {
+      "title": "Güvenlik",
+      "description": "Hesabınızı güvende tutmak için şifrenizi düzenli olarak güncelleyin.",
+      "changeButton": "Şifre Değiştir",
+      "cancelButton": "İptal",
+    "fields": {
+        "currentPassword": "Mevcut Şifre",
+        "currentPasswordPlaceholder": "Mevcut şifrenizi girin",
+        "newPassword": "Yeni Şifre",
+        "newPasswordPlaceholder": "Yeni şifrenizi girin",
+        "confirmPassword": "Yeni Şifreyi Onayla",
+        "confirmPasswordPlaceholder": "Yeni şifrenizi tekrar girin"
+    },
+    "buttons": {
+        "change": "Şifre Değiştir",
+        "changing": "Şifre Değiştiriliyor..."
+    },
+    "notifications": {
+        "success": "Şifre başarıyla değiştirildi.",
+        "error": "Şifre değiştirilirken bir hata oluştu.",
+        "wrongPassword": "Mevcut şifre yanlış."
+    },
+      "criteria": {
+        "length": "En az 8 karakter",
+        "uppercase": "En az 1 büyük harf",
+        "number": "En az 1 sayı",
+        "match": "Şifreler eşleşiyor"
+      }
+    },
     "fields": {
       "firstName": "Ad",
       "firstNamePlaceholder": "Adınız",

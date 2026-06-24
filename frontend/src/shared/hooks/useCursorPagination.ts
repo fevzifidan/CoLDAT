@@ -89,6 +89,7 @@ export function useCursorPagination<T>({
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(false);
+  const [resetCounter, setResetCounter] = useState(0);
   const lastFetchId = useRef(0);
   const mountedRef = useRef(true);
 
@@ -148,7 +149,7 @@ export function useCursorPagination<T>({
       // Cleanup: son fetch'i iptal et (race condition önleme)
       lastFetchId.current++;
     };
-  }, [enabled, manualFirstPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enabled, manualFirstPage, resetCounter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // loadMore: accumulate modunda append, paginated modunda goNext'e yönlendir
   const loadMore = useCallback(() => {
@@ -200,6 +201,7 @@ export function useCursorPagination<T>({
       setCurrentPage(1);
     }
 
+    setResetCounter(c => c + 1);
     lastFetchId.current++;
   }, [mode]);
 

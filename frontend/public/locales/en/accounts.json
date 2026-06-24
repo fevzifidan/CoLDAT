@@ -6,6 +6,35 @@
       "title": "Personal Identity Information",
       "description": "This information will be shown to other users in the projects and teams you are assigned to."
     },
+    "passwordChange": {
+      "title": "Security",
+      "description": "Update your password regularly to keep your account secure.",
+      "changeButton": "Change Password",
+      "cancelButton": "Cancel",
+    "fields": {
+        "currentPassword": "Current Password",
+        "currentPasswordPlaceholder": "Enter current password",
+        "newPassword": "New Password",
+        "newPasswordPlaceholder": "Enter new password",
+        "confirmPassword": "Confirm New Password",
+        "confirmPasswordPlaceholder": "Re-enter new password"
+    },
+    "buttons": {
+        "change": "Change Password",
+        "changing": "Changing Password..."
+    },
+    "notifications": {
+        "success": "Password changed successfully.",
+        "error": "An error occurred while changing the password.",
+        "wrongPassword": "Current password is incorrect."
+    },
+      "criteria": {
+        "length": "At least 8 characters",
+        "uppercase": "At least 1 uppercase letter",
+        "number": "At least 1 number",
+        "match": "Passwords match"
+      }
+    },
     "fields": {
       "firstName": "First Name",
       "firstNamePlaceholder": "Your first name",
