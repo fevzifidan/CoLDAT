@@ -22,8 +22,10 @@
     "error_needs_project": "You must first enter a project to create a dataset.",
     "success": "Dataset created successfully."
   },
-  "roles": {
+    "roles": {
     "admin": "Admin",
+    "annotator": "Annotator",
+    "viewer": "Viewer",
     "member": "Member"
   },
   "card": {
@@ -128,7 +130,29 @@
     "error_create": "Failed to create dataset.",
     "error_fetch_projects": "Failed to load projects."
   },
-    "project_page": {
+  "add_members_page": {
+    "title": "Add Team Members",
+    "subtitle": "Select and assign roles to project members",
+    "step1_title": "Select Members",
+    "step1_description": "Choose team members from the project to add to this dataset.",
+    "step2_title": "Assign Roles",
+    "step2_description": "Set the role for each selected member.",
+    "no_members": "No other members found in the project.",
+    "no_members_hint": "Add members to the project first.",
+    "no_selection": "No members selected. Please go back.",
+    "project_member": "Project Member",
+    "selected_count": "{{count}} member(s) selected",
+    "add_members_button": "Add Members",
+    "add_success": "{{count}} member(s) added successfully.",
+    "add_partial": "{{succeeded}} member(s) added, {{failed}} failed.",
+    "add_error": "Failed to add members.",
+    "table": {
+      "user": "User",
+      "role_in_project": "Role in Project",
+      "role": "Role"
+    }
+  },
+  "project_page": {
     "manage_linked": "Linked Datasets Management",
     "active_datasets": "Active Datasets",
     "pipeline_status": "Pipeline Status",

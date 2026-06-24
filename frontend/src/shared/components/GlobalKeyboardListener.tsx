@@ -29,9 +29,13 @@ export const GlobalKeyboardListener = () => {
       }
       if (e.key === 'Shift') setKeyPressed('Shift', true);
 
-      // ── SAM Tool Shortcuts ────────────────────────────────────────────
+            // ── SAM Tool Shortcuts ────────────────────────────────────────────
       if (!isInput) {
         const state = useAppStore.getState();
+
+        // 🔒 Read-only modda SAM annotation oluşturma kısayollarını blokla
+        if (state.isReadOnly) return;
+
         const activeTool = state.activeTool;
         const samMaskData = state.samMaskData;
         const samLogitData = state.samLogitData;

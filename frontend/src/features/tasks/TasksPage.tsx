@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Loader2, AlertCircle, Layers, CircleDot, Play, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Search, Plus, Loader2, AlertCircle, Layers, CircleDot, Play, CheckCircle2, XCircle, Send } from "lucide-react";
 import { SelectFilter, type SelectFilterOption } from '@/shared/components/SelectFilter';
 
 // Bileşen ve Servis Entegrasyonları
@@ -111,8 +111,8 @@ const fetchTasks = async () => {
     const searchTarget = `${task.id} ${task.dataset_id} ${task.assignee_username || ''}`.toLowerCase();
     const matchesSearch = searchTarget.includes(searchQuery.toLowerCase());
     
-        // API'den gelen statüler (lowercase: assigned, in_progress, approval_pending, completed, rejected)
-        const taskStatus = task.status?.toLowerCase() ?? "";
+    // API'den gelen statüler (lowercase: assigned, in_progress, submitted, approved, rejected)
+    const taskStatus = task.status?.toLowerCase() ?? "";
     const matchesProgress = progressFilter === "ALL" || taskStatus === progressFilter;
     
     return matchesSearch && matchesProgress;
@@ -129,7 +129,7 @@ const fetchTasks = async () => {
           {t('tasks:title', 'Tasks Workspace')}
         </h1>
         
-                <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Arama Kutusu */}
           <div className="relative w-64">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -141,32 +141,32 @@ const fetchTasks = async () => {
             />
           </div>
 
-                    {/* Yeni Görev Oluştur Butonu - CreateTaskPage sayfasına yönlendirir */}
+          {/* Yeni Görev Oluştur Butonu - CreateTaskPage sayfasına yönlendirir */}
           <Button 
             onClick={() => navigate('/tasks/new')}
             className="bg-primary hover:bg-primary/90 h-9 font-medium shadow-sm gap-1.5 text-primary-foreground"
           >
-            <Plus size={16} />
-                        {t('tasks:create_new', 'Create New Task')}
+          <Plus size={16} />
+            {t('tasks:create_new', 'Create New Task')}
           </Button>
 
-                                        {/* Statü Filtresi */}
-                                        <SelectFilter
-                      value={progressFilter}
-                      onChange={(v) => {
-                        setProgressFilter(v);
-                        setDisplayLimit(4);
-                      }}
-                      triggerClassName="w-44"
-                      options={[
-                        { value: 'ALL', label: t('tasks:filter.all_progress', 'All Statuses'), icon: <Layers className="h-3.5 w-3.5" /> },
-                        { value: 'assigned', label: t('tasks:filter.status.assigned', 'ASSIGNED'), icon: <CircleDot className="h-3.5 w-3.5" /> },
-                        { value: 'in_progress', label: t('tasks:filter.status.in_progress', 'IN PROGRESS'), icon: <Play className="h-3.5 w-3.5" /> },
-                                                { value: 'approval_pending', label: t('tasks:filter.status.approval_pending', 'PENDING APPROVAL'), icon: <Clock className="h-3.5 w-3.5" /> },
-                        { value: 'completed', label: t('tasks:filter.status.completed', 'COMPLETED'), icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
-                        { value: 'rejected', label: t('tasks:filter.status.rejected', 'REJECTED'), icon: <XCircle className="h-3.5 w-3.5" /> },
-                      ]}
-                    />
+          {/* Statü Filtresi */}
+          <SelectFilter
+            value={progressFilter}
+            onChange={(v) => {
+              setProgressFilter(v);
+              setDisplayLimit(4);
+            }}
+            triggerClassName="w-44"
+            options={[
+              { value: 'ALL', label: t('tasks:filter.all_progress', 'All Statuses'), icon: <Layers className="h-3.5 w-3.5" /> },
+              { value: 'assigned', label: t('tasks:filter.status.assigned', 'ASSIGNED'), icon: <CircleDot className="h-3.5 w-3.5" /> },
+              { value: 'in_progress', label: t('tasks:filter.status.in_progress', 'IN PROGRESS'), icon: <Play className="h-3.5 w-3.5" /> },
+              { value: 'submitted', label: t('tasks:filter.status.submitted', 'SUBMITTED'), icon: <Send className="h-3.5 w-3.5" /> },
+              { value: 'approved', label: t('tasks:filter.status.approved', 'APPROVED'), icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+              { value: 'rejected', label: t('tasks:filter.status.rejected', 'REJECTED'), icon: <XCircle className="h-3.5 w-3.5" /> },
+            ]}
+          />
         </div>
       </div>
 

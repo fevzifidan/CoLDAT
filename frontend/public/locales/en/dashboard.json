@@ -25,9 +25,11 @@
     "dataset": "DATASET"
   },
   "status": {
-    "new": "NEW",
+    "assigned": "ASSIGNED",
     "in_progress": "IN PROGRESS",
-    "completed": "COMPLETED"
+    "submitted": "SUBMITTED",
+    "approved": "APPROVED",
+    "rejected": "REJECTED"
   },
   "roles": {
     "all_roles": "All Roles",

@@ -16,7 +16,7 @@ export function useTaskLifecycle(taskId: string) {
         ? await import('../services/annotation.api.mock')
         : await import('../services/annotation.api');
         
-      await api.updateTaskStatus(taskId, 'approval_pending', note);
+      await api.updateTaskStatus(taskId, 'submitted', note);
       notificationService.success('Task submitted for approval.');
     } catch (error) {
       console.error('Failed to submit task:', error);

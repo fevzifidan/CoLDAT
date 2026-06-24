@@ -3,13 +3,14 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCallback, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Tag, Database, ArrowLeft, ListTodo, Settings } from "lucide-react";
+import { Tag, Database, ArrowLeft, ListTodo, Settings, Users } from "lucide-react";
 import { RoleProvider } from '@/context/PermissionContext';
 import { type BackendRole } from '@/shared/roles';
 import TaxonomyManager from '@/features/datasets/taxonomy/TaxonomyManager';
 import ProjectDatasetsPage from './ProjectDatasetsPage';
 import { ProjectTasksTab } from './tabs/ProjectTasksTab';
 import GeneralSettings from './tabs/GeneralSettings';
+import ProjectMembersManager from '@/features/projects/components/ProjectMembersManager';
 import { projectService } from './services/projectService';
 import notificationService from '@/shared/services/notification/notification.service';
 
@@ -68,8 +69,9 @@ const ProjectDetailPage = () => {
     }
   };
 
-  const tabs = [
+    const tabs = [
     { value: 'general', label: t('pages:project_detail.tabs.general', 'General'), icon: Settings },
+    { value: 'members', label: t('pages:project_detail.tabs.members', 'Members'), icon: Users },
     { value: 'datasets', label: t('pages:project_detail.tabs.datasets', 'Datasets'), icon: Database },
     { value: 'taxonomy', label: t('pages:project_detail.tabs.taxonomy', 'Taxonomy'), icon: Tag },
     { value: 'tasks', label: t('pages:project_detail.tabs.tasks', 'Tasks'), icon: ListTodo },
@@ -124,7 +126,7 @@ const ProjectDetailPage = () => {
 
           {/* Tab Content */}
           <div className="pb-20">
-            {activeTab === 'general' && (
+                        {activeTab === 'general' && (
               loadingProject ? (
                 <div className="flex justify-center items-center py-24 text-primary font-medium">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current mr-3" />
@@ -141,6 +143,10 @@ const ProjectDetailPage = () => {
                   {t('pages:project_detail.not_found', 'Project Not Found.')}
                 </div>
               )
+            )}
+
+                        {activeTab === 'members' && (
+              <ProjectMembersManager projectId={projectId} ownerId={project?.owner_id} />
             )}
 
                                                 {activeTab === 'datasets' && (

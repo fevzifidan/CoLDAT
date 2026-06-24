@@ -123,6 +123,17 @@ class ProjectMemberListCreateView(APIView):
 
         memberships = get_project_memberships(project=project)
 
+        # exclude_dataset_members query parametresi: belirtilen dataset'in mevcut
+        # üyelerini sonuçtan hariç tutar (AddDatasetMembersPage için)
+        exclude_dataset_id = request.query_params.get("exclude_dataset_members")
+        if exclude_dataset_id:
+            from apps.datasets.models import DatasetMember
+
+            existing_user_ids = DatasetMember.objects.filter(
+                dataset_id=exclude_dataset_id,
+            ).values_list("user_id", flat=True)
+            memberships = memberships.exclude(user_id__in=existing_user_ids)
+
         return Response(
             ProjectMembershipSerializer(memberships, many=True).data,
             status=status.HTTP_200_OK,
@@ -176,3 +187,4 @@ class ProjectMemberDetailView(APIView):
 
     def get_permissions(self):
         return [IsProjectAdmin()]
+

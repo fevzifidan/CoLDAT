@@ -3,7 +3,7 @@ export interface Project {
   name: string;
   description?: string; // YAML'da mevcut
   task: string;
-  status: "In Progress" | "Completed" | "New";
+  status: "Assigned" | "In Progress" | "Submitted" | "Approved" | "Rejected"; // YAML standardı için string
   count: number;
   role: 'admin' | 'annotator' | 'viewer'; // YAML: ProjectMember Role
   type: 'project' | 'dataset';
@@ -27,7 +27,7 @@ export const projects: Project[] = [
     name: "Medical NLP Labeling", 
     description: "Entity recognition for medical prescriptions and reports.",
     task: "Entity Recognition", 
-    status: "Completed", 
+    status: "Approved", 
     count: 500,
     role: "annotator",
     type: "project",
@@ -38,7 +38,7 @@ export const projects: Project[] = [
     name: "Autonomous Vehicle Relations", 
     description: "Analyzing semantic relations between vehicles and pedestrians.",
     task: "Semantic Relation", 
-    status: "New", 
+    status: "Assigned", 
     count: 0,
     role: "viewer",
     type: "project",
@@ -49,7 +49,7 @@ export const projects: Project[] = [
     name: "Autonomous Doom Relations", 
     description: "Dataset for in-game object relationship mapping.",
     task: "Semantic Relation", 
-    status: "Completed", 
+    status: "Approved", 
     count: 20,
     role: "admin",
     type: "project",
@@ -63,7 +63,7 @@ export const projects: Project[] = [
     count: 850,
     role: "admin",
     type: "dataset",
-    status: "Completed",
+    status: "Approved",
     created_at: "2024-04-05T16:45:00Z"
   },
 ];

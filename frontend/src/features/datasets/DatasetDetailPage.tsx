@@ -137,8 +137,7 @@ const DatasetDetailPage = () => {
             </p>
           </div>
         </div>
-
-                <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <Guard permission="dataset:delete">
             <Button
               variant="outline"
@@ -245,7 +244,7 @@ const DatasetDetailPage = () => {
           </CardContent>
         </Card>
       </div>
-            {/* Upload Images Section */}
+      {/* Upload Images Section */}
       <Guard permission="asset:add">
         <DatasetImageUploader
           datasetId={dataset.id}
@@ -261,7 +260,7 @@ const DatasetDetailPage = () => {
         onImagesChanged={handleImagesChanged}
       />
 
-            {/* Team Members Section */}
+      {/* Team Members Section */}
       <DatasetMemberManager
         datasetId={dataset.id}
         currentUserRole={dataset.role}

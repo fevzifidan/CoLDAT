@@ -12,6 +12,10 @@ class DatasetSerializer(serializers.ModelSerializer):
     )
     role = serializers.SerializerMethodField()
 
+    current_version = serializers.SerializerMethodField()
+    total_images = serializers.IntegerField(source="_total_images", read_only=True)
+    annotated_images = serializers.IntegerField(source="_annotated_images", read_only=True)
+
     class Meta:
         model = Dataset
         fields = [
@@ -22,6 +26,9 @@ class DatasetSerializer(serializers.ModelSerializer):
             "created_by_id",
             "created_by_username",
             "role",
+            "current_version",
+            "total_images",
+            "annotated_images",
             "is_deleted",
             "created_at",
             "updated_at",
@@ -32,6 +39,9 @@ class DatasetSerializer(serializers.ModelSerializer):
             "created_by_id",
             "created_by_username",
             "role",
+            "current_version",
+            "total_images",
+            "annotated_images",
             "is_deleted",
             "created_at",
             "updated_at",
@@ -55,6 +65,10 @@ class DatasetSerializer(serializers.ModelSerializer):
             return "admin"
 
         return None
+
+    def get_current_version(self, obj):
+        latest_version = obj.versions.order_by("-created_at").first()
+        return latest_version.version_tag if latest_version else None
 
 class DatasetCreateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)

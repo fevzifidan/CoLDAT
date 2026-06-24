@@ -107,7 +107,7 @@ export interface TaskImagesResponse {
   next_cursor: string | null;
 }
 
-export type TaskStatus = 'open' | 'in_progress' | 'approval_pending' | 'completed' | 'rejected';
+export type TaskStatus = 'assigned' | 'in_progress' | 'submitted' | 'approved' | 'rejected';
 
 export interface TaxonomyResponse {
   classes: Array<{

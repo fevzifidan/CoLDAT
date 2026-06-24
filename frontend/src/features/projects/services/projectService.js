@@ -68,10 +68,51 @@ export const projectService = {
 
         // API spec: direkt obje döner (axios interceptor zaten response.data'yı unwrap eder)
     const userData = await apiService.get(
-      `users/lookup/?username=${encodeURIComponent(query)}`
+      `users/lookup/?q=${encodeURIComponent(query)}`
     );
 
-    return userData ? [userData] : [];
+    return userData ? userData : [];
+  },
+
+  /**
+   * ================= PROJECT MEMBERS =================
+   */
+
+    /**
+   * GET /projects/{projectId}/members/
+   * Proje üyelerini listeler.
+   * @param {string} projectId
+   * @param {Object} [params] - { limit?, after?, exclude_dataset_members?: string }
+   *   exclude_dataset_members: Belirtilen dataset ID'sine sahip dataset'in mevcut
+   *   üyelerini sonuçtan hariç tutar (AddDatasetMembersPage için).
+   */
+  getProjectMembers: async (projectId, params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.limit != null) queryParams.set('limit', String(params.limit));
+    if (params.after) queryParams.set('after', params.after);
+    if (params.exclude_dataset_members) queryParams.set('exclude_dataset_members', params.exclude_dataset_members);
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return apiService.get(`projects/${projectId}/members/${query}`);
+  },
+
+  /**
+   * POST /projects/{projectId}/members/
+   * Projeye yeni üye ekler.
+   * @param {string} projectId
+   * @param {Object} payload - { user_id: string }
+   */
+  addProjectMember: async (projectId, payload) => {
+    return apiService.post(`projects/${projectId}/members/`, payload);
+  },
+
+  /**
+   * DELETE /projects/{projectId}/members/{membershipId}/
+   * Projeden üye çıkarır.
+   * @param {string} projectId
+   * @param {string} membershipId - ProjectMembership UUID
+   */
+  removeProjectMember: async (projectId, membershipId) => {
+    return apiService.delete(`projects/${projectId}/members/${membershipId}/`);
   },
 
   /**

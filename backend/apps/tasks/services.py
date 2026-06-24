@@ -194,7 +194,7 @@ def update_task_status(
     if is_assignee:
         allowed_assignee_transitions = {
             Task.Status.ASSIGNED: [Task.Status.IN_PROGRESS],
-            Task.Status.IN_PROGRESS: [Task.Status.APPROVAL_PENDING],
+            Task.Status.IN_PROGRESS: [Task.Status.SUBMITTED],
             Task.Status.REJECTED: [Task.Status.IN_PROGRESS],
         }
 
@@ -208,8 +208,8 @@ def update_task_status(
         # Admin flow
     elif is_manager:
         allowed_manager_transitions = {
-            Task.Status.APPROVAL_PENDING: [
-                Task.Status.COMPLETED,
+            Task.Status.SUBMITTED: [
+                Task.Status.APPROVED,
                 Task.Status.REJECTED,
             ],
             Task.Status.REJECTED: [
@@ -224,11 +224,10 @@ def update_task_status(
                 f"Admin cannot change task status from {current_status} to {new_status}."
             )
 
-        if new_status == Task.Status.COMPLETED:
-            if not task_has_annotations(task=task):
-                raise ValidationError(
-                    "Task cannot be completed because none of its images have annotations."
-                )
+        if new_status == Task.Status.APPROVED and not task_has_annotations(task=task):
+            raise ValidationError(
+                "Task cannot be approved because none of its images have annotations."
+            )
 
     else:
         raise ValidationError("You do not have permission to update this task status.")
@@ -245,7 +244,7 @@ def update_task_status(
         task.started_at = timezone.now()
         update_fields.append("started_at")
 
-    if new_status == Task.Status.COMPLETED and task.completed_at is None:
+    if new_status == Task.Status.APPROVED and task.completed_at is None:
         task.completed_at = timezone.now()
         update_fields.append("completed_at")
 

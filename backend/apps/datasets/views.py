@@ -5,7 +5,10 @@ from rest_framework.permissions import IsAuthenticated
 
 from apps.common.pagination import UUIDv7PaginatedAPIViewMixin
 
+from django.shortcuts import get_object_or_404
+
 from .permissions import IsDatasetProjectAdmin
+from .models import Dataset, DatasetMember
 from .selectors import (
     get_dataset_for_user,
     get_dataset_member_by_id,
@@ -244,7 +247,7 @@ class DatasetMemberDetailView(APIView):
             status=status.HTTP_200_OK,
         )
 
-    def delete(self, request, dataset_id, member_id):
+    def delete(self, request, dataset_id, member_id=None):
         dataset = get_dataset_for_user(
             dataset_id=dataset_id,
             user=request.user,
@@ -252,10 +255,27 @@ class DatasetMemberDetailView(APIView):
 
         self.check_object_permissions(request, dataset)
 
-        membership = get_dataset_member_by_id(
-            dataset=dataset,
-            member_id=member_id,
-        )
+        # Support both:
+        #   Standard:  DELETE /datasets/{id}/members/<member_id>/
+        #   Frontend:  DELETE /datasets/{id}/members/?userId=<user_id>
+        user_id = request.query_params.get("userId")
+
+        if member_id:
+            membership = get_dataset_member_by_id(
+                dataset=dataset,
+                member_id=member_id,
+            )
+        elif user_id:
+            membership = get_object_or_404(
+                DatasetMember,
+                dataset=dataset,
+                user_id=user_id,
+            )
+        else:
+            return Response(
+                {"detail": "Either member_id path parameter or userId query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         remove_dataset_member(membership=membership)
 

@@ -24,10 +24,11 @@ export const datasetMemberService = {
   },
 
   /**
-   * DELETE /datasets/{datasetId}/members?userId=<userId>
-   * Removes a member from the dataset
+   * DELETE /datasets/{datasetId}/members/{memberId}/
+   * Removes a member from the dataset using the membership ID (standard endpoint)
    */
-  removeMember: async (datasetId: string, userId: string) => {
-    return apiService.delete(`/datasets/${datasetId}/members/?userId=${userId}`, { silent: true } as any);
+  removeMember: async (datasetId: string, memberId: string) => {
+    return apiService.delete(`/datasets/${datasetId}/members/${memberId}/`, { silent: true } as any);
   }
 };
+

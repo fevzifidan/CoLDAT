@@ -102,7 +102,7 @@ export const ProjectCard = ({
       return 'border-amber-500/20 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20';
     }
 
-    if (normalized === 'completed') {
+    if (normalized === 'approved') {
       return 'border-emerald-500/20 text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20';
     }
 

@@ -242,8 +242,8 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     switch (status?.toUpperCase()) {
       case "ASSIGNED": return "bg-primary/10 text-primary border-primary/20";
       case "IN_PROGRESS": return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-      case "APPROVAL_PENDING": return "bg-muted text-muted-foreground border-border";
-      case "COMPLETED": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+      case "SUBMITTED": return "bg-muted text-muted-foreground border-border";
+      case "APPROVED": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
       case "REJECTED": return "bg-destructive/10 text-destructive border-destructive/20";
       default: return "bg-muted text-muted-foreground border-border";
     }
@@ -276,7 +276,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     );
   }
 
-  // Backend'den gelen user_role bilgisini RoleProvider'a aktarıyoruz.
+  // Backend'den gelen role bilgisini RoleProvider'a aktarıyoruz.
   // Örn: "admin" → tüm yönetici butonları (Approve/Reject, Reassign, Add Asset, Revoke) görünür.
   // Örn: "annotator" → sadece "Submit for Approval" butonu görünür.
   // Örn: null/undefined → hiçbir yönetici butonu görünmez (güvenli varsayılan).
@@ -462,7 +462,7 @@ const TasksDetailPageInner = ({
               {task.deadline && (
                 <div className="flex justify-between border-b pb-2 border-border items-center">
                   <span className="text-muted-foreground">{t('tasks:detail.deadline', 'Deadline:')}</span>
-                  <span className={`font-semibold text-xs ${new Date(task.deadline) < new Date() && task.status !== 'completed' ? 'text-destructive' : ''}`}>
+                  <span className={`font-semibold text-xs ${new Date(task.deadline) < new Date() && task.status !== 'approved' ? 'text-destructive' : ''}`}>
                     <CalendarDays size={12} className="inline mr-1" />
                     {new Date(task.deadline).toLocaleDateString(undefined, {
                       year: 'numeric',
@@ -545,7 +545,7 @@ const TasksDetailPageInner = ({
               {task.status?.toLowerCase() === "in_progress" && (
                 <Button 
                   disabled={isSubmitting}
-                  onClick={() => onUpdateStatus("approval_pending")}
+                  onClick={() => onUpdateStatus("submitted")}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs h-9 gap-1.5"
                 >
                   <Send size={14} /> {t('tasks:detail.submit_for_approval', 'Submit for Approval')}
@@ -554,11 +554,11 @@ const TasksDetailPageInner = ({
 
               {/* Admin Rolü için Onay/Red Mekanizmaları */}
               <Guard permission="task:approve-reject">
-                {task.status?.toLowerCase() === "approval_pending" && (
+                {task.status?.toLowerCase() === "submitted" && (
                   <div className="flex gap-2">
                     <Button 
                       disabled={isSubmitting}
-                      onClick={() => onUpdateStatus("completed")}
+                      onClick={() => onUpdateStatus("approved")}
                       className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs h-9 gap-1.5"
                     >
                       <CheckCircle2 size={14} /> {t('tasks:detail.approve', 'Approve')}
@@ -576,7 +576,7 @@ const TasksDetailPageInner = ({
               </Guard>
 
               {/* Reset mekanizması */}
-              {(["completed", "rejected", "assigned"] as string[]).includes(task.status?.toLowerCase() ?? "") && (
+              {(["approved", "rejected", "assigned"] as string[]).includes(task.status?.toLowerCase() ?? "") && (
                 <Button 
                   disabled={isSubmitting}
                   onClick={() => onUpdateStatus("in_progress")}

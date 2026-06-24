@@ -45,6 +45,7 @@ import { datasetMemberService } from '@/features/datasets/services/datasetMember
 import { userLookupService } from '@/features/tasks/services/userLookupService';
 
 export interface DatasetMember {
+  id: string;
   user_id: string;
   username: string;
   role: 'annotator' | 'viewer' | 'admin';
@@ -72,8 +73,8 @@ const MemberSelectionStep = ({ datasetId, onSelect, selectedMember }: MemberSele
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
 
-  // Remove member
-  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
+    // Remove member
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
 
   const fetchMembers = useCallback(async () => {
     setLoading(true);
@@ -150,12 +151,12 @@ const MemberSelectionStep = ({ datasetId, onSelect, selectedMember }: MemberSele
     }
   };
 
-  // --- Remove member ---
-  const handleRemoveMember = async (userId: string) => {
+    // --- Remove member ---
+  const handleRemoveMember = async (memberId: string) => {
     if (!window.confirm(t('tasks:create.member_remove_confirm', 'Remove this member from the dataset?'))) return;
-    setRemovingUserId(userId);
+    setRemovingMemberId(memberId);
     try {
-      await datasetMemberService.removeMember(datasetId, userId);
+      await datasetMemberService.removeMember(datasetId, memberId);
       notificationService.success(
         t('tasks:create.member_remove_success', 'Member removed successfully.')
       );
@@ -164,7 +165,7 @@ const MemberSelectionStep = ({ datasetId, onSelect, selectedMember }: MemberSele
       const msg = err?.response?.data?.message || err?.message || 'Failed to remove member.';
       notificationService.error(msg);
     } finally {
-      setRemovingUserId(null);
+      setRemovingMemberId(null);
     }
   };
 
@@ -360,11 +361,11 @@ const MemberSelectionStep = ({ datasetId, onSelect, selectedMember }: MemberSele
               </TableRow>
             </TableHeader>
             <TableBody>
-              {members.map((member) => {
+                            {members.map((member) => {
                 const isSelected = selectedUserId === member.user_id;
-                const isRemoving = removingUserId === member.user_id;
+                const isRemoving = removingMemberId === member.id;
                 return (
-                  <TableRow key={member.user_id} className={isSelected ? 'bg-primary/5' : undefined}>
+                  <TableRow key={member.id} className={isSelected ? 'bg-primary/5' : undefined}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9 border">
@@ -421,7 +422,7 @@ const MemberSelectionStep = ({ datasetId, onSelect, selectedMember }: MemberSele
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                            onClick={() => handleRemoveMember(member.user_id)}
+                                                        onClick={() => handleRemoveMember(member.id)}
                             disabled={isRemoving}
                           >
                             {isRemoving ? (

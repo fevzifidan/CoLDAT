@@ -1,10 +1,8 @@
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 
-from apps.projects.models import ProjectMembership
 from apps.projects.selectors import get_project_for_user
-
 from .models import Dataset, DatasetMember, DatasetVersion, DatasetAPIKey
 
 
@@ -14,6 +12,17 @@ def get_project_datasets_for_user(*, project_id, user):
     datasets = Dataset.objects.filter(
         project=project,
         is_deleted=False,
+    ).annotate(
+        _total_images=Count(
+            "assets",
+            filter=Q(assets__is_deleted=False),
+            distinct=True,
+        ),
+        _annotated_images=Count(
+            "assets",
+            filter=Q(assets__is_deleted=False, assets__annotation_objects__isnull=False),
+            distinct=True,
+        ),
     )
 
     return project, datasets
@@ -22,30 +31,51 @@ def get_project_datasets_for_user(*, project_id, user):
 def get_datasets_for_user(*, user, search=None):
     datasets = (
         Dataset.objects.filter(
-            Q(project__memberships__user=user)
-            | Q(memberships__user=user),
+            Q(memberships__user=user)
+            | Q(project__owner=user),
             is_deleted=False,
             project__is_archived=False,
         )
         .select_related("project", "created_by")
+        .annotate(
+            _total_images=Count(
+                "assets",
+                filter=Q(assets__is_deleted=False),
+                distinct=True,
+            ),
+            _annotated_images=Count(
+                "assets",
+                filter=Q(assets__is_deleted=False, assets__annotation_objects__isnull=False),
+                distinct=True,
+            ),
+        )
         .distinct()
         .order_by("-created_at")
     )
 
     if search:
         datasets = datasets.filter(name__icontains=search)
-
     return datasets
 
 
 def get_dataset_for_user(*, dataset_id, user):
     datasets = Dataset.objects.filter(
-        Q(project__memberships__user=user)
-        | Q(memberships__user=user),
+        Q(memberships__user=user)
+        | Q(project__owner=user),
         is_deleted=False,
         project__is_archived=False,
+    ).annotate(
+        _total_images=Count(
+            "assets",
+            filter=Q(assets__is_deleted=False),
+            distinct=True,
+        ),
+        _annotated_images=Count(
+            "assets",
+            filter=Q(assets__is_deleted=False, assets__annotation_objects__isnull=False),
+            distinct=True,
+        ),
     ).distinct()
-
     return get_object_or_404(
         datasets,
         id=dataset_id,
@@ -70,7 +100,6 @@ def get_dataset_member_by_id(*, dataset, member_id):
         id=member_id,
         dataset=dataset,
     )
-
 def get_dataset_versions_for_user(*, dataset_id, user):
     dataset = get_dataset_for_user(
         dataset_id=dataset_id,
@@ -146,3 +175,4 @@ def get_dataset_api_key_for_user(*, dataset_id, key_id, user):
     )
 
     return dataset, api_key
+

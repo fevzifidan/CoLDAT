@@ -17,17 +17,18 @@ export const memberService = {
       return response?.data || response;
   },
 
-  // PATCH /datasets/{datasetId}/members/{userId}/
-  updateMember: async (datasetId, userId, role) => {
-    const response = await apiService.patch(`/datasets/${datasetId}/members/${userId}/`, { role });
+  // PATCH /datasets/{datasetId}/members/{memberId}/
+  updateMember: async (datasetId, memberId, role) => {
+    const response = await apiService.patch(`/datasets/${datasetId}/members/${memberId}/`, { role });
     return response?.data || response;
   },
 
-        /**
-   * DELETE /datasets/{datasetId}/members?userId=<userId>
+  /**
+   * DELETE /datasets/{datasetId}/members/{memberId}/
+   * Dataset'ten bir üyeyi membership ID'si ile siler.
    */
-  removeMember: async (datasetId, userId) => {
-    const response = await apiService.delete(`/datasets/${datasetId}/members/?userId=${userId}`);
+  removeMember: async (datasetId: string, memberId: string) => {
+    const response = await apiService.delete(`/datasets/${datasetId}/members/${memberId}/`);
     // API spec: 204 No Content
     return response;
     }

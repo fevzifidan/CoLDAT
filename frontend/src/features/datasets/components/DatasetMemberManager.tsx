@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -66,16 +66,11 @@ const ROLE_OPTIONS = [
 const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManagerProps) => {
   const { t } = useTranslation(['datasets', 'common']);
   const { hasPermission } = usePermission();
+  const navigate = useNavigate();
 
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Add member modal state
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [newUsername, setNewUsername] = useState('');
-  const [newRole, setNewRole] = useState('annotator');
-  const [addingMember, setAddingMember] = useState(false);
 
   // Edit role state
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
@@ -104,27 +99,6 @@ const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManag
     loadMembers();
   }, [loadMembers]);
 
-  const handleAddMember = async () => {
-    if (!newUsername.trim()) return;
-    setAddingMember(true);
-    try {
-      await datasetService.addDatasetMember(datasetId, {
-        username: newUsername.trim(),
-        role: newRole,
-      });
-      notificationService.success(t('datasets:member_manager.add_success', 'Member added successfully.'));
-      setAddModalOpen(false);
-      setNewUsername('');
-      setNewRole('annotator');
-      loadMembers();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || 'An error occurred.';
-      notificationService.error(msg);
-    } finally {
-      setAddingMember(false);
-    }
-  };
-
   const handleRoleChange = async (memberId: string, newRoleValue: string) => {
     setEditingMemberId(memberId);
     try {
@@ -139,11 +113,11 @@ const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManag
     }
   };
 
-  const handleRemoveMember = async () => {
+    const handleRemoveMember = async () => {
     if (!deletingMemberId) return;
     setDeletingMember(true);
     try {
-      await datasetService.removeDatasetMember(datasetId, deletingMemberId);
+      await datasetService.removeDatasetMemberById(datasetId, deletingMemberId);
       notificationService.success(t('datasets:member_manager.remove_success', 'Member removed successfully.'));
       setDeletingMemberId(null);
       loadMembers();
@@ -180,10 +154,10 @@ const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManag
             {t('datasets:member_manager.description', 'Manage who has access to this dataset')}
           </CardDescription>
         </div>
-                <Guard permission="member:add">
+                                <Guard permission="member:add">
           <Button
             size="sm"
-            onClick={() => setAddModalOpen(true)}
+            onClick={() => navigate(`/datasets/${datasetId}/add-members`)}
                         className="gap-1.5 h-8 text-xs"
           >
             <UserPlus size={13} />
@@ -283,11 +257,11 @@ const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManag
                         </SelectContent>
                       </Select>
 
-                      <Button
+                                            <Button
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                                onClick={() => setDeletingMemberId(member.user_id)}
+                                                onClick={() => setDeletingMemberId(member.id)}
                         title={t('common:actions.remove', 'Remove')}
                       >
                         <X size={12} />
@@ -307,72 +281,6 @@ const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManag
           </div>
         )}
       </CardContent>
-
-      {/* Add Member Dialog */}
-      <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-              <UserPlus size={16} />
-              {t('datasets:member_manager.add_member_title', 'Add Team Member')}
-            </DialogTitle>
-            <DialogDescription>
-              {t('datasets:member_manager.add_member_desc', 'Enter the username and assign a role.')}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-                            <label className="text-sm font-medium text-foreground">{t('datasets:member_manager.username_label', 'Username')}</label>
-              <Input
-                placeholder={t('datasets:member_manager.username_placeholder', 'Enter username...')}
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                autoFocus
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">{t('datasets:member_manager.role_label', 'Role')}</label>
-              <Select value={newRole} onValueChange={setNewRole}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                                    {ROLE_OPTIONS.map((role) => (
-                    <SelectItem key={role.value} value={role.value}>
-                      <span className={role.color}>{t(role.labelKey, role.defaultLabel)}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setAddModalOpen(false);
-                setNewUsername('');
-                setNewRole('annotator');
-              }}
-                        >
-              {t('common:actions.cancel', 'Cancel')}
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleAddMember}
-              disabled={!newUsername.trim() || addingMember}
-              className="gap-1.5"
-            >
-              {addingMember && <Loader2 size={14} className="animate-spin" />}
-              {t('datasets:member_manager.add_button', 'Add Member')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Remove Member Confirmation Dialog */}
       <Dialog open={!!deletingMemberId} onOpenChange={(open) => !open && setDeletingMemberId(null)}>

@@ -88,7 +88,7 @@ const loadAssets = async () => {
       await notificationService.promise(
         assetService.bulkUpdateStatus(updates),
         {
-                    loading: t("datasets:assets.notifications.sending_batch", 'Sending batch upload status to backend...'),
+          loading: t("datasets:assets.notifications.sending_batch", 'Sending batch upload status to backend...'),
           success: t("datasets:assets.notifications.batch_completed", 'Batch status synchronization completed!'),
           error: (err: any) =>
             err?.response?.data?.message || t("datasets:assets.notifications.batch_error", 'Failed to process bulk status update.'),

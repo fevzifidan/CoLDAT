@@ -22,8 +22,10 @@
     "error_needs_project": "Veri seti oluşturabilmek için öncelikle bir projenin içerisine girmelisiniz.",
     "success": "Veri seti başarıyla oluşturuldu."
   },
-  "roles": {
+    "roles": {
     "admin": "Admin",
+    "annotator": "Annotatör",
+    "viewer": "İzleyici",
     "member": "Üye"
   },
   "card": {
@@ -128,7 +130,29 @@
     "error_create": "Veri seti oluşturulamadı.",
     "error_fetch_projects": "Projeler yüklenemedi."
   },
-    "project_page": {
+  "add_members_page": {
+    "title": "Takım Üyeleri Ekle",
+    "subtitle": "Proje üyelerini seçin ve rollerini atayın",
+    "step1_title": "Üyeleri Seç",
+    "step1_description": "Bu veri setine eklemek için projedeki takım üyelerini seçin.",
+    "step2_title": "Rolleri Ata",
+    "step2_description": "Seçilen her üye için rol belirleyin.",
+    "no_members": "Projede başka üye bulunamadı.",
+    "no_members_hint": "Önce projeye üye ekleyin.",
+    "no_selection": "Hiç üye seçilmedi. Lütfen geri gidin.",
+    "project_member": "Proje Üyesi",
+    "selected_count": "{{count}} üye seçildi",
+    "add_members_button": "Üyeleri Ekle",
+    "add_success": "{{count}} üye başarıyla eklendi.",
+    "add_partial": "{{succeeded}} üye eklendi, {{failed}} başarısız.",
+    "add_error": "Üyeler eklenirken hata oluştu.",
+    "table": {
+      "user": "Kullanıcı",
+      "role_in_project": "Projedeki Rolü",
+      "role": "Rol"
+    }
+  },
+  "project_page": {
     "manage_linked": "Bağlı Veri Seti Yönetimi",
     "active_datasets": "Aktif Veri Setleri",
     "pipeline_status": "İşlem Hattı Durumu",

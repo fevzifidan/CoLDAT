@@ -96,7 +96,7 @@ export default function AnnotationToolbar({
   const { t } = useTranslation('annotation');
   const { handleExport } = useExport();
 
-        const canUndo = historyIndex > 0;
+  const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
 
   const handleTogglePan = useCallback(() => setActiveTool('pan'), [setActiveTool]);
@@ -159,7 +159,7 @@ export default function AnnotationToolbar({
 
           <Separator orientation="vertical" className="h-5 mx-1" />
 
-                    <Button variant="ghost" size="icon" onClick={resetViewer} className="h-8 w-8 text-muted-foreground hover:text-foreground" title={t('toolbar.resetView')}>
+          <Button variant="ghost" size="icon" onClick={resetViewer} className="h-8 w-8 text-muted-foreground hover:text-foreground" title={t('toolbar.resetView')}>
             <RotateCcw size={16} />
           </Button>
         </div>
@@ -220,7 +220,7 @@ export default function AnnotationToolbar({
           </div>
         )}
 
-                <SettingsPopover />
+        <SettingsPopover />
 
         <Separator orientation="vertical" className="h-5" />
 
@@ -262,11 +262,11 @@ export default function AnnotationToolbar({
               {t('toolbar.save')}
             </Button>
 
-                        <Button
+            <Button
               size="sm"
               className="h-8 gap-1.5 text-xs bg-primary hover:bg-primary/90"
               onClick={onSubmit}
-              disabled={isSubmitting || isReadOnly || currentTask?.status === 'approval_pending' || currentTask?.status === 'completed'}
+              disabled={isSubmitting || currentTask?.status === 'submitted' || currentTask?.status === 'approved'}
               title={t('toolbar.submitTooltip')}
             >
               {isSubmitting

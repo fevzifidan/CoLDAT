@@ -56,7 +56,7 @@ const fetchAdminProjects = async (
 
   // Filter to admin-only projects
   const adminProjects = rawProjects.filter(
-    (p: any) => (p.user_role ?? "").toUpperCase() === "ADMIN"
+    (p: any) => (p.role ?? "").toUpperCase() === "ADMIN"
   );
 
   return {

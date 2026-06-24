@@ -8,8 +8,6 @@ import secrets
 from datetime import timedelta
 from django.utils import timezone
 
-from apps.projects.models import ProjectMembership
-
 from .models import Dataset, DatasetAPIKey, DatasetMember, DatasetVersion
 
 
@@ -30,22 +28,13 @@ def create_dataset(
         description=description,
     )
 
-    project_memberships = ProjectMembership.objects.filter(project=project)
-
-    dataset_members = [
-        DatasetMember(
-            dataset=dataset,
-            user=membership.user,
-            role=(
-                DatasetMember.Role.ADMIN
-                if membership.user_id == project.owner_id
-                else DatasetMember.Role.VIEWER
-            ),
-        )
-        for membership in project_memberships
-    ]
-
-    DatasetMember.objects.bulk_create(dataset_members)
+    # Sadece proje sahibi (owner) otomatik olarak admin rolüyle eklenir.
+    # Diğer proje üyeleri admin tarafından manuel olarak eklenmelidir.
+    DatasetMember.objects.create(
+        dataset=dataset,
+        user=project.owner,
+        role=DatasetMember.Role.ADMIN,
+    )
 
     return dataset
 

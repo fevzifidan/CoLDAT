@@ -99,9 +99,18 @@ deleteDataset: async (id) => {
     return response?.data || response;
   },
 
+        /**
+   * DELETE /datasets/{datasetId}/members/{memberId}/
+   * Dataset'ten bir üyeyi membership ID'si ile siler (standard endpoint).
+   */
+  removeDatasetMemberById: async (datasetId, memberId) => {
+    const response = await apiService.delete(`/datasets/${datasetId}/members/${memberId}/`);
+    return response;
+  },
+
     /**
    * DELETE /datasets/{datasetId}/members?userId=<userId>
-   * userId query parametresi olarak gönderilir (CoLDAT API spec).
+   * userId query parametresi olarak gönderilir (legacy, tercih edilmez).
    */
   removeDatasetMember: async (datasetId, userId) => {
     const response = await apiService.delete(`/datasets/${datasetId}/members/?userId=${userId}`);

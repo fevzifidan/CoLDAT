@@ -15,8 +15,8 @@ class Task(models.Model):
     class Status(models.TextChoices):
         ASSIGNED = "assigned", "Assigned"
         IN_PROGRESS = "in_progress", "In Progress"
-        APPROVAL_PENDING = "approval_pending", "Approval Pending"
-        COMPLETED = "completed", "Completed"
+        SUBMITTED = "submitted", "Submitted"
+        APPROVED = "approved", "Approved"
         REJECTED = "rejected", "Rejected"
 
     class Priority(models.TextChoices):

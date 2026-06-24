@@ -36,12 +36,22 @@ export default function ViewerPage() {
     }))
   );
 
-  // Set read-only mode on mount and revert on unmount
+    // Set read-only mode on mount and revert on unmount
+  // NOTE: useAnnotationData hook'u mount sonrası task'ın rolüne/status'una göre
+  // setReadOnly(false) çağırabilir. Her render'da tekrar setReadOnly(true) yaparak
+  // viewer modunun her koşulda read-only kalmasını sağlıyoruz (Option B).
   useEffect(() => {
     setReadOnly(true);
     setActiveTool('select');
     return () => setReadOnly(false);
   }, [setReadOnly, setActiveTool]);
+
+  // ── View modunu her durumda read-only tut ──────────────────────────────
+  // useAnnotationData mount sonrası task bilgisine göre setReadOnly(false)
+  // yapabilir (örn. Annotator rolü ve assigned status). Bu effect onu ezer.
+  useEffect(() => {
+    setReadOnly(true);
+  }, [setReadOnly]);
 
   // K-2: useAnnotationData, taskId ve imageId'nin her ikisiyle de çağrılıyor.
   // Metadata zinciri (task → dataset → taxonomy) ve annotation yüklemesi doğru çalışır.

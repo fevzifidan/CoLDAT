@@ -56,4 +56,13 @@ def remove_project_member(*, membership: ProjectMembership):
     if membership.user_id == membership.project.owner_id:
         raise ValidationError("The project owner cannot be removed.")
 
+    # Bu kullanıcının projedeki tüm dataset'lerdeki üyeliklerini de sil
+    from apps.datasets.models import DatasetMember
+
+    DatasetMember.objects.filter(
+        dataset__project=membership.project,
+        user=membership.user,
+    ).delete()
+
     membership.delete()
+

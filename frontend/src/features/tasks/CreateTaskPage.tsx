@@ -285,7 +285,7 @@ const CreateTaskPage = () => {
                   isActive ? 'text-foreground' : 'text-muted-foreground'
                 }`}
               >
-                                  {s === 1
+                  {s === 1
                   ? t('tasks:create.step1_title')
                   : s === 2
                   ? t('tasks:create.step2_title')

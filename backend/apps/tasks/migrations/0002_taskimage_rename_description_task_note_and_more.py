@@ -61,8 +61,8 @@ class Migration(migrations.Migration):
                 choices=[
                     ("assigned", "Assigned"),
                     ("in_progress", "In Progress"),
-                    ("approval_pending", "Approval Pending"),
-                    ("completed", "Completed"),
+                    ("submitted", "Submitted"),
+                    ("approved", "Approved"),
                     ("rejected", "Rejected"),
                 ],
                 default="assigned",

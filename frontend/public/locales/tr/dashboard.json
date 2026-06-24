@@ -25,9 +25,11 @@
     "dataset": "VERİ SETİ"
   },
   "status": {
-    "new": "YENİ",
+    "assigned": "ATANMIŞ",
     "in_progress": "DEVAM EDİYOR",
-    "completed": "TAMAMLANDI"
+    "submitted": "GÖNDERİLDİ",
+    "approved": "ONAYLANDI",
+    "rejected": "REDDEDİLDİ"
   },
   "roles": {
     "all_roles": "Tüm Roller",

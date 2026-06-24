@@ -246,7 +246,7 @@ class TaskMetadataAPITests(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_completion_records_completed_at_for_future_scoring(self):
-        task = self._create_task_model(status=Task.Status.APPROVAL_PENDING)
+        task = self._create_task_model(status=Task.Status.SUBMITTED)
         project_class = ProjectClass.objects.create(
             project=self.project,
             name="Product",
@@ -264,7 +264,7 @@ class TaskMetadataAPITests(TestCase):
 
         response = self.client.patch(
             f"/api/v1/tasks/{task.id}/status/",
-            {"status": Task.Status.COMPLETED},
+            {"status": Task.Status.APPROVED},
             format="json",
         )
 

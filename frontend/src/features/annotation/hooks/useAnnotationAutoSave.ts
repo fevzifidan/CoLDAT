@@ -43,7 +43,7 @@ export function useAnnotationAutoSave(imageId: string) {
     const doSave = useCallback(async (silent: boolean) => {
     if (!imageId || isSavingRef.current) return;
 
-    // Read-only modda save işlemini engelle (approval_pending, completed veya Viewer rolü)
+    // Read-only modda save işlemini engelle (submitted, approved durumları veya Viewer rolü)
     const { isReadOnly } = useAppStore.getState();
     if (isReadOnly) {
       if (!silent) {
