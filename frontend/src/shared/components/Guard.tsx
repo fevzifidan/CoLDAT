@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { usePermission } from '@/context/PermissionContext';
 import { type Permission } from '@/shared/roles';
 

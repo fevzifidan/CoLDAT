@@ -25,7 +25,7 @@ def create_user(
         first_name=first_name,
         last_name=last_name,
         auth_provider=User.AuthProvider.EMAIL,
-        is_active=True,
+        is_active=False,
     )
 
     return user
