@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import {
   Upload,
   X,
-  FileImage,
   AlertCircle,
   CheckCircle2,
   Loader2,
@@ -14,7 +13,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Guard } from '@/shared/components/Guard';
-import { usePermission } from '@/context/PermissionContext';
 import { uploadService } from '@/shared/services/s3upload';
 import { useDatasetUploads } from '../hooks/useDatasetUploads';
 import { useAppStore } from '@/store';
@@ -61,34 +59,6 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
 
   // Bu dataset'e ait upload task'lerini dinle
   const uploadTasks = useDatasetUploads(datasetId);
-
-  // Seçili dosyalardan hangileri terminal durumda (başarılı/başarısız)
-  const completedUploadIds = new Set(
-    uploadTasks
-      .filter((t) => t.status === 'SUCCESS' || t.status === 'FAILED' || t.status === 'CANCELLED')
-      .map((t) => t.upload_id)
-  );
-
-  // Tüm upload'lar başarılı olduğunda parent'ı bilgilendir ve seçimleri temizle
-  const allSelectedUploaded =
-    selectedFiles.length > 0 &&
-    selectedFiles.every((sf) => {
-      const task = uploadTasks.find((t) => t.upload_id === sf.id);
-      return task?.status === 'SUCCESS';
-    });
-
-  useEffect(() => {
-    if (allSelectedUploaded) {
-      // Biraz gecikmeli temizle (kullanıcı "SUCCESS" badge'ini görebilsin)
-      const timer = setTimeout(() => {
-        setSelectedFiles([]);
-        // Preview URL'leri temizle
-        selectedFiles.forEach((sf) => URL.revokeObjectURL(sf.previewUrl));
-        onUploadComplete?.();
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [allSelectedUploaded]);
 
   // Cleanup preview URLs on unmount
   useEffect(() => {
@@ -179,11 +149,12 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
     });
   };
 
-    const handleUploadAll = async () => {
+                const handleUploadAll = async () => {
     if (selectedFiles.length === 0) return;
 
     setIsUploading(true);
 
+    // 1. Tüm dosyaları upload servisine devret
     for (const sf of selectedFiles) {
       const existing = uploadTasks.find((t) => t.upload_id === sf.id);
       if (existing && !['FAILED', 'CANCELLED'].includes(existing.status)) continue;
@@ -197,6 +168,12 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
       // Upload Manager panelini otomatik aç
       expandPanel();
     }
+
+    // 2. Seçim listesini HEMEN temizle — upload'lar arka planda Upload Manager'da devam edecek
+    //    Bu işlem kesinlikle sayfa refresh'ine yol açmaz, sadece bileşen state'ini sıfırlar.
+    const currentFiles = [...selectedFiles];
+    setSelectedFiles([]);
+    currentFiles.forEach((sf) => URL.revokeObjectURL(sf.previewUrl));
 
     setIsUploading(false);
   };
@@ -455,40 +432,24 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
             </div>
 
                         {/* Upload All Button */}
-            <Guard permission="asset:add">
-              {!allSelectedUploaded && (
+                        <Guard permission="asset:add">
               <Button
                 onClick={handleUploadAll}
-                disabled={hasActiveUploads || isUploading || selectedFiles.length === 0}
+                disabled={isUploading || selectedFiles.length === 0}
                 className="w-full gap-2"
               >
-                {hasActiveUploads ? (
+                {isUploading ? (
                   <Loader2 size={16} className="animate-spin" />
                 ) : (
                   <Upload size={16} />
                 )}
-                {hasActiveUploads
-                  ? t('datasets:uploader.uploading', 'Uploading...')
-                  : t('datasets:uploader.upload_button', {
-                      count: selectedFiles.length,
-                      defaultValue: `Upload {{count}} file(s) to Dataset`,
-                    })}
+                {t('datasets:uploader.upload_button', {
+                  count: selectedFiles.length,
+                  defaultValue: `Upload {{count}} file(s) to Dataset`,
+                })}
               </Button>
-              )}
             </Guard>
 
-            {/* All Uploaded Success Message */}
-            {allSelectedUploaded && (
-              <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/30 text-center">
-                <CheckCircle2 size={24} className="mx-auto text-emerald-500 mb-1" />
-                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
-                  {t(
-                    'datasets:uploader.all_uploaded',
-                    'All files uploaded successfully!'
-                  )}
-                </p>
-              </div>
-            )}
           </div>
         )}
 
