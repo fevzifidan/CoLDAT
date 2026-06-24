@@ -19,6 +19,7 @@ import {
 
 import { projectService } from '@/features/projects/services/projectService';
 import notificationService from '@/shared/services/notification/notification.service';
+import { Guard } from '@/shared/components/Guard';
 
 // Backend ProjectMembershipSerializer response format (role field does NOT exist)
 interface ProjectMember {
@@ -216,22 +217,24 @@ const ProjectMembersManager = ({
           </p>
         </div>
 
-        <Button
-          onClick={() => setIsAdding(!isAdding)}
-          variant={isAdding ? 'outline' : 'default'}
-        >
-          {isAdding ? (
-            <>
-              <X className="mr-2 h-4 w-4" />
-              {t('common:status.cancel')}
-            </>
-          ) : (
-            <>
-              <UserPlus className="mr-2 h-4 w-4" />
-              {t('team.add_member', 'Add Member')}
-            </>
-          )}
-        </Button>
+        <Guard permission="member:add">
+          <Button
+            onClick={() => setIsAdding(!isAdding)}
+            variant={isAdding ? 'outline' : 'default'}
+          >
+            {isAdding ? (
+              <>
+                <X className="mr-2 h-4 w-4" />
+                {t('common:status.cancel')}
+              </>
+            ) : (
+              <>
+                <UserPlus className="mr-2 h-4 w-4" />
+                {t('team.add_member', 'Add Member')}
+              </>
+            )}
+          </Button>
+        </Guard>
       </div>
 
       {/* Add Member Form */}
@@ -338,14 +341,16 @@ const ProjectMembersManager = ({
                     </div>
 
                     {!isOwnerMember && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeUser(member.id)}
-                        className="hover:bg-destructive/10"
-                      >
-                        <Trash2 size={14} className="text-muted-foreground hover:text-destructive" />
-                      </Button>
+                      <Guard permission="member:remove">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeUser(member.id)}
+                          className="hover:bg-destructive/10"
+                        >
+                          <Trash2 size={14} className="text-muted-foreground hover:text-destructive" />
+                        </Button>
+                      </Guard>
                     )}
                   </div>
                 </CardContent>

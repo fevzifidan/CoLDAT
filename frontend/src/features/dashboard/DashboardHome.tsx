@@ -224,7 +224,7 @@ const DashboardHome = () => {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {mappedTasks.map((task) => (
                 <RoleProvider key={task.id} role={(task.role?.toLowerCase() as BackendRole) || null} permissionMap={DATASET_ROLE_PERMISSIONS}>
-                <ProjectCard project={task} cardType="task" />
+                <ProjectCard project={task} cardType="task" onClick={() => navigate(`/tasks/${task.id}`)} />
                 </RoleProvider>
             ))}
           </div>
@@ -281,11 +281,11 @@ const DashboardHome = () => {
           </div>
         )}
 
-        {mappedDatasets.length > 0 ? (
+          {mappedDatasets.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {mappedDatasets.map((dataset) => (
               <RoleProvider key={dataset.id} role={(dataset.role as BackendRole) || null} permissionMap={DATASET_ROLE_PERMISSIONS}>
-              <ProjectCard project={dataset} cardType="dataset" />
+              <ProjectCard project={dataset} cardType="dataset" onClick={() => navigate(`/datasets/${dataset.id}`)} />
               </RoleProvider>
             ))}
           </div>
@@ -326,11 +326,11 @@ const DashboardHome = () => {
           </div>
         )}
 
-        {mappedProjects.length > 0 ? (
+          {mappedProjects.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {mappedProjects.slice(0, 4).map((project) => (
               <RoleProvider key={project.id} role={(project.role as BackendRole) || null} permissionMap={PROJECT_ROLE_PERMISSIONS}>
-                <ProjectCard project={project} cardType="project" />
+                <ProjectCard project={project} cardType="project" onClick={() => navigate(`/projects/${project.id}`)} />
               </RoleProvider>
             ))}
           </div>

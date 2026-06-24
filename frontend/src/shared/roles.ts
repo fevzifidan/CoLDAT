@@ -34,6 +34,7 @@ export type Permission =
   | 'task:view-assigned'
   | 'task:delete'
   | 'task:reassign'
+  | 'task:annotate'
   // --- Task Onay Yetkileri ---
   | 'task:submit-approval'
   | 'task:approve-reject'
@@ -47,13 +48,13 @@ export type Permission =
 // Rol: 'admin' veya 'member'
 // ============================================================
 export const PROJECT_ROLE_PERMISSIONS: Record<string, Permission[]> = {
-  admin: [
+    admin: [
     'project:create', 'project:update', 'project:delete', 'project:view',
     'dataset:create', 'dataset:update', 'dataset:delete', 'dataset:view',
     'member:add', 'member:remove', 'member:update-role', 'member:view',
     'asset:add', 'asset:remove', 'asset:view',
-        'task:create', 'task:view-all', 'task:delete', 'task:reassign',
-    'task:approve-reject',
+    'task:create', 'task:view-all', 'task:delete', 'task:reassign',
+    'task:annotate', 'task:submit-approval', 'task:approve-reject',
     'task:add-asset', 'task:remove-asset',
   ],
   member: [
@@ -71,20 +72,22 @@ export const PROJECT_ROLE_PERMISSIONS: Record<string, Permission[]> = {
 // Rol: 'admin', 'annotator', veya 'viewer'
 // ============================================================
 export const DATASET_ROLE_PERMISSIONS: Record<string, Permission[]> = {
-  admin: [
+    admin: [
     'dataset:update', 'dataset:delete', 'dataset:view',
     'member:add', 'member:remove', 'member:update-role', 'member:view',
     'asset:add', 'asset:remove', 'asset:view',
     'task:create', 'task:view-all', 'task:delete', 'task:reassign',
-    'task:approve-reject',
-    'task:add-asset', 'task:remove-asset',
+    'task:annotate', 'task:submit-approval', 'task:approve-reject',
+    'task:add-asset', 'task:remove-asset', 'task:view-assigned'
   ],
   annotator: [
     'dataset:view',
     'member:view',
     'asset:view',
     'task:view-assigned',
+    'task:annotate',
     'task:submit-approval',
+    'task:view-assigned',
   ],
   viewer: [
     'dataset:view',

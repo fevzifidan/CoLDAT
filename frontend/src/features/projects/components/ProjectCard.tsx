@@ -13,7 +13,6 @@ import {
   ArrowUpRight,
   Settings,
   Eye,
-  Database,
   Calendar
 } from "lucide-react";
 import { Guard } from '@/shared/components/Guard';
@@ -35,12 +34,15 @@ interface ProjectCardProps {
   project: CardProject;
   cardType: 'task' | 'dataset' | 'project';
   onStatusChange?: () => void;
+  /** Eğer verilmişse, kartın tamamı tıklanabilir olur ve bu onClick tetiklenir */
+  onClick?: (e: React.MouseEvent) => void;
 }
 
 export const ProjectCard = ({
   project,
   cardType,
-  onStatusChange
+  onStatusChange,
+  onClick
 }: ProjectCardProps) => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation(['projects']);
@@ -63,12 +65,13 @@ export const ProjectCard = ({
     navigate(paths[cardType]);
   };
 
-  const handleDatasetNavigate = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate(`/projects/${project.id}/datasets`);
+    const handleCardClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      onClick(e);
+    }
   };
 
-    const getButtonConfig = () => {
+  const getButtonConfig = () => {
 
     if (hasPermission('project:update')) {
       return {
@@ -119,8 +122,11 @@ export const ProjectCard = ({
 
   const roleKey = (project.role?.toLowerCase() || 'viewer').replace(/ /g, '_');
 
-  return (
-    <Card className="group relative overflow-hidden rounded-[2rem] bg-card shadow-sm hover:shadow-xl dark:hover:shadow-black/40 transition-all duration-300 border border-border">
+    return (
+    <Card
+      className={`group relative overflow-hidden rounded-[2rem] bg-card shadow-sm hover:shadow-xl dark:hover:shadow-black/40 transition-all duration-300 border border-border ${onClick ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
+      onClick={onClick ? handleCardClick : undefined}
+    >
       <CardHeader className="pb-2 text-left p-5">
         <div className="flex justify-between items-start mb-1">
           {cardType === 'task' ? (
@@ -187,36 +193,16 @@ export const ProjectCard = ({
       </CardContent>
 
             <CardFooter className="p-5 pt-2 gap-2">
-        <Guard permission="project:update">
-        {cardType === 'project' ? (
-          <>
-            <Button
-              className="flex-1 rounded-xl h-9 font-bold text-[10px] transition-all border-none bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground cursor-pointer"
-              onClick={handleManageNavigate}
-            >
-              {buttonConfig.text}
-              {buttonConfig.icon}
-            </Button>
-
-            <Button
-              className="flex-1 rounded-xl h-9 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-none font-bold text-[10px] transition-all gap-1 cursor-pointer"
-              onClick={handleDatasetNavigate}
-            >
-              <Database size={12} />
-              {t('projects:buttons.dataset', 'DATASET')}
-            </Button>
-          </>
-        ) : (
-          <Button
-            className="w-full rounded-xl h-9 bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground border-none font-bold text-[10px] transition-all cursor-pointer"
-            onClick={handleManageNavigate}
-          >
-            {buttonConfig.text}
-            {buttonConfig.icon}
-          </Button>
-        )}
-        </Guard>
-      </CardFooter>
+              <Guard permission="project:update">
+                <Button
+                  className="w-full rounded-xl h-9 font-bold text-[10px] transition-all border-none bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground cursor-pointer"
+                  onClick={handleManageNavigate}
+                >
+                  {buttonConfig.text}
+                  {buttonConfig.icon}
+                </Button>
+              </Guard>
+            </CardFooter>
     </Card>
   );
 };

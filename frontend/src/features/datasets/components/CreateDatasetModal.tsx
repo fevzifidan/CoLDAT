@@ -149,7 +149,7 @@ export const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
   // ── Render ──
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-card border-2 border-border text-card-foreground rounded-2xl">
+                        <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
             {step === "select_project" ? (
@@ -171,7 +171,7 @@ export const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
                   projectName: selectedProject?.name ?? "",
                 })}
           </DialogDescription>
-        </DialogHeader>
+                </DialogHeader>
 
         {/* ── Step 1: Project Selection ── */}
         {step === "select_project" && (
@@ -251,20 +251,18 @@ export const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
 
         {/* ── Step 2: Dataset Creation ── */}
         {step === "create_dataset" && (
-          <form onSubmit={handleCreateDataset} className="space-y-4 pt-2">
+          <form onSubmit={handleCreateDataset} className="space-y-4">
             {/* Back button */}
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleBack}
-                className="rounded-xl h-8 gap-1.5 text-muted-foreground hover:text-card-foreground"
-              >
-                <ArrowLeft size={14} />
-                {t("datasets:modal.back_button")}
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              className="rounded-xl h-8 gap-1.5 text-muted-foreground hover:text-card-foreground"
+            >
+              <ArrowLeft size={14} />
+              {t("datasets:modal.back_button")}
+            </Button>
 
             {/* Selected project badge */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/50 border border-border">
@@ -281,7 +279,7 @@ export const CreateDatasetModal: React.FC<CreateDatasetModalProps> = ({
               </div>
             </div>
 
-                        {/* Dataset Name */}
+            {/* Dataset Name */}
             <div className="space-y-1">
               <label className="text-xs font-bold text-card-foreground">
                 {t("datasets:project_page.dataset_name_label", "Dataset Name")}

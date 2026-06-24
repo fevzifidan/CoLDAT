@@ -230,24 +230,25 @@ const ProjectsPage = () => {
           ) : (
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                             {filteredProjects.map(item => (
-                <RoleProvider key={item.id} role={(item.role as BackendRole) || null} permissionMap={PROJECT_ROLE_PERMISSIONS}>
-                                <div 
-                  className="relative group transition-transform hover:scale-[1.01]"
-                >
-                  <ProjectCard project={item} cardType="project" />
+                              <RoleProvider key={item.id} role={(item.role as BackendRole) || null} permissionMap={PROJECT_ROLE_PERMISSIONS}>
+                                              <div 
+                                className="relative group transition-transform hover:scale-[1.01] cursor-pointer"
+                                onClick={() => navigate(`/projects/${item.id}`)}
+                              >
+                                <ProjectCard project={item} cardType="project" />
                   
-                  <Guard permission="project:delete">
-                  <button
-                    onClick={(e) => handleDeleteProject(item.id, e)}
-                    className="absolute bottom-14 right-4 p-2 rounded-lg bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 border border-destructive/20 shadow-sm z-10"
-                    title={t('pages:trash.permanent_delete', 'Delete')}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                  </Guard>
-                </div>
-                </RoleProvider>
-              ))}
+                                <Guard permission="project:delete">
+                                <button
+                                  onClick={(e) => handleDeleteProject(item.id, e)}
+                                  className="absolute bottom-14 right-4 p-2 rounded-lg bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 border border-destructive/20 shadow-sm z-10"
+                                  title={t('pages:trash.permanent_delete', 'Delete')}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                                </Guard>
+                              </div>
+                              </RoleProvider>
+                            ))}
             </div>
           )}
         </>

@@ -11,6 +11,7 @@ import { RoleProvider } from '@/context/PermissionContext';
 import { type BackendRole } from '@/shared/roles';
 import { useConfirm } from '@/shared/services/confirmation/useConfirm';
 import notificationService from '@/shared/services/notification/notification.service';
+import { DATASET_ROLE_PERMISSIONS } from '@/shared/roles';
 
 interface TaskItem {
   id: string;
@@ -122,7 +123,7 @@ export const ProjectTasksTab = ({ projectId }: ProjectTasksTabProps) => {
     <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tasks.map((task) => (
-                    <RoleProvider key={task.id} role={(task.role?.toLowerCase() as BackendRole) ?? null}>
+          <RoleProvider key={task.id} role={(task.role?.toLowerCase() as BackendRole) ?? null} permissionMap={DATASET_ROLE_PERMISSIONS}>
             <TaskCard
               task={task}
               onViewDetail={(id) => navigate(`/tasks/${id}`)}

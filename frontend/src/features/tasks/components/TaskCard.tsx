@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Eye, FileText, User, PenLine, ChevronDown, ExternalLink, Trash2 } from "lucide-react";
 import { usePermission } from '@/context/PermissionContext';
+import { Guard } from '@/shared/components/Guard';
 
 // Status badge renklerini belirleyen yardımcı fonksiyon
 const getStatusColor = (status: string): string => {
@@ -65,11 +66,7 @@ interface TaskCardProps {
 
 export const TaskCard = ({ task, onViewDetail, onAnnotate, onView, onDelete }: TaskCardProps) => {
   const { t } = useTranslation(['tasks']);
-    const { hasPermission } = usePermission();
-
-  const canViewAll = hasPermission('task:view-all');
-  const canAnnotate = hasPermission('task:submit-approval');
-  const canViewAssigned = hasPermission('task:view-assigned');
+  const { hasPermission } = usePermission();
   const canDelete = hasPermission('task:delete');
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -124,7 +121,7 @@ export const TaskCard = ({ task, onViewDetail, onAnnotate, onView, onDelete }: T
         </div>
       </div>
 
-            <div className="flex gap-2 px-5 pb-5">
+      <div className="flex gap-2 px-5 pb-5">
         {/* Ana aksiyon butonu: herkes için Task Details */}
         <Button
           onClick={() => onViewDetail(task.id)}
@@ -134,7 +131,7 @@ export const TaskCard = ({ task, onViewDetail, onAnnotate, onView, onDelete }: T
           <Eye size={14} /> {t('tasks:card.details', 'Task Details')}
         </Button>
 
-        {/* Dropdown menü — tüm roller görebilir */}
+        {/* Dropdown menü — rollerine göre özelleştirilmiş aksiyonlar */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="h-8 w-8 shrink-0">
@@ -147,20 +144,24 @@ export const TaskCard = ({ task, onViewDetail, onAnnotate, onView, onDelete }: T
               {t('tasks:card.manage_task', 'Manage Task')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            {onAnnotate && (
-              <DropdownMenuItem onClick={() => onAnnotate(task.id)} className="cursor-pointer gap-2 text-xs font-medium">
-                <PenLine size={14} />
-                {t('tasks:card.annotate', 'Annotate')}
-                <span className="ml-auto text-[10px] text-muted-foreground">Annotator</span>
-              </DropdownMenuItem>
-            )}
-            {onView && (
-              <DropdownMenuItem onClick={() => onView(task.id)} className="cursor-pointer gap-2 text-xs font-medium">
-                <ExternalLink size={14} />
-                {t('tasks:card.view', 'View')}
-                <span className="ml-auto text-[10px] text-muted-foreground">Read-only</span>
-              </DropdownMenuItem>
-            )}
+            <Guard permission="task:annotate">
+              {onAnnotate && (
+                <DropdownMenuItem onClick={() => onAnnotate(task.id)} className="cursor-pointer gap-2 text-xs font-medium">
+                  <PenLine size={14} />
+                  {t('tasks:card.annotate', 'Annotate')}
+                  <span className="ml-auto text-[10px] text-muted-foreground">Annotator</span>
+                </DropdownMenuItem>
+              )}
+            </Guard>
+            <Guard permission="task:view-assigned">
+              {onView && (
+                <DropdownMenuItem onClick={() => onView(task.id)} className="cursor-pointer gap-2 text-xs font-medium">
+                  <ExternalLink size={14} />
+                  {t('tasks:card.view', 'View')}
+                  <span className="ml-auto text-[10px] text-muted-foreground">Read-only</span>
+                </DropdownMenuItem>
+              )}
+            </Guard>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

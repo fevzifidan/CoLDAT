@@ -11,7 +11,7 @@ import { TaskCard } from '@/features/tasks/components/TaskCard';
 import TasksDetailPage from './TasksDetailPage';
 import { taskService } from '@/features/tasks/services/taskService';
 import { RoleProvider } from '@/context/PermissionContext';
-import { type BackendRole } from '@/shared/roles';
+import { type BackendRole, DATASET_ROLE_PERMISSIONS } from '@/shared/roles';
 
 // Backend TaskSerializer şemasına tam uyumlu tip tanımı
 interface TaskItem {
@@ -91,14 +91,17 @@ const fetchTasks = async () => {
     }
   };
 
-    // --- GÖREV DETAYDAN GERİ DÖNÜŞ PANELİ ---
+        // --- GÖREV DETAYDAN GERİ DÖNÜŞ PANELİ ---
   if (selectedTaskId) {
     return (
       <TasksDetailPage 
         taskId={selectedTaskId} 
         onBack={() => {
           setSelectedTaskId(null);
-          navigate('/tasks'); // URL'yi de temizle
+          // 🎯 DÜZELTME: navigate(-1) ile browser history'de bir önceki sayfaya dön
+          // Böylece dashboard'dan task'a tıklayıp gidildiyse dashboard'a dönülür.
+          // history'ye yeni /tasks kaydı eklenmez, kullanıcının beklentisi karşılanır.
+          navigate(-1);
           fetchTasks(); // Detay sayfasındaki değişiklikleri yansıtmak için listeyi yeniliyoruz
         }} 
       />
@@ -121,7 +124,7 @@ const fetchTasks = async () => {
   const visibleTasks = filteredTasks.slice(0, displayLimit);
 
   return (
-        <div className="p-6 space-y-6 max-w-7xl mx-auto relative">
+      <div className="p-6 space-y-6 max-w-7xl mx-auto relative">
       
       {/* Üst Yönetim Alanı */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 border-border">
@@ -187,12 +190,12 @@ const fetchTasks = async () => {
           {t('tasks:empty_list', 'No tasks match your filter criteria or data repository is empty.')}
         </div>
       ) : (
-                /* Görev Kartları Grid Yapısı */
+        /* Görev Kartları Grid Yapısı */
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                         {visibleTasks.map(item => (
             <div key={item.id} className="transition-transform hover:scale-[1.01]">
-              <RoleProvider role={(item.role?.toLowerCase() as BackendRole) ?? null}>
-                            <TaskCard 
+              <RoleProvider role={(item.role?.toLowerCase() as BackendRole) ?? null} permissionMap={DATASET_ROLE_PERMISSIONS}>
+                <TaskCard 
                 task={{
                   ...item,
                   // Serializer'da 'name' alanı bulunmadığı için ID'den benzersiz kısa bir maskeleme üretiyoruz
@@ -205,7 +208,7 @@ const fetchTasks = async () => {
                 onAnnotate={(id) => navigate(`/annotate/${id}`)}
                 onView={(id) => navigate(`/view/${id}`)}
                 onDelete={handleDeleteTask}
-              />
+                />
               </RoleProvider>
             </div>
           ))}
