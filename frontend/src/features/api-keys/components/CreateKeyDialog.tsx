@@ -234,15 +234,17 @@ export const CreateKeyDialog: React.FC<CreateKeyDialogProps> = ({
             </div>
           </div>
 
-          <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={handleClose}>
-              {t('api-keys:create_dialog.cancel_button')}
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('api-keys:create_dialog.create_button')}
-            </Button>
-          </DialogFooter>
+          <div className="pt-2">
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleClose}>
+                {t('api-keys:create_dialog.cancel_button')}
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t('api-keys:create_dialog.create_button')}
+              </Button>
+            </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
