@@ -49,7 +49,7 @@ export const ProjectCard = ({
     const handleManageNavigate = (e: React.MouseEvent) => {
     e.stopPropagation();
 
-        // Task tipi için task detay sayfasına yönlendir (imageId gerekli olduğu için doğrudan annotation sayfasına gitme)
+    // Task tipi için task detay sayfasına yönlendir (imageId gerekli olduğu için doğrudan annotation sayfasına gitme)
     if (cardType === 'task') {
       navigate(`/tasks/${project.id}`);
       return;

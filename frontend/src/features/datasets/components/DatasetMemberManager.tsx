@@ -58,7 +58,6 @@ interface DatasetMemberManagerProps {
 }
 
 const ROLE_OPTIONS = [
-  { value: 'admin', labelKey: 'datasets:member_manager.role_admin', defaultLabel: 'Admin', color: 'text-red-600' },
   { value: 'annotator', labelKey: 'datasets:member_manager.role_annotator', defaultLabel: 'Annotator', color: 'text-blue-600' },
   { value: 'viewer', labelKey: 'datasets:member_manager.role_viewer', defaultLabel: 'Viewer', color: 'text-gray-600' },
 ];
@@ -146,7 +145,7 @@ const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManag
     <Card className="shadow-sm border-border">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <div>
-                    <CardTitle className="flex items-center gap-2 text-base font-bold">
+          <CardTitle className="flex items-center gap-2 text-base font-bold">
             <Users size={18} className="text-primary" />
             {t('datasets:member_manager.title', 'Team Members')}
           </CardTitle>
@@ -154,7 +153,7 @@ const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManag
             {t('datasets:member_manager.description', 'Manage who has access to this dataset')}
           </CardDescription>
         </div>
-                                <Guard permission="member:add">
+        <Guard permission="member:add">
           <Button
             size="sm"
             onClick={() => navigate(`/datasets/${datasetId}/add-members`)}
@@ -172,7 +171,7 @@ const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManag
           <div className="flex items-center gap-2 p-3 rounded-lg border border-destructive/20 bg-destructive/5 text-sm text-destructive">
             <AlertCircle size={14} />
             <span>{error}</span>
-                        <Button size="sm" variant="ghost" className="ml-auto h-6 text-xs" onClick={loadMembers}>
+            <Button size="sm" variant="ghost" className="ml-auto h-6 text-xs" onClick={loadMembers}>
               {t('common:actions.retry', 'Retry')}
             </Button>
           </div>
@@ -198,8 +197,8 @@ const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManag
         {!loading && !error && members.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
             <Users size={28} className="text-muted-foreground/40" />
-                        <p className="text-sm font-medium">{t('datasets:member_manager.no_members', 'No members yet.')}</p>
-                        <Guard permission="member:add">
+              <p className="text-sm font-medium">{t('datasets:member_manager.no_members', 'No members yet.')}</p>
+              <Guard permission="member:add">
               <p className="text-xs text-muted-foreground">
                 {t('datasets:member_manager.no_members_hint', 'Click "Add Member" to invite someone.')}
               </p>
@@ -236,37 +235,46 @@ const DatasetMemberManager = ({ datasetId, currentUserRole }: DatasetMemberManag
                   </div>
 
                   {hasPermission('member:update-role') ? (
-                    <div className="flex items-center gap-1.5">
-                      <Select
-                        value={member.role}
-                        onValueChange={(val) => handleRoleChange(member.id, val)}
-                        disabled={isEditing}
+                    (member.role === 'admin') ? (
+                      <Badge
+                        variant="secondary"
+                        className={`text-xs font-medium capitalize ${getRoleBadgeColor(member.role)}`}
                       >
-                        <SelectTrigger
-                          className={`h-7 w-[110px] text-xs font-medium border-none bg-transparent hover:bg-muted/50 gap-1 ${getRoleBadgeColor(member.role)}`}
+                        {member.role}
+                      </Badge>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <Select
+                          value={member.role}
+                          onValueChange={(val) => handleRoleChange(member.id, val)}
+                          disabled={isEditing}
                         >
-                          <Shield size={10} />
-                          <SelectValue />
-                        </SelectTrigger>
-                                                <SelectContent>
-                          {ROLE_OPTIONS.map((role) => (
-                            <SelectItem key={role.value} value={role.value} className="text-xs">
-                              {t(role.labelKey, role.defaultLabel)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                          <SelectTrigger
+                            className={`h-7 w-[110px] text-xs font-medium border-none bg-transparent hover:bg-muted/50 gap-1 ${getRoleBadgeColor(member.role)}`}
+                          >
+                            <Shield size={10} />
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ROLE_OPTIONS.map((role) => (
+                              <SelectItem key={role.value} value={role.value} className="text-xs">
+                                {t(role.labelKey, role.defaultLabel)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
 
-                                            <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                                onClick={() => setDeletingMemberId(member.id)}
-                        title={t('common:actions.remove', 'Remove')}
-                      >
-                        <X size={12} />
-                      </Button>
-                    </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          onClick={() => setDeletingMemberId(member.id)}
+                          title={t('common:actions.remove', 'Remove')}
+                        >
+                          <X size={12} />
+                        </Button>
+                      </div>
+                    )
                   ) : (
                     <Badge
                       variant="secondary"

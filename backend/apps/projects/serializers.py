@@ -41,10 +41,10 @@ class ProjectSerializer(serializers.ModelSerializer):
         if obj.owner_id == request.user.id:
             return "admin"
 
-        # Proje üyesi ise viewer olarak kabul edilir
+        # Proje üyesi ise member olarak kabul edilir
         is_member = obj.memberships.filter(user=request.user).exists()
         if is_member:
-            return "viewer"
+            return "member"
 
         return None
 

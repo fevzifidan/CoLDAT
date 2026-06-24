@@ -6,7 +6,7 @@ import { Loader2, AlertCircle } from 'lucide-react';
 
 // Bileşen ve Servis Entegrasyonları
 import { RoleProvider } from '@/context/PermissionContext';
-import { type BackendRole } from '@/shared/roles';
+import { type BackendRole, PROJECT_ROLE_PERMISSIONS, DATASET_ROLE_PERMISSIONS } from '@/shared/roles';
 import { ProjectCard } from '@/features/projects/components/ProjectCard';
 import { projectService } from '@/features/projects/services/projectService';
 import { taskService } from '@/features/tasks/services/taskService';
@@ -221,11 +221,11 @@ const DashboardHome = () => {
         )}
 
         {mappedTasks.length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {mappedTasks.map((task) => (
-              <RoleProvider key={task.id} role={(task.role?.toLowerCase() as BackendRole) || null}>
-              <ProjectCard key={task.id} project={task} cardType="task" />
-              </RoleProvider>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {mappedTasks.map((task) => (
+                <RoleProvider key={task.id} role={(task.role?.toLowerCase() as BackendRole) || null} permissionMap={DATASET_ROLE_PERMISSIONS}>
+                <ProjectCard project={task} cardType="task" />
+                </RoleProvider>
             ))}
           </div>
         ) : (
@@ -281,11 +281,11 @@ const DashboardHome = () => {
           </div>
         )}
 
-                {mappedDatasets.length > 0 ? (
+        {mappedDatasets.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {mappedDatasets.map((dataset) => (
-              <RoleProvider key={dataset.id} role={(dataset.role as BackendRole) || null}>
-              <ProjectCard key={dataset.id} project={dataset} cardType="dataset" />
+              <RoleProvider key={dataset.id} role={(dataset.role as BackendRole) || null} permissionMap={DATASET_ROLE_PERMISSIONS}>
+              <ProjectCard project={dataset} cardType="dataset" />
               </RoleProvider>
             ))}
           </div>
@@ -296,7 +296,7 @@ const DashboardHome = () => {
         )}
       </section>
 
-            {/* RECENT PROJECTS SECTION */}
+      {/* RECENT PROJECTS SECTION */}
       <section className="space-y-4">
         <div className="flex justify-between items-end px-1">
           <div>
@@ -327,10 +327,10 @@ const DashboardHome = () => {
         )}
 
         {mappedProjects.length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {mappedProjects.slice(0, 4).map((project) => (
-              <RoleProvider key={project.id} role={(project.role as BackendRole) || null}>
-              <ProjectCard key={project.id} project={project} cardType="project" />
+              <RoleProvider key={project.id} role={(project.role as BackendRole) || null} permissionMap={PROJECT_ROLE_PERMISSIONS}>
+                <ProjectCard project={project} cardType="project" />
               </RoleProvider>
             ))}
           </div>

@@ -5,7 +5,7 @@ import { useCallback, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tag, Database, ArrowLeft, ListTodo, Settings, Users } from "lucide-react";
 import { RoleProvider } from '@/context/PermissionContext';
-import { type BackendRole } from '@/shared/roles';
+import { type BackendRole, PROJECT_ROLE_PERMISSIONS } from '@/shared/roles';
 import TaxonomyManager from '@/features/datasets/taxonomy/TaxonomyManager';
 import ProjectDatasetsPage from './ProjectDatasetsPage';
 import { ProjectTasksTab } from './tabs/ProjectTasksTab';
@@ -78,7 +78,7 @@ const ProjectDetailPage = () => {
   ];
 
   return (
-    <RoleProvider role={projectRole}>
+    <RoleProvider role={projectRole} permissionMap={PROJECT_ROLE_PERMISSIONS}>
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-8 border-b border-border bg-background">

@@ -78,6 +78,18 @@ def add_or_update_dataset_member(
     except User.DoesNotExist:
         raise ValidationError("User with this username does not exist.")
 
+    # Kullanıcı önce proje üyesi olmalıdır
+    from apps.projects.models import ProjectMembership
+
+    if not ProjectMembership.objects.filter(
+        project=dataset.project,
+        user=user,
+    ).exists() and dataset.project.owner_id != user.id:
+        raise ValidationError(
+            "User must be a project member before being added to a dataset. "
+            "Add them to the project first."
+        )
+
     membership, created = DatasetMember.objects.get_or_create(
         dataset=dataset,
         user=user,

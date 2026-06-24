@@ -1,5 +1,5 @@
-import { createContext, useContext, ReactNode } from 'react';
-import { type Permission, type BackendRole, ROLE_PERMISSIONS } from '@/shared/roles';
+import { createContext, useContext, type ReactNode } from 'react';
+import { type Permission, type BackendRole, PROJECT_ROLE_PERMISSIONS } from '@/shared/roles';
 
 interface PermissionContextValue {
   role: BackendRole | null;
@@ -8,6 +8,7 @@ interface PermissionContextValue {
   isAdmin: boolean;
   isAnnotator: boolean;
   isViewer: boolean;
+  isMember: boolean;
 }
 
 const PermissionContext = createContext<PermissionContextValue | null>(null);
@@ -19,25 +20,34 @@ const PermissionContext = createContext<PermissionContextValue | null>(null);
  * ASLA global seviyede kullanılmaz!
  *
  * KULLANIM:
- *   <RoleProvider role={project.user_role}>
+ *   {/* Proje detay sayfası: proje permission map'i ile * /}
+ *   <RoleProvider role={project.role} permissionMap={PROJECT_ROLE_PERMISSIONS}>
  *     <GeneralSettings />
+ *   </RoleProvider>
+ *
+ *   {/* Dataset detay sayfası: dataset permission map'i ile * /}
+ *   <RoleProvider role={dataset.role} permissionMap={DATASET_ROLE_PERMISSIONS}>
+ *     <DatasetDetail />
  *   </RoleProvider>
  *
  *   {/* Listelerde her kart kendi Provider'ını alır * /}
  *   {datasets.map(d => (
- *     <RoleProvider key={d.id} role={d.role}>
+ *     <RoleProvider key={d.id} role={d.role} permissionMap={DATASET_ROLE_PERMISSIONS}>
  *       <DatasetCard dataset={d} />
  *     </RoleProvider>
  *   ))}
  */
 export const RoleProvider = ({
   role,
+  permissionMap,
   children,
 }: {
   role: BackendRole | null;
+  permissionMap?: Record<string, Permission[]>;
   children: ReactNode;
 }) => {
-  const permissions = role ? ROLE_PERMISSIONS[role] : [];
+  const map = permissionMap || PROJECT_ROLE_PERMISSIONS;
+  const permissions = role ? (map[role] || []) : [];
 
   const value: PermissionContextValue = {
     role,
@@ -46,6 +56,7 @@ export const RoleProvider = ({
     isAdmin: role === 'admin',
     isAnnotator: role === 'annotator',
     isViewer: role === 'viewer',
+    isMember: role === 'member',
   };
 
   return (

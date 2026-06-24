@@ -16,7 +16,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { RoleProvider } from '@/context/PermissionContext';
-import { type BackendRole } from '@/shared/roles';
+import { type BackendRole, DATASET_ROLE_PERMISSIONS } from '@/shared/roles';
 import { Guard } from '@/shared/components/Guard';
 import { datasetService } from './services/datasetService';
 import DatasetMemberManager from './components/DatasetMemberManager';
@@ -117,7 +117,7 @@ const DatasetDetailPage = () => {
   const datasetRole = dataset.role || null;
 
   return (
-    <RoleProvider role={datasetRole}>
+    <RoleProvider role={datasetRole} permissionMap={DATASET_ROLE_PERMISSIONS}>
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between border-b pb-4 border-border">

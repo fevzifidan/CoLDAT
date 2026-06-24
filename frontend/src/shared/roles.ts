@@ -1,7 +1,7 @@
 // ============================================================
 // 1. ROL TANIMLARI
 // ============================================================
-export type BackendRole = 'admin' | 'annotator' | 'viewer';
+export type BackendRole = 'admin' | 'member' | 'annotator' | 'viewer';
 export type ProjectRole = BackendRole;
 export type DatasetRole = BackendRole;
 
@@ -42,9 +42,11 @@ export type Permission =
   | 'task:remove-asset';
 
 // ============================================================
-// 3. ROL → YETKİ EŞLEMESİ
+// 3. PROJE SEVİYESİ PERMISSION MAP
+// Proje detay sayfasında kullanılır.
+// Rol: 'admin' veya 'member'
 // ============================================================
-export const ROLE_PERMISSIONS: Record<BackendRole, Permission[]> = {
+export const PROJECT_ROLE_PERMISSIONS: Record<string, Permission[]> = {
   admin: [
     'project:create', 'project:update', 'project:delete', 'project:view',
     'dataset:create', 'dataset:update', 'dataset:delete', 'dataset:view',
@@ -54,15 +56,7 @@ export const ROLE_PERMISSIONS: Record<BackendRole, Permission[]> = {
     'task:approve-reject',
     'task:add-asset', 'task:remove-asset',
   ],
-  annotator: [
-    'project:view',
-    'dataset:view',
-    'member:view',
-    'asset:view',
-    'task:view-assigned',
-    'task:submit-approval',
-  ],
-  viewer: [
+  member: [
     'project:view',
     'dataset:view',
     'member:view',
@@ -70,3 +64,40 @@ export const ROLE_PERMISSIONS: Record<BackendRole, Permission[]> = {
     'task:view-assigned',
   ],
 };
+
+// ============================================================
+// 4. DATASET SEVİYESİ PERMISSION MAP
+// Dataset detay sayfası ve dataset kartlarında kullanılır.
+// Rol: 'admin', 'annotator', veya 'viewer'
+// ============================================================
+export const DATASET_ROLE_PERMISSIONS: Record<string, Permission[]> = {
+  admin: [
+    'dataset:update', 'dataset:delete', 'dataset:view',
+    'member:add', 'member:remove', 'member:update-role', 'member:view',
+    'asset:add', 'asset:remove', 'asset:view',
+    'task:create', 'task:view-all', 'task:delete', 'task:reassign',
+    'task:approve-reject',
+    'task:add-asset', 'task:remove-asset',
+  ],
+  annotator: [
+    'dataset:view',
+    'member:view',
+    'asset:view',
+    'task:view-assigned',
+    'task:submit-approval',
+  ],
+  viewer: [
+    'dataset:view',
+    'member:view',
+    'asset:view',
+    'task:view-assigned',
+  ],
+};
+
+// ============================================================
+// 5. GERİYE DÖNÜK UYUMLULUK (BACKWARD COMPATIBILITY)
+// Eski kodların ROLE_PERMISSIONS kullanımı bozulmasın diye
+// varsayılan olarak PROJECT_ROLE_PERMISSIONS'ı export et
+// ============================================================
+export const ROLE_PERMISSIONS = PROJECT_ROLE_PERMISSIONS;
+

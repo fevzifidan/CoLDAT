@@ -12,7 +12,14 @@ def get_project_datasets_for_user(*, project_id, user):
     datasets = Dataset.objects.filter(
         project=project,
         is_deleted=False,
-    ).annotate(
+    )
+
+    # Admin (proje owner) tüm dataset'leri görür
+    if project.owner_id != user.id:
+        # Admin olmayanlar sadece üyesi oldukları dataset'leri görür
+        datasets = datasets.filter(memberships__user=user)
+
+        datasets = datasets.annotate(
         _total_images=Count(
             "assets",
             filter=Q(assets__is_deleted=False),
@@ -29,9 +36,18 @@ def get_project_datasets_for_user(*, project_id, user):
 
 
 def get_datasets_for_user(*, user, search=None):
+    """
+    Kullanıcının erişebildiği dataset'ler:
+    - Proje owner: projesindeki tüm dataset'ler
+    - Proje üyesi + dataset üyesi: sadece üyesi olduğu dataset'ler
+    Dataset membership tek başına yeterli değildir, proje üyesi de olmak gerekir.
+    """
     datasets = (
         Dataset.objects.filter(
-            Q(memberships__user=user)
+            Q(
+                memberships__user=user,
+                project__memberships__user=user,
+            )
             | Q(project__owner=user),
             is_deleted=False,
             project__is_archived=False,
@@ -59,8 +75,15 @@ def get_datasets_for_user(*, user, search=None):
 
 
 def get_dataset_for_user(*, dataset_id, user):
+    """
+    Tek bir dataset'i user filter'ı ile döndürür.
+    Proje membership kontrolü zorunludur.
+    """
     datasets = Dataset.objects.filter(
-        Q(memberships__user=user)
+        Q(
+            memberships__user=user,
+            project__memberships__user=user,
+    )
         | Q(project__owner=user),
         is_deleted=False,
         project__is_archived=False,

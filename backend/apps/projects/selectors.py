@@ -4,8 +4,14 @@ from django.shortcuts import get_object_or_404
 
 
 def get_projects_for_user(*, user):
+    """
+    Kullanıcının erişebildiği projeleri döndürür.
+    - Proje üyesi olan (ProjectMembership)
+    - Proje owner'ı
+    Dataset membership TEK BAŞINA projeye erişim hakkı vermez.
+    """
     return Project.objects.filter(
-        Q(memberships__user=user) | Q(datasets__memberships__user=user),
+        Q(memberships__user=user) | Q(owner=user),
         is_archived=False,
     ).distinct()
 

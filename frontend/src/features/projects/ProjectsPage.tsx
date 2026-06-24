@@ -9,7 +9,7 @@ import { SelectFilter } from '@/shared/components/SelectFilter';
 import { useCursorPagination } from '@/shared/hooks/useCursorPagination';
 import type { PaginatedResponse } from '@/shared/hooks/useCursorPagination';
 import { RoleProvider, usePermission } from '@/context/PermissionContext';
-import { type BackendRole } from '@/shared/roles';
+import { type BackendRole, PROJECT_ROLE_PERMISSIONS } from '@/shared/roles';
 import { Guard } from '@/shared/components/Guard';
 import { ProjectCard } from './components/ProjectCard';
 import { projectService } from './services/projectService';
@@ -34,7 +34,7 @@ const fetchProjectsPage = async (
     const projects: ExtendedProject[] = (response?.data ?? []).map((p: any) => ({
     ...p,
     isDeleted: false,
-    role: (p.role || "viewer").toLowerCase(),
+    role: (p.role || "member").toLowerCase(),
   }));
 
   return {
@@ -167,18 +167,19 @@ const ProjectsPage = () => {
           </Button>
 
                                         <SelectFilter
-                      value={roleFilter}
-                      onChange={(v) => {
-                        setRoleFilter(v);
-                      }}
-                      triggerClassName="w-44"
-                      options={[
-                        { value: 'ALL', label: t('projects:roles.all_roles', 'All Roles'), icon: <Layers className="h-3.5 w-3.5" /> },
-                        { value: 'admin', label: t('projects:roles.admin', 'Admin'), icon: <Shield className="h-3.5 w-3.5" /> },
-                        { value: 'annotator', label: t('projects:roles.annotator', 'Annotator'), icon: <Pen className="h-3.5 w-3.5" /> },
-                        { value: 'viewer', label: t('projects:roles.viewer', 'Viewer'), icon: <Eye className="h-3.5 w-3.5" /> },
-                      ]}
-                    />
+                                                    value={roleFilter}
+                                                    onChange={(v) => {
+                                                      setRoleFilter(v);
+                                                    }}
+                                                    triggerClassName="w-44"
+                                                    options={[
+                                                      { value: 'ALL', label: t('projects:roles.all_roles', 'All Roles'), icon: <Layers className="h-3.5 w-3.5" /> },
+                                                      { value: 'admin', label: t('projects:roles.admin', 'Admin'), icon: <Shield className="h-3.5 w-3.5" /> },
+                                                      { value: 'member', label: t('projects:roles.member', 'Member'), icon: <Eye className="h-3.5 w-3.5" /> },
+                                                      { value: 'annotator', label: t('projects:roles.annotator', 'Annotator'), icon: <Pen className="h-3.5 w-3.5" /> },
+                                                      { value: 'viewer', label: t('projects:roles.viewer', 'Viewer'), icon: <Eye className="h-3.5 w-3.5" /> },
+                                                    ]}
+                                                  />
 
           <Button 
             variant="outline" 
@@ -228,10 +229,9 @@ const ProjectsPage = () => {
             </div>
           ) : (
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {filteredProjects.map(item => (
-                <RoleProvider key={item.id} role={(item.role as BackendRole) || null}>
+                            {filteredProjects.map(item => (
+                <RoleProvider key={item.id} role={(item.role as BackendRole) || null} permissionMap={PROJECT_ROLE_PERMISSIONS}>
                                 <div 
-                  key={item.id} 
                   className="relative group transition-transform hover:scale-[1.01]"
                 >
                   <ProjectCard project={item} cardType="project" />

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Trash2, RotateCcw, X, Plus, Trash, ArrowLeft, Layers, Shield, Users } from "lucide-react";
 import { SelectFilter } from '@/shared/components/SelectFilter';
 import { RoleProvider } from '@/context/PermissionContext';
-import { type BackendRole } from '@/shared/roles';
+import { type BackendRole, DATASET_ROLE_PERMISSIONS } from '@/shared/roles';
 import { Guard } from '@/shared/components/Guard';
 import { DatasetCard } from './components/DatasetCard';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -253,7 +253,7 @@ const DatasetsPage = () => {
       ) : (
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 text-left">
           {filteredDatasets.map((dataset) => (
-            <RoleProvider key={dataset.id} role={(dataset.role as BackendRole) || null}>
+            <RoleProvider key={dataset.id} role={(dataset.role as BackendRole) || null} permissionMap={DATASET_ROLE_PERMISSIONS}>
                         <div
               key={dataset.id}
               onClick={() => navigate(`/datasets/${dataset.id}`)}

@@ -68,12 +68,12 @@ class ProjectDetailView(APIView):
             raise Http404("Project not found.")
 
     def get(self, request, project_id):
-        project = self.get_project(project_id)
-
-        if not project.memberships.filter(user=request.user).exists():
-            raise PermissionDenied(
-                "You do not have permission to view this project."
-            )
+        # get_project_for_user ile güvenlik kontrolü:
+        # Sadece proje üyesi veya owner erişebilir
+        project = get_project_for_user(
+            project_id=project_id,
+            user=request.user,
+        )
 
         return Response(
             ProjectSerializer(project, context={"request": request}).data,
