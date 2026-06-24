@@ -17,6 +17,7 @@ import { Guard } from '@/shared/components/Guard';
 import { usePermission } from '@/context/PermissionContext';
 import { uploadService } from '@/shared/services/s3upload';
 import { useDatasetUploads } from '../hooks/useDatasetUploads';
+import { useAppStore } from '@/store';
 import type { UploadTask } from '@/shared/services/s3upload/types';
 
 interface DatasetImageUploaderProps {
@@ -52,7 +53,11 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+    const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+
+  // Upload Manager panelini açmak için
+  const expandPanel = useAppStore((state) => state.expandPanel);
 
   // Bu dataset'e ait upload task'lerini dinle
   const uploadTasks = useDatasetUploads(datasetId);
@@ -174,20 +179,26 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
     });
   };
 
-  const handleUploadAll = async () => {
+    const handleUploadAll = async () => {
     if (selectedFiles.length === 0) return;
 
+    setIsUploading(true);
+
     for (const sf of selectedFiles) {
-      // Daha önce eklenmişse atla
       const existing = uploadTasks.find((t) => t.upload_id === sf.id);
       if (existing && !['FAILED', 'CANCELLED'].includes(existing.status)) continue;
 
       await uploadService.addUpload(sf.file, datasetId, {
         priority: 'HIGH',
         upload_type: 'asset',
-        hidden: true,
+        hidden: false,
       });
+
+      // Upload Manager panelini otomatik aç
+      expandPanel();
     }
+
+    setIsUploading(false);
   };
 
   // Bir task'in status bilgisini seçili dosyayla eşleştir
@@ -448,7 +459,7 @@ const DatasetImageUploader: React.FC<DatasetImageUploaderProps> = ({
               {!allSelectedUploaded && (
               <Button
                 onClick={handleUploadAll}
-                disabled={hasActiveUploads || selectedFiles.length === 0}
+                disabled={hasActiveUploads || isUploading || selectedFiles.length === 0}
                 className="w-full gap-2"
               >
                 {hasActiveUploads ? (

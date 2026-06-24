@@ -37,7 +37,16 @@ class ProjectSerializer(serializers.ModelSerializer):
         if not request or not request.user or not request.user.is_authenticated:
             return None
 
-        return "admin" if obj.owner_id == request.user.id else None
+        # Proje sahibi admin rolüne sahiptir
+        if obj.owner_id == request.user.id:
+            return "admin"
+
+        # Proje üyesi ise viewer olarak kabul edilir
+        is_member = obj.memberships.filter(user=request.user).exists()
+        if is_member:
+            return "viewer"
+
+        return None
 
 class ProjectCreateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)

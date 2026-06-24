@@ -21,6 +21,7 @@ import { datasetTaskService } from '@/features/datasets/services/datasetTaskServ
 import DatasetSelectionStep, { type DatasetResult } from '@/features/tasks/components/DatasetSelectionStep';
 import MemberSelectionStep, { type DatasetMember } from '@/features/tasks/components/MemberSelectionStep';
 import RoleSelectionStep from '@/features/tasks/components/RoleSelectionStep';
+import TaskDetailsStep, { type TaskFormData } from '@/features/tasks/components/TaskDetailsStep';
 import AssetSelectionStep from '@/features/tasks/components/AssetSelectionStep';
 
 // --- Types ---
@@ -29,10 +30,10 @@ interface AnnotatorAssignment {
   assignee_username: string;
 }
 
-type CreateStep = 1 | 2 | 3 | 4;
+type CreateStep = 1 | 2 | 3 | 4 | 5;
 
 // --- Constants ---
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 const CreateTaskPage = () => {
   const { t } = useTranslation(['tasks', 'common']);
@@ -46,7 +47,16 @@ const CreateTaskPage = () => {
   const [selectedRole, setSelectedRole] = useState<'Annotator' | 'Viewer'>('Annotator');
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set());
   const [assignedAssetMap, setAssignedAssetMap] = useState<Map<string, string>>(new Map());
-  const [note, setNote] = useState('');
+    const [note, setNote] = useState('');
+
+  // Yeni task detay alanları
+  const [taskFormData, setTaskFormData] = useState<TaskFormData>({
+    name: '',
+    description: '',
+    priority: 'medium',
+    deadline: undefined,
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
@@ -55,12 +65,20 @@ const CreateTaskPage = () => {
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastDatasetIdRef = useRef<string | null>(null);
 
-  // --- Mark form as dirty on any change ---
+    // --- Mark form as dirty on any change ---
   useEffect(() => {
-    if (selectedDataset || selectedMember || selectedAssetIds.size > 0 || note.trim()) {
+    if (
+      selectedDataset ||
+      selectedMember ||
+      selectedAssetIds.size > 0 ||
+      note.trim() ||
+      taskFormData.name.trim() ||
+      taskFormData.description.trim() ||
+      taskFormData.deadline
+    ) {
       setIsDirty(true);
     }
-  }, [selectedDataset, selectedMember, selectedAssetIds, note]);
+  }, [selectedDataset, selectedMember, selectedAssetIds, note, taskFormData]);
 
   // --- Conflict Map Building (using /datasets/{datasetId}/annotator-assignments) ---
   const buildConflictMap = useCallback(async (datasetId: string, username: string) => {
@@ -142,7 +160,7 @@ const CreateTaskPage = () => {
     setStep(targetStep);
   };
 
-  // --- Step 1: Dataset Selection ---
+    // --- Step 1: Dataset Selection ---
   const handleDatasetSelect = (dataset: DatasetResult) => {
     if (selectedDataset?.id === dataset.id) return;
     setSelectedDataset(dataset);
@@ -150,10 +168,16 @@ const CreateTaskPage = () => {
     setSelectedRole('Annotator');
     setSelectedAssetIds(new Set());
     setAssignedAssetMap(new Map());
+    setTaskFormData({
+      name: '',
+      description: '',
+      priority: 'medium',
+      deadline: undefined,
+    });
     setStep(2);
   };
 
-  // --- Step 2: Member Selection ---
+    // --- Step 2: Member Selection ---
   const handleMemberSelect = (member: DatasetMember) => {
     if (selectedMember?.user_id === member.user_id) return;
     setSelectedMember(member);
@@ -161,14 +185,19 @@ const CreateTaskPage = () => {
     setStep(3);
   };
 
-  // --- Step 3: Role Selection + auto-advance ---
+  // --- Step 3: Task Details (name, description, priority, deadline) ---
+  const handleTaskDetailsChange = (data: Partial<TaskFormData>) => {
+    setTaskFormData((prev) => ({ ...prev, ...data }));
+  };
+
+  // --- Step 4: Role Selection + auto-advance ---
   const handleRoleChange = (role: 'Annotator' | 'Viewer') => {
     setSelectedRole(role);
     setSelectedAssetIds(new Set());
-    setStep(4);
+    setStep(5);
   };
 
-  // --- Step 4: Asset Toggle ---
+  // --- Step 5: Asset Toggle ---
   const handleAssetToggle = (assetId: string) => {
     setSelectedAssetIds((prev) => {
       const next = new Set(prev);
@@ -181,17 +210,21 @@ const CreateTaskPage = () => {
     });
   };
 
-  // --- Submission ---
+    // --- Submission ---
   const handleSubmit = async () => {
     if (!selectedMember || !selectedDataset || selectedAssetIds.size === 0) return;
 
     setIsSubmitting(true);
     try {
-            await taskService.createTask({
+      await taskService.createTask({
         dataset_id: selectedDataset.id,
         assignee_username: selectedMember.username,
-        role: selectedRole,
+        role: selectedRole.toLowerCase() as 'annotator' | 'viewer',
         image_ids: Array.from(selectedAssetIds),
+        name: taskFormData.name.trim() || undefined,
+        description: taskFormData.description.trim() || undefined,
+        priority: taskFormData.priority,
+        deadline: taskFormData.deadline?.toISOString() || undefined,
         note: note.trim() || undefined,
       });
 
@@ -208,13 +241,14 @@ const CreateTaskPage = () => {
     }
   };
 
-  // --- Validation per step ---
+    // --- Validation per step ---
   const canContinue = (): boolean => {
     switch (step) {
       case 1: return !!selectedDataset;
       case 2: return !!selectedMember;
-      case 3: return !!selectedRole;
-      case 4: return selectedAssetIds.size > 0;
+      case 3: return true; // Task details are optional
+      case 4: return !!selectedRole;
+      case 5: return selectedAssetIds.size > 0;
       default: return false;
     }
   };
@@ -251,11 +285,13 @@ const CreateTaskPage = () => {
                   isActive ? 'text-foreground' : 'text-muted-foreground'
                 }`}
               >
-                {s === 1
+                                  {s === 1
                   ? t('tasks:create.step1_title')
                   : s === 2
                   ? t('tasks:create.step2_title')
                   : s === 3
+                  ? t('tasks:create.details.short_title', 'Details')
+                  : s === 4
                   ? t('tasks:create.step3_title')
                   : t('tasks:create.step4_title')}
               </span>
@@ -318,7 +354,37 @@ const CreateTaskPage = () => {
           </div>
         );
 
-      case 3:
+            case 3:
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold">
+                {t('tasks:create.details.title', 'Task Details')}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {t('tasks:create.details.description', 'Set task name, priority, description, and deadline.')}
+              </p>
+              {/* Active filters badges */}
+              <div className="flex flex-wrap items-center gap-2 mt-3">
+                <Badge variant="outline" className="gap-1.5 text-xs px-3 py-1">
+                  <Database size={12} />
+                  {selectedDataset?.name}
+                </Badge>
+                {selectedMember && (
+                  <Badge variant="secondary" className="gap-1.5 text-xs px-3 py-1">
+                    @{selectedMember.username}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <TaskDetailsStep
+              formData={taskFormData}
+              onChange={handleTaskDetailsChange}
+            />
+          </div>
+        );
+
+      case 4:
         if (!selectedMember) {
           return (
             <div className="flex flex-col items-center gap-4 py-12">
@@ -348,7 +414,7 @@ const CreateTaskPage = () => {
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div className="space-y-6">
             <div>

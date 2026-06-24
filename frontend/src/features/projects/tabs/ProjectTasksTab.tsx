@@ -16,6 +16,7 @@ interface TaskItem {
   id: string;
   name: string;
   status: string;
+  priority?: string;
   count?: number;
   assignee_username?: string | null;
   role?: string;
@@ -43,7 +44,7 @@ export const ProjectTasksTab = ({ projectId }: ProjectTasksTabProps) => {
   const handleDeleteTask = async (id: string) => {
     const confirmed = await confirm({
       title: t('tasks:detail.confirm_delete', 'Revoke Task'),
-      message: t('tasks:detail.confirm_delete_message', 'Are you sure you want to revoke/delete this task assignment?'),
+      description: t('tasks:detail.confirm_delete_message', 'Are you sure you want to revoke/delete this task assignment?'),
       confirmText: t('common:actions.confirm', 'Yes, Revoke'),
       cancelText: t('common:actions.cancel', 'Cancel'),
       variant: 'destructive',

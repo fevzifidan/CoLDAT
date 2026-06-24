@@ -18,13 +18,13 @@ const ProjectDetailPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation(['pages', 'common']);
   const [activeTab, setActiveTab] = useState('datasets');
-  const [project, setProject] = useState<{ id: string; name: string; description?: string; user_role?: string } | null>(null);
+  const [project, setProject] = useState<{ id: string; name: string; description?: string; role?: string } | null>(null);
   const [loadingProject, setLoadingProject] = useState(true);
 
   const projectId = id || '';
 
   // Proje rolünü BackendRole tipine cast et
-  const projectRole = (project?.user_role as BackendRole) || null;
+  const projectRole = (project?.role as BackendRole) || null;
 
   // Proje detayını backend'den çek
   const fetchProject = useCallback(async () => {

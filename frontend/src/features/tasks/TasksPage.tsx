@@ -23,6 +23,7 @@ interface TaskItem {
   created_by_id: string;
   created_by_username: string;
   status: string;
+  priority?: string;
   note?: string;
   image_count: number;
   created_at: string;
@@ -191,14 +192,15 @@ const fetchTasks = async () => {
                                         {visibleTasks.map(item => (
             <div key={item.id} className="transition-transform hover:scale-[1.01]">
               <RoleProvider role={(item.role?.toLowerCase() as BackendRole) ?? null}>
-              <TaskCard 
+                            <TaskCard 
                 task={{
                   ...item,
                   // Serializer'da 'name' alanı bulunmadığı için ID'den benzersiz kısa bir maskeleme üretiyoruz
                   name: `Task #${item.id.slice(0, 8)}`,
                   // TaskSerializer'dan doğrudan dönen image_count yapısını bağlıyoruz
-                  count: item.image_count || 0
-                }} 
+                  count: item.image_count || 0,
+                  priority: item.priority,
+                }}  
                 onViewDetail={(id) => setSelectedTaskId(id)}
                 onAnnotate={(id) => navigate(`/annotate/${id}`)}
                 onView={(id) => navigate(`/view/${id}`)}

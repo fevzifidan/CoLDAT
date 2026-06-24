@@ -125,13 +125,13 @@ const DashboardHome = () => {
     [datasetsList]
   );
 
-    const mappedProjects = useMemo(() =>
+        const mappedProjects = useMemo(() =>
     projectsList.map(p => ({
       id: p.id,
       name: p.name || 'Standard Project',
       status: p.status || '',
       description: p.description || 'Ecosystem managed project workspace.',
-      role: p.user_role,
+      role: p.role,
     })),
     [projectsList]
   );

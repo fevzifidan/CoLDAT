@@ -38,11 +38,15 @@ import {
   ChevronLeft,
   ChevronRight,
   FileImage,
-  FileText
+  FileText,
+  CalendarDays,
+  Flag
 } from "lucide-react";
 
 import { RoleProvider, usePermission } from '@/context/PermissionContext';
 import { Guard } from '@/shared/components/Guard';
+import { useConfirm } from '@/shared/services/confirmation/useConfirm';
+import { useAppStore } from '@/store';
 import { type BackendRole } from '@/shared/roles';
 import { taskService } from '@/features/tasks/services/taskService';
 import notificationService from '@/shared/services/notification/notification.service';
@@ -57,6 +61,10 @@ interface TasksDetailPageProps {
 // Backend'den dönecek response'ın iç yapısı
 interface TaskDetailData {
   id: string;
+  name?: string;
+  description?: string;
+  priority?: string;
+  deadline?: string | null;
   dataset_id: string;
   assignee_id?: string;
   role?: string;
@@ -105,11 +113,11 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
   const [note, setNote] = useState<string>("");
 
   // --- GÖRSEL LİSTESİ (GET /tasks/{taskId}/images) — Cursor-based pagination ---
-  const fetchImagesAdapter = async (
-    cursor: string | null,
+    const fetchImagesAdapter = async (
+    cursor: string | null | undefined,
     limit: number
   ): Promise<PaginatedResponse<TaskImage>> => {
-    return await taskService.getTaskImages(taskId, { limit, after: cursor });
+    return await taskService.getTaskImages(taskId, { limit, after: cursor as any });
   };
 
   const {
@@ -214,18 +222,18 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
   };
 
   // --- API EVENT HANDLERS (DELETE /tasks/{taskId}) ---
-  const handleDeleteTask = async () => {
+    const handleDeleteTask = async () => {
     if (!task) return;
-    if (window.confirm(t('tasks:detail.confirm_delete', "Are you sure you want to revoke/delete this task assignment?"))) {
-      try {
-        setIsSubmitting(true);
-        await taskService.deleteTask(taskId);
-        if (onBack) onBack();
-      } catch (err: any) {
-        alert(err?.response?.data?.message || t('tasks:detail.delete_failed', 'Failed to delete task.'));
-      } finally {
-        setIsSubmitting(false);
-      }
+    const confirmed = window.confirm(t('tasks:detail.confirm_delete', "Are you sure you want to revoke/delete this task assignment?"));
+    if (!confirmed) return;
+    try {
+      setIsSubmitting(true);
+      await taskService.deleteTask(taskId);
+      if (onBack) onBack();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || t('tasks:detail.delete_failed', 'Failed to delete task.'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -288,7 +296,7 @@ const TasksDetailPage = ({ taskId, onBack }: TasksDetailPageProps) => {
     onSetIsAddAssetModalOpen: setIsAddAssetModalOpen,
     onSetNewAssetId: setNewAssetId,
     onSetNote: setNote,
-    onRefreshImages: refreshImages,
+    onRefreshImages: refreshImages as any,
     goNext, goPrev,
   };
 
@@ -346,7 +354,8 @@ const TasksDetailPageInner = ({
   onRefreshImages, goNext, goPrev,
 }: TasksDetailPageInnerProps) => {
   
-  const { hasPermission } = usePermission(); // ✅ Artık RoleProvider children'ı içinde
+    const { hasPermission } = usePermission(); // ✅ Artık RoleProvider children'ı içinde
+  const { confirm } = useConfirm();
 
   const handleAssetClick = (assetId: string) => {
     if (hasPermission('task:view-all')) {
@@ -385,8 +394,10 @@ const TasksDetailPageInner = ({
             <ArrowLeft size={16} />
           </Button>
           <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-extrabold text-foreground">{task.id}</h1>
+                        <div className="flex items-center gap-2.5">
+                            <h1 className="text-2xl font-extrabold text-foreground truncate max-w-md">
+                {task.name && task.name !== 'Untitled Task' ? task.name : `${t('tasks:detail.task_prefix', 'Task')} #${task.id.slice(0, 8)}`}
+              </h1>
               <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider ${getStatusBadge(task.status)}`}>
                 {task.status}
               </span>
@@ -419,10 +430,50 @@ const TasksDetailPageInner = ({
         
         {/* Sol Panel: Meta Bilgiler & İş Akışı Yönetimi */}
         <div className="md:col-span-1 space-y-4">
-          <div className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
+                    <div className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
             <h3 className="font-bold text-sm tracking-wide text-muted-foreground uppercase">{t('tasks:detail.info_section', 'Task Information')}</h3>
             
             <div className="space-y-3 text-sm">
+              {/* Task Name */}
+              {task.name && task.name !== 'Untitled Task' && (
+                <div className="flex justify-between border-b pb-2 border-border">
+                  <span className="text-muted-foreground">{t('tasks:detail.task_name', 'Name:')}</span>
+                  <span className="font-semibold text-right max-w-[200px] truncate">{task.name}</span>
+                </div>
+              )}
+
+              {/* Priority */}
+              {task.priority && (
+                <div className="flex justify-between border-b pb-2 border-border items-center">
+                  <span className="text-muted-foreground">{t('tasks:detail.priority', 'Priority:')}</span>
+                  <span className="flex items-center gap-1.5">
+                    <div className={`h-2.5 w-2.5 rounded-full ${
+                      task.priority === 'urgent' ? 'bg-red-500' :
+                      task.priority === 'high' ? 'bg-amber-500' :
+                      task.priority === 'medium' ? 'bg-blue-500' :
+                      'bg-emerald-500'
+                    }`} />
+                    <span className="font-semibold capitalize">{task.priority}</span>
+                  </span>
+                </div>
+              )}
+
+              {/* Deadline */}
+              {task.deadline && (
+                <div className="flex justify-between border-b pb-2 border-border items-center">
+                  <span className="text-muted-foreground">{t('tasks:detail.deadline', 'Deadline:')}</span>
+                  <span className={`font-semibold text-xs ${new Date(task.deadline) < new Date() && task.status !== 'completed' ? 'text-destructive' : ''}`}>
+                    <CalendarDays size={12} className="inline mr-1" />
+                    {new Date(task.deadline).toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </span>
+                </div>
+              )}
+
+              {/* Assignee */}
               <div className="flex justify-between border-b pb-2 border-border">
                 <span className="text-muted-foreground">{t('tasks:detail.assignee', 'Assignee:')}</span>
                 <span className="font-semibold text-primary">
@@ -433,6 +484,18 @@ const TasksDetailPageInner = ({
                 <span className="text-muted-foreground">{t('tasks:detail.total_assets', 'Total Assets:')}</span>
                 <span className="font-bold">{task.image_count || 0}{t('tasks:detail.files_suffix', ' files')}</span>
               </div>
+
+              {/* Description */}
+              {task.description && (
+                <div className="pt-1">
+                  <span className="text-xs text-muted-foreground font-medium block mb-1">
+                    {t('tasks:detail.description', 'Description:')}
+                  </span>
+                  <p className="text-xs text-card-foreground/80 leading-relaxed bg-muted/50 rounded-lg p-2.5">
+                    {task.description}
+                  </p>
+                </div>
+              )}
 
               {/* Rejection Note */}
               {task.status?.toLowerCase() === "rejected" && task.rejection_note && (
@@ -582,12 +645,12 @@ const TasksDetailPageInner = ({
                 </TableHeader>
                 <TableBody>
                   {images.map((img) => (
-                    <ContextMenu key={img.image_id}>
-                      <ContextMenuTrigger
-                        onClick={() => handleAssetClick(img.image_id)}
-                        className="cursor-pointer [&:has([role=menuitem])]:bg-muted/50"
-                      >
-                        <TableRow>
+                                        <ContextMenu key={img.image_id}>
+                      <ContextMenuTrigger asChild>
+                        <TableRow
+                          onClick={() => handleAssetClick(img.image_id)}
+                          className="cursor-pointer [&:has([role=menuitem])]:bg-muted/50"
+                        >
                           <TableCell className="py-2.5">
                             <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
                               {img.mime_type?.startsWith('image/') ? (

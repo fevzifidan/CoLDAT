@@ -50,8 +50,8 @@ export const ROLE_PERMISSIONS: Record<BackendRole, Permission[]> = {
     'dataset:create', 'dataset:update', 'dataset:delete', 'dataset:view',
     'member:add', 'member:remove', 'member:update-role', 'member:view',
     'asset:add', 'asset:remove', 'asset:view',
-    'task:create', 'task:view-all', 'task:delete', 'task:reassign',
-    'task:submit-approval', 'task:approve-reject',
+        'task:create', 'task:view-all', 'task:delete', 'task:reassign',
+    'task:approve-reject',
     'task:add-asset', 'task:remove-asset',
   ],
   annotator: [

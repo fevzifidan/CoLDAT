@@ -34,7 +34,7 @@ const fetchProjectsPage = async (
     const projects: ExtendedProject[] = (response?.data ?? []).map((p: any) => ({
     ...p,
     isDeleted: false,
-    role: (p.user_role || "viewer").toLowerCase(),
+    role: (p.role || "viewer").toLowerCase(),
   }));
 
   return {

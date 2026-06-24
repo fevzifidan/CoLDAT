@@ -40,37 +40,53 @@ interface RetryUploadResponse {
 
 /**
  * GET /users/assets endpoint'inden dönen asset tipi.
- * CoLDAT API Design'daki Image şemasına dayanır.
+ * Backend AssetSerializer şemasına birebir uyumlu.
+ * Not: Backend'de pagination, file_size, thumbnail_url, dataset_name alanları yoktur.
  */
 export interface UserAsset {
   id: string;
   dataset_id: string;
-  dataset_name?: string;
   filename: string;
   mime_type: string;
-  width: number;
-  height: number;
-  file_size: number;
+  width: number | null;
+  height: number | null;
   status: string;
   created_at: string;
   updated_at?: string;
+  /** Backend'de mevcut olmayan alanlar — null/undefined gelebilir */
+  file_size?: number;
   thumbnail_url?: string;
+  dataset_name?: string;
 }
 
 export const assetService = {
   /**
    * GET /users/assets
-   * Kullanıcının yüklediği tüm asset'leri cursor-based pagination ile listeler.
-   * @param {Object} params - { status?, dataset_name?, dataset_id?, limit?, after? }
+   * Kullanıcının yüklediği tüm asset'leri listeler.
+   * Backend şu an cursor-based pagination DESTEKLEMEMEKTEDİR
+   * (next_cursor her zaman null döner, tüm sonuçlar tek seferde gelir).
+   *
+   * @param {Object} params - { status?, search?, limit?, after? }
+   *   - status: "PENDING" | "UPLOADED" | "FAILED" | "VERIFICATION_FAILED"
+   *   - search: filename üzerinde arama (case-insensitive contains)
    */
   getUserAssets: async (params: {
     status?: string;
-    dataset_name?: string;
-    dataset_id?: string;
+    search?: string;
     limit?: number;
     after?: string | null;
   } = {}): Promise<{ data: UserAsset[]; next_cursor: string | null }> => {
-    const response = await apiService.get('/users/assets', { params });
+    const cleanParams: Record<string, any> = {};
+
+    // Sadece backend'in anlayacağı parametreleri gönder
+    if (params.status) cleanParams.status = params.status;
+    if (params.search) cleanParams.search = params.search;
+
+    // limit ve after backend tarafından ignore edilir (pagination yok),
+    // ancak göndermek zararsızdır.
+    if (params.limit) cleanParams.limit = params.limit;
+    if (params.after) cleanParams.after = params.after;
+    const response = await apiService.get('/users/assets', { params: cleanParams });
     const data = response?.data ?? response ?? [];
     return {
       data: Array.isArray(data) ? data : [],
@@ -114,3 +130,4 @@ export const assetService = {
     return response.data || response;
   }
 };
+

@@ -4,11 +4,20 @@ import apiService from "@/shared/services/api/api.service";
 export const assetService = {
   /**
    * GET /users/assets
-   * Kullanıcının yüklediği tüm asset'leri cursor-based pagination ile listeler.
-   * @param {Object} params - { status?, dataset_name?, dataset_id?, limit?, after? }
+   * Kullanıcının yüklediği tüm asset'leri listeler.
+   * Backend şu an cursor-based pagination desteklememektedir.
+   * @param {Object} params - { status?, search?, limit?, after? }
+   *   - status: "PENDING" | "UPLOADED" | "FAILED" | "VERIFICATION_FAILED"
+   *   - search: filename üzerinde arama (case-insensitive contains)
    */
   getUserAssets: async (params = {}) => {
-    const response = await apiService.get('/users/assets', { params });
+    // Sadece backend'in anlayacağı parametreleri temizle
+    const cleanParams = {};
+    if (params.status) cleanParams.status = params.status;
+    if (params.search) cleanParams.search = params.search;
+    if (params.limit) cleanParams.limit = params.limit;
+    if (params.after) cleanParams.after = params.after;
+    const response = await apiService.get('/users/assets', { params: cleanParams });
     const data = response?.data ?? response ?? [];
     return {
       data: Array.isArray(data) ? data : [],
