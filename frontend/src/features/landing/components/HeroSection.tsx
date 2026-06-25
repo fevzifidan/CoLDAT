@@ -13,7 +13,7 @@ export const HeroSection: React.FC = () => {
       {/* Main Headlines */}
       <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-neutral-950 dark:text-white max-w-4xl leading-[1.15] mb-6 px-4">
         Computer Vision <br />
-        <span className="italic font-serif text-red-600 dark:text-red-500 font-black">Training, Simplified.</span>
+        <span className="italic font-serif text-red-600 dark:text-red-500 font-black">Annotation Tool</span>
       </h1>
 
       <p className="text-neutral-600 dark:text-zinc-400 max-w-2xl text-base md:text-lg mb-10 px-4 leading-relaxed">
