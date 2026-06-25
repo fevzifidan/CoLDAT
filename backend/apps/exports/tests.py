@@ -1,8 +1,10 @@
 from datetime import timedelta
+from io import BytesIO
 import json
 from unittest.mock import patch
 from zipfile import ZipFile
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
@@ -26,6 +28,15 @@ from .services import (
 
 
 User = get_user_model()
+
+
+class FakeStreamingBody(BytesIO):
+    def iter_chunks(self, chunk_size=1024 * 1024):
+        while True:
+            chunk = self.read(chunk_size)
+            if not chunk:
+                break
+            yield chunk
 
 
 class DatasetExportAuthenticationTests(TestCase):
@@ -269,6 +280,90 @@ class ExportArchiveTests(TestCase):
             )
 
         self.assertEqual(stored_data, export_data)
+
+    def test_coco_archive_can_include_original_images_from_snapshot(self):
+        export_data = {"format": "coco", "images": [], "annotations": []}
+        snapshot = {
+            "assets": [
+                {
+                    "asset_id": "image-1",
+                    "filename": "../unsafe/cat.jpg",
+                    "storage_key": "datasets/dataset-1/assets/cat.jpg",
+                }
+            ]
+        }
+
+        with patch("apps.exports.archives.get_internal_minio_client") as mock_client:
+            mock_client.return_value.get_object.return_value = {
+                "Body": FakeStreamingBody(b"cat-image-bytes"),
+            }
+
+            archive = build_export_archive(
+                export_data=export_data,
+                export_format="coco",
+                snapshot=snapshot,
+            )
+        self.addCleanup(archive.close)
+
+        with ZipFile(archive) as zip_file:
+            self.assertEqual(
+                set(zip_file.namelist()),
+                {
+                    "annotations/instances.json",
+                    "images/cat.jpg",
+                },
+            )
+            self.assertEqual(zip_file.read("images/cat.jpg"), b"cat-image-bytes")
+
+        mock_client.return_value.get_object.assert_called_once_with(
+            Bucket=settings.MINIO_BUCKET_NAME,
+            Key="datasets/dataset-1/assets/cat.jpg",
+        )
+
+    def test_archive_prefixes_duplicate_image_filenames(self):
+        export_data = {"format": "visual_genome", "images": []}
+        snapshot = {
+            "assets": [
+                {
+                    "asset_id": "image-1",
+                    "filename": "same.jpg",
+                    "storage_key": "datasets/dataset-1/assets/first.jpg",
+                },
+                {
+                    "asset_id": "image-2",
+                    "filename": "same.jpg",
+                    "storage_key": "datasets/dataset-1/assets/second.jpg",
+                },
+            ]
+        }
+
+        with patch("apps.exports.archives.get_internal_minio_client") as mock_client:
+            mock_client.return_value.get_object.side_effect = [
+                {"Body": FakeStreamingBody(b"first-image")},
+                {"Body": FakeStreamingBody(b"second-image")},
+            ]
+
+            archive = build_export_archive(
+                export_data=export_data,
+                export_format="visual_genome",
+                snapshot=snapshot,
+            )
+        self.addCleanup(archive.close)
+
+        with ZipFile(archive) as zip_file:
+            self.assertEqual(
+                set(zip_file.namelist()),
+                {
+                    "visual_genome.json",
+                    "images/same.jpg",
+                    "images/image-2-same.jpg",
+                },
+            )
+            self.assertEqual(zip_file.read("images/same.jpg"), b"first-image")
+            self.assertEqual(
+                zip_file.read("images/image-2-same.jpg"),
+                b"second-image",
+            )
 
     def test_yolo_archive_contains_classes_and_safe_label_paths(self):
         export_data = {
