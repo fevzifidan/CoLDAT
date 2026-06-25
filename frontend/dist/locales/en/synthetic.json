@@ -1,0 +1,162 @@
+{
+  "page": {
+    "title": "Synthetic Generation Studio",
+    "byokBadge": "Bring Your Own Key"
+  },
+  "chat": {
+    "header": "AI Co-Pilot",
+    "inputPlaceholder_noModel": "Select an AI model first...",
+    "inputPlaceholder_ready": "Write a prompt or enter a command (zoom, rotate, reset...)",
+    "inputPlaceholder_generating": "Generating image...",
+    "sendButton": "Send",
+    "generatingStatus": "Generating image...",
+    "welcome": "Welcome to Synthetic Image Studio! Please select an AI model above and enter your API key. Then write a prompt to generate images.",
+    "errors": {
+      "noModel": "⚠️ Please select an AI model first.",
+      "noApiKey": "🔑 Please enter a valid API key. Your key should start with \"sk-\" and be at least 10 characters long.",
+      "generationFailed": "❌ Error ({{retries}} retries): {{message}}\n\nPlease check your API key or try a different prompt.",
+      "unknownError": "Unknown error occurred."
+    },
+    "generatingFor": "🖼️ Generating image for \"{{prompt}}\"... ({{model}})",
+    "generationSuccess": "✅ Image generated successfully! You can use Keep below to save to your project or Discard to delete.",
+    "retrying": "🔄 Retry {{attempt}} ({{wait}}s)...",
+    "commands": {
+      "reset": "✅ Viewer reset: zoom, rotation and filters back to default.",
+      "rotate": "🔄 Image rotated by {{degree}}°.",
+      "zoomIn": "🔍 Zoomed in ({{zoom}}x)",
+      "zoomOut": "🔍 Zoomed out ({{zoom}}x)",
+      "invert_on": "🎨 Invert filter applied.",
+      "invert_off": "🎨 Invert filter removed.",
+      "grayscale": "🎨 Grayscale filter applied.",
+      "sepia": "🎨 Sepia filter applied.",
+      "blur_on": "🎨 Blur filter applied (4px).",
+      "blur_off": "🎨 Blur removed."
+    }
+  },
+  "viewer": {
+    "noImageTitle": "No image yet",
+    "noImageSubtitle": "Write a prompt and click Send",
+    "generatingStatus": "Generating image...",
+    "imageLoadFailed": "Image failed to load",
+    "toolbar": {
+      "zoomIn": "Zoom In (Ctrl+Scroll Up)",
+      "zoomOut": "Zoom Out (Ctrl+Scroll Down)",
+      "rotate": "Rotate 90°",
+      "reset": "Reset"
+    },
+    "filtersIndicator": "Rot: {{rotation}}° | Zoom: {{zoom}}x{{invert}}{{grayscale}}{{sepia}}{{blur}}"
+  },
+  "preview": {
+    "header": "Images ({{count}})",
+    "selectedCount": "{{count}} selected",
+    "clearSelection": "Clear selection",
+    "empty": "No images yet",
+    "dragHandle": "Drag",
+    "selectTooltip": "Select",
+    "deselectTooltip": "Deselect",
+    "discardTooltip": "Discard (Delete)"
+  },
+  "controls": {
+    "shortcut_prev": "Previous",
+    "shortcut_next": "Next",
+    "keep_single": "Keep (Save)",
+    "keep_multi": "Save Selected",
+    "discard_single": "Discard (Delete)",
+    "discard_multi": "Delete Selected",
+    "keep_button": "Keep (K)",
+    "discard_button": "Discard (D)",
+    "multiSelected": "{{count}} images selected",
+    "clearMulti": "Clear"
+  },
+  "modelSelector": {
+    "placeholder": "Select AI Model...",
+    "apiKeyPlaceholder": "{{modelName}} API Key ({{provider}})",
+    "persistedBadge": "Saved",
+    "getKey": "Get Key",
+    "hideKey": "Hide",
+    "showKey": "Show",
+    "clearKey": "Remove API key (also clears from localStorage)",
+    "validation": {
+      "checking": "Validating...",
+      "valid": "API key is valid ✓",
+      "invalid": "API key is invalid",
+      "error": "Error during validation"
+    },
+    "models": {
+      "dall-e-3": {
+        "name": "DALL-E 3",
+        "description": "Highest quality, detailed and creative images. 1024x1024, 1792x1024, 1024x1792"
+      },
+      "dall-e-2": {
+        "name": "DALL-E 2",
+        "description": "Fast and economical image generation. 256x256, 512x512, 1024x1024"
+      },
+      "stable-diffusion-xl": {
+        "name": "Stable Diffusion XL",
+        "description": "High quality, open source AI model. 1024x1024"
+      },
+      "stable-diffusion-3": {
+        "name": "Stable Diffusion 3.5",
+        "description": "Latest Stability model, superior quality. 1024x1024"
+      },
+      "flux-schnell": {
+        "name": "Flux Schnell",
+        "description": "Black Forest Labs - Fast and high quality, open model"
+      },
+      "flux-pro": {
+        "name": "Flux Pro",
+        "description": "Black Forest Labs - Premium quality image generation"
+      }
+    }
+  },
+  "saveDialog": {
+    "title_single": "Save Image",
+    "title_multi": "Save {{count}} Images",
+    "step_project": "Select the project to save images to.",
+    "step_dataset": "Select a dataset within the project.",
+    "step_uploading": "Adding images to S3 upload queue...",
+    "step_complete": "Images added to upload queue.",
+    "multiCountBanner": "{{count}} images will be saved",
+    "noProjects": "You don't have any projects yet. Create a project first.",
+    "noDatasets": "This project has no datasets yet.",
+    "allProjectsLoaded": "All projects loaded ({{count}})",
+    "allDatasetsLoaded": "All datasets loaded ({{count}})",
+    "selectProjectFirst": "Please select a project.",
+    "selectDatasetFirst": "Please select a dataset.",
+    "back": "Back",
+    "cancel": "Cancel",
+    "next": "Next",
+    "upload": "Upload to S3",
+    "uploadMulti": "Upload {{count}} Images to S3",
+    "close": "Close",
+    "trackUploads": "Track Uploads",
+    "uploadingSingle": "Adding image to upload queue...",
+    "uploadingMulti": "Adding {{count}} images to upload queue...",
+    "backgroundNote": "Upload will continue in the background. You can monitor progress in",
+    "uploadManagerLinkText": "Upload Manager",
+    "successSingle": "Image added to upload queue!",
+    "successMulti": "{{count}} images added to upload queue!",
+    "successAction": "Track Uploads",
+    "errorUpload": "Failed to initiate upload",
+    "completeTitle_single": "Image added to upload queue!",
+    "completeTitle_multi": "{{count}} images added to upload queue!",
+    "completeDesc": "Your images are being uploaded to S3 storage. You can track the upload status via the Upload Manager in the bottom right corner.",
+    "retry": "Try Again"
+  },
+  "bulkManager": {
+    "title": "Bulk Image Upload Simulator",
+    "filesList": "Queued files: {{files}}",
+    "uploadButton": "Bulk Upload via Secure URL (upload-urls)",
+    "actionsTitle": "Bulk Action Requests",
+    "actionsDesc": "Approve or reject all selected images at once for endpoint testing.",
+    "rejectAll": "Reject All",
+    "acceptAll": "Accept All",
+    "toast": {
+      "step1": "1/2: Retrieving secure S3 upload URLs...",
+      "step2": "2/2: Transferring files to cloud...",
+      "success": "{{count}} new images successfully uploaded to your synthetic pool!",
+      "uploadError": "Error occurred during upload simulation.",
+      "updateError": "Bulk status update failed."
+    }
+  }
+}

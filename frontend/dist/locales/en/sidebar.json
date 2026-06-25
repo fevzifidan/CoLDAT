@@ -1,0 +1,11 @@
+{
+  "dashboard": "Dashboard",
+  "projects": "Projects",
+  "datasets": "Datasets",
+  "tasks": "Tasks",
+  "api_keys": "API Keys",
+  "my_assets": "My Assets",
+  "settings": "Settings",
+    "synthetic_data": "Synthetic Data",
+  "account_settings": "Account Settings"
+}

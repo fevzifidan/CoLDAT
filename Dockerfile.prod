@@ -1,0 +1,140 @@
+# syntax=docker/dockerfile:1
+
+FROM python:3.13-slim AS builder
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PATH="/opt/venv/bin:$PATH"
+
+RUN python -m venv /opt/venv
+
+WORKDIR /build
+
+COPY backend/requirements.txt .
+RUN pip install --requirement requirements.txt \
+    && pip install gunicorn==23.0.0
+
+
+FROM python:3.13-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DJANGO_SETTINGS_MODULE=config.settings.deploy \
+    PATH="/opt/venv/bin:$PATH"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq5 \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system django \
+    && useradd --system --gid django --home-dir /app django
+
+COPY --from=builder /opt/venv /opt/venv
+
+WORKDIR /app
+
+COPY --chown=django:django backend/ .
+
+RUN mkdir -p /app/staticfiles
+
+RUN <<'SH' sh
+cat > /docker-entrypoint.sh <<'EOF'
+#!/bin/sh
+set -eu
+
+echo "Waiting for PostgreSQL..."
+python - <<'PY'
+import os
+import socket
+import time
+
+host = os.getenv("DB_HOST", "db")
+port = int(os.getenv("DB_PORT", "5432"))
+deadline = time.time() + 60
+
+while True:
+    try:
+        with socket.create_connection((host, port), timeout=3):
+            break
+    except OSError:
+        if time.time() > deadline:
+            raise
+        time.sleep(2)
+PY
+
+echo "Running database migrations..."
+python manage.py migrate --noinput
+
+echo "Collecting static files..."
+python manage.py collectstatic --noinput --clear
+
+echo "Starting application..."
+exec "$@"
+EOF
+chmod 755 /docker-entrypoint.sh
+SH
+
+RUN <<'PY' python
+from pathlib import Path
+Path("/app/config/settings/deploy.py").write_text('''\
+import os
+
+from .prod import *
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    return os.getenv(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_list(name: str) -> list[str]:
+    return [
+        item.strip()
+        for item in os.getenv(name, "").split(",")
+        if item.strip()
+    ]
+
+
+DEBUG = False
+
+ALLOWED_HOSTS = _env_list("ALLOWED_HOSTS") or [
+    "api.coldat.org.tr",
+    "localhost",
+    "127.0.0.1",
+]
+
+CORS_ALLOWED_ORIGINS = _env_list("CORS_ALLOWED_ORIGINS")
+CSRF_TRUSTED_ORIGINS = _env_list("CSRF_TRUSTED_ORIGINS")
+CORS_ALLOW_CREDENTIALS = True
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://coldat.org.tr").rstrip("/")
+
+SECURE_PROXY_SSL_HEADER = None
+USE_X_FORWARDED_HOST = True
+SECURE_SSL_REDIRECT = _env_bool("SECURE_SSL_REDIRECT", False)
+SESSION_COOKIE_SECURE = _env_bool("SESSION_COOKIE_SECURE", False)
+CSRF_COOKIE_SECURE = _env_bool("CSRF_COOKIE_SECURE", False)
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", False)
+SECURE_HSTS_PRELOAD = _env_bool("SECURE_HSTS_PRELOAD", False)
+
+DATABASES["default"]["CONN_MAX_AGE"] = int(os.getenv("DB_CONN_MAX_AGE", "60"))
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+''')
+PY
+
+RUN chown -R django:django /app
+
+USER django
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD python -c "import socket; s=socket.create_connection(('127.0.0.1', 8000), 3); s.close()"
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+
+CMD ["sh", "-c", "exec gunicorn config.wsgi:application --bind 0.0.0.0:${BACKEND_PORT:-8000} --workers ${GUNICORN_WORKERS:-3} --threads ${GUNICORN_THREADS:-2} --timeout ${GUNICORN_TIMEOUT:-120} --graceful-timeout 30 --access-logfile - --error-logfile -"]

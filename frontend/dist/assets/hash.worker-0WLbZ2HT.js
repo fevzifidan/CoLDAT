@@ -1,0 +1,1 @@
+self.onmessage=async r=>{const{file:e,id:a}=r.data;try{const s=await e.arrayBuffer(),t=await crypto.subtle.digest("SHA-256",s),c=Array.from(new Uint8Array(t)).map(o=>o.toString(16).padStart(2,"0")).join("");self.postMessage({id:a,hash:c,success:!0})}catch(s){self.postMessage({id:a,success:!1,error:s})}};

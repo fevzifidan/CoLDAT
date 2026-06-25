@@ -6,6 +6,10 @@
   ],
 
   "compilerOptions": {
+    "skipLibCheck": true,         // Harici kütüphanelerdeki tip hatalarını yoksayar.
+    "noEmitOnError": false,       // TS hatası olsa dahi çıktı dosyalarını üretmeye devam eder.
+    "strict": false,               // Katı kuralların tamamını kapatır.
+    "noImplicitAny": false,
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {

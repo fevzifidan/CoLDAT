@@ -1,0 +1,58 @@
+{
+  "brand": "CoLDAT",
+  "workspace_title": "CoLDAT Çalışma Alanı",
+  "actions": {
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "back": "Geri",
+    "next": "İleri",
+    "yes": "Evet",
+    "no": "Hayır",
+    "close": "Kapat",
+    "create": "Oluştur"
+  },
+  "status": {
+    "loading": "Yükleniyor...",
+    "success": "Başarılı!",
+    "success_copied": "Panoya kopyalandı!",
+    "error": "Bir hata oluştu!",
+    "server_error": "Sunucu hatası!",
+    "deleting": "Siliniyor...",
+    "updating": "Güncelleniyor...",
+    "saving": "Kaydediliyor...",
+    "creating": "Oluşturuluyor...",
+    "moved_to_trash": "Çöp kutusuna taşındı.",
+    "back": "Projelere Dön",
+    "cancel": "İptal",
+    "close": "Kapat",
+    "load_more": "Daha Fazla Yükle",
+    "no_results": "Sonuç bulunamadı.",
+    "action_cannot_be_undone": "Bu işlem geri alınamaz."
+  },
+  "error": {
+    "err_reach_server": "Sunucuya erişilemedi!"
+  },
+  "theme": {
+    "header": "Temayı Değiştir",
+    "appearance": "Görünüm",
+    "light": "Açık",
+    "dark": "Karanlık",
+    "system": "Sistem"
+  },
+  "step_of": "Adım {{current}} / {{total}}",
+  "search": {
+    "placeholder": "Ara..."
+  },
+  "footer": {
+    "privacyPolicy": "Gizlilik Politikası",
+    "termsOfUse": "Kullanım Şartları",
+    "contact": "İletişim",
+    "copyright": "© 2026 CoLDAT. Tüm hakları saklıdır."
+  },
+  "support": "Destek",
+  "help": "Yardım",
+  "language": "Dil",
+  "logout": "Çıkış Yap"
+}

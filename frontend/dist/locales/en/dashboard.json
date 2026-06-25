@@ -1,0 +1,40 @@
+{
+  "title": "Overview",
+  "description": "Welcome back! Here is a quick summary of your ecosystem.",
+  "no_assigned_tasks": "There are no tasks assigned to you at the moment.",
+  "show_more": "Show More",
+  "files": "PROCESSED FILE",
+  "loading_text": "Synchronizing dashboard metrics...",
+  "retry_button": "Retry Connection",
+  "fetch_error": "Failed to sync ecosystem metrics with backend.",
+  "sections": {
+    "recent_tasks": "Recent Tasks",
+    "tasks_description": "Active labeling jobs assigned to you.",
+    "recent_datasets": "Recent Datasets",
+    "datasets_description": "Datasets linked with your primary active workspace.",
+    "datasets_empty": "No datasets found for the primary project directory.",
+    "recent_projects": "Recent Projects",
+    "projects_description": "Enterprise project structures you have validation clearances for.",
+    "projects_empty": "No projects registered in this workspace context."
+  },
+  "buttons": {
+    "manage": "MANAGE",
+    "start_labeling": "START LABELING",
+    "open": "OPEN PROJECT",
+    "create_project": "Create New Project",
+    "dataset": "DATASET"
+  },
+  "status": {
+    "assigned": "ASSIGNED",
+    "in_progress": "IN PROGRESS",
+    "submitted": "SUBMITTED",
+    "approved": "APPROVED",
+    "rejected": "REJECTED"
+  },
+  "roles": {
+    "all_roles": "All Roles",
+    "annotator": "Annotator",
+    "viewer": "Viewer",
+    "admin": "Admin"
+  }
+}

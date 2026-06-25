@@ -1,0 +1,36 @@
+{
+  "title": "Yüklemeler",
+  "mini_island": {
+    "uploading": "{{count}} dosya yükleniyor...",
+    "uploading_plural": "{{count}} dosya yükleniyor...",
+    "all_complete": "Tüm yüklemeler tamamlandı",
+    "upload_failed": "Yükleme başarısız oldu",
+    "uploads_complete": "Yüklemeler tamamlandı",
+    "expand": "Yükleme panelini genişlet",
+    "close": "Yükleme panelini kapat"
+  },
+  "expanded_panel": {
+    "title": "Yüklemeler",
+    "pause_all": "Tümünü Duraklat",
+    "minimize": "Küçült",
+    "close": "Kapat",
+    "empty": "Henüz yükleme yok."
+  },
+  "file_item": {
+    "status": {
+      "idle": "Bekliyor...",
+      "preprocessing": "Ön işleniyor...",
+      "hashing": "Karma (hash) hesaplanıyor...",
+      "requesting_url": "Yükleme hazırlanıyor...",
+      "uploading": "Yükleniyor...",
+      "success": "Tamamlandı",
+      "failed": "Ağ hatası",
+      "cancelled": "İptal edildi"
+    },
+    "progress_completed": "%{{percent}} TAMAMLANDI",
+    "retry": "Yeniden dene",
+    "cancel": "Yüklemeyi iptal et",
+    "hash_computing": "Hesaplanıyor...",
+    "dimensions_unknown": "Bilinmiyor"
+  }
+}

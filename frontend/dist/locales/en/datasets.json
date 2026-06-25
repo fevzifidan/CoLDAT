@@ -1,0 +1,240 @@
+{
+  "title": "Datasets",
+  "create_dataset": "Create Dataset",
+  "empty_list": "No datasets found matching the criteria.",
+  "description": "Manage versioned data collections and track progress.",
+  "search_placeholder": "Search datasets...",
+  "total": "Total",
+  "annotated": "Annotated",
+  "progress": "Progress",
+  "view_data": "View Data",
+  "members": "Members",
+  "more_load": "Load More",
+  "filter": {
+    "all_roles": "All Roles",
+    "owner": "Owner",
+    "member": "Member"
+  },
+  "messages": {
+    "load_failed": "Failed to load datasets."
+  },
+  "create": {
+    "error_needs_project": "You must first enter a project to create a dataset.",
+    "success": "Dataset created successfully."
+  },
+  "roles": {
+    "admin": "Admin",
+    "annotator": "Annotator",
+    "viewer": "Viewer",
+    "member": "Member"
+  },
+  "card": {
+    "no_description": "No description provided for this repository.",
+    "version_label": "Version"
+  },
+  "trash": {
+    "title": "Trash",
+    "modal_title": "Trash Bin",
+    "empty": "Trash is empty",
+    "recover": "Recover",
+    "permanent_delete": "Delete",
+    "tooltips": {
+      "delete_permanently": "Delete Permanently"
+    }
+  },
+  "assets": {
+    "bulk_actions": "Bulk Actions",
+    "url_lifetimes": "URL Lifetimes",
+    "dangling_pointers": "Dangling Pointers",
+    "queue_metrics": "Queue Metrics",
+    "sync_pending": "Sync Pending Queue",
+    "extend_links": "Extend Expiring Links",
+    "force_verification": "Force S3 Verification",
+    "matrix_items": "Dataset Matrix Items",
+    "upload_items": "Upload Items",
+    "no_assets": "No assets found inside this project context.",
+    "retry_pipeline": "Retry Pipeline",
+    "expires_label": "Expires:",
+    "status": {
+      "annotated": "Annotated",
+      "pending": "Pending",
+      "verify_failed": "VERIFY_FAILED",
+      "upload_failed": "UPLOAD_FAILED"
+    },
+    "notifications": {
+      "no_pending_assets": "No pending assets found to update status.",
+      "sending_batch": "Sending batch upload status to backend...",
+      "batch_completed": "Batch status synchronization completed!",
+      "batch_error": "Failed to process bulk status update.",
+      "no_pending_urls": "No pending status assets require URL refresh.",
+      "refreshing_urls": "Refreshing presigned URLs context...",
+      "urls_refreshed": "Successfully refreshed {{count}} assets!",
+      "urls_error": "Access denied or validation failed during URL refresh.",
+      "scanning_dangling": "Scanning S3 repositories for dangling assets...",
+      "scan_completed": "Scan completed. Synced to Uploaded: {{count}}",
+      "scan_error": "Dangling pointer sync pipeline failed.",
+      "retrying_upload": "Re-initializing setup for {{filename}}...",
+      "retry_success": "New Presigned URL generated! Ready for S3 pipeline.",
+      "retry_error": "Asset context is not eligible for a retry workflow."
+    }
+  },
+  "export": {
+    "title": "Matrix Format Export Target",
+    "description": "Transform native annotation polygons into specialized pipeline layers.",
+    "ready_title": "Static Snapshot Export Bundle",
+    "compiling": "Compiling...",
+    "pack_download": "Pack & Download",
+    "version_label": "Export Version",
+    "latest_version": "Latest",
+    "exporting_version": "Exporting",
+    "formats": {
+      "coco_desc": "COCO",
+      "yolo_desc": "YOLO",
+      "visual_genome_desc": "Visual Genome"
+    },
+    "external_api": "External API Integrations",
+    "api_description": "Automate cloud fetch processes using long-lived security signatures.",
+    "emergency_revoke": "Emergency Revoke All",
+    "mint_token": "Mint API Token",
+    "no_keys": "No pipeline access integrations configured yet.",
+    "decoding": "Decoding Signature Records...",
+    "active": "Active",
+    "revoked": "Revoked",
+    "table": {
+      "token_identifier": "Token Identifier",
+      "secret_hash": "Secret Key Hash",
+      "expiry_date": "Expiry Date",
+      "status": "Status",
+      "scope_actions": "Scope Actions"
+    },
+    "placeholder_key_name": "e.g., Jenkins_CI_Pipeline, Production_Sync",
+    "confirm_delete_key": "Are you sure you want to permanently delete this integration token?",
+    "copy_prefix": "Copy key prefix",
+    "confirm_revoke_all": "⚠️ WARNING: This will immediately revoke ALL active API keys for this dataset. External pipelines will break instantly. Proceed?",
+    "notifications": {
+      "load_keys_error": "Failed to retrieve integration keys.",
+      "creating_key": "Generating secure access credentials...",
+      "key_created": "API Key generated successfully!",
+      "key_error": "Could not generate API access credentials.",
+      "key_revealed": "Security signature revealed.",
+      "key_reveal_error": "Unauthorized: Failed to decrypt secret string.",
+      "key_deleted": "API Key revoked permanently.",
+      "key_delete_error": "Pipeline failure during key deletion.",
+      "revoking_all": "Executing global override revocation...",
+      "revoke_success": "Security lockdown successful. All tokens invalidated.",
+      "revoke_error": "Override pipeline execution failed."
+    }
+  },
+  "modal": {
+    "step1_title": "Select a Project",
+    "step1_desc": "Choose a project where you are an admin to create a dataset inside it.",
+    "step2_title": "Create New Dataset",
+    "step2_desc": "Configuring dataset for: {{projectName}}",
+    "back_button": "Back",
+    "selected_project_label": "Selected Project",
+    "no_admin_projects": "No projects found where you are an admin. Start by creating a project.",
+    "loading_projects": "Loading projects...",
+    "success": "Dataset created successfully.",
+    "error_create": "Failed to create dataset.",
+    "error_fetch_projects": "Failed to load projects."
+  },
+  "add_members_page": {
+    "title": "Add Team Members",
+    "subtitle": "Select and assign roles to project members",
+    "step1_title": "Select Members",
+    "step1_description": "Choose team members from the project to add to this dataset.",
+    "step2_title": "Assign Roles",
+    "step2_description": "Set the role for each selected member.",
+    "no_members": "No other members found in the project.",
+    "no_members_hint": "Add members to the project first.",
+    "no_selection": "No members selected. Please go back.",
+    "project_member": "Project Member",
+    "selected_count": "{{count}} member(s) selected",
+    "add_members_button": "Add Members",
+    "add_success": "{{count}} member(s) added successfully.",
+    "add_partial": "{{succeeded}} member(s) added, {{failed}} failed.",
+    "add_error": "Failed to add members.",
+    "table": {
+      "user": "User",
+      "role_in_project": "Role in Project",
+      "role": "Role"
+    }
+  },
+  "detail": {
+    "overview_tab": "Overview",
+    "versions_tab": "Versions",
+    "export_tab": "Export",
+    "subtitle": "Dataset Overview",
+    "statistics": "Statistics",
+    "total_images": "Total Images",
+    "annotated": "Annotated",
+    "complete": "complete",
+    "no_data": "No data",
+    "role_label": "Role",
+    "delete_confirm": "Are you sure you want to delete this dataset?"
+  },
+  "versions": {
+    "title": "Version History",
+    "description": "View and manage dataset snapshots",
+    "latest_badge": "Latest",
+    "no_versions": "No versions available yet.",
+    "no_versions_desc": "Versions are created automatically when a task is approved.",
+    "actions": {
+      "export": "Export",
+      "restore": "Restore"
+    },
+    "restore_dialog": {
+      "title": "Restore Version",
+      "description": "Restore dataset state from",
+      "create_new": "Create as new version",
+      "create_new_desc": "Creates a new version from the snapshot. Current dataset state is preserved.",
+      "replace": "Replace current state",
+      "replace_desc": "Replaces the current dataset assets and annotations with the snapshot. Current state will be lost.",
+      "confirm": "Restore"
+    },
+    "notifications": {
+      "load_error": "Failed to load version history.",
+      "restoring_new": "Creating new version from snapshot...",
+      "restoring_replace": "Replacing dataset state...",
+      "restore_new_success": "New version created from snapshot!",
+      "restore_replace_success": "Dataset state replaced successfully!",
+      "restore_error": "Version restore failed."
+    }
+  },
+  "project_page": {
+    "manage_linked": "Linked Datasets Management",
+    "active_datasets": "Active Datasets",
+    "pipeline_status": "Pipeline Status",
+    "requirements": "Requirements Link",
+    "no_dataset_title": "No Dataset Connected Yet",
+    "no_dataset_desc": "To unlock the project manager dashboard, you must first attach or upload a dataset matrix to this environment.",
+    "create_new_dataset": "Create New",
+    "create_from_scratch": "Create from Scratch",
+    "create_and_add": "Create & Add to Project",
+    "create_modal_title": "Create New Dataset",
+    "create_modal_desc": "Start a new data collection directly for this project.",
+    "dataset_name_label": "Dataset Name",
+    "description_label": "Description",
+    "placeholder_name": "e.g., Autonomous Driving Camera Data",
+    "placeholder_desc": "Briefly describe the purpose of this dataset...",
+    "pipeline_info": "To access the project management dashboard (MANAGE), at least 1 verified dataset must be added to the list above.",
+    "dataset_connection": "Dataset Connection:",
+    "manager_access": "Manager Access:",
+    "passed": "PASSED",
+    "required_label": "REQUIRED",
+    "unlocked": "UNLOCKED",
+    "locked": "LOCKED",
+    "id_label": "ID",
+    "images_label": "Images",
+    "annotated_label": "Annotated",
+    "role_label": "Role",
+    "refresh": "Refresh",
+    "loading_configs": "Loading dataset configurations...",
+    "notifications": {
+      "load_error": "An error occurred while loading data.",
+      "creating_dataset": "Creating dataset...",
+      "create_success": "Dataset successfully created and added to project.",
+      "create_error": "An error occurred."
+    }
+  }
+}

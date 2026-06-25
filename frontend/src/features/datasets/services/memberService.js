@@ -27,7 +27,7 @@ export const memberService = {
    * DELETE /datasets/{datasetId}/members/{memberId}/
    * Dataset'ten bir üyeyi membership ID'si ile siler.
    */
-  removeMember: async (datasetId: string, memberId: string) => {
+  removeMember: async (datasetId, memberId) => {
     const response = await apiService.delete(`/datasets/${datasetId}/members/${memberId}/`);
     // API spec: 204 No Content
     return response;

@@ -1,0 +1,11 @@
+{
+  "dashboard": "Genel Bakış",
+  "projects": "Projeler",
+  "datasets": "Veri Setleri",
+  "tasks": "Görevler",
+  "api_keys": "API Anahtarları",
+  "my_assets": "Benim Resimlerim",
+  "settings": "Ayarlar",
+    "synthetic_data": "Sentetik Veri",
+  "account_settings": "Hesap Ayarları"
+}

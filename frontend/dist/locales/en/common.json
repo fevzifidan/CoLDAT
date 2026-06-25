@@ -1,0 +1,58 @@
+{
+  "brand": "CoLDAT",
+  "workspace_title": "CoLDAT Workspace",
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "yes": "Yes",
+    "no": "No",
+    "close": "Close",
+    "create": "Create"
+  },
+  "status": {
+    "loading": "Loading...",
+    "success": "Successful!",
+    "success_copied": "Copied to clipboard!",
+    "error": "An error occurred!",
+    "server_error": "Server error!",
+    "deleting": "Deleting...",
+    "updating": "Updating...",
+    "saving": "Saving...",
+    "creating": "Creating...",
+    "moved_to_trash": "Moved to trash.",
+    "back": "Go to Projects",
+    "cancel": "Cancel",
+    "close": "Close",
+    "load_more": "Load More",
+    "no_results": "No results found.",
+    "action_cannot_be_undone": "This action cannot be undone."
+  },
+  "error": {
+    "err_reach_server": "Could not reach server!"
+  },
+  "theme": {
+    "header": "Change Theme",
+    "appearance": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "step_of": "Step {{current}} of {{total}}",
+  "search": {
+    "placeholder": "Search..."
+  },
+  "footer": {
+    "privacyPolicy": "Privacy Policy",
+    "termsOfUse": "Terms of Use",
+    "contact": "Contact",
+    "copyright": "© 2026 CoLDAT. All rights reserved."
+  },
+  "support": "Support",
+  "help": "Help",
+  "language": "Language",
+  "logout": "Logout"
+}

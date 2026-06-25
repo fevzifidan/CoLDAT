@@ -1,0 +1,163 @@
+{
+  "datasets": {
+    "title": "Datasets",
+    "create_dataset": "Create Dataset",
+    "search_placeholder": "Search datasets...",
+    "empty_list": "No datasets found matching the criteria.",
+    "more_load": "Load More",
+    "description": "Manage versioned data collections and track progress.",
+    "filter": {
+      "all_roles": "All Roles",
+      "owner": "Owner",
+      "member": "Member"
+    }
+  },
+  "trash": {
+    "title": "Trash",
+    "modal_title": "Trash Bin",
+    "empty": "Trash is empty",
+    "recover": "Recover",
+    "permanent_delete": "Delete",
+    "tooltips": {
+      "delete_permanently": "Delete Permanently"
+    }
+  },
+  "project_detail": {
+    "not_found": "Project Not Found.",
+    "save_all": "Save All Changes",
+    "annotate_data": "Annotate Data",
+    "alert_success": "Changes saved successfully (Check console).",
+    "tabs": {
+      "general": "General",
+      "taxonomy": "Taxonomy",
+      "assets": "Assets",
+      "users": "Users",
+      "export": "Export"
+    }
+  },
+  "project_general": {
+    "metadata": "Project Metadata",
+    "project_name": "PROJECT NAME",
+    "description": "DESCRIPTION",
+    "task_type": "TASK TYPE",
+    "privacy_status": "PRIVACY STATUS",
+    "public": "Public",
+    "private": "Private",
+    "delete_project": "Delete Project",
+    "delete_warning": "This action is permanent and cannot be undone.",
+    "placeholder_name": "e.g., Autonomous Driving Dataset",
+    "placeholder_desc": "Describe the purpose of this dataset...",
+    "tasks": {
+      "object_detection": "Object Detection",
+      "instance_segmentation": "Instance Segmentation",
+      "classification": "Classification"
+    }
+  },
+  "taxonomy": {
+    "title": "Project Taxonomy",
+    "description": "Manage object classes and the relations between them.",
+    "save_changes": "Save Changes",
+    "alert_saved": "Changes Saved!",
+    "object_classes": "Object Classes",
+    "predicates": "Predicates",
+    "no_global_attributes": "No Global Attributes Defined",
+    "add_global_attribute": "Add global attribute",
+    "global_attributes_title": "Global Attributes",
+    "prompt_msg": "Enter new attribute name (e.g., color, truncation):",
+    "default_new_class": "New Class",
+    "default_new_relation": "new_relation",
+    "view_only": "Read Only",
+    "no_classes": "No classes defined yet.",
+    "no_predicates": "No predicates defined yet.",
+    "permanent_delete_warning": "WARNING! This action will permanently delete ALL historical labels associated with this item from the database. Are you sure?",
+    "deleting": "Deleting item...",
+    "delete_success": "Item and all associated labels have been successfully deleted.",
+    "delete_error": "An error occurred while deleting the item."
+  },
+  "assets": {
+    "search_placeholder": "Search assets...",
+    "upload_items": "Upload Items",
+    "cancel": "Cancel",
+    "upload_title": "Upload your images or videos",
+    "upload_desc": "Drag and drop files here, or click to browse. Supports JPG, PNG, MP4.",
+    "select_files": "Select Files",
+    "status": {
+      "annotated": "Annotated",
+      "pending": "Pending"
+    }
+  },
+  "team": {
+    "title": "Project Team",
+    "description": "Manage collaborators and access levels.",
+    "cancel": "Cancel",
+    "add_member": "Add Member",
+    "email_label": "Email Address",
+    "role_label": "Role",
+    "send_invitation": "Send Invitation",
+    "alert_invited": "Invitation sent to {{email}}!",
+    "status": {
+      "active": "ACTIVE",
+      "invited": "INVITED"
+    },
+    "roles": {
+      "admin": "Admin",
+      "manager": "Manager",
+      "labeler": "Labeler",
+      "reviewer": "Reviewer"
+    }
+  },
+  "export": {
+    "title": "Export Dataset",
+    "description": "Download your annotations in industry-standard formats.",
+    "ready_title": "Ready to Generate",
+    "ready_desc": "This process will package all annotated assets into a {{format}} file.",
+    "btn_generating": "Generating...",
+    "btn_export_now": "Export Now",
+    "formats": {
+      "coco_desc": "Common Objects in Context format",
+      "yolo_desc": "Darknet / PyTorch format",
+      "pascal_desc": "XML format for object detection"
+    }
+  },
+  "user_assets": {
+    "title": "My Assets",
+    "subtitle": "All uploaded assets across datasets",
+    "search_placeholder": "Search by filename...",
+    "no_results": "No matching assets",
+    "empty": "No assets found.",
+    "empty_filter_hint": "Try adjusting your search or filter criteria.",
+    "empty_hint": "Assets you upload to any dataset will appear here for easy browsing.",
+    "clear_filters": "Clear Filters",
+    "page_info": "Page {{page}} · {{count}} asset",
+    "page_info_plural": "Page {{page}} · {{count}} assets",
+    "items_count": "{{count}} items",
+    "last_page": "Last page",
+    "stats": {
+      "this_page": "This Page",
+      "uploaded": "Uploaded",
+      "pending": "Pending",
+      "failed": "Failed"
+    },
+    "table": {
+      "type": "Type",
+      "filename": "Filename",
+      "dimensions": "Dimensions",
+      "format": "Format",
+      "status": "Status",
+      "uploaded": "Uploaded"
+    },
+    "status_labels": {
+      "all": "All Statuses",
+      "pending": "Pending",
+      "uploaded": "Uploaded",
+      "verification_failed": "Verify Failed",
+      "failed": "Failed"
+    },
+    "time": {
+      "just_now": "just now",
+      "mins_ago": "{{count}}m ago",
+      "hours_ago": "{{count}}h ago",
+      "days_ago": "{{count}}d ago"
+    }
+  }
+}

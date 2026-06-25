@@ -1,0 +1,37 @@
+{
+  "title": "Projects",
+  "create_new": "Create New Project",
+  "import": "Import Project",
+  "search_placeholder": "Search projects...",
+  "more_load": "Load More",
+  "show_more": "Show More",
+  "no_projects": "No active projects found matching criteria.",
+  "loading": "Loading project...",
+  "files": "PROCESSED FILE",
+  "buttons": {
+    "manage": "MANAGE",
+    "start_labeling": "START LABELING",
+    "open": "OPEN PROJECT",
+    "create_project": "Create New Project",
+    "dataset": "DATASET"
+  },
+  "status": {
+    "assigned": "ASSIGNED",
+    "in_progress": "IN PROGRESS",
+    "submitted": "SUBMITTED",
+    "approved": "APPROVED",
+    "rejected": "REJECTED"
+  },
+  "roles": {
+    "all_roles": "All Roles",
+    "annotator": "Annotator",
+    "viewer": "Viewer",
+    "admin": "Admin"
+  },
+  "filter": {
+    "all_roles": "All Roles",
+    "owner": "Owner",
+    "member": "Member"
+  },
+  "trash_btn": "Trash"
+}

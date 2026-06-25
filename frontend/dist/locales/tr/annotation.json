@@ -1,0 +1,144 @@
+{
+  "toolbar": {
+    "undo": "Geri Al",
+    "redo": "Yinele",
+    "zoomIn": "Yakınlaş",
+    "zoomOut": "Uzaklaş",
+    "panTool": "Kaydırma Aracı",
+    "magnifier": "Büyüteç",
+    "resetView": "Görünümü Sıfırla",
+    "prev": "ÖNCEKİ",
+    "next": "SONRAKİ",
+    "viewSettings": "Görünüm",
+    "imageSettings": "Görsel Ayarları",
+    "reset": "Sıfırla",
+    "brightness": "Parlaklık",
+    "contrast": "Kontrast",
+    "saturation": "Doygunluk",
+    "maskOpacity": "Maske Opaklığı",
+    "settings": "Ayarlar",
+    "settingsTitle": "Ayarlar",
+    "theme": "Tema",
+    "viewSettingsDescription": "Tuval Alanı",
+    "samSettings": "SAM Ayarları",
+    "samSettingsDescription": "Önbellek ve Model",
+    "livewireSettings": "Livewire Ayarları",
+    "livewireSettingsDescription": "Poligon Sadeleştirme",
+    "livewireEpsilon": "Sadeleştirme Toleransı (Epsilon)",
+    "livewireEpsilonDescription": "Epsilon değeri arttıkça poligon köşe sayısı azalır ve daha sade çizgiler oluşur. Düşük değerler orijinal sınır çizgisine sadık kalır.",
+    "samCache": "SAM Önbelleği",
+    "samCacheInfo": "Gömme (embedding) önbelleği SAM modelinin daha hızlı çalışmasını sağlar.",
+    "samCacheEntries": "{{count}} önbelleğe alınmış gömme",
+    "clearSAMCache": "Önbelleği Temizle",
+    "clearSAMCacheConfirmTitle": "SAM önbelleği temizlensin mi?",
+    "clearSAMCacheConfirmDescription": "Bu işlem, yerel olarak önbelleğe alınmış tüm SAM (Segment Anything Model) gömme verilerini kalıcı olarak silecektir. Bu işlem geri alınamaz.",
+    "clearSAMCacheConfirmButton": "Önbelleği Temizle",
+    "samCacheCleared": "SAM önbelleği başarıyla temizlendi.",
+    "export": "Dışa Aktar",
+    "exportOptions": "Dışa Aktarma Formatları",
+    "exportCOCO": "COCO Formatı (.json)",
+    "exportYOLO": "YOLO Formatı (.txt)",
+    "exportVG": "Visual Genome (.json)",
+    "exporting": "Veri dışa aktarılıyor...",
+    "exportSuccess": "Dışa aktarma başarılı!",
+    "exportError": "Dışa aktarma başarısız oldu: {{error}}",
+    "save": "Kaydet",
+    "saveTooltip": "Etiketleri kaydet (Ctrl+S)",
+    "submit": "İncelemeye Gönder",
+    "submitTooltip": "Bu görevi yönetici incelemesi için gönderir."
+  },
+  "sideToolbar": {
+    "select": "Seç (V)",
+    "bbox": "Dikdörtgen (R)",
+    "polygon": "Poligon (P)",
+    "points": "Noktalar (K)",
+    "pen": "Kalem (B)",
+    "eraser": "Silgi (E)",
+    "livewire": "Akıllı Tel / Livewire (L)",
+    "sam": "SAM (S)",
+    "samPoint": "Nokta İstemi",
+    "samBbox": "Kutu İstemi"
+  },
+  "leftPanel": {
+    "search": "Mevcut sayfada ara...",
+    "taskQueue": "Görev Kuyruğu",
+    "datasetQueue": "Veri Seti Kuyruğu",
+    "imagesCount": "{{current}} / {{total}} görsel",
+    "status": {
+      "uploaded": "Yüklendi",
+      "pending": "Beklemede",
+      "verFailed": "Doğrulama Başarısız",
+      "failed": "Başarısız Oldu"
+    },
+    "filter": "Filtrele"
+  },
+  "rightPanel": {
+    "tabs": {
+      "inspector": "Denetçi",
+      "overview": "Genel Bakış"
+    },
+    "inspector": {
+      "noObjectSelected": "Hiçbir nesne seçilmedi",
+      "boundingBox": "Sınırlayıcı Kutu (BBox)",
+      "class": "Sınıf",
+      "selectClass": "Bir sınıf seçin...",
+      "zIndex": "Z-Index",
+      "bringForward": "Öne Getir",
+      "sendBackward": "Arkaya Gönder",
+      "relationsOntology": "İlişkiler (Ontoloji)",
+      "noRelations": "Bu nesne için tanımlı ilişki yok",
+      "fields": {
+        "xMin": "X MİN",
+        "yMin": "Y MİN",
+        "xMax": "X MAKS",
+        "yMax": "Y MAKS"
+      },
+      "classes": "Sınıflar",
+      "filterClasses": "Sınıfları filtrele...",
+      "objectHeader": {
+        "hide": "Gizle",
+        "show": "Göster",
+        "lock": "Kilitle",
+        "unlock": "Kilidi Aç",
+        "delete": "Sil",
+        "rename": "Yeniden Adlandır",
+        "id": "ID",
+        "deleteConfirmTitle": "Bu nesneyi silmek istediğinizden emin misiniz?",
+        "confirmDelete": "Sil",
+        "cancel": "İptal"
+      }
+    },
+    "overview": {
+      "annotatedObjects": "Etiketlenmiş Nesneler",
+      "noAnnotations": "Henüz etiket bulunmuyor",
+      "objectRelations": "Nesne İlişkileri",
+      "noRelations": "Tanımlanmış ilişki yok",
+      "hidden": "gizli"
+    },
+    "objectMenu": {
+      "menu": "Menü",
+      "relation": "İlişki",
+      "selectTarget": "Hedef nesneyi seçin...",
+      "noObjectsFound": "Nesne bulunamadı.",
+      "selectRelationType": "İlişki türünü seçin...",
+      "noTypesFound": "Tür bulunamadı."
+    },
+    "contextMenu": {
+      "hideObject": "Nesneyi Gizle",
+      "showObject": "Nesneyi Göster",
+      "unlockObject": "Nesne Kilidini Aç",
+      "lockObject": "Nesneyi Kilitle",
+      "deleteObject": "Nesneyi Sil"
+    },
+    "pagination": {
+      "previous": "Önceki",
+      "next": "Sonraki",
+      "page": "Sayfa {{page}}"
+    }
+  },
+  "sam": {
+    "actionHint": "Poligon için Q'ya, sınırlayıcı kutu için W'ya basın",
+    "bboxActionHint": "İstem alanı oluşturmak için sürükleyerek sınırlayıcı kutu çizin",
+    "noMaskFound": "Seçilen bölgede hiçbir maske bulunamadı."
+  }
+}
