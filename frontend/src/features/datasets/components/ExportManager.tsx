@@ -21,17 +21,17 @@ import {
   Loader2, 
   Key, 
   Trash2, 
-  Eye, 
   AlertOctagon,
   Copy,
-  Check
+  Check,
+  Info
 } from "lucide-react";
 import { exportService } from '../services/exportService';
 
 interface ApiKeyItem {
   id: string;
   name: string;
-  api_key: string;
+  key_prefix: string;
   created_at: string;
   expires_at: string;
   is_active: boolean;
@@ -48,11 +48,10 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
   const [isExporting, setIsExporting] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState('coco');
 
-  // API Keys State'leri
+    // API Keys State'leri
   const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
   const [isLoadingKeys, setIsLoadingKeys] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
-  const [revealedKeys, setRevealedKeys] = useState<{ [keyId: string]: string }>({});
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
 
     const formats = [
@@ -99,29 +98,19 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
           error: t("datasets:export.notifications.key_error", "Could not generate API access credentials."),
         }
       );
-      setNewKeyName('');
+            setNewKeyName('');
       
-      // Eğer backend yeni üretilen açık anahtarı (res.key) dönüyorsa, doğrudan kullanıcı görsün diye inject edelim:
-      if (res.key) {
-        setRevealedKeys(prev => ({ ...prev, [res.id]: res.key }));
+      // Backend yeni oluşturulan raw_key'i sadece bu response'da döner
+      if (res.raw_key) {
+        notificationService.info(
+          `API Key: ${res.raw_key}`,
+          { duration: 120000 } // 2 dakika gösterim süresi
+        );
       }
       
       loadApiKeys();
     } catch (err) {
       console.error(err);
-    }
-  };
-
-    // Anahtarı Maskesiz Göster (Reveal)
-  const handleRevealKey = async (keyId: string) => {
-    if (!datasetId) return;
-    try {
-      const res = await exportService.revealApiKey(datasetId, keyId);
-      setRevealedKeys(prev => ({ ...prev, [keyId]: res.api_key }));
-      notificationService.success(t("datasets:export.notifications.key_revealed", "Security signature revealed."));
-    } catch (err) {
-      console.error(err);
-      notificationService.error(t("datasets:export.notifications.key_reveal_error", "Unauthorized: Failed to decrypt secret string."));
     }
   };
 
@@ -170,16 +159,32 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
     setTimeout(() => setCopiedKeyId(null), 2000);
   };
 
-    // Export tetikleyicisi - gerçek backend bağlantısı
+        // Export tetikleyicisi - backend'den gelen download_url ile indirme
   const handleExport = async () => {
     if (!datasetId) return;
     setIsExporting(true);
     try {
-      await exportService.downloadExport(datasetId, { format: selectedFormat });
-      notificationService.success(`${selectedFormat === 'visual_genome' ? 'Visual Genome' : selectedFormat.toUpperCase()} ${t("datasets:export.notifications.export_complete", "package generated! Ready to feed internal SDK frameworks.")}`);
+      const result = await notificationService.promise(
+        exportService.downloadExport(datasetId, { format: selectedFormat }),
+        {
+          loading: `${selectedFormat.toUpperCase()} ${t("datasets:export.compiling", "Compiling...")}`,
+          success: (data) => `${selectedFormat.toUpperCase()} ${t("datasets:export.notifications.export_complete", "export ready!")}`,
+          error: t("datasets:export.notifications.export_error", "Export failed. Please try again."),
+        }
+      );
+      
+      // Backend'den gelen presigned download_url ile indirme başlat
+      const downloadUrl = result?.download_url;
+      if (downloadUrl) {
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${selectedFormat}-${result?.version_tag || 'latest'}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
     } catch (err) {
       console.error(err);
-      notificationService.error(t("datasets:export.notifications.export_error", "Export failed. Please try again."));
     } finally {
       setIsExporting(false);
     }
@@ -313,23 +318,21 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
                     <th className="p-3 text-right pr-4">{t("datasets:export.table.scope_actions", "Scope Actions")}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y dark:divide-slate-800 font-medium text-slate-600 dark:text-slate-300">
+                                <tbody className="divide-y dark:divide-slate-800 font-medium text-slate-600 dark:text-slate-300">
                   {apiKeys.map((key) => {
-                    const isRevealed = !!revealedKeys[key.id];
-                    const displayedKey = isRevealed ? revealedKeys[key.id] : key.api_key;
-                    
                     return (
                       <tr key={key.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
                         <td className="p-3 pl-4 font-bold text-slate-800 dark:text-slate-200">{key.name}</td>
                         <td className="p-3">
                           <div className="flex items-center gap-1.5 font-mono text-[11px] tracking-tight">
-                            <span className={isRevealed ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-400'}>
-                              {displayedKey}
+                            <span className="text-slate-400">
+                              {key.key_prefix}...
                             </span>
                             <button
                               type="button"
-                              onClick={() => handleCopyToClipboard(key.id, displayedKey)}
+                              onClick={() => handleCopyToClipboard(key.id, key.key_prefix)}
                               className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-slate-600"
+                              title={t("datasets:export.copy_prefix", "Copy key prefix")}
                             >
                               {copiedKeyId === key.id ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
                             </button>
@@ -347,22 +350,13 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
                             {key.is_active ? t("datasets:export.active", "Active") : t("datasets:export.revoked", "Revoked")}
                           </Badge>
                         </td>
-                        <td className="p-3 text-right pr-4 space-x-1">
-                          {!isRevealed && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => handleRevealKey(key.id)}
-                              className="h-7 w-7 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg"
-                            >
-                              <Eye size={13} />
-                            </Button>
-                          )}
+                        <td className="p-3 text-right pr-4">
                           <Button 
                             variant="ghost" 
                             size="icon" 
                             onClick={() => handleDeleteKey(key.id)}
                             className="h-7 w-7 text-slate-400 hover:text-rose-600 rounded-lg"
+                            title={t("common:actions.delete", "Delete")}
                           >
                             <Trash2 size={13} />
                           </Button>

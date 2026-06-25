@@ -14,14 +14,18 @@ import {
   Loader2,
   AlertCircle,
   Trash2,
+  FileDown,
+  LayoutDashboard,
 } from 'lucide-react';
 import { RoleProvider } from '@/context/PermissionContext';
 import { type BackendRole, DATASET_ROLE_PERMISSIONS } from '@/shared/roles';
 import { Guard } from '@/shared/components/Guard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { datasetService } from './services/datasetService';
 import DatasetMemberManager from './components/DatasetMemberManager';
 import DatasetImageUploader from './components/DatasetImageUploader';
 import DatasetImageGallery from './components/DatasetImageGallery';
+import ExportManager from './components/ExportManager';
 
 interface DatasetDetail {
   id: string;
@@ -44,6 +48,7 @@ const DatasetDetailPage = () => {
   const [error, setError] = useState<string | null>(null);
   // Refresh key — her upload/görsel değişiminde artırılarak galeri ve istatistiklerin yenilenmesi sağlanır
   const [refreshKey, setRefreshKey] = useState(0);
+  const [activeTab, setActiveTab] = useState('overview');
 
   const fetchDataset = useCallback(() => {
     if (!datasetId) return;
@@ -163,108 +168,130 @@ const DatasetDetailPage = () => {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Main Info Card */}
-        <Card className="md:col-span-2 shadow-sm border-border hover:shadow-md transition-shadow duration-300">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <Database size={18} className="text-primary" />
-              {dataset.name}
-            </CardTitle>
-            <CardDescription className="text-sm">
-              {dataset.description || t('datasets:card.no_description', 'No description provided.')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex flex-wrap gap-3 text-xs font-semibold text-muted-foreground">
-              <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-lg border border-border/50 hover:bg-muted/80 transition-colors">
-                <Layers size={13} className="text-primary/70" />
-                <span>
-                  {t('datasets:card.version_label', 'Version')}:{' '}
-                  <span className="text-foreground font-bold">{dataset.current_version || 'v1.0'}</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-lg border border-border/50 hover:bg-muted/80 transition-colors">
-                <UserCheck size={13} className="text-primary" />
-                <span>
-                  {t('datasets:detail.role_label', 'Role')}:{' '}
-                  <span className="text-foreground font-bold uppercase">{dataset.role || 'N/A'}</span>
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            {/* Tabs Navigation */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="bg-muted/50 p-1 rounded-xl">
+          <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background gap-2">
+            <LayoutDashboard size={15} />
+            {t('datasets:detail.overview_tab', 'Overview')}
+          </TabsTrigger>
+          <TabsTrigger value="export" className="rounded-lg data-[state=active]:bg-background gap-2">
+            <FileDown size={15} />
+            {t('datasets:detail.export_tab', 'Export')}
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Stats Card */}
-        <Card className="shadow-sm border-border hover:shadow-md transition-shadow duration-300">
-          <CardHeader>
-            <CardTitle className="text-sm font-bold">
-              {t('datasets:detail.statistics', 'Statistics')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground group">
-                <div className="p-1.5 rounded-md bg-muted group-hover:bg-primary/10 transition-colors">
-                  <ImageIcon size={16} className="text-foreground/70 group-hover:text-primary transition-colors" />
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6 mt-0">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Main Info Card */}
+            <Card className="md:col-span-2 shadow-sm border-border hover:shadow-md transition-shadow duration-300">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base font-bold">
+                  <Database size={18} className="text-primary" />
+                  {dataset.name}
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  {dataset.description || t('datasets:card.no_description', 'No description provided.')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap gap-3 text-xs font-semibold text-muted-foreground">
+                  <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-lg border border-border/50 hover:bg-muted/80 transition-colors">
+                    <Layers size={13} className="text-primary/70" />
+                    <span>
+                      {t('datasets:card.version_label', 'Version')}:{' '}
+                      <span className="text-foreground font-bold">{dataset.current_version || 'v1.0'}</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-lg border border-border/50 hover:bg-muted/80 transition-colors">
+                    <UserCheck size={13} className="text-primary" />
+                    <span>
+                      {t('datasets:detail.role_label', 'Role')}:{' '}
+                      <span className="text-foreground font-bold uppercase">{dataset.role || 'N/A'}</span>
+                    </span>
+                  </div>
                 </div>
-                {t('datasets:detail.total_images', 'Total Images')}
-              </div>
-              <span className="font-bold text-foreground text-lg">{dataset.total_images ?? 0}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground group">
-                <div className="p-1.5 rounded-md bg-muted group-hover:bg-primary/10 transition-colors">
-                  <CheckCircle size={16} className="text-primary/80 group-hover:text-primary transition-colors" />
+              </CardContent>
+            </Card>
+
+            {/* Stats Card */}
+            <Card className="shadow-sm border-border hover:shadow-md transition-shadow duration-300">
+              <CardHeader>
+                <CardTitle className="text-sm font-bold">
+                  {t('datasets:detail.statistics', 'Statistics')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground group">
+                    <div className="p-1.5 rounded-md bg-muted group-hover:bg-primary/10 transition-colors">
+                      <ImageIcon size={16} className="text-foreground/70 group-hover:text-primary transition-colors" />
+                    </div>
+                    {t('datasets:detail.total_images', 'Total Images')}
+                  </div>
+                  <span className="font-bold text-foreground text-lg">{dataset.total_images ?? 0}</span>
                 </div>
-                {t('datasets:detail.annotated', 'Annotated')}
-              </div>
-              <span className="font-bold text-foreground text-lg">{dataset.annotated_images ?? 0}</span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full transition-all duration-500 ease-out"
-                style={{
-                  width: `${dataset.total_images && dataset.total_images > 0
-                      ? Math.round(((dataset.annotated_images ?? 0) / dataset.total_images) * 100)
-                      : 0
-                    }%`,
-                }}
-              />
-            </div>
-            <p className="text-[10px] text-muted-foreground text-center">
-              {dataset.total_images && dataset.total_images > 0
-                ? `${Math.round(((dataset.annotated_images ?? 0) / dataset.total_images) * 100)}% ${t(
-                  'datasets:detail.complete',
-                  'complete'
-                )}`
-                : t('datasets:detail.no_data', 'No data')}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-      {/* Upload Images Section */}
-      <Guard permission="asset:add">
-        <DatasetImageUploader
-          datasetId={dataset.id}
-          currentUserRole={dataset.role}
-          onUploadComplete={handleImagesChanged}
-        />
-      </Guard>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground group">
+                    <div className="p-1.5 rounded-md bg-muted group-hover:bg-primary/10 transition-colors">
+                      <CheckCircle size={16} className="text-primary/80 group-hover:text-primary transition-colors" />
+                    </div>
+                    {t('datasets:detail.annotated', 'Annotated')}
+                  </div>
+                  <span className="font-bold text-foreground text-lg">{dataset.annotated_images ?? 0}</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full transition-all duration-500 ease-out"
+                    style={{
+                      width: `${dataset.total_images && dataset.total_images > 0
+                          ? Math.round(((dataset.annotated_images ?? 0) / dataset.total_images) * 100)
+                          : 0
+                        }%`,
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground text-center">
+                  {dataset.total_images && dataset.total_images > 0
+                    ? `${Math.round(((dataset.annotated_images ?? 0) / dataset.total_images) * 100)}% ${t(
+                      'datasets:detail.complete',
+                      'complete'
+                    )}`
+                    : t('datasets:detail.no_data', 'No data')}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Image Gallery Section */}
-      <DatasetImageGallery
-        datasetId={dataset.id}
-        currentUserRole={dataset.role}
-        onImagesChanged={handleImagesChanged}
-      />
+          {/* Upload Images Section */}
+          <Guard permission="asset:add">
+            <DatasetImageUploader
+              datasetId={dataset.id}
+              currentUserRole={dataset.role}
+              onUploadComplete={handleImagesChanged}
+            />
+          </Guard>
 
-      {/* Team Members Section */}
-      <DatasetMemberManager
-        datasetId={dataset.id}
-        currentUserRole={dataset.role}
-      />
+          {/* Image Gallery Section */}
+          <DatasetImageGallery
+            datasetId={dataset.id}
+            currentUserRole={dataset.role}
+            onImagesChanged={handleImagesChanged}
+          />
+
+          {/* Team Members Section */}
+          <DatasetMemberManager
+            datasetId={dataset.id}
+            currentUserRole={dataset.role}
+          />
+        </TabsContent>
+
+        {/* Export Tab */}
+        <TabsContent value="export" className="space-y-6 mt-0">
+          <ExportManager datasetId={dataset.id} />
+        </TabsContent>
+      </Tabs>
     </div>
     </RoleProvider>
   );

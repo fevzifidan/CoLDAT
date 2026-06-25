@@ -102,6 +102,7 @@
     },
     "placeholder_key_name": "e.g., Jenkins_CI_Pipeline, Production_Sync",
     "confirm_delete_key": "Are you sure you want to permanently delete this integration token?",
+    "copy_prefix": "Copy key prefix",
     "confirm_revoke_all": "⚠️ WARNING: This will immediately revoke ALL active API keys for this dataset. External pipelines will break instantly. Proceed?",
     "notifications": {
       "load_keys_error": "Failed to retrieve integration keys.",
@@ -151,6 +152,10 @@
       "role_in_project": "Role in Project",
       "role": "Role"
     }
+  },
+  "detail": {
+    "overview_tab": "Overview",
+    "export_tab": "Export"
   },
   "project_page": {
     "manage_linked": "Linked Datasets Management",

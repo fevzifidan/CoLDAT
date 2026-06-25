@@ -102,6 +102,7 @@
     },
     "placeholder_key_name": "Örn: Jenkins_CI_Pipeline, Production_Sync",
     "confirm_delete_key": "Bu entegrasyon token'ını kalıcı olarak silmek istediğinize emin misiniz?",
+    "copy_prefix": "Anahtar önekini kopyala",
     "confirm_revoke_all": "⚠️ UYARI: Bu işlem bu veri seti için TÜM aktif API anahtarlarını anında iptal edecektir. Harici işlem hatları anında kesilecektir. Devam edilsin mi?",
     "notifications": {
       "load_keys_error": "Entegrasyon anahtarları alınamadı.",
@@ -151,6 +152,10 @@
       "role_in_project": "Projedeki Rolü",
       "role": "Rol"
     }
+  },
+  "detail": {
+    "overview_tab": "Genel Bakış",
+    "export_tab": "Dışa Aktar"
   },
   "project_page": {
     "manage_linked": "Bağlı Veri Seti Yönetimi",
