@@ -84,9 +84,9 @@ export const CreateKeyDialog: React.FC<CreateKeyDialogProps> = ({
   };
 
   const handleCopy = async () => {
-    if (!createdKey?.key) return;
+    if (!createdKey?.raw_key) return;
     try {
-      await navigator.clipboard.writeText(createdKey.key);
+      await navigator.clipboard.writeText(createdKey.raw_key);
       setCopied(true);
       notificationService.success(t('common:status.success_copied'));
       setTimeout(() => setCopied(false), 2000);
@@ -159,7 +159,7 @@ export const CreateKeyDialog: React.FC<CreateKeyDialogProps> = ({
               <Label className="text-xs text-muted-foreground">API Key</Label>
               <div className="flex gap-2">
                 <code className="flex-1 bg-muted border border-border px-3 py-2 rounded-lg font-mono text-xs break-all select-all">
-                  {createdKey.key}
+                  {createdKey.raw_key}
                 </code>
                 <Button size="icon" variant="outline" onClick={handleCopy} className="shrink-0">
                   {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
