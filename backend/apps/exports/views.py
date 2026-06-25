@@ -65,6 +65,7 @@ class DatasetExportView(APIView):
         archive = build_export_archive(
             export_data=export_data,
             export_format=export_format,
+            snapshot=version.snapshot,
         )
         try:
             download_url = upload_export_archive(
@@ -76,13 +77,14 @@ class DatasetExportView(APIView):
         finally:
             archive.close()
 
-            return Response(
+        return Response(
             {
                 "format": export_format,
                 "dataset_id": str(dataset.id),
                 "dataset_name": dataset.name,
                 "version_tag": version.version_tag,
                 "download_url": download_url,
+                "data": export_data,
             },
             status=status.HTTP_200_OK,
         )

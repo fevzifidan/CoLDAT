@@ -23,7 +23,7 @@ export interface CreateApiKeyPayload {
 // YAML: id, key (tam değer), target_version, expires_at
 export interface CreateApiKeyResponse {
   id: string;
-  key: string;
+  raw_key: string;
   target_version?: string;
   expires_at?: string;
 }

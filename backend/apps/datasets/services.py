@@ -4,11 +4,13 @@ import secrets
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.annotations.models import AnnotationObject, SceneGraphRelationship
 from apps.assets.models import Asset
+from apps.tasks.models import TaskImage
 from apps.taxonomy.models import ProjectAttribute, ProjectClass, ProjectPredicate
 
 from .models import Dataset, DatasetAPIKey, DatasetMember, DatasetVersion
@@ -282,6 +284,141 @@ def delete_dataset_version(*, version: DatasetVersion):
     version.delete()
 
 
+def _restore_snapshot_taxonomy(*, snapshot: dict, dataset: Dataset):
+    project = dataset.project
+
+    for item in snapshot.get("taxonomy", {}).get("classes", []):
+        ProjectClass.objects.update_or_create(
+            id=item["id"],
+            defaults={
+                "project": project,
+                "name": item["name"],
+                "color": item.get("color", ""),
+                "index": item.get("index", 0),
+                "is_active": item.get("is_active", True),
+                "include_in_export": item.get("include_in_export", True),
+            },
+        )
+
+    for item in snapshot.get("taxonomy", {}).get("predicates", []):
+        ProjectPredicate.objects.update_or_create(
+            id=item["id"],
+            defaults={
+                "project": project,
+                "name": item["name"],
+                "is_active": item.get("is_active", True),
+                "include_in_export": item.get("include_in_export", True),
+            },
+        )
+
+    for item in snapshot.get("taxonomy", {}).get("attributes", []):
+        ProjectAttribute.objects.update_or_create(
+            id=item["id"],
+            defaults={
+                "project": project,
+                "name": item["name"],
+                "attribute_type": item.get("attribute_type", "text"),
+                "options": item.get("options", []),
+                "is_active": item.get("is_active", True),
+                "include_in_export": item.get("include_in_export", True),
+            },
+        )
+
+
+def _replace_dataset_state_from_snapshot(
+    *,
+    dataset: Dataset,
+    snapshot: dict,
+    restored_by,
+):
+    snapshot_assets = snapshot.get("assets", [])
+    restored_asset_ids = {
+        str(asset["asset_id"])
+        for asset in snapshot_assets
+    }
+
+    SceneGraphRelationship.objects.filter(image__dataset=dataset).delete()
+    AnnotationObject.objects.filter(image__dataset=dataset).delete()
+
+    Asset.objects.filter(dataset=dataset).exclude(
+        id__in=restored_asset_ids,
+    ).update(is_deleted=True, updated_at=timezone.now())
+
+    _restore_snapshot_taxonomy(snapshot=snapshot, dataset=dataset)
+
+    restored_assets_by_id = {}
+
+    for asset_data in snapshot_assets:
+        asset, _ = Asset.objects.update_or_create(
+            id=asset_data["asset_id"],
+            defaults={
+                "dataset": dataset,
+                "filename": asset_data["filename"],
+                "mime_type": asset_data.get(
+                    "mime_type",
+                    "application/octet-stream",
+                ),
+                "width": asset_data.get("width"),
+                "height": asset_data.get("height"),
+                "storage_key": asset_data.get("storage_key", ""),
+                "status": Asset.UploadStatus.UPLOADED,
+                "uploaded_by": restored_by,
+                "is_deleted": False,
+            },
+        )
+        restored_assets_by_id[str(asset.id)] = asset
+
+    TaskImage.objects.filter(task__dataset=dataset).exclude(
+        image_id__in=restored_asset_ids,
+    ).delete()
+
+    restored_objects_by_id = {}
+
+    for asset_data in snapshot_assets:
+        asset = restored_assets_by_id[str(asset_data["asset_id"])]
+
+        for object_data in asset_data.get("objects", []):
+            annotation_object = AnnotationObject.objects.create(
+                id=object_data["id"],
+                image=asset,
+                annotation_class_id=object_data["class_id"],
+                geometry_type=object_data["type"],
+                coordinates=object_data.get("coordinates", []),
+                created_by=restored_by,
+                updated_by=restored_by,
+            )
+            restored_objects_by_id[str(annotation_object.id)] = annotation_object
+
+    for asset_data in snapshot_assets:
+        asset = restored_assets_by_id[str(asset_data["asset_id"])]
+
+        for relationship_data in asset_data.get("relationships", []):
+            subject = restored_objects_by_id.get(
+                str(relationship_data["subject_id"])
+            )
+            obj = restored_objects_by_id.get(
+                str(relationship_data["object_id"])
+            )
+            if subject is None or obj is None:
+                continue
+
+            SceneGraphRelationship.objects.create(
+                id=relationship_data["id"],
+                image=asset,
+                subject=subject,
+                object=obj,
+                predicate_id=relationship_data["predicate_id"],
+                created_by=restored_by,
+            )
+
+    dataset.name = snapshot.get("dataset", {}).get("name", dataset.name)
+    dataset.description = snapshot.get("dataset", {}).get(
+        "description",
+        dataset.description,
+    )
+    dataset.save(update_fields=["name", "description", "updated_at"])
+
+
 def restore_dataset_version(
     *,
     source_version: DatasetVersion,
@@ -302,43 +439,29 @@ def restore_dataset_version(
 
     if mode == "create_new":
         version_tag = auto_generate_version_tag(dataset=dataset)
-        return create_dataset_version(
+        return DatasetVersion.objects.create(
             dataset=dataset,
             created_by=created_by,
             version_tag=version_tag,
             description=f"Restored from {source_version.version_tag}",
+            snapshot=snapshot,
         )
 
     elif mode == "replace":
-        # Mevcut asset ve annotation'ları temizle
-        assets = Asset.objects.filter(
-            dataset=dataset,
-            is_deleted=False,
-        )
-        for asset in assets:
-            # AnnotationObject'ları sil (SceneGraphRelationship'ler cascade ile otomatik silinir)
-            asset.annotation_objects.all().delete()
-            # SceneGraphRelationship'leri doğrudan asset üzerinden temizle
-            SceneGraphRelationship.objects.filter(image=asset).delete()
-            asset.is_deleted = True
-            asset.save(update_fields=["is_deleted"])
+        with transaction.atomic():
+            _replace_dataset_state_from_snapshot(
+                dataset=dataset,
+                snapshot=snapshot,
+                restored_by=created_by,
+            )
 
-        # Snapshot'taki asset'leri yeniden oluştur
-        # Not: Bu modda sadece dataset'in state'i değişir.
-        # Gerçek asset dosyaları (storage_key) korunur.
-
-        # Yeni bir versiyon oluştur (replace sonrası state'i freeze'lemek için)
-        version_tag = auto_generate_version_tag(dataset=dataset)
-        dataset.name = snapshot.get("dataset", {}).get("name", dataset.name)
-        dataset.description = snapshot.get("dataset", {}).get("description", dataset.description)
-        dataset.save(update_fields=["name", "description", "updated_at"])
-
-        return create_dataset_version(
-            dataset=dataset,
-            created_by=created_by,
-            version_tag=version_tag,
-            description=f"Replaced state from {source_version.version_tag}",
-        )
+            version_tag = auto_generate_version_tag(dataset=dataset)
+            return create_dataset_version(
+                dataset=dataset,
+                created_by=created_by,
+                version_tag=version_tag,
+                description=f"Replaced state from {source_version.version_tag}",
+            )
 
     else:
         raise ValidationError(f"Unknown restore mode: {mode}")
