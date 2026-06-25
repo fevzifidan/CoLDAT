@@ -27,6 +27,14 @@ import {
   Info
 } from "lucide-react";
 import { exportService } from '../services/exportService';
+import { versionService, type DatasetVersion } from '../services/versionService';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ApiKeyItem {
   id: string;
@@ -44,9 +52,14 @@ interface ExportManagerProps {
 const ExportManager = ({ datasetId }: ExportManagerProps) => {
   const { t } = useTranslation(['pages', 'common', 'datasets']);
   
-  // Format Seçim State'leri
+    // Format Seçim State'leri
   const [isExporting, setIsExporting] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState('coco');
+
+  // Versiyon Seçim State'leri
+  const [versions, setVersions] = useState<DatasetVersion[]>([]);
+  const [isLoadingVersions, setIsLoadingVersions] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<string>('latest');
 
     // API Keys State'leri
   const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
@@ -75,8 +88,26 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
     }
   };
 
-  useEffect(() => {
+    useEffect(() => {
     loadApiKeys();
+  }, [datasetId]);
+
+  // Versiyon listesini yükle
+  useEffect(() => {
+    if (!datasetId) return;
+    setIsLoadingVersions(true);
+    versionService
+      .getVersions(datasetId)
+      .then((res) => {
+        const versionList = res.data || [];
+        setVersions(versionList);
+        // En son versiyonu varsayılan seç
+        if (versionList.length > 0) {
+          setSelectedVersion(versionList[0].version_tag);
+        }
+      })
+      .catch((err) => console.error("Failed to load versions:", err))
+      .finally(() => setIsLoadingVersions(false));
   }, [datasetId]);
 
     // Yeni Anahtar Üret (POST)
@@ -85,10 +116,10 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
     if (!datasetId || !newKeyName.trim()) return;
 
     try {
-      const payload = {
+            const payload = {
         name: newKeyName,
         ttl_days: 30, // Varsayılan 30 gün geçerlilik
-        target_version: "v1.0"
+        target_version: selectedVersion !== 'latest' ? selectedVersion : undefined,
       };
       const res = await notificationService.promise(
         exportService.createApiKey(datasetId, payload),
@@ -164,11 +195,14 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
     if (!datasetId) return;
     setIsExporting(true);
     try {
-      const result = await notificationService.promise(
-        exportService.downloadExport(datasetId, { format: selectedFormat }),
+            const result = await notificationService.promise(
+        exportService.downloadExport(datasetId, {
+          format: selectedFormat,
+          version: selectedVersion !== 'latest' ? selectedVersion : undefined,
+        }),
         {
           loading: `${selectedFormat.toUpperCase()} ${t("datasets:export.compiling", "Compiling...")}`,
-          success: (data) => `${selectedFormat.toUpperCase()} ${t("datasets:export.notifications.export_complete", "export ready!")}`,
+          success: (data: any) => `${selectedFormat.toUpperCase()} ${t("datasets:export.notifications.export_complete", "export ready!")} (${data?.version_tag || selectedVersion})`,
           error: t("datasets:export.notifications.export_error", "Export failed. Please try again."),
         }
       );
@@ -226,16 +260,51 @@ const ExportManager = ({ datasetId }: ExportManagerProps) => {
               </Card>
             );
           })}
+                </div>
+
+        {/* Versiyon Seçici */}
+        <div className="flex items-center gap-3">
+          <label className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+            {t("datasets:export.version_label", "Export Version")}:
+          </label>
+          {isLoadingVersions ? (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Loader2 size={12} className="animate-spin" />
+              Loading...
+            </div>
+          ) : (
+            <Select value={selectedVersion} onValueChange={setSelectedVersion}>
+              <SelectTrigger className="h-8 text-xs rounded-xl w-[160px] dark:border-slate-800">
+                <SelectValue placeholder={t("datasets:export.latest_version", "Latest")} />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {versions.map((v) => (
+                  <SelectItem key={v.version_tag} value={v.version_tag} className="text-xs">
+                    <span className="font-mono font-bold">{v.version_tag}</span>
+                    <span className="text-muted-foreground ml-2">
+                      {new Date(v.created_at).toLocaleDateString()}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <Card className="rounded-2xl border dark:border-slate-800 shadow-sm">
           <CardContent className="p-5">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-0.5 text-left">
+                            <div className="space-y-0.5 text-left">
                                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{t("datasets:export.ready_title", "Static Snapshot Export Bundle")}</h4>
                 <p className="text-[11px] text-muted-foreground">
-                  {t("datasets:export.ready_desc", "Package current version matrix coordinates as: ")}  
-                  <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold ml-1">{selectedFormat === 'visual_genome' ? 'Visual Genome' : selectedFormat.toUpperCase()}</span>
+                  {t("datasets:export.exporting_version", "Exporting")}:{" "}
+                  <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold">
+                    {selectedVersion}
+                  </span>{" "}
+                  →{" "}
+                  <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold">
+                    {selectedFormat === 'visual_genome' ? 'Visual Genome' : selectedFormat.toUpperCase()}
+                  </span>
                 </p>
               </div>
               <Button 

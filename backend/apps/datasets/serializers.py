@@ -169,6 +169,14 @@ class DatasetVersionCreateSerializer(serializers.Serializer):
         allow_blank=True,
     )
 
+
+class DatasetVersionRestoreSerializer(serializers.Serializer):
+    mode = serializers.ChoiceField(
+        choices=["create_new", "replace"],
+        default="create_new",
+    )
+
+
 class DatasetAPIKeySerializer(serializers.ModelSerializer):
     dataset_id = serializers.UUIDField(source="dataset.id", read_only=True)
     created_by_id = serializers.UUIDField(source="created_by.id", read_only=True)

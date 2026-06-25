@@ -22,7 +22,7 @@
     "error_needs_project": "Veri seti oluşturabilmek için öncelikle bir projenin içerisine girmelisiniz.",
     "success": "Veri seti başarıyla oluşturuldu."
   },
-    "roles": {
+  "roles": {
     "admin": "Admin",
     "annotator": "Annotatör",
     "viewer": "İzleyici",
@@ -82,9 +82,16 @@
     "title": "Matris Formatı Dışa Aktarma Hedefi",
     "description": "Yerel açıklama çokgenlerini uzmanlaşmış işlem hattı katmanlarına dönüştürün.",
     "ready_title": "Statik Anlık Görüntü Dışa Aktarma Paketi",
-    "ready_desc": "Geçerli sürüm matris koordinatlarını şu şekilde paketle:",
     "compiling": "Derleniyor...",
     "pack_download": "Paketle ve İndir",
+    "version_label": "Dışa Aktarma Sürümü",
+    "latest_version": "En Son",
+    "exporting_version": "Dışa Aktarılıyor",
+    "formats": {
+      "coco_desc": "COCO",
+      "yolo_desc": "YOLO",
+      "visual_genome_desc": "Visual Genome"
+    },
     "external_api": "Harici API Entegrasyonları",
     "api_description": "Uzun ömürlü güvenlik imzaları kullanarak bulut getirme süreçlerini otomatikleştirin.",
     "emergency_revoke": "Acil Durumda Tümünü İptal Et",
@@ -155,7 +162,44 @@
   },
   "detail": {
     "overview_tab": "Genel Bakış",
-    "export_tab": "Dışa Aktar"
+    "versions_tab": "Sürümler",
+    "export_tab": "Dışa Aktar",
+    "subtitle": "Veri Seti Genel Bakış",
+    "statistics": "İstatistikler",
+    "total_images": "Toplam Görsel",
+    "annotated": "Etiketlenen",
+    "complete": "tamamlandı",
+    "no_data": "Veri yok",
+    "role_label": "Rol",
+    "delete_confirm": "Bu veri setini silmek istediğinize emin misiniz?"
+  },
+  "versions": {
+    "title": "Sürüm Geçmişi",
+    "description": "Veri seti anlık görüntülerini görüntüleyin ve yönetin",
+    "latest_badge": "En Son",
+    "no_versions": "Henüz sürüm bulunmuyor.",
+    "no_versions_desc": "Sürümler, bir görev onaylandığında otomatik olarak oluşturulur.",
+    "actions": {
+      "export": "Dışa Aktar",
+      "restore": "Geri Yükle"
+    },
+    "restore_dialog": {
+      "title": "Sürümü Geri Yükle",
+      "description": "Veri seti durumunu şu sürümden geri yükle",
+      "create_new": "Yeni sürüm olarak oluştur",
+      "create_new_desc": "Anlık görüntüden yeni bir sürüm oluşturur. Mevcut veri seti durumu korunur.",
+      "replace": "Mevcut durumu değiştir",
+      "replace_desc": "Mevcut veri seti varlıklarını ve açıklamalarını anlık görüntü ile değiştirir. Mevcut durum kaybolacaktır.",
+      "confirm": "Geri Yükle"
+    },
+    "notifications": {
+      "load_error": "Sürüm geçmişi yüklenemedi.",
+      "restoring_new": "Anlık görüntüden yeni sürüm oluşturuluyor...",
+      "restoring_replace": "Veri seti durumu değiştiriliyor...",
+      "restore_new_success": "Anlık görüntüden yeni sürüm oluşturuldu!",
+      "restore_replace_success": "Veri seti durumu başarıyla değiştirildi!",
+      "restore_error": "Sürüm geri yükleme başarısız oldu."
+    }
   },
   "project_page": {
     "manage_linked": "Bağlı Veri Seti Yönetimi",

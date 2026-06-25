@@ -1,18 +1,51 @@
 // frontend/src/features/synthetic/services/imageGenerationService.ts
+//
+// Frontend-only BYOK implementation.
+// The API key is supplied by the user for each request and is never stored here.
+// This works only when the selected provider permits browser CORS requests.
+// A provider-side CORS rejection cannot be fixed in frontend code; that provider
+// will require a backend/serverless proxy.
 
 import type { AIModel, GeneratedImage } from '../types/synthetic.types';
 
-// =============================================================================
-// 1. PREDEFINED MODELS - Genişletilmiş model havuzu
-// =============================================================================
+export type ProviderKey = 'google' | 'openai' | 'stability' | 'replicate';
+// The public service returns one GeneratedImage, so providers are always asked
+// for one output. Keep n for call-site compatibility, but do not bill for and
+// discard additional images.
+type GenerateOptions = { size?: string; n?: number };
+
+interface ProviderStrategy {
+  generateImage: (
+    model: AIModel,
+    prompt: string,
+    apiKey: string,
+    options?: GenerateOptions
+  ) => Promise<GeneratedImage>;
+  validateApiKey: (apiKey: string) => Promise<{ valid: boolean; message?: string }>;
+}
+
+const REQUEST_TIMEOUT_MS = 120_000;
+const POLL_INTERVAL_MS = 1_500;
+const MAX_POLL_ATTEMPTS = 40;
+
 export const PREDEFINED_MODELS: AIModel[] = [
-  // --- OpenAI ---
+  {
+    id: 'gemini-2.5-flash-image',
+    name: 'Gemini 2.5 Flash Image',
+    provider: 'google' as AIModel['provider'],
+    modelId: 'gemini-2.5-flash-image',
+    description: 'Google Gemini native image generation.',
+    supportedSizes: ['1024x1024'],
+    maxPromptLength: 4000,
+    requiresApiKey: true,
+    apiKeyUrl: 'https://aistudio.google.com/apikey',
+  },
   {
     id: 'dall-e-3',
     name: 'DALL-E 3',
     provider: 'openai',
     modelId: 'dall-e-3',
-    description: 'En yüksek kalite, detaylı ve yaratıcı görseller. 1024x1024, 1792x1024, 1024x1792',
+    description: 'OpenAI image generation.',
     supportedSizes: ['1024x1024', '1792x1024', '1024x1792'],
     maxPromptLength: 4000,
     requiresApiKey: true,
@@ -23,19 +56,18 @@ export const PREDEFINED_MODELS: AIModel[] = [
     name: 'DALL-E 2',
     provider: 'openai',
     modelId: 'dall-e-2',
-    description: 'Hızlı ve ekonomik görsel üretimi. 256x256, 512x512, 1024x1024',
+    description: 'OpenAI legacy image generation.',
     supportedSizes: ['256x256', '512x512', '1024x1024'],
     maxPromptLength: 1000,
     requiresApiKey: true,
     apiKeyUrl: 'https://platform.openai.com/api-keys',
   },
-  // --- Stability AI ---
   {
     id: 'stable-diffusion-xl',
     name: 'Stable Diffusion XL',
     provider: 'stability',
     modelId: 'stable-diffusion-xl-1024-v1-0',
-    description: 'Yüksek kaliteli, açık kaynak AI modeli. 1024x1024',
+    description: 'Stability AI SDXL image generation.',
     supportedSizes: ['1024x1024'],
     maxPromptLength: 2000,
     requiresApiKey: true,
@@ -45,20 +77,19 @@ export const PREDEFINED_MODELS: AIModel[] = [
     id: 'stable-diffusion-3',
     name: 'Stable Diffusion 3.5',
     provider: 'stability',
-    modelId: 'stable-diffusion-3.5-large',
-    description: 'En yeni Stability modeli, üstün kalite. 1024x1024',
-    supportedSizes: ['1024x1024'],
+    modelId: 'sd3.5-large',
+    description: 'Stability AI SD3.5 image generation.',
+    supportedSizes: ['1024x1024', '1360x768', '768x1360'],
     maxPromptLength: 2000,
     requiresApiKey: true,
     apiKeyUrl: 'https://platform.stability.ai/account/keys',
   },
-  // --- Replicate ---
   {
     id: 'flux-schnell',
-    name: 'Flux Schnell',
+    name: 'FLUX Schnell',
     provider: 'replicate',
     modelId: 'black-forest-labs/flux-schnell',
-    description: 'Black Forest Labs - Hızlı ve kaliteli, açık model',
+    description: 'Fast FLUX generation through Replicate.',
     supportedSizes: ['1024x1024', '1360x768', '768x1360'],
     maxPromptLength: 2000,
     requiresApiKey: true,
@@ -66,10 +97,10 @@ export const PREDEFINED_MODELS: AIModel[] = [
   },
   {
     id: 'flux-pro',
-    name: 'Flux Pro',
+    name: 'FLUX Pro',
     provider: 'replicate',
     modelId: 'black-forest-labs/flux-pro',
-    description: 'Black Forest Labs - Premium kalite görsel üretimi',
+    description: 'Premium FLUX generation through Replicate.',
     supportedSizes: ['1024x1024', '1360x768', '768x1360'],
     maxPromptLength: 2000,
     requiresApiKey: true,
@@ -77,28 +108,153 @@ export const PREDEFINED_MODELS: AIModel[] = [
   },
 ];
 
-// =============================================================================
-// 2. PROVIDER STRATEGIES - Her provider için ayrı strateji
-// =============================================================================
-
-type GenerateOptions = { size?: string; n?: number };
-
-interface ProviderStrategy {
-  generateImage: (
-    model: AIModel,
-    prompt: string,
-    apiKey: string,
-    options?: GenerateOptions
-  ) => Promise<GeneratedImage>;
-
-  validateApiKey: (apiKey: string) => Promise<{ valid: boolean; message?: string }>;
+function providerOf(model: AIModel): ProviderKey {
+  return model.provider as ProviderKey;
 }
 
-// --- OpenAI Strategy ---
-const OPENAI_API_URL = 'https://api.openai.com/v1/images/generations';
+function selectedSize(model: AIModel, requested?: string): string {
+  const size = requested || model.supportedSizes[0];
+  if (!model.supportedSizes.includes(size)) {
+    throw new Error(`${model.name} modeli ${size} boyutunu desteklemiyor.`);
+  }
+  return size;
+}
+
+function sizeToAspectRatio(size: string): string {
+  const [width, height] = size.split('x').map(Number);
+  if (!width || !height) return '1:1';
+
+  const ratio = width / height;
+  if (ratio > 1.6) return '16:9';
+  if (ratio > 1.2) return '3:2';
+  if (ratio < 0.625) return '9:16';
+  if (ratio < 0.84) return '2:3';
+  return '1:1';
+}
+
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  timeoutMs = REQUEST_TIMEOUT_MS
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('AI sağlayıcısı zaman aşımına uğradı.');
+    }
+    if (error instanceof TypeError) {
+      throw new Error(
+        'AI sağlayıcısına tarayıcıdan bağlanılamadı. CORS engeli varsa backend proxy gerekir.'
+      );
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+async function responseError(response: Response, providerName: string): Promise<Error> {
+  let message = `${providerName} API hatası: ${response.status}`;
+  try {
+    const body = await response.json();
+    message =
+      body?.error?.message ||
+      body?.message ||
+      body?.detail ||
+      body?.error ||
+      message;
+  } catch {
+    // Provider did not return JSON.
+  }
+  return new Error(String(message));
+}
+
+async function remoteImageToDataUrl(url: string): Promise<string> {
+  const response = await fetchWithTimeout(url, {}, 60_000);
+  if (!response.ok) throw await responseError(response, 'Görsel indirme');
+
+  const blob = await response.blob();
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('Üretilen görsel okunamadı.'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+const googleStrategy: ProviderStrategy = {
+  generateImage: async (model, prompt, apiKey, options) => {
+    // Validate the requested UI size. This service returns one generated image.
+    selectedSize(model, options?.size);
+
+    const endpoint =
+      `https://generativelanguage.googleapis.com/v1/models/` +
+      `${encodeURIComponent(model.modelId)}:generateContent`;
+
+    const response = await fetchWithTimeout(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey.trim(),
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: prompt }],
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) throw await responseError(response, 'Google Gemini');
+    const data = await response.json();
+    const parts =
+      data.candidates?.flatMap(
+        (candidate: {
+          content?: {
+            parts?: Array<{ inlineData?: { data?: string; mimeType?: string } }>;
+          };
+        }) => candidate.content?.parts || []
+      ) || [];
+    const imagePart = parts.find(
+      (part: { inlineData?: { data?: string; mimeType?: string } }) =>
+        part.inlineData?.data
+    );
+
+    if (!imagePart?.inlineData?.data) {
+      throw new Error('Google Gemini yanıtında görsel bulunamadı.');
+    }
+
+    const mimeType = imagePart.inlineData.mimeType || 'image/png';
+    return {
+      dataUrl: `data:${mimeType};base64,${imagePart.inlineData.data}`,
+      prompt,
+    } as GeneratedImage;
+  },
+
+  validateApiKey: async (apiKey) => {
+    const response = await fetchWithTimeout(
+      'https://generativelanguage.googleapis.com/v1/models',
+      { headers: { 'x-goog-api-key': apiKey.trim() } },
+      20_000
+    );
+    if (response.ok) return { valid: true };
+    if (response.status === 400 || response.status === 401 || response.status === 403) {
+      return { valid: false, message: 'Google API anahtarı geçersiz veya yetkisiz.' };
+    }
+    return { valid: false, message: `Google API doğrulama hatası: ${response.status}` };
+  },
+};
+
 const openAIStrategy: ProviderStrategy = {
-  generateImage: async (model, prompt, apiKey, options): Promise<GeneratedImage> => {
-    const response = await fetch(OPENAI_API_URL, {
+  generateImage: async (model, prompt, apiKey, options) => {
+    const size = selectedSize(model, options?.size);
+    const response = await fetchWithTimeout('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -106,330 +262,278 @@ const openAIStrategy: ProviderStrategy = {
       },
       body: JSON.stringify({
         model: model.modelId,
-        prompt: prompt.trim(),
-        n: options?.n || 1,
-        size: options?.size || '1024x1024',
+        prompt,
+        n: 1,
+        size,
         response_format: 'b64_json',
       }),
     });
 
-    if (!response.ok) {
-      let errorMessage = `OpenAI API Hatası: ${response.status}`;
-      try {
-        const errData = await response.json();
-        errorMessage = errData.error?.message || errorMessage;
-      } catch {
-        // use default error message
-      }
-      throw new Error(errorMessage);
-    }
-
+    if (!response.ok) throw await responseError(response, 'OpenAI');
     const data = await response.json();
+    const image = data.data?.[0];
+    if (!image?.b64_json) throw new Error('OpenAI yanıtında görsel bulunamadı.');
 
-    if (!data.data?.[0]?.b64_json) {
-      throw new Error('OpenAI API yanıtında görsel verisi bulunamadı.');
-    }
-
-    const imageData = data.data[0];
     return {
-      dataUrl: `data:image/png;base64,${imageData.b64_json}`,
-      // revised_prompt varsa kullan
-      prompt: imageData.revised_prompt || prompt.trim(),
-    } as Partial<GeneratedImage> as GeneratedImage;
+      dataUrl: `data:image/png;base64,${image.b64_json}`,
+      prompt: image.revised_prompt || prompt,
+    } as GeneratedImage;
   },
 
   validateApiKey: async (apiKey) => {
-    try {
-      const response = await fetch('https://api.openai.com/v1/models', {
-        headers: { Authorization: `Bearer ${apiKey.trim()}` },
-      });
-      if (response.ok) return { valid: true };
-      if (response.status === 401)
-        return { valid: false, message: 'OpenAI API anahtarı geçersiz veya süresi dolmuş.' };
-      return { valid: false, message: `OpenAI API yanıt hatası: ${response.status}` };
-    } catch {
-      return { valid: false, message: 'OpenAI API bağlantısı kurulamadı.' };
+    const response = await fetchWithTimeout(
+      'https://api.openai.com/v1/models',
+      { headers: { Authorization: `Bearer ${apiKey.trim()}` } },
+      20_000
+    );
+    if (response.ok) return { valid: true };
+    if (response.status === 401) {
+      return { valid: false, message: 'OpenAI API anahtarı geçersiz veya süresi dolmuş.' };
     }
+    return { valid: false, message: `OpenAI API doğrulama hatası: ${response.status}` };
   },
 };
 
-// --- Stability AI Strategy ---
-const STABILITY_API_URL = 'https://api.stability.ai/v2beta/stable-image/generate/sd3';
-const stabilityStrategy: ProviderStrategy = {
-  generateImage: async (model, prompt, apiKey, options): Promise<GeneratedImage> => {
-    const formData = new FormData();
-    formData.append('prompt', prompt.trim());
-    formData.append('output_format', 'png');
-    if (options?.size) {
-      formData.append('aspect_ratio', options.size.replace('x', ':'));
-    } else {
-      formData.append('aspect_ratio', '1:1');
-    }
+async function generateStabilitySdxl(
+  model: AIModel,
+  prompt: string,
+  apiKey: string,
+  options?: GenerateOptions
+): Promise<GeneratedImage> {
+  const [width, height] = selectedSize(model, options?.size).split('x').map(Number);
+  const endpoint = `https://api.stability.ai/v1/generation/${model.modelId}/text-to-image`;
+  const response = await fetchWithTimeout(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: `Bearer ${apiKey.trim()}`,
+    },
+    body: JSON.stringify({
+      text_prompts: [{ text: prompt, weight: 1 }],
+      width,
+      height,
+      samples: 1,
+      steps: 30,
+    }),
+  });
 
-    const response = await fetch(STABILITY_API_URL, {
+  if (!response.ok) throw await responseError(response, 'Stability AI');
+  const data = await response.json();
+  const base64Image = data.artifacts?.[0]?.base64;
+  if (!base64Image) throw new Error('Stability AI yanıtında görsel bulunamadı.');
+
+  return { dataUrl: `data:image/png;base64,${base64Image}`, prompt } as GeneratedImage;
+}
+
+async function generateStabilitySd3(
+  model: AIModel,
+  prompt: string,
+  apiKey: string,
+  options?: GenerateOptions
+): Promise<GeneratedImage> {
+  const form = new FormData();
+  form.append('prompt', prompt);
+  form.append('model', model.modelId);
+  form.append('aspect_ratio', sizeToAspectRatio(selectedSize(model, options?.size)));
+  form.append('output_format', 'png');
+
+  const response = await fetchWithTimeout(
+    'https://api.stability.ai/v2beta/stable-image/generate/sd3',
+    {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey.trim()}`,
         Accept: 'application/json',
-        // DO NOT set Content-Type - FormData sets it automatically with boundary
       },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      let errorMessage = `Stability AI API Hatası: ${response.status}`;
-      try {
-        const errData = await response.json();
-        errorMessage = errData.message || errData.error || errorMessage;
-      } catch {
-        // use default error message
-      }
-      throw new Error(errorMessage);
+      body: form,
     }
+  );
 
-    const data = await response.json();
+  if (!response.ok) throw await responseError(response, 'Stability AI');
+  const data = await response.json();
+  if (!data.image) throw new Error('Stability AI yanıtında görsel bulunamadı.');
 
-    if (!data.image) {
-      throw new Error('Stability AI yanıtında görsel verisi bulunamadı.');
+  return { dataUrl: `data:image/png;base64,${data.image}`, prompt } as GeneratedImage;
+}
+
+const stabilityStrategy: ProviderStrategy = {
+  generateImage: async (model, prompt, apiKey, options) => {
+    if (model.id === 'stable-diffusion-xl') {
+      return generateStabilitySdxl(model, prompt, apiKey, options);
     }
-
-    return {
-      dataUrl: `data:image/png;base64,${data.image}`,
-      prompt: prompt.trim(),
-    } as Partial<GeneratedImage> as GeneratedImage;
+    return generateStabilitySd3(model, prompt, apiKey, options);
   },
 
   validateApiKey: async (apiKey) => {
-    try {
-      const response = await fetch('https://api.stability.ai/v1/user/account', {
-        headers: { Authorization: `Bearer ${apiKey.trim()}` },
-      });
-      if (response.ok) return { valid: true };
-      if (response.status === 401)
-        return { valid: false, message: 'Stability AI API anahtarı geçersiz veya süresi dolmuş.' };
-      return { valid: false, message: `Stability AI API yanıt hatası: ${response.status}` };
-    } catch {
-      return { valid: false, message: 'Stability AI API bağlantısı kurulamadı.' };
+    const response = await fetchWithTimeout(
+      'https://api.stability.ai/v1/user/account',
+      { headers: { Authorization: `Bearer ${apiKey.trim()}` } },
+      20_000
+    );
+    if (response.ok) return { valid: true };
+    if (response.status === 401) {
+      return { valid: false, message: 'Stability AI API anahtarı geçersiz.' };
     }
+    return { valid: false, message: `Stability AI doğrulama hatası: ${response.status}` };
   },
 };
 
-// --- Replicate Strategy ---
-const REPLICATE_API_URL = 'https://api.replicate.com/v1/predictions';
 const replicateStrategy: ProviderStrategy = {
-  generateImage: async (model, prompt, apiKey, options): Promise<GeneratedImage> => {
-    // Step 1: Create prediction
-    const createResponse = await fetch(REPLICATE_API_URL, {
+  generateImage: async (model, prompt, apiKey, options) => {
+    const endpoint = `https://api.replicate.com/v1/models/${model.modelId}/predictions`;
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey.trim()}`,
+      Prefer: 'wait=60',
+    };
+
+    const createResponse = await fetchWithTimeout(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey.trim()}`,
-        'Prefer': 'wait',
-      },
+      headers,
       body: JSON.stringify({
-        version: model.modelId,
         input: {
-          prompt: prompt.trim(),
-          num_outputs: options?.n || 1,
-          aspect_ratio: options?.size ? options.size.replace('x', ':') : '1:1',
+          prompt,
+          num_outputs: 1,
+          aspect_ratio: sizeToAspectRatio(selectedSize(model, options?.size)),
           output_format: 'png',
         },
       }),
     });
 
-    if (!createResponse.ok) {
-      let errorMessage = `Replicate API Hatası: ${createResponse.status}`;
-      try {
-        const errData = await createResponse.json();
-        errorMessage = errData.detail || errorMessage;
-      } catch {
-        // use default error message
+    if (!createResponse.ok) throw await responseError(createResponse, 'Replicate');
+    let prediction = await createResponse.json();
+
+    for (let attempt = 0; !prediction.output && attempt < MAX_POLL_ATTEMPTS; attempt += 1) {
+      if (prediction.status === 'failed' || prediction.status === 'canceled') {
+        throw new Error(prediction.error || `Replicate işlemi ${prediction.status}.`);
       }
-      throw new Error(errorMessage);
+      if (!prediction.urls?.get) break;
+
+      await new Promise((resolve) => window.setTimeout(resolve, POLL_INTERVAL_MS));
+      const pollResponse = await fetchWithTimeout(
+        prediction.urls.get,
+        { headers: { Authorization: `Bearer ${apiKey.trim()}` } },
+        30_000
+      );
+      if (!pollResponse.ok) throw await responseError(pollResponse, 'Replicate');
+      prediction = await pollResponse.json();
     }
 
-    const prediction = await createResponse.json();
-
-    // Step 2: Handle sync (Prefer: wait) response or poll
-    let output = prediction.output;
-    if (!output && prediction.urls?.get) {
-      // Poll for completion up to 30 seconds
-      const maxAttempts = 30;
-      const pollUrl = prediction.urls.get;
-      for (let i = 0; i < maxAttempts; i++) {
-        await new Promise((r) => setTimeout(r, 1000));
-        const pollResponse = await fetch(pollUrl, {
-          headers: { Authorization: `Bearer ${apiKey.trim()}` },
-        });
-        const pollData = await pollResponse.json();
-        if (pollData.status === 'succeeded') {
-          output = pollData.output;
-          break;
-        }
-        if (pollData.status === 'failed') {
-          throw new Error(pollData.error || 'Replicate model çalıştırma hatası.');
-        }
-      }
-      if (!output) {
-        throw new Error('Replicate zaman aşımı: görsel oluşturulamadı.');
-      }
+    const output = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
+    if (typeof output !== 'string') {
+      throw new Error('Replicate zaman aşımına uğradı veya görsel döndürmedi.');
     }
 
-    if (!output || (Array.isArray(output) && output.length === 0)) {
-      throw new Error('Replicate yanıtında görsel verisi bulunamadı.');
-    }
-
-    // Fetch the image from URL and convert to base64
-    const imageUrl = Array.isArray(output) ? output[0] : output;
-    const imageResponse = await fetch(imageUrl);
-    const imageBlob = await imageResponse.blob();
-
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve({
-          dataUrl: reader.result as string,
-          prompt: prompt.trim(),
-        } as Partial<GeneratedImage> as GeneratedImage);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(imageBlob);
-    });
+    return { dataUrl: await remoteImageToDataUrl(output), prompt } as GeneratedImage;
   },
 
   validateApiKey: async (apiKey) => {
-    try {
-      const response = await fetch('https://api.replicate.com/v1/account', {
-        headers: { Authorization: `Bearer ${apiKey.trim()}` },
-      });
-      if (response.ok) return { valid: true };
-      if (response.status === 401)
-        return { valid: false, message: 'Replicate API anahtarı geçersiz veya süresi dolmuş.' };
-      return { valid: false, message: `Replicate API yanıt hatası: ${response.status}` };
-    } catch {
-      return { valid: false, message: 'Replicate API bağlantısı kurulamadı.' };
+    const response = await fetchWithTimeout(
+      'https://api.replicate.com/v1/account',
+      { headers: { Authorization: `Bearer ${apiKey.trim()}` } },
+      20_000
+    );
+    if (response.ok) return { valid: true };
+    if (response.status === 401) {
+      return { valid: false, message: 'Replicate API anahtarı geçersiz.' };
     }
+    return { valid: false, message: `Replicate doğrulama hatası: ${response.status}` };
   },
 };
 
-// =============================================================================
-// 3. PROVIDER REGISTRY - Provider'ları merkezi olarak yönet
-// =============================================================================
-
-const providerRegistry: Record<string, ProviderStrategy> = {
+const providerRegistry: Record<ProviderKey, ProviderStrategy> = {
+  google: googleStrategy,
   openai: openAIStrategy,
   stability: stabilityStrategy,
   replicate: replicateStrategy,
 };
 
-// =============================================================================
-// 4. IMAGE GENERATION SERVICE - Ana servis (BYOK prensibi ile)
-// =============================================================================
+function configuredModel(model: AIModel): AIModel {
+  // Migrate the previously persisted Imagen selection without requiring users
+  // to manually clear localStorage after this deployment.
+  if (model.id === 'imagen-3' || model.modelId === 'imagen-3.0-generate-002') {
+    return PREDEFINED_MODELS.find((candidate) => candidate.id === 'gemini-2.5-flash-image')!;
+  }
+
+  return PREDEFINED_MODELS.find((candidate) => candidate.id === model.id) || model;
+}
 
 export const imageGenerationService = {
-  /**
-   * Returns the list of predefined AI models.
-   */
   getModels: (): AIModel[] => PREDEFINED_MODELS,
 
-  /**
-   * Finds a model by its ID.
-   */
-  getModelById: (id: string): AIModel | undefined =>
-    PREDEFINED_MODELS.find((m) => m.id === id),
+  getModelById: (id: string): AIModel | undefined => {
+    const migratedId = id === 'imagen-3' ? 'gemini-2.5-flash-image' : id;
+    return PREDEFINED_MODELS.find((model) => model.id === migratedId);
+  },
 
-  /**
-   * Generates an image using the selected model and API key.
-   * The API key is sent directly to the external provider (e.g., OpenAI),
-   * NOT to our backend. This ensures user privacy and security.
-   *
-   * Uses a provider strategy pattern to support multiple AI providers.
-   */
   generateImage: async (
     model: AIModel,
-    prompt: string,
-    apiKey: string,
-    options?: { size?: string; n?: number }
+    rawPrompt: string,
+    rawApiKey: string,
+    options?: GenerateOptions
   ): Promise<GeneratedImage> => {
-    const tempId = `gen_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    const prompt = rawPrompt.trim();
+    const apiKey = rawApiKey.trim();
+    const activeModel = configuredModel(model);
 
-    // Validate inputs
-    if (!apiKey || apiKey.trim().length < 10) {
-      throw new Error('Geçerli bir API anahtarı gerekli.');
-    }
-    if (!prompt || prompt.trim().length < 3) {
-      throw new Error('Prompt en az 3 karakter olmalıdır.');
-    }
-
-    // Get the appropriate provider strategy
-    const strategy = providerRegistry[model.provider];
-    if (!strategy) {
-      throw new Error(`Desteklenmeyen AI sağlayıcısı: ${model.provider}`);
+    if (apiKey.length < 10) throw new Error('Geçerli bir API anahtarı gerekli.');
+    if (prompt.length < 3) throw new Error('Prompt en az 3 karakter olmalıdır.');
+    if (prompt.length > activeModel.maxPromptLength) {
+      throw new Error(`Prompt en fazla ${activeModel.maxPromptLength} karakter olabilir.`);
     }
 
-    // Delegate to the provider strategy
-    const result = await strategy.generateImage(model, prompt, apiKey, options);
+    const provider = providerOf(activeModel);
+    const strategy = providerRegistry[provider];
+    if (!strategy) throw new Error(`Desteklenmeyen AI sağlayıcısı: ${provider}`);
 
+    const result = await strategy.generateImage(activeModel, prompt, apiKey, options);
     return {
       ...result,
-      id: tempId,
-      modelId: model.modelId,
-      modelName: model.name,
-      status: 'completed' as const,
+      id: `gen_${Date.now()}_${crypto.randomUUID()}`,
+      modelId: activeModel.modelId,
+      modelName: activeModel.name,
+      status: 'completed',
       timestamp: Date.now(),
-    } as GeneratedImage;
-  },
-
-  /**
-   * Validates an API key by making a lightweight request to the provider.
-   * Supports multiple providers via the strategy pattern.
-   */
-  validateApiKey: async (apiKey: string): Promise<{ valid: boolean; message?: string }> => {
-    const provider = imageGenerationService.detectProviderFromKey(apiKey);
-    if (!provider) {
-      return { valid: false, message: 'API anahtarı formatı tanınamadı.' };
-    }
-
-    // Map detected provider name to registry key
-    const providerMap: Record<string, string> = {
-      'OpenAI API': 'openai',
-      'Stability AI': 'stability',
-      'Replicate': 'replicate',
     };
+  },
 
-    const registryKey = providerMap[provider];
-    const strategy = registryKey ? providerRegistry[registryKey] : null;
-
-    if (strategy) {
-      return strategy.validateApiKey(apiKey);
+  // Pass the selected model provider when available. Without it, prefix-based
+  // detection is only a convenience and cannot reliably distinguish every key.
+  validateApiKey: async (
+    apiKey: string,
+    provider?: ProviderKey
+  ): Promise<{ valid: boolean; message?: string }> => {
+    const normalizedKey = apiKey.trim();
+    if (normalizedKey.length < 10) {
+      return { valid: false, message: 'API anahtarı çok kısa.' };
     }
 
-    // Fallback: generic validation using the detectProviderFromKey
+    const selectedProvider = provider || imageGenerationService.detectProviderFromKey(normalizedKey);
+    if (!selectedProvider) {
+      return {
+        valid: false,
+        message: 'API anahtarını doğrulamak için seçili model sağlayıcısı gerekli.',
+      };
+    }
+
     try {
-      const response = await fetch(`https://api.${provider.toLowerCase().replace(' ', '')}.com/v1/models`, {
-        headers: { Authorization: `Bearer ${apiKey.trim()}` },
-      });
-      if (response.ok) return { valid: true };
-      return { valid: false, message: 'API anahtarı geçersiz.' };
-    } catch {
-      return { valid: false, message: 'API bağlantısı kurulamadı. İnternet bağlantınızı kontrol edin.' };
+      return await providerRegistry[selectedProvider].validateApiKey(normalizedKey);
+    } catch (error) {
+      return {
+        valid: false,
+        message: error instanceof Error ? error.message : 'API doğrulaması başarısız.',
+      };
     }
   },
 
-  /**
-   * Detects the provider from an API key prefix.
-   * Now returns proper provider names for the strategy pattern.
-   */
-  detectProviderFromKey: (apiKey: string): string | null => {
-    const trimmed = apiKey.trim();
-    if (trimmed.startsWith('sk-')) return 'OpenAI API';
-    if (trimmed.startsWith('r8_')) return 'Replicate';
-    if (trimmed.startsWith('sb-')) return 'Stability AI';
+  detectProviderFromKey: (apiKey: string): ProviderKey | null => {
+    const key = apiKey.trim();
+    if (key.startsWith('r8_')) return 'replicate';
+    if (key.startsWith('AIza') || key.startsWith('AQ.')) return 'google';
+    // OpenAI and Stability key formats may overlap, so do not guess for sk-*.
     return null;
   },
 
-  /**
-   * Returns the list of registered providers.
-   */
-  getRegisteredProviders: (): string[] => Object.keys(providerRegistry),
+  getRegisteredProviders: (): ProviderKey[] => Object.keys(providerRegistry) as ProviderKey[],
 };

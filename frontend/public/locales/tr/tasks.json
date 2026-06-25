@@ -21,7 +21,10 @@
   "card": {
     "manage_task": "Görevi Yönet",
     "processed_files": "İşlenmiş Dosya",
-    "assignee_prefix": "Görevli: @"
+    "assignee_prefix": "Görevli: @",
+    "annotate": "Etiketle",
+    "view": "Görüntüle",
+    "details": "Görev Detayları"
   },
 
   "detail": {
@@ -32,6 +35,12 @@
     "dataset_id": "Veri Seti ID:",
 
     "info_section": "Görev Bilgileri",
+    "task_prefix": "Görev",
+    "task_name": "Ad:",
+    "priority": "Öncelik:",
+    "deadline": "Son Tarih:",
+    "description": "Açıklama:",
+    "rejection_reason": "Reddedilme Sebebi",
     "assignee": "Görevli:",
     "unassigned": "Atanmamış",
     "total_assets": "Toplam Varlık:",
@@ -53,13 +62,33 @@
     "asset_status_labeled": "etiketlendi",
     "asset_status_unlabeled": "etiketsiz",
     "no_assets": "Bu göreve henüz varlık atanmamış.",
+    "page_info": "Sayfa {{page}}",
+    "loading_images": "Görseller yükleniyor...",
+    "retry": "Tekrar Dene",
+    "open_annotator": "Etiketleyicide Aç",
+    "open_viewer": "Görüntüleyicide Aç",
+    "copy_asset_id": "Varlık ID'sini Kopyala",
+    "asset_id_copied": "Varlık ID'si panoya kopyalandı!",
+    "asset_id_copy_failed": "Varlık ID'si kopyalanamadı.",
+    "untitled": "İsimsiz",
 
     "confirm_delete": "Bu görevi iptal etmek/silmek istediğinize emin misiniz?",
     "revoke_button": "Görevi İptal Et",
     "status_update_failed": "Durum güncellemesi başarısız oldu.",
     "reassignment_failed": "Yeniden atama başarısız oldu.",
     "add_asset_failed": "Varlık ekleme başarısız oldu.",
-    "delete_failed": "Görev silinemedi."
+    "delete_failed": "Görev silinemedi.",
+    "fetch_failed": "Görevler sunucudan getirilemedi."
+  },
+
+  "table": {
+    "type": "Tür",
+    "filename": "Dosya Adı",
+    "mime_type": "MIME Türü",
+    "status": "Durum",
+    "embedding": "Embedding",
+    "items": "öğe",
+    "last_page": "son sayfa"
   },
 
   "modal": {
@@ -166,9 +195,11 @@
       "user": "Kullanıcı",
       "role": "Rol",
       "select": "Seç",
-      "selected": "Seçildi"
+      "selected": "Seçildi",
+      "actions": "İşlemler"
     },
     "member_role_owner": "Sahip",
+    "member_role_admin": "Yönetici",
     "asset_search_placeholder": "Dosya adı ile arama yapın...",
     "asset_table": {
       "preview": "Önizleme",
@@ -187,5 +218,27 @@
     "missing_dataset": "Lütfen önce bir veri seti seçin.",
     "no_assets_selected": "Lütfen en az bir varlık seçin.",
     "load_more": "Daha Fazla Yükle"
+  },
+
+  "details": {
+    "title": "Görev Detayları",
+    "description": "Görev adı, öncelik, açıklama ve son tarihi belirleyin.",
+    "short_title": "Detaylar",
+    "name_label": "Görev Adı",
+    "description_label": "Açıklama",
+    "priority_label": "Öncelik",
+    "deadline_label": "Son Tarih",
+    "name_placeholder": "örn. Araç tespiti için sınırlayıcı kutu etiketleme",
+    "description_placeholder": "Bu görev için ek bağlam veya talimatlar ekleyin...",
+    "deadline_placeholder": "Tarih seçin",
+    "optional": "isteğe bağlı",
+    "clear_deadline": "Son tarihi temizle",
+    "hint": "Öncelik ve son tarih, görev ilerlemesini düzenlemeye ve takip etmeye yardımcı olur. Bu alanlar isteğe bağlıdır.",
+    "priority_options": {
+      "low": "Düşük",
+      "medium": "Orta",
+      "high": "Yüksek",
+      "urgent": "Acil"
+    }
   }
 }

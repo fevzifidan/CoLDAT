@@ -76,14 +76,13 @@ class DatasetExportView(APIView):
         finally:
             archive.close()
 
-        return Response(
+            return Response(
             {
                 "format": export_format,
                 "dataset_id": str(dataset.id),
                 "dataset_name": dataset.name,
                 "version_tag": version.version_tag,
                 "download_url": download_url,
-                "data": export_data,
             },
             status=status.HTTP_200_OK,
         )

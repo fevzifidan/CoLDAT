@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useSyntheticStore } from '../store/syntheticSlice';
 import { imageGenerationService } from '../services/imageGenerationService';
 import { generateThumbnail } from '@/shared/utils/imageUtils';
@@ -9,7 +10,10 @@ import { Bot, User, Send, Loader2 } from 'lucide-react';
 /**
  * Renders a chat message using either raw text, or i18n key + params.
  */
-function renderMessageText(msg: { text?: string; i18nKey?: string; i18nParams?: Record<string, string | number | boolean> }, t: (key: string, params?: object) => string): string {
+function renderMessageText(
+  msg: { text?: string; i18nKey?: string; i18nParams?: Record<string, string | number | boolean> },
+  t: TFunction,
+): string {
   if (msg.i18nKey && t) {
     return t(msg.i18nKey, msg.i18nParams as Record<string, string | number | boolean>);
   }
@@ -150,10 +154,12 @@ function ChatInputArea() {
   const handleGenerate = async () => {
     const prompt = inputValue.trim();
     if (!prompt || isGenerating) return;
-    setInputValue('');
 
     // Check for command keywords first
-    if (handleCommand(prompt)) return;
+    if (handleCommand(prompt)) {
+      setInputValue('');
+      return;
+    }
 
     // Guard: API key check
     if (!selectedModel) {
@@ -176,6 +182,9 @@ function ChatInputArea() {
       return;
     }
 
+    // Only clear a valid prompt after all local guards pass.
+    setInputValue('');
+
     // Add user message
     addMessage({
       id: `user_${Date.now()}`,
@@ -197,63 +206,40 @@ function ChatInputArea() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     });
 
-    // Retry mechanism with exponential backoff
-    const MAX_RETRIES = 3;
-    let lastError: unknown;
+    // Image requests can be billable even when the response is lost. Submit
+    // exactly once; automatic retries can create duplicate images and charges.
+    try {
+      const generated = await imageGenerationService.generateImage(selectedModel, prompt, apiKey);
 
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      // Thumbnail generation is local and must never trigger another provider request.
       try {
-        const generated = await imageGenerationService.generateImage(selectedModel, prompt, apiKey);
-
-        // Generate thumbnail for preview strip
-        try {
-          generated.thumbnailUrl = await generateThumbnail(generated.dataUrl);
-        } catch {
-          // Silently fail, thumbnail not critical
-        }
-
-        addImage(generated);
-        resetViewer();
-
-        addMessage({
-          id: `done_${Date.now()}`,
-          sender: 'ai',
-          i18nKey: 'synthetic:chat.generationSuccess',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        });
-
-        lastError = undefined;
-        break; // Success, exit retry loop
-      } catch (error) {
-        lastError = error;
-
-        if (attempt < MAX_RETRIES) {
-          const waitMs = 1500 * attempt; // Exponential: 1.5s, 3s
-          addMessage({
-            id: `retry_${Date.now()}_${attempt}`,
-            sender: 'ai',
-            i18nKey: 'synthetic:chat.retrying',
-            i18nParams: { attempt, wait: waitMs / 1000 },
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          });
-          await new Promise((resolve) => setTimeout(resolve, waitMs));
-        }
+        generated.thumbnailUrl = await generateThumbnail(generated.dataUrl);
+      } catch {
+        // Thumbnail is optional; keep the generated image.
       }
-    }
 
-    if (lastError) {
-      const errMsg = lastError instanceof Error ? lastError.message : t('chat.errors.unknownError');
+      addImage(generated);
+      resetViewer();
+
+      addMessage({
+        id: `done_${Date.now()}`,
+        sender: 'ai',
+        i18nKey: 'synthetic:chat.generationSuccess',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      });
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : t('chat.errors.unknownError');
       setGenerationError(errMsg);
       addMessage({
         id: `err_${Date.now()}`,
         sender: 'ai',
         i18nKey: 'synthetic:chat.errors.generationFailed',
-        i18nParams: { retries: MAX_RETRIES, message: errMsg },
+        i18nParams: { retries: 1, message: errMsg },
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       });
+    } finally {
+      setIsGenerating(false);
     }
-
-    setIsGenerating(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

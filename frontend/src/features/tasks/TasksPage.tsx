@@ -9,9 +9,9 @@ import { SelectFilter, type SelectFilterOption } from '@/shared/components/Selec
 // Bileşen ve Servis Entegrasyonları
 import { TaskCard } from '@/features/tasks/components/TaskCard';
 import TasksDetailPage from './TasksDetailPage';
+import { type BackendRole, DATASET_ROLE_PERMISSIONS } from '@/shared/roles';
 import { taskService } from '@/features/tasks/services/taskService';
 import { RoleProvider } from '@/context/PermissionContext';
-import { type BackendRole, DATASET_ROLE_PERMISSIONS } from '@/shared/roles';
 
 // Backend TaskSerializer şemasına tam uyumlu tip tanımı
 interface TaskItem {

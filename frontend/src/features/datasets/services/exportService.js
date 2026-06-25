@@ -8,7 +8,8 @@ export const exportService = {
    */
   getApiKeys: async (datasetId) => {
     const response = await apiService.get(`/datasets/${datasetId}/api-keys`);
-    return response.data || response;
+    // Interceptor response.data döndürür: { data: [...], next_cursor: null }
+    return response;
   },
 
   /**
@@ -18,7 +19,8 @@ export const exportService = {
    */
   createApiKey: async (datasetId, payload) => {
     const response = await apiService.post(`/datasets/${datasetId}/api-keys`, payload);
-    return response.data || response;
+    // Interceptor response.data döndürür: { id, dataset_id, ..., raw_key }
+    return response;
   },
 
   /**
@@ -27,7 +29,8 @@ export const exportService = {
    */
   revokeAllKeys: async (datasetId) => {
     const response = await apiService.post(`/datasets/${datasetId}/api-keys/actions/revoke-all`);
-    return response.data || response;
+    // Interceptor response.data döndürür: { revoked_count }
+    return response;
   },
 
   /**
@@ -36,7 +39,8 @@ export const exportService = {
    */
   updateApiKey: async (datasetId, keyId, payload) => {
     const response = await apiService.patch(`/datasets/${datasetId}/api-keys/${keyId}`, payload);
-    return response.data || response;
+    // Interceptor response.data döndürür: { id, dataset_id, ..., is_active }
+    return response;
   },
 
   /**
@@ -45,7 +49,8 @@ export const exportService = {
    */
   deleteApiKey: async (datasetId, keyId) => {
     const response = await apiService.delete(`/datasets/${datasetId}/api-keys/${keyId}`);
-    return response.data || response;
+    // Interceptor response.data döndürür (204 için null/empty olabilir)
+    return response;
   },
 
     /**
@@ -54,7 +59,8 @@ export const exportService = {
    */
   revealApiKey: async (datasetId, keyId) => {
     const response = await apiService.get(`/datasets/${datasetId}/api-keys/${keyId}/reveal`);
-    return response.data || response;
+    // Interceptor response.data döndürür: { id, dataset_id, ..., message }
+    return response;
   },
 
   // ========== EXPORT DOWNLOAD ENDPOINT ==========
@@ -72,6 +78,7 @@ export const exportService = {
     if (params.version) queryParams.set('version', params.version);
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
     const response = await apiService.get(`/datasets/${datasetId}/export${query}`);
-    return response.data || response;
+    // Interceptor response.data döndürür: { format, dataset_id, dataset_name, version_tag, download_url }
+    return response;
   }
 };

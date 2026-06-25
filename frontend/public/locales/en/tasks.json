@@ -18,10 +18,13 @@
     }
   },
 
-  "card": {
+    "card": {
     "manage_task": "Manage Task",
     "processed_files": "Processed Files",
-    "assignee_prefix": "Assignee: @"
+    "assignee_prefix": "Assignee: @",
+    "annotate": "Annotate",
+    "view": "View",
+    "details": "Task Details"
   },
 
   "detail": {
@@ -32,6 +35,12 @@
     "dataset_id": "Dataset ID:",
 
     "info_section": "Task Information",
+    "task_prefix": "Task",
+    "task_name": "Name:",
+    "priority": "Priority:",
+    "deadline": "Deadline:",
+    "description": "Description:",
+    "rejection_reason": "Rejection Reason",
     "assignee": "Assignee:",
     "unassigned": "Unassigned",
     "total_assets": "Total Assets:",
@@ -53,13 +62,33 @@
     "asset_status_labeled": "labeled",
     "asset_status_unlabeled": "unlabeled",
     "no_assets": "No assets bound to this task yet.",
+    "page_info": "Page {{page}}",
+    "loading_images": "Loading images...",
+    "retry": "Retry",
+    "open_annotator": "Open in Annotator",
+    "open_viewer": "Open in Viewer",
+    "copy_asset_id": "Copy Asset ID",
+    "asset_id_copied": "Asset ID copied to clipboard!",
+    "asset_id_copy_failed": "Failed to copy Asset ID.",
+    "untitled": "Untitled",
 
     "confirm_delete": "Are you sure you want to revoke/delete this task?",
     "revoke_button": "Revoke Task",
     "status_update_failed": "Status update failed.",
     "reassignment_failed": "Reassignment failed.",
     "add_asset_failed": "Adding asset failed.",
-    "delete_failed": "Failed to delete task."
+    "delete_failed": "Failed to delete task.",
+    "fetch_failed": "Failed to fetch tasks from server."
+  },
+
+  "table": {
+    "type": "Type",
+    "filename": "Filename",
+    "mime_type": "MIME Type",
+    "status": "Status",
+    "embedding": "Embedding",
+    "items": "items",
+    "last_page": "last page"
   },
 
   "modal": {
@@ -166,9 +195,11 @@
       "user": "User",
       "role": "Role",
       "select": "Select",
-      "selected": "Selected"
+      "selected": "Selected",
+      "actions": "Actions"
     },
     "member_role_owner": "Owner",
+    "member_role_admin": "Admin",
     "asset_search_placeholder": "Search by filename...",
     "asset_table": {
       "preview": "Preview",
@@ -187,5 +218,27 @@
     "missing_dataset": "Please select a dataset first.",
     "no_assets_selected": "Please select at least one asset.",
     "load_more": "Load More"
+  },
+
+  "details": {
+    "title": "Task Details",
+    "description": "Set task name, priority, description, and deadline.",
+    "short_title": "Details",
+    "name_label": "Task Name",
+    "description_label": "Description",
+    "priority_label": "Priority",
+    "deadline_label": "Deadline",
+    "name_placeholder": "e.g. Bounding box annotation for vehicle detection",
+    "description_placeholder": "Provide additional context or instructions for this task...",
+    "deadline_placeholder": "Pick a date",
+    "optional": "optional",
+    "clear_deadline": "Clear deadline",
+    "hint": "Priority and deadline help organize and track task progress. These fields are optional.",
+    "priority_options": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    }
   }
 }

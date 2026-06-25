@@ -22,7 +22,7 @@
     "error_needs_project": "You must first enter a project to create a dataset.",
     "success": "Dataset created successfully."
   },
-    "roles": {
+  "roles": {
     "admin": "Admin",
     "annotator": "Annotator",
     "viewer": "Viewer",
@@ -82,9 +82,16 @@
     "title": "Matrix Format Export Target",
     "description": "Transform native annotation polygons into specialized pipeline layers.",
     "ready_title": "Static Snapshot Export Bundle",
-    "ready_desc": "Package current version matrix coordinates as:",
     "compiling": "Compiling...",
     "pack_download": "Pack & Download",
+    "version_label": "Export Version",
+    "latest_version": "Latest",
+    "exporting_version": "Exporting",
+    "formats": {
+      "coco_desc": "COCO",
+      "yolo_desc": "YOLO",
+      "visual_genome_desc": "Visual Genome"
+    },
     "external_api": "External API Integrations",
     "api_description": "Automate cloud fetch processes using long-lived security signatures.",
     "emergency_revoke": "Emergency Revoke All",
@@ -155,7 +162,44 @@
   },
   "detail": {
     "overview_tab": "Overview",
-    "export_tab": "Export"
+    "versions_tab": "Versions",
+    "export_tab": "Export",
+    "subtitle": "Dataset Overview",
+    "statistics": "Statistics",
+    "total_images": "Total Images",
+    "annotated": "Annotated",
+    "complete": "complete",
+    "no_data": "No data",
+    "role_label": "Role",
+    "delete_confirm": "Are you sure you want to delete this dataset?"
+  },
+  "versions": {
+    "title": "Version History",
+    "description": "View and manage dataset snapshots",
+    "latest_badge": "Latest",
+    "no_versions": "No versions available yet.",
+    "no_versions_desc": "Versions are created automatically when a task is approved.",
+    "actions": {
+      "export": "Export",
+      "restore": "Restore"
+    },
+    "restore_dialog": {
+      "title": "Restore Version",
+      "description": "Restore dataset state from",
+      "create_new": "Create as new version",
+      "create_new_desc": "Creates a new version from the snapshot. Current dataset state is preserved.",
+      "replace": "Replace current state",
+      "replace_desc": "Replaces the current dataset assets and annotations with the snapshot. Current state will be lost.",
+      "confirm": "Restore"
+    },
+    "notifications": {
+      "load_error": "Failed to load version history.",
+      "restoring_new": "Creating new version from snapshot...",
+      "restoring_replace": "Replacing dataset state...",
+      "restore_new_success": "New version created from snapshot!",
+      "restore_replace_success": "Dataset state replaced successfully!",
+      "restore_error": "Version restore failed."
+    }
   },
   "project_page": {
     "manage_linked": "Linked Datasets Management",

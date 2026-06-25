@@ -40,7 +40,10 @@ export type Permission =
   | 'task:approve-reject'
   // --- Dataset Task Yetkileri ---
   | 'task:add-asset'
-  | 'task:remove-asset';
+  | 'task:remove-asset'
+  // --- Dataset Version Yetkileri ---
+  | 'version:revert'
+  | 'version:restore';
 
 // ============================================================
 // 3. PROJE SEVİYESİ PERMISSION MAP
@@ -78,7 +81,8 @@ export const DATASET_ROLE_PERMISSIONS: Record<string, Permission[]> = {
     'asset:add', 'asset:remove', 'asset:view',
     'task:create', 'task:view-all', 'task:delete', 'task:reassign',
     'task:annotate', 'task:submit-approval', 'task:approve-reject',
-    'task:add-asset', 'task:remove-asset', 'task:view-assigned'
+    'task:add-asset', 'task:remove-asset', 'task:view-assigned',
+    'version:revert', 'version:restore'
   ],
   annotator: [
     'dataset:view',

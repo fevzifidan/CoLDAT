@@ -13,6 +13,7 @@ from .views import (
     DatasetMemberListCreateView,
     DatasetVersionDetailView,
     DatasetVersionListCreateView,
+    DatasetVersionRestoreView,
     DatasetAPIKeyDetailView,
     DatasetAPIKeyListCreateView,
     DatasetAPIKeyRevealView,
@@ -85,6 +86,11 @@ urlpatterns = [
         "<uuid:dataset_id>/versions/<str:version_tag>/",
         DatasetVersionDetailView.as_view(),
         name="dataset-version-detail",
+    ),
+    path(
+        "<uuid:dataset_id>/versions/<str:version_tag>/restore/",
+        DatasetVersionRestoreView.as_view(),
+        name="dataset-version-restore",
     ),
     path(
         "<uuid:dataset_id>/annotator-assignments/",

@@ -29,6 +29,7 @@ from .serializers import (
     DatasetSerializer,
     DatasetVersionCreateSerializer,
     DatasetVersionListSerializer,
+    DatasetVersionRestoreSerializer,
     DatasetVersionSerializer,
     DatasetAPIKeyCreateResponseSerializer,
     DatasetAPIKeyCreateSerializer,
@@ -42,6 +43,7 @@ from .services import (
     delete_dataset,
     delete_dataset_version,
     remove_dataset_member,
+    restore_dataset_version,
     update_dataset,
     update_dataset_member_role,
     create_dataset_api_key,
@@ -342,7 +344,9 @@ class DatasetVersionDetailView(APIView):
             status=status.HTTP_200_OK,
         )
 
-    def delete(self, request, dataset_id, version_tag):
+
+class DatasetVersionRestoreView(APIView):
+    def post(self, request, dataset_id, version_tag):
         dataset, version = get_dataset_version_for_user(
             dataset_id=dataset_id,
             version_tag=version_tag,
@@ -351,15 +355,22 @@ class DatasetVersionDetailView(APIView):
 
         self.check_object_permissions(request, dataset)
 
-        delete_dataset_version(version=version)
+        serializer = DatasetVersionRestoreSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        new_version = restore_dataset_version(
+            source_version=version,
+            created_by=request.user,
+            mode=serializer.validated_data["mode"],
+        )
+
+        return Response(
+            DatasetVersionSerializer(new_version).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     def get_permissions(self):
-        if self.request.method == "DELETE":
-            return [IsDatasetProjectAdmin()]
-
-        return super().get_permissions()
+        return [IsDatasetProjectAdmin()]
     
 class DatasetAPIKeyListCreateView(UUIDv7PaginatedAPIViewMixin, APIView):
     def get(self, request, dataset_id):

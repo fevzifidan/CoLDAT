@@ -16,6 +16,7 @@ import {
   Trash2,
   FileDown,
   LayoutDashboard,
+  History,
 } from 'lucide-react';
 import { RoleProvider } from '@/context/PermissionContext';
 import { type BackendRole, DATASET_ROLE_PERMISSIONS } from '@/shared/roles';
@@ -26,6 +27,7 @@ import DatasetMemberManager from './components/DatasetMemberManager';
 import DatasetImageUploader from './components/DatasetImageUploader';
 import DatasetImageGallery from './components/DatasetImageGallery';
 import ExportManager from './components/ExportManager';
+import VersionManager from './components/VersionManager';
 
 interface DatasetDetail {
   id: string;
@@ -170,10 +172,14 @@ const DatasetDetailPage = () => {
 
             {/* Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-muted/50 p-1 rounded-xl">
+                <TabsList className="bg-muted/50 p-1 rounded-xl">
           <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background gap-2">
             <LayoutDashboard size={15} />
             {t('datasets:detail.overview_tab', 'Overview')}
+          </TabsTrigger>
+          <TabsTrigger value="versions" className="rounded-lg data-[state=active]:bg-background gap-2">
+            <History size={15} />
+            {t('datasets:detail.versions_tab', 'Versions')}
           </TabsTrigger>
           <TabsTrigger value="export" className="rounded-lg data-[state=active]:bg-background gap-2">
             <FileDown size={15} />
@@ -290,6 +296,11 @@ const DatasetDetailPage = () => {
         {/* Export Tab */}
         <TabsContent value="export" className="space-y-6 mt-0">
           <ExportManager datasetId={dataset.id} />
+        </TabsContent>
+
+        {/* Versions Tab */}
+        <TabsContent value="versions" className="space-y-6 mt-0">
+          <VersionManager datasetId={dataset.id} />
         </TabsContent>
       </Tabs>
     </div>

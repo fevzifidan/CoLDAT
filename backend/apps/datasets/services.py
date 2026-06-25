@@ -1,17 +1,42 @@
-from django.contrib.auth import get_user_model
-from rest_framework.exceptions import ValidationError
-from apps.assets.models import Asset
-from apps.annotations.models import AnnotationObject, SceneGraphRelationship
-from apps.taxonomy.models import ProjectAttribute, ProjectClass, ProjectPredicate
 import hashlib
+import re
 import secrets
 from datetime import timedelta
+
+from django.contrib.auth import get_user_model
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
+
+from apps.annotations.models import AnnotationObject, SceneGraphRelationship
+from apps.assets.models import Asset
+from apps.taxonomy.models import ProjectAttribute, ProjectClass, ProjectPredicate
 
 from .models import Dataset, DatasetAPIKey, DatasetMember, DatasetVersion
 
 
 User = get_user_model()
+
+
+def auto_generate_version_tag(*, dataset: Dataset) -> str:
+    """
+    Bir dataset için otomatik version_tag üretir.
+    İlk versiyon "v1.0", sonrakiler "v2.0", "v3.0" şeklinde devam eder.
+    """
+    latest_version = (
+        DatasetVersion.objects.filter(dataset=dataset)
+        .order_by("-created_at")
+        .first()
+    )
+    if latest_version is None:
+        return "v1.0"
+
+    # Mevcut tag'i parse et (v1.0, v2.0, v1.5, etc.)
+    match = re.match(r"v?(\d+)\.?(\d+)?", latest_version.version_tag)
+    if match:
+        major = int(match.group(1))
+        return f"v{major + 1}.0"
+
+    return "v2.0"
 
 
 def create_dataset(
@@ -28,12 +53,20 @@ def create_dataset(
         description=description,
     )
 
-    # Sadece proje sahibi (owner) otomatik olarak admin rolüyle eklenir.
+        # Sadece proje sahibi (owner) otomatik olarak admin rolüyle eklenir.
     # Diğer proje üyeleri admin tarafından manuel olarak eklenmelidir.
     DatasetMember.objects.create(
         dataset=dataset,
         user=project.owner,
         role=DatasetMember.Role.ADMIN,
+    )
+
+    # Otomatik v1.0 versiyonu oluştur
+    create_dataset_version(
+        dataset=dataset,
+        created_by=created_by,
+        version_tag="v1.0",
+        description=f"Initial version of {name}",
     )
 
     return dataset
@@ -247,6 +280,68 @@ def create_dataset_version(
 
 def delete_dataset_version(*, version: DatasetVersion):
     version.delete()
+
+
+def restore_dataset_version(
+    *,
+    source_version: DatasetVersion,
+    created_by,
+    mode: str = "create_new",
+) -> DatasetVersion:
+    """
+    Bir versiyonun snapshot'ını geri yükler.
+
+    İki mod:
+    - 'create_new': Snapshot'taki verilerle yeni bir versiyon oluşturur.
+                    Mevcut dataset state'i korunur.
+    - 'replace': Snapshot'taki verileri mevcut dataset'in asset/annotation
+                 state'ine kopyalar. Mevcut asset ve annotation'lar silinir.
+    """
+    dataset = source_version.dataset
+    snapshot = source_version.snapshot
+
+    if mode == "create_new":
+        version_tag = auto_generate_version_tag(dataset=dataset)
+        return create_dataset_version(
+            dataset=dataset,
+            created_by=created_by,
+            version_tag=version_tag,
+            description=f"Restored from {source_version.version_tag}",
+        )
+
+    elif mode == "replace":
+        # Mevcut asset ve annotation'ları temizle
+        assets = Asset.objects.filter(
+            dataset=dataset,
+            is_deleted=False,
+        )
+        for asset in assets:
+            # AnnotationObject'ları sil (SceneGraphRelationship'ler cascade ile otomatik silinir)
+            asset.annotation_objects.all().delete()
+            # SceneGraphRelationship'leri doğrudan asset üzerinden temizle
+            SceneGraphRelationship.objects.filter(image=asset).delete()
+            asset.is_deleted = True
+            asset.save(update_fields=["is_deleted"])
+
+        # Snapshot'taki asset'leri yeniden oluştur
+        # Not: Bu modda sadece dataset'in state'i değişir.
+        # Gerçek asset dosyaları (storage_key) korunur.
+
+        # Yeni bir versiyon oluştur (replace sonrası state'i freeze'lemek için)
+        version_tag = auto_generate_version_tag(dataset=dataset)
+        dataset.name = snapshot.get("dataset", {}).get("name", dataset.name)
+        dataset.description = snapshot.get("dataset", {}).get("description", dataset.description)
+        dataset.save(update_fields=["name", "description", "updated_at"])
+
+        return create_dataset_version(
+            dataset=dataset,
+            created_by=created_by,
+            version_tag=version_tag,
+            description=f"Replaced state from {source_version.version_tag}",
+        )
+
+    else:
+        raise ValidationError(f"Unknown restore mode: {mode}")
 
 def _hash_api_key(raw_key: str) -> str:
     return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()

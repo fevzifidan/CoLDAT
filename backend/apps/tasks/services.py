@@ -7,6 +7,10 @@ from rest_framework.exceptions import ValidationError
 from apps.annotations.models import AnnotationObject
 from apps.assets.models import Asset
 from apps.datasets.models import Dataset
+from apps.datasets.services import (
+    auto_generate_version_tag,
+    create_dataset_version,
+)
 from apps.projects.models import ProjectMembership
 
 from .models import Task, TaskImage
@@ -249,6 +253,16 @@ def update_task_status(
         update_fields.append("completed_at")
 
     task.save(update_fields=update_fields)
+
+    # ✨ Task onaylanınca otomatik versiyon oluştur
+    if new_status == Task.Status.APPROVED:
+        version_tag = auto_generate_version_tag(dataset=task.dataset)
+        create_dataset_version(
+            dataset=task.dataset,
+            created_by=user,
+            version_tag=version_tag,
+            description=f"Auto-version after task approval: {task.name}",
+        )
 
     return task
 

@@ -38,6 +38,7 @@ interface RetryUploadResponse {
   };
 }
 
+
 /**
  * GET /users/assets endpoint'inden dönen asset tipi.
  * Backend AssetSerializer şemasına birebir uyumlu.
@@ -128,6 +129,21 @@ export const assetService = {
   retryUpload: async (assetId: string, payload: RetryUploadPayload): Promise<RetryUploadResponse> => {
     const response = await apiService.post(`/assets/${assetId}/retry-upload`, payload);
     return response.data || response;
+  },
+
+  createSyntheticAsset: async (
+    datasetId: string, 
+    base64Data: string, 
+    filename: string, 
+    prompt: string
+  ): Promise<any> => {
+    // CoLDAT backend yapınıza bağlı olarak multipart veya doğrudan base64 JSON payload gönderimi:
+    const response = await apiService.post(`/datasets/${datasetId}/synthetic-assets`, {
+      filename,
+      prompt,
+      image_data: base64Data, // Backend base64 string'i decode edip MinIO'ya yazacaktır
+      mime_type: "image/jpeg"
+    });
+    return response.data || response;
   }
 };
-
