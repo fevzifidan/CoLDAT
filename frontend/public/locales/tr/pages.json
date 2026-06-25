@@ -1,5 +1,4 @@
 {
-  
   "datasets": {
     "title": "Veri Setleri",
     "create_dataset": "Veri Seti Oluştur",
@@ -23,7 +22,6 @@
       "delete_permanently": "Kalıcı Olarak Sil"
     }
   },
-  
   "project_detail": {
     "not_found": "Proje Bulunamadı.",
     "save_all": "Tüm Değişiklikleri Kaydet",
@@ -32,7 +30,7 @@
     "tabs": {
       "general": "Genel",
       "taxonomy": "Taksonomi",
-      "assets": "Varlıklar (Assets)",
+      "assets": "Vaklar (Assets)",
       "users": "Kullanıcılar",
       "export": "Dışa Aktar"
     }
@@ -66,7 +64,7 @@
     "add_global_attribute": "Genel öznitelik ekle",
     "global_attributes_title": "Genel Öznitelikler",
     "prompt_msg": "Yeni öznitelik adı girin (Örn. renk, kesiklik):",
-        "default_new_class": "Yeni Sınıf",
+    "default_new_class": "Yeni Sınıf",
     "default_new_relation": "yeni_iliski",
     "view_only": "Salt Okunur",
     "no_classes": "Henüz sınıf tanımlanmadı.",
@@ -119,6 +117,47 @@
       "coco_desc": "Common Objects in Context formatı",
       "yolo_desc": "Darknet / PyTorch formatı",
       "pascal_desc": "Nesne algılama için XML formatı"
+    }
+  },
+  "user_assets": {
+    "title": "Benim Resimlerim",
+    "subtitle": "Veri kümelerindeki yüklenmiş tüm resimler",
+    "search_placeholder": "Dosya adına göre ara...",
+    "no_results": "Eşleşen resim bulunamadı",
+    "empty": "Henüz resim bulunmuyor.",
+    "empty_filter_hint": "Arama veya filtreleme kriterlerinizi değiştirmeyi deneyin.",
+    "empty_hint": "Veri kümelerine yüklediğiniz tüm resimler kolayca göz atabilmeniz için burada listelenir.",
+    "clear_filters": "Filtreleri Temizle",
+    "page_info": "Sayfa {{page}} · {{count}} resim",
+    "page_info_plural": "Sayfa {{page}} · {{count}} resim",
+    "items_count": "{{count}} öge",
+    "last_page": "Son sayfa",
+    "stats": {
+      "this_page": "Bu Sayfa",
+      "uploaded": "Yüklendi",
+      "pending": "Bekliyor",
+      "failed": "Başarısız"
+    },
+    "table": {
+      "type": "Tür",
+      "filename": "Dosya Adı",
+      "dimensions": "Boyutlar",
+      "format": "Format",
+      "status": "Durum",
+      "uploaded": "Yüklenme"
+    },
+    "status_labels": {
+      "all": "Tüm Durumlar",
+      "pending": "Bekliyor",
+      "uploaded": "Yüklendi",
+      "verification_failed": "Doğrulama Başarısız",
+      "failed": "Başarısız"
+    },
+    "time": {
+      "just_now": "az önce",
+      "mins_ago": "{{count}}dk önce",
+      "hours_ago": "{{count}}sa önce",
+      "days_ago": "{{count}}g önce"
     }
   }
 }

@@ -44,49 +44,39 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-// ─── Constants ──────────────────────────────────────────────
-const STATUS_OPTIONS = [
-  { value: 'ALL', label: 'All Statuses' },
-  { value: 'PENDING', label: 'Pending' },
-  { value: 'UPLOADED', label: 'Uploaded' },
-  { value: 'VERIFICATION_FAILED', label: 'Verification Failed' },
-  { value: 'FAILED', label: 'Failed' },
-];
-
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
-
 type ViewMode = 'grid' | 'table';
 
-// ─── Helpers ─────────────────────────────────────────────────
-const getStatusBadge = (status: string) => {
+// ─── Dynamic Helpers ─────────────────────────────────────────
+const getStatusBadge = (status: string, t: any) => {
   switch (status?.toUpperCase()) {
     case 'PENDING':
       return {
         className:
           'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800/60',
         icon: Hourglass,
-        label: 'Pending',
+        label: t('pages:user_assets.status_labels.pending', 'Pending'),
       };
     case 'UPLOADED':
       return {
         className:
           'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800/60',
         icon: CheckCircle2,
-        label: 'Uploaded',
+        label: t('pages:user_assets.status_labels.uploaded', 'Uploaded'),
       };
     case 'VERIFICATION_FAILED':
       return {
         className:
           'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-800/60',
         icon: AlertTriangle,
-        label: 'Verify Failed',
+        label: t('pages:user_assets.status_labels.verification_failed', 'Verify Failed'),
       };
     case 'FAILED':
       return {
         className:
           'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/60 dark:text-red-400 dark:border-red-800/60',
         icon: XCircle,
-        label: 'Failed',
+        label: t('pages:user_assets.status_labels.failed', 'Failed'),
       };
     default:
       return {
@@ -97,9 +87,9 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-const formatDate = (dateStr: string) => {
+const formatDate = (dateStr: string, lng: string) => {
   const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', {
+  return d.toLocaleDateString(lng === 'tr' ? 'tr-TR' : 'en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -108,18 +98,22 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-const getTimeAgo = (dateStr: string) => {
+const getTimeAgo = (dateStr: string, t: any, lng: string) => {
   const now = Date.now();
   const past = new Date(dateStr).getTime();
   const diffMs = now - past;
   const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
+  
+  if (diffMins < 1) return t('pages:user_assets.time.just_now', 'just now');
+  if (diffMins < 60) return t('pages:user_assets.time.mins_ago', { count: diffMins, defaultValue: `${diffMins}m ago` });
+  
   const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffHours < 24) return t('pages:user_assets.time.hours_ago', { count: diffHours, defaultValue: `${diffHours}h ago` });
+  
   const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 30) return `${diffDays}d ago`;
-  return formatDate(dateStr);
+  if (diffDays < 30) return t('pages:user_assets.time.days_ago', { count: diffDays, defaultValue: `${diffDays}d ago` });
+  
+  return formatDate(dateStr, lng);
 };
 
 const getFileTypeIcon = (mimeType: string) => {
@@ -158,35 +152,32 @@ const StatCard = ({ label, value, icon: Icon, color, bgColor }: StatCardProps) =
 // ─── AssetCard Component ─────────────────────────────────────
 interface AssetCardProps {
   asset: UserAsset;
+  t: any;
+  lng: string;
 }
 
-const AssetCard = ({ asset }: AssetCardProps) => {
-  const statusInfo = getStatusBadge(asset.status);
+const AssetCard = ({ asset, t, lng }: AssetCardProps) => {
+  const statusInfo = getStatusBadge(asset.status, t);
   const StatusIcon = statusInfo.icon;
-  const FileTypeIcon = getFileTypeIcon(asset.mime_type);
+  const FileIconComponent = getFileTypeIcon(asset.mime_type);
 
   return (
     <div className="group relative overflow-hidden rounded-xl border border-border/40 bg-card shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-      {/* Thumbnail / Preview */}
       <div className="aspect-[4/3] bg-gradient-to-br from-muted/60 via-muted/40 to-muted/70 flex items-center justify-center overflow-hidden relative">
         <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
-        <FileTypeIcon
+        <FileIconComponent
           size={48}
           className="text-muted-foreground/20 group-hover:text-muted-foreground/40 group-hover:scale-110 transition-all duration-500"
         />
 
-        {/* Status Badge Overlay */}
         <div
           className={`absolute top-3 right-3 inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border shadow-sm backdrop-blur-sm ${statusInfo.className}`}
         >
           <StatusIcon size={10} />
           <span>{statusInfo.label}</span>
         </div>
-
-        <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary/0 via-primary/40 to-primary/0 scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
       </div>
 
-      {/* Details */}
       <div className="p-4 space-y-2.5">
         <div className="flex items-start justify-between gap-2">
           <h3
@@ -197,7 +188,6 @@ const AssetCard = ({ asset }: AssetCardProps) => {
           </h3>
         </div>
 
-        {/* Metadata tags */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-muted-foreground/70">
           {asset.width != null && asset.height != null && (
             <span className="inline-flex items-center gap-1.5 bg-muted/30 px-2 py-0.5 rounded-md">
@@ -213,12 +203,12 @@ const AssetCard = ({ asset }: AssetCardProps) => {
           )}
           <span className="inline-flex items-center gap-1.5 bg-muted/30 px-2 py-0.5 rounded-md">
             <Clock size={10} className="text-muted-foreground/50" />
-            {getTimeAgo(asset.created_at)}
+            {getTimeAgo(asset.created_at, t, lng)}
           </span>
         </div>
 
         <div className="text-[10px] text-muted-foreground/40 font-mono tracking-tight">
-          {formatDate(asset.created_at)}
+          {formatDate(asset.created_at, lng)}
         </div>
       </div>
     </div>
@@ -228,10 +218,12 @@ const AssetCard = ({ asset }: AssetCardProps) => {
 // ─── AssetTableRow Component ─────────────────────────────────
 interface AssetTableRowProps {
   asset: UserAsset;
+  t: any;
+  lng: string;
 }
 
-const AssetTableRow = ({ asset }: AssetTableRowProps) => {
-  const statusInfo = getStatusBadge(asset.status);
+const AssetTableRow = ({ asset, t, lng }: AssetTableRowProps) => {
+  const statusInfo = getStatusBadge(asset.status, t);
   const StatusIcon = statusInfo.icon;
 
   return (
@@ -270,7 +262,7 @@ const AssetTableRow = ({ asset }: AssetTableRowProps) => {
         </span>
       </TableCell>
       <TableCell className="py-3 text-xs text-muted-foreground/60 whitespace-nowrap hidden lg:table-cell">
-        {getTimeAgo(asset.created_at)}
+        {getTimeAgo(asset.created_at, t, lng)}
       </TableCell>
     </TableRow>
   );
@@ -278,14 +270,23 @@ const AssetTableRow = ({ asset }: AssetTableRowProps) => {
 
 // ─── Main Page Component ─────────────────────────────────────
 const UserAssetsPage = () => {
-  const { t } = useTranslation(['pages', 'common', 'datasets']);
+  const { t, i18n } = useTranslation(['pages', 'common', 'datasets']);
+  const currentLanguage = i18n?.language || 'en';
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [pageSize, setPageSize] = useState(50);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Cursor-based pagination ──
+  const STATUS_OPTIONS = [
+    { value: 'ALL', label: t('pages:user_assets.status_labels.all', 'All Statuses') },
+    { value: 'PENDING', label: t('pages:user_assets.status_labels.pending', 'Pending') },
+    { value: 'UPLOADED', label: t('pages:user_assets.status_labels.uploaded', 'Uploaded') },
+    { value: 'VERIFICATION_FAILED', label: t('pages:user_assets.status_labels.verification_failed', 'Verify Failed') },
+    { value: 'FAILED', label: t('pages:user_assets.status_labels.failed', 'Failed') },
+  ];
+
   const {
     items: paginatedAssets,
     loading,
@@ -311,7 +312,6 @@ const UserAssetsPage = () => {
     enabled: true,
   });
 
-  // Debounced search/filter -> reset pagination
   useEffect(() => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     searchTimerRef.current = setTimeout(() => {
@@ -322,7 +322,6 @@ const UserAssetsPage = () => {
     };
   }, [searchQuery, statusFilter, reset]);
 
-  // Reset when page size changes
   useEffect(() => {
     reset();
   }, [pageSize, reset]);
@@ -331,7 +330,6 @@ const UserAssetsPage = () => {
     reset();
   };
 
-  // Stats (paginated assets üzerinden değil — tüm veri gelmediği için sadece mevcut sayfadaki)
   const totalCount = paginatedAssets.length;
   const uploadedCount = paginatedAssets.filter(
     (a) => a.status?.toUpperCase() === 'UPLOADED'
@@ -362,10 +360,7 @@ const UserAssetsPage = () => {
                 {t('pages:user_assets.title', 'My Assets')}
               </h1>
               <p className="text-sm text-muted-foreground/70 mt-1 max-w-md">
-                {t(
-                  'pages:user_assets.subtitle',
-                  'All uploaded assets across datasets'
-                )}
+                {t('pages:user_assets.subtitle', 'All uploaded assets across datasets')}
               </p>
             </div>
           </div>
@@ -375,10 +370,7 @@ const UserAssetsPage = () => {
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
               <Input
-                placeholder={t(
-                  'pages:user_assets.search_placeholder',
-                  'Search by filename...'
-                )}
+                placeholder={t('pages:user_assets.search_placeholder', 'Search by filename...')}
                 className="pl-10 h-10 w-48 lg:w-56 bg-background/50 border-border/50 text-foreground placeholder:text-muted-foreground/40 rounded-xl focus:border-primary/40 focus:bg-background/80 transition-all text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -387,12 +379,9 @@ const UserAssetsPage = () => {
 
             <SelectFilter
               value={statusFilter}
-              onChange={(v) => setStatusFilter(v)}
+              onChange={(v: string) => setStatusFilter(v)}
               triggerClassName="w-36 lg:w-40 h-10 rounded-xl bg-background/50 border-border/50"
-              options={STATUS_OPTIONS.map((opt) => ({
-                value: opt.value,
-                label: opt.label,
-              }))}
+              options={STATUS_OPTIONS}
             />
 
             {/* View Mode Toggle */}
@@ -461,10 +450,7 @@ const UserAssetsPage = () => {
             <div>
               <p className="text-base font-semibold text-destructive">{error}</p>
               <p className="text-sm text-muted-foreground/60 mt-1">
-                {t(
-                  'common:status.something_wrong',
-                  'Something went wrong. Please try again.'
-                )}
+                {t('common:status.something_wrong', 'Something went wrong. Please try again.')}
               </p>
             </div>
             <Button
@@ -497,28 +483,28 @@ const UserAssetsPage = () => {
       {!initialLoading && !error && paginatedAssets.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
-            label="This Page"
+            label={t('pages:user_assets.stats.this_page', 'This Page')}
             value={totalCount}
             icon={Box}
             color="text-primary"
             bgColor="bg-primary"
           />
           <StatCard
-            label="Uploaded"
+            label={t('pages:user_assets.stats.uploaded', 'Uploaded')}
             value={uploadedCount}
             icon={CheckCircle2}
             color="text-emerald-600 dark:text-emerald-400"
             bgColor="bg-emerald-500"
           />
           <StatCard
-            label="Pending"
+            label={t('pages:user_assets.stats.pending', 'Pending')}
             value={pendingCount}
             icon={Hourglass}
             color="text-amber-600 dark:text-amber-400"
             bgColor="bg-amber-500"
           />
           <StatCard
-            label="Failed"
+            label={t('pages:user_assets.stats.failed', 'Failed')}
             value={failedCount}
             icon={XCircle}
             color="text-red-600 dark:text-red-400"
@@ -538,25 +524,13 @@ const UserAssetsPage = () => {
             <div className="space-y-1.5 max-w-sm">
               <p className="text-lg font-semibold text-foreground/70">
                 {hasActiveFilters
-                  ? t(
-                      'pages:user_assets.no_results',
-                      'No matching assets'
-                    )
-                  : t(
-                      'pages:user_assets.empty',
-                      'No assets found.'
-                    )}
+                  ? t('pages:user_assets.no_results', 'No matching assets')
+                  : t('pages:user_assets.empty', 'No assets found.')}
               </p>
               <p className="text-sm text-muted-foreground/50 leading-relaxed">
                 {hasActiveFilters
-                  ? t(
-                      'pages:user_assets.empty_filter_hint',
-                      'Try adjusting your search or filter criteria.'
-                    )
-                  : t(
-                      'pages:user_assets.empty_hint',
-                      'Assets you upload to any dataset will appear here for easy browsing.'
-                    )}
+                  ? t('pages:user_assets.empty_filter_hint', 'Try adjusting your search or filter criteria.')
+                  : t('pages:user_assets.empty_hint', 'Assets you upload to any dataset will appear here for easy browsing.')}
               </p>
             </div>
             {hasActiveFilters && (
@@ -570,7 +544,7 @@ const UserAssetsPage = () => {
                 className="rounded-xl border-border/40"
               >
                 <RefreshCw size={14} className="mr-2" />
-                Clear Filters
+                {t('pages:user_assets.clear_filters', 'Clear Filters')}
               </Button>
             )}
           </div>
@@ -582,21 +556,21 @@ const UserAssetsPage = () => {
         <>
           <div className="flex items-center justify-between text-xs text-muted-foreground/50 px-1">
             <span className="font-medium">
-              Page {currentPage} · {paginatedAssets.length} asset{paginatedAssets.length !== 1 ? 's' : ''}
+              {t(paginatedAssets.length !== 1 ? 'pages:user_assets.page_info_plural' : 'pages:user_assets.page_info', { page: currentPage, count: paginatedAssets.length, defaultValue: `Page ${currentPage} · ${paginatedAssets.length} assets` })}
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {paginatedAssets.map((asset) => (
-              <AssetCard key={asset.id} asset={asset} />
+              <AssetCard key={asset.id} asset={asset} t={t} lng={currentLanguage} />
             ))}
           </div>
 
           {/* Grid Pagination */}
           <div className="flex items-center justify-between px-1 py-3 border-t border-border/40">
             <span className="text-[11px] text-muted-foreground/50">
-              {paginatedAssets.length} items
-              {!hasNext && ` · Last page`}
+              {t('pages:user_assets.items_count', { count: paginatedAssets.length, defaultValue: `${paginatedAssets.length} items` })}
+              {!hasNext && ` · ${t('pages:user_assets.last_page', 'Last page')}`}
             </span>
             <div className="flex items-center gap-1.5">
               <Button
@@ -631,17 +605,17 @@ const UserAssetsPage = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50px] text-xs">Type</TableHead>
-                <TableHead className="text-xs">Filename</TableHead>
-                <TableHead className="hidden sm:table-cell text-xs">Dimensions</TableHead>
-                <TableHead className="hidden md:table-cell text-xs">Format</TableHead>
-                <TableHead className="text-xs">Status</TableHead>
-                <TableHead className="hidden lg:table-cell text-xs">Uploaded</TableHead>
+                <TableHead className="w-[50px] text-xs">{t('pages:user_assets.table.type', 'Type')}</TableHead>
+                <TableHead className="text-xs">{t('pages:user_assets.table.filename', 'Filename')}</TableHead>
+                <TableHead className="hidden sm:table-cell text-xs">{t('pages:user_assets.table.dimensions', 'Dimensions')}</TableHead>
+                <TableHead className="hidden md:table-cell text-xs">{t('pages:user_assets.table.format', 'Format')}</TableHead>
+                <TableHead className="text-xs">{t('pages:user_assets.table.status', 'Status')}</TableHead>
+                <TableHead className="hidden lg:table-cell text-xs">{t('pages:user_assets.table.uploaded', 'Uploaded')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedAssets.map((asset) => (
-                <AssetTableRow key={asset.id} asset={asset} />
+                <AssetTableRow key={asset.id} asset={asset} t={t} lng={currentLanguage} />
               ))}
             </TableBody>
           </Table>
@@ -649,8 +623,8 @@ const UserAssetsPage = () => {
           {/* Table Pagination */}
           <div className="flex items-center justify-between px-4 py-3 border-t border-border/40 bg-muted/30">
             <span className="text-[11px] text-muted-foreground">
-              Page {currentPage} · {paginatedAssets.length} items
-              {!hasNext && ` · Last page`}
+              {t(paginatedAssets.length !== 1 ? 'pages:user_assets.page_info_plural' : 'pages:user_assets.page_info', { page: currentPage, count: paginatedAssets.length, defaultValue: `Page ${currentPage} · ${paginatedAssets.length} items` })}
+              {!hasNext && ` · ${t('pages:user_assets.last_page', 'Last page')}`}
             </span>
             <div className="flex items-center gap-1.5">
               <Button
